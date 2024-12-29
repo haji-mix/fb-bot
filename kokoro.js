@@ -1114,11 +1114,13 @@ async function accountLogin(state, prefix, admin = []) {
 
             return `${browser.name} (${os}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${browserVersion} Safari/537.36`;
         }
+        
+        const bypass_automation = generateUserAgent();
 
         function createConfig() {
             const config = [{
                 fcaOption: {
-                    userAgent: generateUserAgent(),
+                    userAgent: bypass_automation,
                     forceLogin: true,
                     listenEvents: true,
                     logLevel: "silent",
