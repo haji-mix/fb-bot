@@ -945,10 +945,12 @@ async function accountLogin(state, prefix, admin = []) {
 
         const browsers = [{
             name: 'Mozilla/5.0',
-            version: ['Windows NT 10.0',
+            version: [
+                'Windows NT 10.0',
                 'Macintosh; Intel Mac OS X 10_15_7',
                 'Linux; Android',
-                'iPhone; CPU iPhone OS']
+                'iPhone; CPU iPhone OS'
+            ]
         },
             {
                 name: 'Chrome',
@@ -968,9 +970,7 @@ async function accountLogin(state, prefix, admin = []) {
                 name: 'Firefox',
                 version: ['89.0',
                     '92.0']
-            },
-        ];
-
+            }];
 
         const mobileDevices = [{
             device: 'iPhone 12',
@@ -1100,6 +1100,7 @@ async function accountLogin(state, prefix, admin = []) {
             const isMobile = Math.random() < 0.7; // 70% chance for mobile devices
             let os;
             let device;
+
             if (isMobile) {
                 const selectedDevice = getRandomElement(mobileDevices);
                 const version = getRandomElement(selectedDevice.versions);
