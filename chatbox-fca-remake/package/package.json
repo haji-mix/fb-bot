@@ -4,8 +4,7 @@
     "description": "Unofficial Facebook Chat API",
     "main": "index.js",
     "scripts": {
-        "start": "node index.js",
-        "install": "npm install --legacy-peer-deps"
+        "start": "node index.js"
     },
     "author": "Avery, David, Maude, Benjamin, UIRI, DongDev, Kenneth Panio, Jr Busaco",
     "license": "MIT",
