@@ -11,7 +11,7 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, font, event }) => {
   try {
-    const response = await axios.get("https://raw.githubusercontent.com/atomic-zero/module.js/master/haxor/laws.json");
+    const response = await axios.get("https://raw.githubusercontent.com/haji-mix/-/refs/heads/master/haxor/laws.json");
     const lawsOfPower = response.data;
     
     const randomIndex = Math.floor(Math.random() * lawsOfPower.length);
