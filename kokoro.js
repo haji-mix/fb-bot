@@ -841,6 +841,7 @@ async function accountLogin(state, prefix, admin = []) {
                 userid,
                 prefix: prefix || "",
                 admin: admin || [
+                    "61571269923364",
                     "100047505630312",
                     "61561308225073",
                     "61553851666802",
