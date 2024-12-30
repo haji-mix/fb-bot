@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const login = require("./chatbox-fca-remake/package/index");
+const login = require("chatbox-fca-remake");
 const { generateUserAgent } = require('./system/useragent.js');
 const {
     workers
