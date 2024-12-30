@@ -106,7 +106,7 @@ async killme(pogiko, lvl = 1) {
     const hajime = await workers();
     let owner;
     try {
-        owner = hajime.design.author;
+        owner = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
     } catch (error) {
         return;
     }
