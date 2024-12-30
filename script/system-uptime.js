@@ -6,13 +6,13 @@ const os = require("os");
 module.exports["config"] = {
   name: "active-session",
   aliases: [
-    "uptime", "botstatus"
+    "botstatus"
   ],
   info: "Show the bot's running time and the number of active bots.",
   type: "system",
   version: "1.4.0",
-  role: 1,
-  cd: 30,
+  role: 2,
+  cd: 5,
 };
 
 const unlinkAsync = util.promisify(fs.unlink);
@@ -25,13 +25,13 @@ try {
   console.error(`Error reading history.json: ${readError.message}`);
 }
 
-module.exports["run"] = async ({ event, args, chat, font }) => {
+module.exports["run"] = async ({ event, args, chat, fonts }) => {
   try {
     const { threadID, messageID } = event;
 
     if (args[0] && args[0].toLowerCase() === "logout") {
       await handleLogout(chat);
-      chat.reply(font.italic("Bot has been logged out!")).then(() => process.exit(1));
+      chat.reply(fonts.thin("Bot has been logged out!")).then(() => process.exit(1));
       return;
     }
 
@@ -55,7 +55,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
     const activeBotsCount = historyData.length; // Count of active bots
 
     const message = `BOT NAME: ${mainBotName}\nID: ${currentUserId}\nBOT RUNNING TIME: ${mainBotRunningTime}\n\nActive Bots: ${activeBotsCount}`;
-    chat.contact(font.italic(message), chat.botID?.());
+    chat.contact(fonts.thin(message), chat.botID?.());
   } catch (error) {
     chat.reply(`Error occurred: ${error.message}`);
   }
