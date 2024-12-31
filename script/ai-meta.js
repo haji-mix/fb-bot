@@ -2,7 +2,7 @@ const axios = require("axios");
 const devs = require(__dirname.replace("/script", "") + '/system/api');
 
 module.exports["config"] = {
-  name: "meta",
+  name: "ai",
   version: "4.8",
   role: 0,
   credits: "Markdevs69",
