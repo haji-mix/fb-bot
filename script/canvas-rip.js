@@ -98,7 +98,7 @@ module.exports["run"] = async function({ api, event, args, chat }) {
   const imageBuffer = canvas.toBuffer();
   fs.writeFileSync(pathImg, imageBuffer);
   fs.removeSync(pathAvt1);
-  return api.sendMessage(
+  return chat.reply(
     { attachment: fs.createReadStream(pathImg) },
     event.threadID,
     () => fs.unlinkSync(pathImg),
