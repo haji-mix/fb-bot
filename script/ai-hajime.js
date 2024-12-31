@@ -5,6 +5,7 @@ const path = require('path');
 
 module.exports["config"] = {
   name: "haji",
+  aliases: ["ai"],
   isPrefix: true,
   version: "1.0.0",
   credits: "Kenneth Panio",
@@ -108,7 +109,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
 
     answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-    const message = font.bold("☢️ | " + "HAJI Turbo Instruct") + line + answer + line + mono(`◉ USE "TOGGLE" FOR CONTINUES CONVERSATION.\n◉ USE "CLEAR" TO RESET CONVERSATION.`);
+    const message = font.bold("🤖 | " + "HAJI Turbo Instruct") + line + answer + line + mono(`◉ USE "TOGGLE" FOR CONTINUES CONVERSATION.\n◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
     await answering.edit(message);
 
