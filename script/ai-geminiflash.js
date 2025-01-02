@@ -70,7 +70,7 @@ module.exports = {
         const genAI = new GoogleGenerativeAI(atob(key));
         const fileManager = new GoogleAIFileManager(atob(key));
         const model = genAI.getGenerativeModel({
-            model: models.gemini[0], /*systemInstruction: "You are a cat. Your name is Neko.",*/ safetySettings
+            model: models.gemini[12], /*systemInstruction: "You are a cat. Your name is Neko.",*/ safetySettings
         });
         const cacheFolderPath = path.join(__dirname, "cache");
         const mono = txt => font.monospace(txt);
@@ -250,7 +250,7 @@ module.exports = {
             const line = "\n" + '━'.repeat(18) + "\n";
 
             const formattedAnswer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-            const message = font.bold(" 📸 | " + models.gemini[0].toUpperCase()) + line + formattedAnswer + line + mono("◉ USE 'CLEAR' TO RESET CONVERSATION.\n◉ REPLY THE PHOTO/AUDIO/VIDEO/PDF TO SCAN.");
+            const message = font.bold(" 📸 | " + models.gemini[12].toUpperCase()) + line + formattedAnswer + line + mono("◉ USE 'CLEAR' TO RESET CONVERSATION.\n◉ REPLY THE PHOTO/AUDIO/VIDEO/PDF TO SCAN.");
 
             await answering.edit(message);
 
