@@ -39,7 +39,7 @@ module.exports["run"] = async ({
             const {
                 name, info, usage
             } = command;
-            helpMessage += `\t${index + 1}. **${name}** ${usage ? `${usage}`: ''}\n`;
+            helpMessage += `\t${index + 1}. ${font.bold(name)} ${usage ? `${usage}`: ''}\n`;
         });
 
         /*  helpMessage += `\n• To see all commands, use '${prefix || ''}HELP ALL'\n`;*/
@@ -68,19 +68,19 @@ module.exports["run"] = async ({
                 attachment: url
             });
         }
-    }/* else if (input === 'all') {
-    let helpMessage = `📚 | CMD LIST 〔${prefix || 'NO PREFIX'}〕\n`;
-    helpMessage += `TOTAL COMMANDS: ${totalCommands}\n\n`;
+    } else if (input === 'all') {
+    let helpMessage = font.bold(`📚 | CMD LIST 〔${prefix || 'NO PREFIX'}〕\n`);
+    helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
 
     allCommands.forEach((command, index) => {
       const { name, info, usage } = command;
-      helpMessage += `\t${index + 1}. ${name} ${usage ? `${usage}` : ''}\n`;
+      helpMessage += `\t${index + 1}. ${font.bold(name)} ${usage ? `${usage}` : ''}\n`;
     });
     helpMessage += `\n• For more information use "HELP [cmd name]"`;
 
-    let ireply = await chat.reply(helpMessage);
-    ireply.unsend(120000);
-  }*/ else if (!isNaN(input)) {
+    const ireply = await chat.reply(helpMessage);
+    ireply.unsend(150000);
+  } else if (!isNaN(input)) {
         const page = parseInt(input);
         const totalPages = Math.ceil(totalCommands / perPage);
 
@@ -94,22 +94,20 @@ module.exports["run"] = async ({
         const endIndex = Math.min(startIndex + perPage, totalCommands);
         const commandsOnPage = allCommands.slice(startIndex, endIndex);
 
-        let helpMessage = `📚 | CMD LIST ${page}-${totalPages}\n`;
-        helpMessage += `TOTAL COMMANDS: ${totalCommands}\n\n`;
+        let helpMessage = font.bold(`📚 | CMD LIST ${page}-${totalPages}\n`);
+        helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
 
         commandsOnPage.forEach((command, index) => {
             const {
                 name, info, usage
             } = command;
-            helpMessage += `\t${startIndex + index + 1}. **${name}** ${usage ? `${usage}`: ''}\n`;
+            helpMessage += `\t${startIndex + index + 1}. ${font.bold(name)} ${usage ? `${usage}`: ''}\n`;
         });
 
         helpMessage += `\n• To see another page, use 'HELP [page-number]'\n`;
         helpMessage += `• For more information use "HELP [cmd name]"\n\n`;
 
-        const cleanup = helpMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-
-        const ireply = await chat.reply(font.thin(cleanup) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
+        const ireply = await chat.reply(font.thin(helpMessage) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
         ireply.unsend(120000);
     } else {
         const selectedCommand = allCommands.find(command => {
@@ -131,7 +129,7 @@ module.exports["run"] = async ({
                 cd
             } = selectedCommand;
 
-            const nameMessage = name ? `NAME: ${name}\n`: '';
+            const nameMessage = name ? `NAME: ${font.bold(name)}\n`: '';
             const versionMessage = version ? `VERSION: ${version}\n`: '';
             const roleMessage = role !== undefined ? (role === 0 ? 'ROLE: User': (role === 1 ? 'ROLE: Bot-admin owner': (role === 2 ? 'ROLE: Group admins': (role === 3 ? 'ROLE: Super admins/moderators': '')))): '';
             const aliasesMessage = aliases.length ? `\nALIASES: ${aliases.join(', ')}\n`: '';
