@@ -48,10 +48,8 @@ module.exports["run"] = async ({
         helpMessage += `NOTE: NOT FOR SALE!\n- This bot is intended to be provided free of charge.`;
         helpMessage += `\nGCASH NO: 09468377615. If you'd like to support us and keep our server running 24/7, please consider donating.\n\n`;
 
-        const cleanup = helpMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-
-        const ireply = await chat.reply(font.thin(cleanup) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
-        ireply.unsend(120000);
+        const ireply = await chat.reply(font.thin(helpMessage) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
+        ireply.unsend(150000);
         const url_array = [
             "https://files.catbox.moe/b5csz8.gif",
             "https://files.catbox.moe/3irbyb.gif",
@@ -108,7 +106,7 @@ module.exports["run"] = async ({
         helpMessage += `• For more information use "HELP [cmd name]"\n\n`;
 
         const ireply = await chat.reply(font.thin(helpMessage) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
-        ireply.unsend(120000);
+        ireply.unsend(150000);
     } else {
         const selectedCommand = allCommands.find(command => {
             const aliases = command?.aliases || [];
