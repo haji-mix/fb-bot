@@ -39,7 +39,7 @@ module.exports["run"] = async ({
             const {
                 name, info, usage
             } = command;
-            helpMessage += `\t${index + 1}. ${name} ${usage ? `${usage}`: ''}\n`;
+            helpMessage += `\t${index + 1}. **${name}** ${usage ? `${usage}`: ''}\n`;
         });
 
         /*  helpMessage += `\n• To see all commands, use '${prefix || ''}HELP ALL'\n`;*/
