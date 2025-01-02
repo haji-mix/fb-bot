@@ -31,8 +31,8 @@ module.exports["run"] = async ({
     const totalCommands = allCommands.length;
 
     if (!input) {
-        let helpMessage = `📚 | CMD LIST: 〔${prefix || 'NO PREFIX'}〕\n`;
-        helpMessage += `TOTAL COMMANDS: ${totalCommands}\n\n`;
+        let helpMessage = font.bold(`📚 | CMD LIST: 〔${prefix || 'NO PREFIX'}〕\n`);
+        helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
 
         const firstPageCommands = allCommands.slice(0, perPage);
         firstPageCommands.forEach((command, index) => {
@@ -47,8 +47,10 @@ module.exports["run"] = async ({
         helpMessage += `• For more information use "HELP" [cmd name]"\n\n`;
         helpMessage += `NOTE: NOT FOR SALE!\n- This bot is intended to be provided free of charge.`;
         helpMessage += `\nGCASH NO: 09468377615. If you'd like to support us and keep our server running 24/7, please consider donating.`;
+        
+        const cleanup = helpMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        await chat.reply(helpMessage);
+        await chat.reply(cleanup);
             const url_array = [
                 "https://files.catbox.moe/b5csz8.gif",
                 "https://files.catbox.moe/3irbyb.gif",
@@ -98,12 +100,17 @@ module.exports["run"] = async ({
                 const {
                     name, info, usage
                 } = command;
-                helpMessage += `\t${startIndex + index + 1}. ${name} ${usage ? `${usage}`: ''}\n`;
+                helpMessage += `\t${startIndex + index + 1}. **${name}** ${usage ? `${usage}`: ''}\n`;
             });
 
             helpMessage += `\n• To see another page, use 'HELP [page-number]'\n`;
             helpMessage += `• For more information use "HELP [cmd name]"`;
-            let ireply = await chat.reply(helpMessage);
+            
+            helpMessage += `• If Device Doesn't Support Fonts Reply this message with "Unfont"`;
+            
+            const cleanup = helpMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+
+            let ireply = await chat.reply(font.thin(cleanup));
             ireply.unsend(60000);
         } else {
             const selectedCommand = allCommands.find(command => {
@@ -138,7 +145,7 @@ module.exports["run"] = async ({
                 const cooldownMessage = cd ? `COOLDOWN: ${cd} second(s)\n`: '';
 
                 const message = `COMMAND DETAILS\n\n` + nameMessage + versionMessage + roleMessage + aliasesMessage + prefixMessage + descriptionMessage + usageMessage + guideMessage + creditsMessage + cooldownMessage;
-                let ireply = await chat.reply(message);
+                let ireply = await chat.reply(font.thin(message));
                 ireply.unsend(40000);
             } else {
                 let ireply = await chat.reply(`COMMAND '${input}' NOT FOUND. USE 'HELP' TO SEE ALL COMMANDS`);
