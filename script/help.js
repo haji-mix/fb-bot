@@ -27,7 +27,7 @@ module.exports["run"] = async ({
 
     const input = args.join(' ').trim()?.toLowerCase();
     const allCommands = [...Utils.commands.values()];
-    const perPage = 100;
+    const perPage = 50;
     const totalCommands = allCommands.length;
 
     if (!input) {
