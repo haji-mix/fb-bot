@@ -15,10 +15,10 @@ module.exports.config = {
 async function getAccessToken() {
     const data = new URLSearchParams({
         client_id: 'ofa',
-        client_secret: 'I8oKnWWDv68Gr8Z5/Ftv25nK9Vy9CSEW+F0dmGvbamFxqwyaOeBdEOn/ZrQ3Bags',
+  //      client_secret: 'I8oKnWWDv68Gr8Z5/Ftv25nK9Vy9CSEW+F0dmGvbamFxqwyaOeBdEOn/ZrQ3Bags',
         grant_type: 'refresh_token',
-        refresh_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI4MTY1MTE0NTIiLCJjaWQiOiJvZmEiLCJ2ZXIiOiIyIiwiaWF0IjoxNzI4NjMzNTA1LCJqdGkiOiJYZ0luNWNuSmliMTcyODYzMzUwNSJ9.uJHACRPCwl4JM1_OyC2hSxGXBMILxGdcWJdaLYPmZ9s',
-        scope: 'shodan:aria',
+        refresh_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI5ODY3MTgyMTgiLCJjaWQiOiJvZmEiLCJ2ZXIiOiIyIiwiaWF0IjoxNzM1NTQ0MzAzLCJqdGkiOiJiOGRoV0Z4TTc3MTczNTU0NDMwMyJ9.EAJrJflcetOzXUdCfQve306QTe_h3Zac76XxjS5Xg1c',
+        scope: 'shodan:aria user:read',
     });
 
     const response = await axios.post('https://oauth2.opera-api.com/oauth2/v1/token/', data, {
