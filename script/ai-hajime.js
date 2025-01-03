@@ -5,7 +5,6 @@ const path = require('path');
 
 module.exports["config"] = {
   name: "haji",
-  aliases: ["ai"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio",
