@@ -1,4 +1,5 @@
 const axios = require('axios');
+const randomUseragent = require('random-useragent');
 
 module.exports["config"] = {
     name: "autogpt",
@@ -23,7 +24,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
 
     try {
         const payload = {
-            messages: btoa(prompt),
+            messages: JSON.stringify([{ role: "user", content: prompt }]),
             threadId: "llama",
             stream: false,
             aiAgent: "llama"
@@ -33,13 +34,13 @@ module.exports["run"] = async ({ chat, args, font }) => {
             'Content-Type': 'application/json',
             'Country-Code': 'PH',
             'Time-Zone': 'Asia/Manila',
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 12; Infinix X669 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/132.0.6834.56 Mobile Safari/537.36',
+            'User-Agent': randomUseragent.getRandom(),
             'Referer': 'https://www.autonomous.ai/anon/llama'
         };
 
         const response = await axios.post('https://chatgpt.autonomous.ai/api/v1/ai/chat', payload, { headers });
 
-        const message = response?.data?.choices?.[0]?.message?.content || "No response received from the AI.";
+        const message = response.data.choices[0].message.content || "No response received from the AI.";
         answering.unsend();
         chat.reply(message);
     } catch (error) {
