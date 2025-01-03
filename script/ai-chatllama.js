@@ -24,7 +24,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
 
     try {
         const payload = {
-            messages: JSON.stringify([{ role: "user", content: prompt }]),
+            messages: [{ role: "user", content: prompt }],
             threadId: "llama",
             stream: false,
             aiAgent: "llama"
