@@ -955,7 +955,7 @@ async function accountLogin(state, prefix, admin = []) {
                     updatePresence: true,
                     selfListen: false,
                     online: true,
-                    autoMarkDelivery: true,
+                    autoMarkDelivery: false,
                     autoMarkRead: false
 
                 }
