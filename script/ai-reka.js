@@ -10,11 +10,11 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, font, args }) => {
     const reply = txt => {
-        chat.reply(font.thin(txt.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text))));
+        chat.reply(txt.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text)));
     }
     
     const prompt = args.join(" ");
-    if (!prompt) return reply("Please provide a message");
+    if (!prompt) return reply(font.thin()"Please provide a message"));
     
     try {
         const { post } = require("axios");
@@ -40,14 +40,11 @@ module.exports["run"] = async ({ chat, font, args }) => {
 
         const replyText = response.data.text || "Sorry, I couldn't get a response.";
 
-        let importantChunks = [];
-        const relevantChunks = response.data.retrieved_chunks.filter(chunk => {
-            // Filter chunks with score above a threshold (e.g., 0.2)
-            return chunk.score >= 0.2;
-        });
+        const relevantChunks = Array.isArray(response.data.retrieved_chunks) ? 
+            response.data.retrieved_chunks.filter(chunk => chunk.score >= 0.2) : [];
 
         if (relevantChunks.length > 0) {
-            importantChunks = relevantChunks.map(chunk => {
+            const importantChunks = relevantChunks.map(chunk => {
                 return `**Source**: ${chunk.sourceDocument}\n**Text**: ${chunk.text}\n`;
             }).join("\n");
 
@@ -57,6 +54,6 @@ module.exports["run"] = async ({ chat, font, args }) => {
         reply(replyText);
 
     } catch (error) {
-        reply(error.message);
+        reply(font.thin(error.message));
     }
 }
