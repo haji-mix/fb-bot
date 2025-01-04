@@ -109,7 +109,7 @@ module.exports.run = async ({
         const response = await queryOperaAPI(prompt, event.senderID);
         const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         answering.unsend();
-        chat.reply(formattedAnswer);
+        chat.reply(formattedAnswer || "I'm sorry i can't answer stupid question!");
     } catch (error) {
         answering.unsend();
         chat.reply(mono("An error occurred: " + error.message));
