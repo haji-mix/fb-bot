@@ -14,7 +14,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
     }
     
     const prompt = args.join(" ");
-    if (!prompt) return reply(font.thin()"Please provide a message"));
+    if (!prompt) return reply(font.thin("Please provide a message"));
     
     try {
         const { post } = require("axios");
