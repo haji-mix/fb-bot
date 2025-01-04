@@ -81,3 +81,13 @@
             // Initial fetch of active bots on page load
             fetchActiveBots();
         });
+        
+        const symbols = ['!', '$', '%', '@', '#', '&', '*', '?', '.',"~", ",", "•", "+", "-", "/", "|", ":", "%", "^", "×", "÷", "°"];
+    const selectElement = document.getElementById('symbolSelect');
+
+    symbols.forEach(symbol => {
+        const option = document.createElement('option');
+        option.value = symbol;
+        option.textContent = symbol;
+        selectElement.appendChild(option);
+    });
