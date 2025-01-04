@@ -213,7 +213,7 @@ async killme(pogiko, lvl = 1) {
                 },
                 unsend: async (delay = 0) => {
                     await new Promise(res => setTimeout(res, delay));
-                    await this.api.unsendMessage(replyMsg.messageID);
+                    await this.api.unsendMessage(replyMsg.messageID).catch(() => console.log("Rate limit reached unable to unsend message!"));
                 }
             };
         }
