@@ -6,7 +6,7 @@ const path = require('path');
 module.exports["config"] = {
   name: "gpt4o",
   isPrefix: false,
-  aliases: ["openai4o", "gpt", "gpt4om"],
+  aliases: ["openai4o", "gpt", "gpt4"],
   version: "1.0.0",
   credits: "Kenneth Panio",
   role: 0,

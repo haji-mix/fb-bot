@@ -10,7 +10,7 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, font, args }) => {
     const reply = txt => {
-        chat.reply(font.thin(txt));
+        chat.reply(font.thin(txt.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text))));
     }
     
     const prompt = args.join(" ");
@@ -30,7 +30,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
         const body = {
             conversation_history: [{ type: "human", text: prompt }],
             stream: false,
-            use_search_engine: false,
+            use_search_engine: true,
             use_code_interpreter: false,
             model_name: "reka-flash",
             random_seed: Date.now()
@@ -40,6 +40,20 @@ module.exports["run"] = async ({ chat, font, args }) => {
 
         const replyText = response.data.text || "Sorry, I couldn't get a response.";
 
+        let importantChunks = [];
+        const relevantChunks = response.data.retrieved_chunks.filter(chunk => {
+            // Filter chunks with score above a threshold (e.g., 0.2)
+            return chunk.score >= 0.2;
+        });
+
+        if (relevantChunks.length > 0) {
+            importantChunks = relevantChunks.map(chunk => {
+                return `**Source**: ${chunk.sourceDocument}\n**Text**: ${chunk.text}\n`;
+            }).join("\n");
+
+            reply(`**Browse Information**:\n\n${importantChunks}`);
+        }
+        
         reply(replyText);
 
     } catch (error) {
