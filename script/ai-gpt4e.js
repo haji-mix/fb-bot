@@ -77,7 +77,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
                                 if (event.data === '[DONE]') {
                                         eventSource.close();
                                         answering.unsend();
-                                        chat.reply(text);
+                                        chat.reply(text.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text)));
                                 }
                         }
                 };

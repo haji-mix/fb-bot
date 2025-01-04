@@ -42,7 +42,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
 
         const message = response.data.choices[0].message.content || "No response received from the AI.";
         answering.unsend();
-        chat.reply(message);
+        chat.reply(message.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text)));
     } catch (error) {
         answering.unsend();
         chat.reply(mono(error.message));

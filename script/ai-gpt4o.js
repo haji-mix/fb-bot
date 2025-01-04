@@ -6,7 +6,7 @@ const path = require('path');
 module.exports["config"] = {
   name: "gpt4o",
   isPrefix: false,
-  aliases: ["openai4o", "gpt", "gpt4om", "ai"],
+  aliases: ["openai4o", "gpt", "gpt4om"],
   version: "1.0.0",
   credits: "Kenneth Panio",
   role: 0,
@@ -36,7 +36,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     return;
   }
 
-  const answering = await chat.reply(font.monospace("🕐 | Answering..."));
+  const answering = await chat.reply(font.monospace("🕐 | Generating response..."));
 
   conversationHistories[senderID] = conversationHistories[senderID] || [];
   conversationHistories[senderID].push({ role: "user", content: query });
