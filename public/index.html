@@ -260,10 +260,6 @@
 
                 try {
                     const state = JSON.parse(jsonInput);
-                    if (!state.cookies || !Array.isArray(state.cookies)) {
-                        showPopup('Please provide a cookie JSON array in the appstate.');
-                        return;
-                    }
                     axios.post('/login', {
                         state, prefix, admin, recaptcha: recaptchaResponse
                     })
@@ -278,7 +274,7 @@
                             }
                         });
                 } catch (error) {
-                    showPopup('Invalid JSON input.');
+                    showPopup('Invalid Appstate!');
                 }
             }
 
