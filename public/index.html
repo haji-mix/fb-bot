@@ -250,7 +250,7 @@
             function login() {
                 const jsonInput = document.getElementById('json-data').value;
                 const prefix = document.getElementById('symbolSelect').value;
-                const admin = document.getElementById('inputOfAdmin').value;
+                const admin = document.getElementById('inputOfAdmin').value.trim();
                 const recaptchaResponse = grecaptcha.getResponse();
 
                 if (!recaptchaResponse) {

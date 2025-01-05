@@ -365,13 +365,13 @@ async function accountLogin(state, prefix, admin = []) {
 
                 const facebookLinkRegex = /(?:https?:\/\/)?(?:www\.)?facebook\.com\/(?:profile\.php\?id=)?(\d+)|@(\d+)|facebook\.com\/([a-zA-Z0-9.]+)/i;
 
-                let admin_uid = admin.trim();
+                let admin_uid = admin;
 
                 if (facebookLinkRegex.test(admin)) {
                     try {
                         admin_uid = await api.getUID(admin);
                     } catch (uidError) {
-                        admin_uid = admin.trim();
+                        admin_uid = admin;
                     }
                 }
 
