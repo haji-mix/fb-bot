@@ -13,7 +13,6 @@
             font-family: 'Poppins', sans-serif;
         }
 
-        /* Full-Screen Popup style */
         .popup {
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
@@ -101,7 +100,7 @@
                 Build your own bot for free—no coding skills necessary! This is not for sale!
             </p>
         </div>
-        <button id="ok-button" class="bg-yellow-400 text-gray-900 py-2 px-4 rounded-lg font-sans hover:bg-yellow-500 transition">
+        <button id="ok-button" class="bg-yellow-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-yellow-500 transition">
             Proceed
         </button>
     </div>
@@ -115,10 +114,10 @@
     <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="closeNav()"></div>
     <div id="navMenu" class="hidden fixed top-0 right-0 bg-gray-800 w-64 h-full p-6 z-50 shadow-lg">
         <ul class="space-y-4">
-            <li><a href="#cookie-form" class="block text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Submit Cookie</a></li>
-            <li><a href="#active-users" class="block text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Active Users</a></li>
-            <li><a href="#commands" class="block text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Commands</a></li>
-            <li><a href="#footer" class="block text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Contact</a></li>
+            <li><a href="#cookie-form" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Submit Cookie</a></li>
+            <li><a href="#active-users" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Active Users</a></li>
+            <li><a href="#commands" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Commands</a></li>
+            <li><a href="#footer" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Contact</a></li>
         </ul>
     </div>
 
@@ -126,13 +125,13 @@
     <main class="flex-grow container mx-auto p-6">
         <!-- Cookie Submission Form -->
         <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
-            <h2 class="text-lg font-sans text-yellow-400">C3C APPSTATE</h2>
+            <h2 class="block text-sm font-bold text-yellow-400">C3C APPSTATE</h2>
             <form class="space-y-4">
                 <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                    placeholder="Paste your Facebook appstate cookie here!" rows="4"></textarea>
+                    placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-lg font-sans text-yellow-400">PREFIX:</label>
+                        <label class="block text-sm font-bold text-yellow-400">PREFIX:</label>
                         <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
                             id="symbolSelect">
                             <option value="">(Default) Not Specified</option>
@@ -151,15 +150,15 @@
                 </div>
                 <button id="submit-button" type="submit"
                     class="hidden w-full bg-yellow-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-yellow-500 transition">
-                    Submit
+                    SUBMIT
                 </button>
             </form>
-            <div id="result" class="mt-4"></div>
+            <div id="result" class="mt-4" style="display: none; color: white;"></div>
         </section>
 
         <!-- Active Users Section -->
         <section id="active-users" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-            <h2 class="text-lg font-sans text-green-400 text-center">ACTIVE BOTS</h2>
+            <h2 class="text-sm font-bold text-green-400 text-center">ACTIVE BOTS</h2>
             <p class="text-center">
                 <span id="onlineUsers" class="text-yellow-400">???</span>
             </p>
@@ -167,9 +166,9 @@
 
         <!-- Commands Section -->
         <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-            <h2 class="text-sm font-sans text-green-400 text-center"></h2>
+            <h2 class="text-sm font-bold text-green-400 text-center"></h2>
             <button id="showCommandsBtn"
-                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-sans hover:bg-green-600 transition mt-4">COMMANDS
+                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">COMMANDS
             </button>
             <div id="availableCommands" class="hidden mt-4">
                 <div id="commandsList" class="p-4 bg-gray-700 rounded-lg max-h-40 overflow-y-auto text-left"></div>
@@ -260,6 +259,7 @@
 
                 if (!recaptchaResponse) {
                     resultDiv.textContent = 'Please complete the CAPTCHA.';
+                    resultDiv.style.display = 'block';
                     return;
                 }
 
@@ -267,6 +267,7 @@
                     const state = JSON.parse(jsonInput);
                     if (!state.cookies || !Array.isArray(state.cookies)) {
                         resultDiv.textContent = 'Please provide a cookie JSON array in the appstate.';
+                        resultDiv.style.display = 'block';
                         return;
                     }
                     axios.post('/login', {
@@ -274,6 +275,7 @@
                     })
                         .then(response => {
                             resultDiv.textContent = response.data.success ? response.data.message : 'Login failed.';
+                            resultDiv.style.display = 'block';
                         })
                         .catch(error => {
                             if (error.response) {
@@ -281,9 +283,11 @@
                             } else {
                                 resultDiv.textContent = 'Network or connection issue occurred.';
                             }
+                            resultDiv.style.display = 'block';
                         });
                 } catch (error) {
                     resultDiv.textContent = 'Invalid JSON input.';
+                    resultDiv.style.display = 'block';
                 }
             }
 
