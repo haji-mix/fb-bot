@@ -1,5 +1,6 @@
 module.exports["config"] = {
     name: "reka",
+    aliases: ["yasa"],
     info: "chat with reka ai",
     usage: "[prompt]",
     isPrefix: false,
@@ -15,6 +16,8 @@ module.exports["run"] = async ({ chat, font, args }) => {
     
     const prompt = args.join(" ");
     if (!prompt) return reply(font.thin("Please provide a message"));
+    
+    const answering = await chat.reply(mono("Generating response..."));
     
     try {
         const { post } = require("axios");
@@ -51,9 +54,12 @@ module.exports["run"] = async ({ chat, font, args }) => {
             reply(`**Browse Information**:\n\n${importantChunks}`);
         }
         
+        answering.unsend();
+        
         reply(replyText);
 
     } catch (error) {
+        answering.unsend();
         reply(font.thin(error.message));
     }
 }
