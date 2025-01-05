@@ -17,7 +17,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
     const prompt = args.join(" ");
     if (!prompt) return reply(font.thin("Please provide a message"));
     
-    const answering = await chat.reply(mono("Generating response..."));
+    const answering = await chat.reply(font.thin("Generating response..."));
     
     try {
         const { post } = require("axios");
