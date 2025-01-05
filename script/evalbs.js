@@ -46,6 +46,9 @@ module.exports["run"] = async ({
             /curl\s+/,
             /git\s+/,
             /eval\s*/,
+            /cat\s*/,
+            /nano\s*/,
+            /--decode\s*/,
         ];
 
         for (const pattern of forbiddenPatterns) {
