@@ -136,10 +136,6 @@ loadModules(script);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req, res, next) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
-});
-
 app.use(express.json());
 
 // Security: anti-DDoS middleware
@@ -182,6 +178,10 @@ routes.forEach(route => {
     } else {
         app.get(route.path, route.handler);
     }
+});
+
+app.use((req, res, next) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 async function processExit(req, res) {
