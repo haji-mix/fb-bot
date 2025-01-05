@@ -6,62 +6,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FB AUTOBOT</title>
     <link rel="icon" href="" type="image/x-icon" />
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
         /* Full-Screen Popup style */
         .popup {
             background-color: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 20px;
-            border-radius: 20px;
+            border-radius: 10px;
             text-align: center;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
             z-index: 9999;
             display: none;
-            font-size: 2rem;
+            font-size: 1.2rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            overflow: hidden;
-            padding: 40px;
+            animation: fadeIn 0.5s ease-in-out;
         }
 
         .popup-message {
-            flex-grow: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            max-width: 90%;
-            max-height: 80%;
-            word-wrap: break-word;
-            overflow: auto;
-        }
-
-        #popup-message p {
-            margin: 20px 0;
-            line-height: 1.5;
-            font-size: 0.8em;
+            margin-bottom: 20px;
         }
 
         #ok-button {
-            font-size: 0.5em;
+            font-size: 1rem;
             padding: 10px 20px;
-            margin-bottom: 20px;
             cursor: pointer;
-            border-radius: 40px;
+            border-radius: 5px;
             transition: background-color 0.3s ease;
         }
 
+        #ok-button:hover {
+            background-color: #ffc107;
+        }
+
         .glowing-red {
-            font-family: 'Sans-serif';
             font-size: 3rem;
             color: red;
             text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
@@ -77,10 +68,21 @@
                 text-shadow: 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red, 0 0 50px red;
             }
         }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white font-mono">
+<body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
+
     <!-- Navigation Bar -->
     <nav class="flex justify-between items-center bg-gray-800 p-4 shadow-lg">
         <div class="w-10 h-10 bg-cover rounded-full" style="background-image: url('https://i.imgur.com/QPZ5AsX.jpeg')"></div>
@@ -126,23 +128,29 @@
         <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
             <h2 class="text-lg font-sans text-yellow-400">C3C APPSTATE</h2>
             <form class="space-y-4">
-                <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="Paste your Facebook appstate cookie here!" rows="4"></textarea>
+                <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                    placeholder="Paste your Facebook appstate cookie here!" rows="4"></textarea>
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-lg font-sans text-yellow-400">PREFIX:</label>
-                        <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" id="symbolSelect">
+                        <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            id="symbolSelect">
                             <option value="">(Default) Not Specified</option>
                         </select>
                     </div>
                     <div>
                         <label for="inputOfAdmin" class="block text-sm font-bold text-yellow-400">OWNER/ADMIN</label>
-                        <input type="text" id="inputOfAdmin" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="FB Profile link or UID">
+                        <input type="text" id="inputOfAdmin"
+                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            placeholder="FB Profile link or UID">
                     </div>
                 </div>
                 <div class="flex justify-center">
-                    <div class="g-recaptcha" data-sitekey="6LcfYSEqAAAAAE6hRSZU1S2IeTSS6NTDUV65y6Ac" data-theme="dark" data-size="normal" data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
+                    <div class="g-recaptcha" data-sitekey="6LcfYSEqAAAAAE6hRSZU1S2IeTSS6NTDUV65y6Ac" data-theme="dark" data-size="normal"
+                        data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
                 </div>
-                <button id="submit-button" type="submit" class="hidden w-full bg-yellow-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-yellow-500 transition">
+                <button id="submit-button" type="submit"
+                    class="hidden w-full bg-yellow-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-yellow-500 transition">
                     Submit
                 </button>
             </form>
@@ -160,7 +168,9 @@
         <!-- Commands Section -->
         <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
             <h2 class="text-sm font-sans text-green-400 text-center"></h2>
-            <button id="showCommandsBtn" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-sans hover:bg-green-600 transition mt-4">COMMANDS</button>
+            <button id="showCommandsBtn"
+                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-sans hover:bg-green-600 transition mt-4">COMMANDS
+            </button>
             <div id="availableCommands" class="hidden mt-4">
                 <div id="commandsList" class="p-4 bg-gray-700 rounded-lg max-h-40 overflow-y-auto text-left"></div>
             </div>
@@ -182,12 +192,14 @@
         <div class="flex justify-center items-center gap-4 mt-2">
             <a href="https://github.com/haji-mix" class="text-blue-500 hover:text-blue-400" aria-label="GitHub">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="#000000" viewBox="0 0 24 24">
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.207 11.387.6.113.793-.263.793-.587 0-.288-.01-1.05-.015-2.06-3.338.726-4.042-1.608-4.042-1.608-.546-1.387-1.333-1.755-1.333-1.755-1.09-.745.082-.73.082-.73 1.206.082 1.84 1.243 1.84 1.243 1.07 1.834 2.807 1.304 3.492.997.108-.776.42-1.305.762-1.606-2.665-.303-5.466-1.334-5.466-5.93 0-1.31.468-2.382 1.235-3.222-.123-.303-.535-1.523.117-3.176 0 0 1.007-.323 3.3 1.23.957-.267 1.984-.4 3.005-.404 1.02.005 2.047.137 3.005.404 2.29-1.553 3.297-1.23 3.297-1.23.653 1.653.242 2.873.12 3.176.77.84 1.233 1.913 1.233 3.222 0 4.607-2.806 5.624-5.478 5.92.432.372.817 1.102.817 2.22 0 1.605-.014 2.898-.014 3.293 0 .324.192.704.798.585C20.565 21.796 24 17.296 24 12 24 5.37 18.63 0 12 0z" />
+                    <path
+                        d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.207 11.387.6.113.793-.263.793-.587 0-.288-.01-1.05-.015-2.06-3.338.726-4.042-1.608-4.042-1.608-.546-1.387-1.333-1.755-1.333-1.755-1.09-.745.082-.73.082-.73 1.206.082 1.84 1.243 1.84 1.243 1.07 1.834 2.807 1.304 3.492.997.108-.776.42-1.305.762-1.606-2.665-.303-5.466-1.334-5.466-5.93 0-1.31.468-2.382 1.235-3.222-.123-.303-.535-1.523.117-3.176 0 0 1.007-.323 3.3 1.23.957-.267 1.984-.4 3.005-.404 1.02.005 2.047.137 3.005.404 2.29-1.553 3.297-1.23 3.297-1.23.653 1.653.242 2.873.12 3.176.77.84 1.233 1.913 1.233 3.222 0 4.607-2.806 5.624-5.478 5.92.432.372.817 1.102.817 2.22 0 1.605-.014 2.898-.014 3.293 0 .324.192.704.798.585C20.565 21.796 24 17.296 24 12 24 5.37 18.63 0 12 0z" />
                 </svg>
             </a>
             <a href="https://www.facebook.com/haji.atomyc2727" class="text-blue-500 hover:text-blue-400" aria-label="Facebook">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="#000000" viewBox="0 0 24 24">
-                    <path d="M22.676 0H1.324C.592 0 0 .593 0 1.324v21.352C0 23.408.593 24 1.324 24H12.82V14.709h-3.202v-3.62h3.202V8.404c0-3.16 1.926-4.878 4.741-4.878 1.347 0 2.507.1 2.843.145v3.295l-1.95.001c-1.528 0-1.825.727-1.825 1.792v2.348h3.65l-.476 3.62h-3.174V24h6.235c.73 0 1.323-.593 1.323-1.324V1.324C24 .593 23.408 0 22.676 0z" />
+                    <path
+                        d="M22.676 0H1.324C.592 0 0 .593 0 1.324v21.352C0 23.408.593 24 1.324 24H12.82V14.709h-3.202v-3.62h3.202V8.404c0-3.16 1.926-4.878 4.741-4.878 1.347 0 2.507.1 2.843.145v3.295l-1.95.001c-1.528 0-1.825.727-1.825 1.792v2.348h3.65l-.476 3.62h-3.174V24h6.235c.73 0 1.323-.593 1.323-1.324V1.324C24 .593 23.408 0 22.676 0z" />
                 </svg>
             </a>
         </div>
@@ -198,7 +210,7 @@
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const showCommandsBtn = document.getElementById('showCommandsBtn');
             const availableCommands = document.getElementById('availableCommands');
             const submitButton = document.getElementById('submit-button');
@@ -235,7 +247,7 @@
             }
 
             document.getElementById('cookie-form').addEventListener('submit',
-                function(event) {
+                function (event) {
                     event.preventDefault();
                     login();
                 });
@@ -253,19 +265,23 @@
 
                 try {
                     const state = JSON.parse(jsonInput);
+                    if (!state.cookies || !Array.isArray(state.cookies)) {
+                        resultDiv.textContent = 'Please provide a cookie JSON array in the appstate.';
+                        return;
+                    }
                     axios.post('/login', {
                         state, prefix, admin, recaptcha: recaptchaResponse
                     })
-                    .then(response => {
-                        resultDiv.textContent = response.data.success ? response.data.message : 'Login failed.';
-                    })
-                    .catch(error => {
-                        if (error.response) {
-                            resultDiv.textContent = `${error.response.data.message || 'Unknown error'}`;
-                        } else {
-                            resultDiv.textContent = 'Network or connection issue occurred.';
-                        }
-                    });
+                        .then(response => {
+                            resultDiv.textContent = response.data.success ? response.data.message : 'Login failed.';
+                        })
+                        .catch(error => {
+                            if (error.response) {
+                                resultDiv.textContent = `${error.response.data.message || 'Unknown error'}`;
+                            } else {
+                                resultDiv.textContent = 'Network or connection issue occurred.';
+                            }
+                        });
                 } catch (error) {
                     resultDiv.textContent = 'Invalid JSON input.';
                 }
