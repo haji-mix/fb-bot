@@ -14,11 +14,27 @@ The **Chatbox-FCA-Remake** API allows you to automate Facebook chat functionalit
 
 ## Important Notes
 
-### **Login via Credentials No Longer Supported**
+### **Login via Credentials Supported**
 
-Due to recent updates, logging in using **credentials** (email and password) directly through the API is no longer supported. You can no longer use the old login method based on email and password.
+```javascript
+login({
+    email: "your_email",
+    password: "your_password"
+}, (err, api) => {
+    if(err) return console.error(err);
+});
+```
+
 
 ### **AppState Support**
+
+```javascript
+login({
+    appState: JSON.parse(fs.readFileSync('appstate.json', 'utf8'))
+}, (err, api) => {
+    if(err) return console.error(err);
+});
+```
 
 To use the API, you need to provide an **AppState** from a previously authenticated session. You can retrieve and even update your **AppState** with the **`api.getAppState()`** function after logging in.
 
@@ -178,7 +194,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For support or inquiries, contact:
 
 - [JR Busaco](https://www.facebook.com/jr.busaco.271915)
-- [Haji Atomyc](https://www.facebook.com/haji.atomyc2727)
+- [Kenneth Panio](https://www.facebook.com/haji.atomyc2727)
 
 Join our **ChatBot Community**:
 
