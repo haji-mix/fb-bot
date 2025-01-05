@@ -260,6 +260,9 @@
 
                 try {
                     const state = JSON.parse(jsonInput);
+                    
+                    if (!state) return showPopup('Missing Appstate!');
+                    
                     axios.post('/login', {
                         state, prefix, admin, recaptcha: recaptchaResponse
                     })
@@ -274,7 +277,7 @@
                             }
                         });
                 } catch (error) {
-                    showPopup('Invalid Appstate!');
+                    showPopup('Invalid Appstate JSON!');
                 }
             }
 
@@ -361,5 +364,6 @@ function playRandomMusic() {
 }
 };
 </script>
+<script src="//cdn.jsdelivr.net/npm/eruda"></script> <script>eruda.init();</script>
 </body>
 </html>
