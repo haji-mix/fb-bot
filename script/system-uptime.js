@@ -11,7 +11,7 @@ module.exports["config"] = {
   info: "Show the bot's running time and the number of active bots.",
   type: "system",
   version: "1.4.0",
-  role: 2,
+  role: 1,
   cd: 5,
 };
 
