@@ -203,15 +203,18 @@ async killme(pogiko, lvl = 1) {
 
     async reply(msg, tid = this.threadID, mid = null) {
         if (!msg) throw new Error("Message is missing!");
-        const replyMsg = await this.api.sendMessage(msg, tid, mid).catch(() => {});
+        const replyMsg = await this.api.sendMessage(msg, tid, mid).catch(() => {
+            return;
+        });
         if (replyMsg) {
             return {
                 edit: async (message, delay = 0) => {
-                    if (!message) throw new Error("Missing Edit Message!");
+                    if (!replyMsg.messageID || !message) throw new Error("Missing Edit Message!");
                     await new Promise(res => setTimeout(res, delay));
-                    await this.api.editMessage(message, replyMsg.messageID);
+                    await this.api.editMessage(message, replyMsg.messageID).catch(() => console.log("Rate limit reached unable to edit message!"));
                 },
                 unsend: async (delay = 0) => {
+                    if (!replyMsg.messageID) throw new Error("Missing Message ID");
                     await new Promise(res => setTimeout(res, delay));
                     await this.api.unsendMessage(replyMsg.messageID).catch(() => console.log("Rate limit reached unable to unsend message!"));
                 }
