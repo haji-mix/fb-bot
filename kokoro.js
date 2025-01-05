@@ -1,7 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const login = require("chatbox-fca-remake");
-const { generateUserAgent } = require('./system/useragent.js');
+const {
+    generateUserAgent
+} = require('./system/useragent.js');
 const {
     workers
 } = require("./system/workers.js");
@@ -362,23 +364,19 @@ async function accountLogin(state, prefix, admin = []) {
 
 
                 const facebookLinkRegex = /(?:https?:\/\/)?(?:www\.)?facebook\.com\/(?:profile\.php\?id=)?(\d+)|@(\d+)|facebook\.com\/([a-zA-Z0-9.]+)/i;
-                let adminUIDs = [];
 
-                for (const adminEntry of admin) {
-                    if (facebookLinkRegex.test(adminEntry)) {
-                        try {
-                            const admin_uid = await api.getUID(adminEntry);
-                            adminUIDs.push(admin_uid);
-                        } catch (uidError) {
-                            chat.log("ADMIN ID IS INVALID!");
-                        }
+                let admin_uid = admin;
+
+                if (facebookLinkRegex.test(admin)) {
+                    try {
+                        admin_uid = await api.getUID(admin);
+                    } catch (uidError) {
+                        admin_uid = admin;
                     }
                 }
 
-                const validate_uid = adminUIDs.length > 0 ? adminUIDs: admin;
-
                 const userid = await api.getCurrentUserID();
-                addThisUser(userid, state, prefix, validate_uid);
+                addThisUser(userid, state, prefix, admin_uid);
                 const userInfo = await api.getUserInfo(userid);
 
                 try {
@@ -476,7 +474,7 @@ async function accountLogin(state, prefix, admin = []) {
 
                             const reply = async (msg) => {
                                 const msgInfo = await chat.reply(font.thin(msg));
-                     msgInfo.unsend(15000);
+                                msgInfo.unsend(15000);
                             };
 
                             const historyPath = './data/history.json';
@@ -939,8 +937,8 @@ async function accountLogin(state, prefix, admin = []) {
                         await accountLogin(decState, prefix, admin, blacklist);
                     } catch (error) {
                         if (error.error === "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify.") {
-                        Utils.account.delete(userId);
-                        deleteThisUser(userId);
+                            Utils.account.delete(userId);
+                            deleteThisUser(userId);
                         }
                     }
                 }

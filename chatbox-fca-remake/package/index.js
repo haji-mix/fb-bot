@@ -5,6 +5,9 @@ const log = require("npmlog");
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+const cheerio = require('cheerio');
+const readline = require('readline');
+const deasync = require('deasync');
 
 let checkVerified = null;
 
@@ -468,7 +471,102 @@ return {
 };
 }
 
-// unfortunately login via credentials no longer works,so instead of login via credentials, use login via appstate intead.
+function makeLogin(jar, email, password, loginOptions) {
+   return function(res) {
+       const html = res.body;
+       const $ = cheerio.load(html);
+       let arr = [];
+
+       $("#login_form input").map((i, v) => arr.push({ val: $(v).val(), name: $(v).attr("name") }));
+       arr = arr.filter(v => v.val && v.val.length);
+
+       const form = utils.arrToForm(arr);
+       form.lsd = utils.getFrom(html, "[\"LSD\",[],{\"token\":\"", "\"}");
+       form.lgndim = Buffer.from("{\"w\":1440,\"h\":900,\"aw\":1440,\"ah\":834,\"c\":24}").toString('base64');
+       form.email = email;
+       form.pass = password;
+       form.default_persistent = '0';
+       form.locale = 'en_US';     
+       form.timezone = '240';
+       form.lgnjs = ~~(Date.now() / 1000);
+
+       html.split("\"_js_").slice(1).map((val) => {
+           jar.setCookie(utils.formatCookie(JSON.parse("[\"" + utils.getFrom(val, "", "]") + "]"), "facebook"), "https://www.facebook.com")
+       });
+
+       return utils
+           .post("https://www.facebook.com/login/device-based/regular/login/?login_attempt=1&lwv=110", jar, form, loginOptions)
+           .then(utils.saveCookies(jar))
+           .then(function(res) {
+               const headers = res.headers;
+               if (!headers.location) throw { error: "Invalid username/password." };
+
+               if (headers.location.indexOf('https://www.facebook.com/checkpoint/') > -1) {
+                   return handle2FA(headers, jar, form, loginOptions);
+               }
+               return utils.get('https://www.facebook.com/', jar, null, loginOptions).then(utils.saveCookies(jar));
+           });
+   };
+}
+
+function handle2FA(headers, jar, form, loginOptions) {
+   const nextURL = 'https://www.facebook.com/checkpoint/?next=https%3A%2F%2Fwww.facebook.com%2Fhome.php';
+   
+   return utils
+       .get(headers.location, jar, null, loginOptions)
+       .then(utils.saveCookies(jar))
+       .then(function(res) {
+           const html = res.body;
+           const $ = cheerio.load(html);
+           let arr = [];
+
+           $("form input").map((i, v) => arr.push({ val: $(v).val(), name: $(v).attr("name") }));
+           arr = arr.filter(v => v.val && v.val.length);
+           form = utils.arrToForm(arr);
+
+           if (html.indexOf("checkpoint/?next") > -1) {
+               const code = promptFor2FACode();
+               return submit2FACode(code, form, jar, nextURL, loginOptions);
+           }
+       });
+}
+
+function promptFor2FACode() {
+   const rl = readline.createInterface({
+       input: process.stdin,
+       output: process.stdout
+   });
+   let done, code;
+   rl.question("Enter 2FA code: ", answer => {
+       rl.close();
+       code = answer;
+       done = true;
+   });
+   deasync.loopWhile(() => !done);
+   return code;
+}
+
+function submit2FACode(code, form, jar, nextURL, loginOptions) {
+   form.approvals_code = code;
+   form['submit[Continue]'] = "Continue";
+   
+   return utils
+       .post(nextURL, jar, form, loginOptions)
+       .then(utils.saveCookies(jar))
+       .then(function() {
+           delete form.no_fido;
+           delete form.approvals_code;
+           form.name_action_selected = 'save_device';
+           return utils.post(nextURL, jar, form, loginOptions).then(utils.saveCookies(jar));
+       })
+       .then(function(res) {
+           if (!res.headers.location && res.headers['set-cookie'][0].includes('checkpoint')) {
+               throw { error: "Failed to verify 2FA code." };
+           }
+           return utils.get('https://www.facebook.com/', jar, null, loginOptions).then(utils.saveCookies(jar));
+       });
+}
+
 function loginHelper(appState, email, password, globalOptions, callback, hajime_custom = {} = callback) {
     let mainPromise = null;
     const jar = utils.getJar();
@@ -504,17 +602,17 @@ function loginHelper(appState, email, password, globalOptions, callback, hajime_
     });
 
         // Load the main page.
-        mainPromise = utils.get('https://www.facebook.com/', jar, null, globalOptions, {
-            noRef: true })          
-.then(utils.saveCookies(jar));
-	} else {
-		if (email) {
-			throw { error: "Unfortunately login via credentials is no longer work, please use login via appstate instead." };
-		}
-		else {
-			throw { error: "Please provide appstate." };
-		}
-	}
+       mainPromise = utils
+           .get('https://www.facebook.com/', jar, null, globalOptions, { noRef: true })
+           .then(utils.saveCookies(jar));
+   } else if (email && password) {
+       mainPromise = utils
+           .get('https://www.facebook.com/', jar, null, globalOptions)
+           .then(utils.saveCookies(jar))
+           .then(makeLogin(jar, email, password, globalOptions));
+   } else {
+       throw { error: "Please provide either appState or email and password." };
+   }
     
     function CheckAndFixErr(res, fastSwitch) {
         if (fastSwitch) return res;
