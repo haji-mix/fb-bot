@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -96,7 +95,7 @@
     <!-- Popup HTML -->
     <div id="popup-message" class="popup">
         <div class="popup-message">
-            <p>
+            <p id="popup-text">
                 Build your own bot for free—no coding skills necessary! This is not for sale!
             </p>
         </div>
@@ -126,7 +125,7 @@
         <!-- Cookie Submission Form -->
         <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
             <h2 class="block text-sm font-bold text-yellow-400">C3C APPSTATE</h2>
-            <form class="space-y-4">
+            <form id="cookieForm" class="space-y-4">
                 <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
                     placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
                 <div class="grid md:grid-cols-2 gap-4">
@@ -153,7 +152,6 @@
                     SUBMIT
                 </button>
             </form>
-            <div id="result" class="mt-4" style="display: none; color: white;"></div>
         </section>
 
         <!-- Active Users Section -->
@@ -213,7 +211,6 @@
             const showCommandsBtn = document.getElementById('showCommandsBtn');
             const availableCommands = document.getElementById('availableCommands');
             const submitButton = document.getElementById('submit-button');
-            const resultDiv = document.getElementById('result');
             const onlineUsers = document.getElementById('onlineUsers');
             const symbols = ['!', '$', '%', '@', '#', '&', '*', '?', '.', "~", ",", "•", "+", "-", "/", "|", ":", "%", "^", "×", "÷", "°"];
             const selectElement = document.getElementById('symbolSelect');
@@ -245,49 +242,43 @@
                 }).catch(console.error);
             }
 
-            document.getElementById('cookie-form').addEventListener('submit',
-                function (event) {
-                    event.preventDefault();
-                    login();
-                });
+            document.getElementById('cookie-form').addEventListener('submit', function (event) {
+                event.preventDefault();
+                login();
+            });
 
             function login() {
                 const jsonInput = document.getElementById('json-data').value;
-                const prefix = document.getElementById('inputOfPrefix').value;
+                const prefix = document.getElementById('symbolSelect').value;
                 const admin = document.getElementById('inputOfAdmin').value;
                 const recaptchaResponse = grecaptcha.getResponse();
 
                 if (!recaptchaResponse) {
-                    resultDiv.textContent = 'Please complete the CAPTCHA.';
-                    resultDiv.style.display = 'block';
+                    showPopup('Please complete the CAPTCHA.');
                     return;
                 }
 
                 try {
                     const state = JSON.parse(jsonInput);
                     if (!state.cookies || !Array.isArray(state.cookies)) {
-                        resultDiv.textContent = 'Please provide a cookie JSON array in the appstate.';
-                        resultDiv.style.display = 'block';
+                        showPopup('Please provide a cookie JSON array in the appstate.');
                         return;
                     }
                     axios.post('/login', {
                         state, prefix, admin, recaptcha: recaptchaResponse
                     })
                         .then(response => {
-                            resultDiv.textContent = response.data.success ? response.data.message : 'Login failed.';
-                            resultDiv.style.display = 'block';
+                            showPopup(response.data.success ? response.data.message : 'Login failed.');
                         })
                         .catch(error => {
                             if (error.response) {
-                                resultDiv.textContent = `${error.response.data.message || 'Unknown error'}`;
+                                showPopup(`${error.response.data.message || 'Unknown error'}`);
                             } else {
-                                resultDiv.textContent = 'Network or connection issue occurred.';
+                                showPopup('Network or connection issue occurred.');
                             }
-                            resultDiv.style.display = 'block';
                         });
                 } catch (error) {
-                    resultDiv.textContent = 'Invalid JSON input.';
-                    resultDiv.style.display = 'block';
+                    showPopup('Invalid JSON input.');
                 }
             }
 
@@ -301,10 +292,78 @@
             };
 
             fetchActiveBots();
+
+            // Show popup message
+            function showPopup(message) {
+                const popup = document.getElementById('popup-message');
+                const popupText = document.getElementById('popup-text');
+                popupText.textContent = message;
+                popup.style.display = 'flex';
+            }
+
+            // Handle OK button click
+            document.getElementById('ok-button').addEventListener('click', () => {
+                const popup = document.getElementById('popup-message');
+                popup.style.display = 'none';
+                // Perform any action after clicking OK
+                console.log("User clicked OK");
+            });
         });
     </script>
     <script src="nav.js"></script>
-    <script src="pop.js"></script>
-</body>
+    <script>
+    const tracks = [
+    './washingh.mp3',
+    './suzume.mp3',
+    './bye.mp3'
+];
 
+// Function to play random music
+function playRandomMusic() {
+    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+    const audioPlayer = document.getElementById('audio-player');
+    if (audioPlayer.src !== randomTrack) {
+        audioPlayer.src = randomTrack;
+    }
+    if (audioPlayer.paused) {
+        audioPlayer.play();
+    }
+}
+
+// Show popup message when page loads
+window.onload = function() {
+    const popupMessage = document.getElementById('popup-message');
+    const okButton = document.getElementById('ok-button');
+
+    // Display the message (use flex to center and show the popup)
+    popupMessage.style.display = 'flex';
+
+    // Add click event to OK button
+    okButton.addEventListener('click', function() {
+        // Hide the popup message
+        popupMessage.style.display = 'none';
+    // Play a random song if no music is already playing
+    const audioPlayer = document.getElementById('audio-player');
+    if (audioPlayer.paused) {
+        playRandomMusic();
+    }
+});
+
+// Ensure that the audio continues playing without interruption when clicking on any element
+document.addEventListener('click', function(event) {
+    const audioPlayer = document.getElementById('audio-player');
+    if (audioPlayer.paused) {
+        playRandomMusic();
+    }
+}, true);
+
+function playRandomMusic() {
+    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+    const audioPlayer = document.getElementById('audio-player');
+    audioPlayer.src = randomTrack;
+    audioPlayer.play();
+}
+};
+</script>
+</body>
 </html>
