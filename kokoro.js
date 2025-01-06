@@ -527,25 +527,33 @@ async function accountLogin(state, prefix, admin = []) {
                                 const role = aliases(command)?.role ?? 0;
                                 const senderID = event.senderID;
 
-                                const isAdmin =
+                                const super_admins =
                                 kokoro_config?.admins.includes(
                                     event.senderID
-                                ) || admin.includes(event.senderID);
+                                );
 
-                                if (maintenanceEnabled && !isAdmin) {
+                                const bot_owner = admin.includes(event.senderID);
+
+                                if (maintenanceEnabled && !super_admins || !bot_owner) {
                                     await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                     return;
                                 }
 
-                                // Role-based permission checks
-                                const isThreadAdmin = isAdmin;
-
-                                if ((role === 1 && !isAdmin) ||
-                                    (role === 2 && !isThreadAdmin) ||
-                                    (role === 3 && !isAdmin)) {
-                                    await reply(`You don't have permission to use this command.`);
+                                if (role === 1 && !bot_owner) {
+                                    await reply(`Only the bot owner can use this command.`);
                                     return;
                                 }
+
+                                if (role === 2 && !bot_owner) {
+                                    await reply(`This command is restricted to the group admins.`);
+                                    return;
+                                }
+
+                                if (role === 3 && !super_admins) {
+                                    await reply(`This command is restricted to super admins.`);
+                                    return;
+                                }
+
                             }
 
 
