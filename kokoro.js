@@ -546,20 +546,20 @@ async function accountLogin(state, prefix, admin = []) {
                                     await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                     return;
                                 }
-                                const warning = "[You don't have permission!]\n\n";
+                                const warning = font.bold("[You don't have permission!]\n\n");
 
                                 if (role === 1 && !bot_owner) {
-                                    await reply(warning + `Only the bot owner/admin can use this command.`);
+                                    await reply(warning + `Only the bot owner/admin have access to this command.`);
                                     return;
                                 }
 
                                 if (role === 2 && !group_admin) {
-                                    await reply(warning + `Only group admin can use this command.`);
+                                    await reply(warning + `Only group admin have access to this command.`);
                                     return;
                                 }
 
                                 if (role === 3 && !super_admin) {
-                                    await reply(warning + `Only moderators/super_admins/site_owner can use this command.`);
+                                    await reply(warning + `Only moderators/super_admins/site_owner have access to this command.`);
                                     return;
                                 }
 
