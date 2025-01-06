@@ -283,27 +283,7 @@ async function getLogin(req, res) {
     } = req.query;
 
     try {
-
-        const existingUser = Utils.account.get(email);
-
-        if (existingUser) {
-            const currentTime = Date.now();
-            const lastLoginTime = existingUser.lastLoginTime || 0;
-            const waitTime = 3 * 60 * 1000;
-
-            if (currentTime - lastLoginTime < waitTime) {
-                const remainingTime = Math.ceil((waitTime - (currentTime - lastLoginTime)) / 1000);
-                return res.status(400).json({
-                    error: false,
-                    message: `This account is already logged in. Please wait ${remainingTime} second(s) to relogin again to avoid duplicate bots. if bots does not respond please wait more few minutes and relogin again.`
-                });
-            }
-        }
-
         await accountLogin(null, prefix, [admin], email, password);
-        Utils.account.set(email, {
-            lastLoginTime: Date.now()
-        });
         res.status(200).json({
             success: true,
             message: 'Authentication successful; user logged in.',
