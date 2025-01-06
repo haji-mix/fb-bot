@@ -583,13 +583,6 @@ async function accountLogin(state, prefix, admin = []) {
                                     return;
                                 }
                             }
-
-                            if (aliases(command)?.isGroup === true) {
-                                if (!event.isGroup) {
-                                    return reply("You can only use this command in group chats");
-                                }
-                            }
-                            
                                                         if (aliases(command)?.isGroup === true) {
                                 if (!event.isGroup) {
                                     return reply("You can only use this command in group chats.");
