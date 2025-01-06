@@ -54,6 +54,7 @@ async function loadModule(modulePath, eventType) {
         version = "1.0.0",
         isPrefix = true,
         isPremium = false,
+        isPrivate = false,
         isGroup = false,
         limit = "5",
         aliases = [],
@@ -79,6 +80,7 @@ async function loadModule(modulePath, eventType) {
         isPrefix: config.isPrefix,
         isPremium: config.isPremium,
         isGroup: config.isGroup,
+        isPrivate: config.isPrivate,
         limit,
         credits,
         cd
@@ -585,6 +587,18 @@ async function accountLogin(state, prefix, admin = []) {
                             if (aliases(command)?.isGroup === true) {
                                 if (!event.isGroup) {
                                     return reply("You can only use this command in group chats");
+                                }
+                            }
+                            
+                                                        if (aliases(command)?.isGroup === true) {
+                                if (!event.isGroup) {
+                                    return reply("You can only use this command in group chats.");
+                                }
+                            }
+                            
+                                                        if (aliases(command)?.isPrivate === true) {
+                                if (event.isGroup) {
+                                    return reply("You can only use this command in private chat.");
                                 }
                             }
 

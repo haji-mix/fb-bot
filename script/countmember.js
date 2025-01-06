@@ -2,12 +2,11 @@ module.exports["config"] = {
   name: "countmember",
   aliases: ["countmem", "totalmem", "totalmember", "totalm", "countm"],
   version: "1.0.0",
+  isGroup: true,
   info: "Count the total number of participants in the group",
 };
 
 module.exports["run"] = async ({ chat, font, event }) => {
-    
-    if (!event.isGroup) return chat.reply(font.monospace("You can only use this command in group chats!")); 
     
     const threadInfo = await chat.threadInfo(event.threadID);
     const totalParticipants = threadInfo?.participantIDs.length || event?.participantIDs.length;

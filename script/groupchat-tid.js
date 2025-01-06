@@ -6,6 +6,7 @@ module.exports["config"] = {
   info: 'Provides detailed information about the current chat group.',
   type: "information",
   version: '1.0.0',
+  isGroup: true,
   role: 1,
   cd: 10,
 };
@@ -15,10 +16,6 @@ module.exports["run"] = async ({ event, chat, font }) => {
     
     if (!threadInfo) {
         return chat.reply("This feature is temporary not available! (Blocked By Meta)");
-    }
-    
-    if (!event.isGroup) {
-        return chat.reply(font.monospace("This feature is only available for group chats."));
     }
     
     const totalParticipants = threadInfo?.participantIDs.length;

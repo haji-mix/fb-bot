@@ -11,10 +11,6 @@ module.exports.config = {
 module.exports.run = async ({
     event, chat, args, font
 }) => {
-    
-    if (!event.isGroup) {
-        return chat.reply(font.monospace("You can't kick someone in Private Chat, only in Groups!"));
-    }
 
     const botID = chat.botID();
     const threadInfo = await chat.threadInfo(event.threadID);

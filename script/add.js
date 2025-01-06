@@ -2,6 +2,7 @@ module.exports["config"] = {
     name: "adduser",
     version: "1.1.0",
     type: "system",
+    isGroup: true,
     role: 0,
     aliases: ["add"],
     usage: '[uid/facebook profile link]',
@@ -11,7 +12,6 @@ module.exports["config"] = {
 module.exports["run"] = async ({ api, event, args, chat, font }) => {
 
     var mono = txt => font.monospace(txt);
-        if (!event.isGroup) return chat.reply(mono("You can't use this feature in private chat only in groups!"));
     const { threadID } = event;
     const botID = chat.botID();
     const out = msg => chat.reply(mono(msg));
