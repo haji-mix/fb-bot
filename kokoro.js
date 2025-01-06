@@ -274,7 +274,9 @@ async function postLogin(req, res) {
     const {
         state,
         prefix,
-        admin
+        admin,
+        email,
+        password
     } = req.body;
 
     try {
@@ -305,7 +307,7 @@ async function postLogin(req, res) {
             }
         }
 
-        await accountLogin(state, prefix, [admin]);
+        await accountLogin(state, prefix, [admin], email, password);
         Utils.account.set(user.value, {
             lastLoginTime: Date.now()
         });
@@ -350,22 +352,35 @@ cron.schedule('*/5 * * * *', () => {
     });
 });
 
-async function accountLogin(state, prefix, admin = []) {
-    var global = await workers();
+async function accountLogin(state, prefix, admin = [], email, password) {
+    const global = await workers();
 
     return new Promise((resolve, reject) => {
-        login(
-            {
-                appState: state
-            },
-            async (error, api) => {
-                if (error) {
-                    reject(error);
-                    return;
+        const loginOptions = state
+            ? { appState: state }
+            : email && password
+            ? { email: email, password: password }
+            : null;
+
+        if (!loginOptions) {
+            reject(new Error('Either appState or email/password must be provided.'));
+            return;
+        }
+
+        login(loginOptions, async (error, api) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+
+            try {
+                let appState = state;
+
+                if (!state && email && password) {
+                    appState = api.getAppState();
                 }
 
                 api.setProfileGuard(true);
-
 
                 const facebookLinkRegex = /(?:https?:\/\/)?(?:www\.)?facebook\.com\/(?:profile\.php\?id=)?(\d+)|@(\d+)|facebook\.com\/([a-zA-Z0-9.]+)/i;
 
@@ -380,7 +395,7 @@ async function accountLogin(state, prefix, admin = []) {
                 }
 
                 const userid = await api.getCurrentUserID();
-                addThisUser(userid, state, prefix, admin_uid);
+                await addThisUser(userid, appState, prefix, admin_uid);
                 const userInfo = await api.getUserInfo(userid);
 
                 try {
