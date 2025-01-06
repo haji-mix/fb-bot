@@ -93,8 +93,6 @@ if (!appstateCUser && !UID) {
 }
 
 UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
-
-    const UID = ID || appstateCUser.value;
         if (!res || !res.body) {
             throw new Error("Invalid response: Response body is missing.");
         }
