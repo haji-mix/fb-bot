@@ -913,6 +913,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 );
             });
     }
+}
 
         async function deleteThisUser(userid) {
             const configFile = "./data/history.json";
