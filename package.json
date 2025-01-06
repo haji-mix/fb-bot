@@ -31,7 +31,7 @@
     "license": "ISC",
     "dependencies": {
         "canvas": "^3.0.0",
-        "chatbox-fca-remake": "^4.1.2",
+        "chatbox-fca-remake": "^4.1.3",
         "srod-v2": "^1.0.2",
         "@google/generative-ai": "^0.16.0",
         "@types/node": "^18.0.6",

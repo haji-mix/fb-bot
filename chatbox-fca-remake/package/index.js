@@ -80,9 +80,20 @@ function setOptions(globalOptions, options) {
 	});
 }
 
-function updateDTSG(res, appstate, ID) {
+function updateDTSG(res, appstate, jar, ID) {
     try {
-    const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
+    let UID;
+
+const appstateCUser = appstate.find(i => i.key === 'i_user') || appstate.find(i => i.key === 'c_user');
+
+if (!appstateCUser && !UID) {
+    const cookies = jar.getCookies("https://www.facebook.com");
+    const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+    UID = userCookie ? userCookie.value : null;
+}
+
+UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
+
     const UID = ID || appstateCUser.value;
         if (!res || !res.body) {
             throw new Error("Invalid response: Response body is missing.");
@@ -117,16 +128,18 @@ let isBehavior = false;
 async function bypassAutoBehavior(resp, jar, globalOptions, appstate, ID) {
   try {
       
-      let UID;
-    const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
-    
-    if (!UID) {
-            const cookies = jar.getCookies("https://www.facebook.com");
-            const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
-            UID = userCookie ? userCookie.value : null;
-        }
-        
-     UID = ID || appstateCUser.value;
+let UID;
+
+const appstateCUser = appstate.find(i => i.key === 'i_user') || appstate.find(i => i.key === 'c_user');
+
+if (!appstateCUser && !UID) {
+    const cookies = jar.getCookies("https://www.facebook.com");
+    const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+    UID = userCookie ? userCookie.value : null;
+}
+
+UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
+
     const FormBypass = {
       av: UID,
       fb_api_caller_class: "RelayModern",
@@ -162,11 +175,19 @@ async function bypassAutoBehavior(resp, jar, globalOptions, appstate, ID) {
   }
 }
 
-async function checkIfSuspended(resp, appstate) {
+async function checkIfSuspended(resp, appstate, jar, ID) {
   try {
-    const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
-    
-    const UID = appstateCUser?.value;
+    let UID;
+
+const appstateCUser = appstate.find(i => i.key === 'c_user') || appstate.find(i => i.key === 'i_user');
+
+if (!appstateCUser && !UID) {
+    const cookies = jar.getCookies("https://www.facebook.com");
+    const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+    UID = userCookie ? userCookie.value : null;
+}
+
+UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
     const suspendReasons = {};
     if (resp) {
       if (resp.request.uri && resp.request.uri.href.includes("https://www.facebook.com/checkpoint/")) {
@@ -198,10 +219,19 @@ async function checkIfSuspended(resp, appstate) {
   }
 }
 
-async function checkIfLocked(resp, appstate) {
+async function checkIfLocked(resp, appstate, jar, ID) {
   try {
-    const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
-    const UID = appstateCUser?.value;
+let UID;
+
+const appstateCUser = appstate.find(i => i.key === 'c_user') || appstate.find(i => i.key === 'i_user');
+
+if (!appstateCUser && !UID) {
+    const cookies = jar.getCookies("https://www.facebook.com");
+    const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+    UID = userCookie ? userCookie.value : null;
+}
+
+UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
     const lockedReasons = {};
     if (resp) {
       if (resp.request.uri && resp.request.uri.href.includes("https://www.facebook.com/checkpoint/")) {
@@ -668,7 +698,7 @@ function loginHelper(appState, email, password, globalOptions, callback, hajime_
                     }
                 })
                 .then(res => bypassAutoBehavior(res, jar, globalOptions, appState))
-                .then(res => updateDTSG(res, appState))
+                .then(res => updateDTSG(res, appState, jar))
                     .then(async (res) => {
                     const url = `https://www.facebook.com/home.php`;
                    const php = await utils.get(url, jar, null, globalOptions);
@@ -696,9 +726,9 @@ function loginHelper(appState, email, password, globalOptions, callback, hajime_
 	// At the end we call the callback or catch an exception
 	mainPromise
 		.then(async (res) => {
-	  const detectLocked = await checkIfLocked(res, appState);
+	  const detectLocked = await checkIfLocked(res, appState, jar);
       if (detectLocked) throw detectLocked;
-      const detectSuspension = await checkIfSuspended(res, appState);
+      const detectSuspension = await checkIfSuspended(res, appState, jar);
       if (detectSuspension) throw detectSuspension;
 			log.info("login", 'Done logging in.');
 			return callback(null, api);
