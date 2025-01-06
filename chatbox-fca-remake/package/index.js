@@ -116,8 +116,17 @@ function updateDTSG(res, appstate, ID) {
 let isBehavior = false;
 async function bypassAutoBehavior(resp, jar, globalOptions, appstate, ID) {
   try {
+      
+      let UID;
     const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
-    const UID = ID || appstateCUser.value;
+    
+    if (!UID) {
+            const cookies = jar.getCookies("https://www.facebook.com");
+            const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+            UID = userCookie ? userCookie.value : null;
+        }
+        
+     UID = ID || appstateCUser.value;
     const FormBypass = {
       av: UID,
       fb_api_caller_class: "RelayModern",
@@ -156,6 +165,7 @@ async function bypassAutoBehavior(resp, jar, globalOptions, appstate, ID) {
 async function checkIfSuspended(resp, appstate) {
   try {
     const appstateCUser = (appstate.find(i => i.key == 'i_user') || appstate.find(i => i.key == 'c_user'))
+    
     const UID = appstateCUser?.value;
     const suspendReasons = {};
     if (resp) {
