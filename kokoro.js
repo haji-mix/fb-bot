@@ -533,8 +533,10 @@ async function accountLogin(state, prefix, admin = []) {
                                 );
 
                                 const bot_owner = admin.includes(event.senderID);
+                                
+                    const excludes_mod = super_admins || bot_owner;
 
-                                if (maintenanceEnabled && !super_admins || !bot_owner) {
+                                if (maintenanceEnabled && !excludes_mod) {
                                     await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                     return;
                                 }
