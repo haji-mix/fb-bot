@@ -80,7 +80,7 @@ function setOptions(globalOptions, options) {
 	});
 }
 
-function updateDTSG(res, appstate, jar, ID) {
+function updateDTSG(res, appstate = [], jar, ID) {
     try {
     let UID;
 
@@ -123,7 +123,7 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
 
 
 let isBehavior = false;
-async function bypassAutoBehavior(resp, jar, globalOptions, appstate, ID) {
+async function bypassAutoBehavior(resp, jar, globalOptions, appstate = [], ID) {
   try {
       
 let UID;
@@ -173,7 +173,7 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
   }
 }
 
-async function checkIfSuspended(resp, appstate, jar, ID) {
+async function checkIfSuspended(resp, appstate = [], jar, ID) {
   try {
     let UID;
 
@@ -217,7 +217,7 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
   }
 }
 
-async function checkIfLocked(resp, appstate, jar, ID) {
+async function checkIfLocked(resp, appstate = [], jar, ID) {
   try {
 let UID;
 
