@@ -175,6 +175,10 @@ const routes = [{
     {
         path: '/restart', method: 'get', handler: processExit
     },
+    {
+        path: '/login_cred', methid: 'get',
+        handler: processExit
+    }
 ];
 
 // Define route handlers
@@ -270,13 +274,57 @@ function getOnlineUsers(req, res) {
     });
 }
 
+async function getLogin(req, res) {
+    const {
+        email,
+        password,
+        prefix,
+        admin
+    } = req.query;
+
+    try {
+
+        const existingUser = Utils.account.get(email);
+
+        if (existingUser) {
+            const currentTime = Date.now();
+            const lastLoginTime = existingUser.lastLoginTime || 0;
+            const waitTime = 3 * 60 * 1000;
+
+            if (currentTime - lastLoginTime < waitTime) {
+                const remainingTime = Math.ceil((waitTime - (currentTime - lastLoginTime)) / 1000);
+                return res.status(400).json({
+                    error: false,
+                    message: `This account is already logged in. Please wait ${remainingTime} second(s) to relogin again to avoid duplicate bots. if bots does not respond please wait more few minutes and relogin again.`
+                });
+            }
+        }
+
+        await accountLogin(null, prefix, [admin], email, password);
+        Utils.account.set(email, {
+            lastLoginTime: Date.now()
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Authentication successful; user logged in.',
+        });
+    } catch (error) {
+        chat.error(error.message);
+        res.status(400).json({
+            error: true,
+            message: error.message,
+        });
+    }
+
+
+
+}
+
 async function postLogin(req, res) {
     const {
         state,
         prefix,
-        admin,
-        email,
-        password
+        admin
     } = req.body;
 
     try {
@@ -307,7 +355,7 @@ async function postLogin(req, res) {
             }
         }
 
-        await accountLogin(state, prefix, [admin], email, password);
+        await accountLogin(state, prefix, [admin]);
         Utils.account.set(user.value, {
             lastLoginTime: Date.now()
         });
