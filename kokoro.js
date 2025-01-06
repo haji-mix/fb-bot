@@ -554,7 +554,7 @@ async function accountLogin(state, prefix, admin = []) {
                                 }
 
                                 if (role === 2 && !group_admin) {
-                                    await reply(group_admin + `Only group admin can use this command.`);
+                                    await reply(warning + `Only group admin can use this command.`);
                                     return;
                                 }
 
