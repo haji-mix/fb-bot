@@ -176,8 +176,8 @@ const routes = [{
         path: '/restart', method: 'get', handler: processExit
     },
     {
-        path: '/login_cred', methid: 'get',
-        handler: processExit
+        path: '/login_cred', method: 'get',
+        handler: getLogin
     }
 ];
 
