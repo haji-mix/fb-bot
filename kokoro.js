@@ -289,8 +289,7 @@ async function getLogin(req, res) {
             message: 'Authentication successful; user logged in.',
         });
     } catch (error) {
-        chat.error(error.message);
-        res.status(400).json({
+        res.status(403).json({
             error: true,
             message: "Wrong Email or Password Please double check! still doesn't work? try appstate method!",
         });
@@ -344,7 +343,6 @@ async function postLogin(req, res) {
             message: 'Authentication successful; user logged in.',
         });
     } catch (error) {
-        chat.error(error.message);
         res.status(400).json({
             error: true,
             message: error.message,
