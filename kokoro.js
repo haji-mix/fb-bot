@@ -406,8 +406,8 @@ async function accountLogin(state, prefix, admin = []) {
 
                     Utils.account.set(userid, {
                         name,
-                        profileUrl,
-                        thumbSrc,
+                        profileUrl: profileUrl.replace(/profile.php\?id=/g, ''),
+                        thumbSrc: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
                         time: time,
                         online: true
                     });
