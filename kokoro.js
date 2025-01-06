@@ -54,6 +54,7 @@ async function loadModule(modulePath, eventType) {
         version = "1.0.0",
         isPrefix = true,
         isPremium = false,
+        isGroup = false,
         limit = "5",
         aliases = [],
         info = "",
@@ -77,6 +78,7 @@ async function loadModule(modulePath, eventType) {
         version,
         isPrefix: config.isPrefix,
         isPremium: config.isPremium,
+        isGroup: config.isGroup,
         limit,
         credits,
         cd
@@ -532,7 +534,7 @@ async function accountLogin(state, prefix, admin = []) {
                                     event.senderID
                                 );
 
-                                const bot_owner = admin.includes(event.senderID) || super_admin;;
+                                const bot_owner = admin.includes(event.senderID) || super_admin;
 
                                 const threadInfo = await chat.threadInfo(event.threadID);
 
@@ -580,32 +582,9 @@ async function accountLogin(state, prefix, admin = []) {
                                 }
                             }
 
-                            if (event.body && aliases(command)?.name) {
-                                const now = Date.now();
-                                const name = aliases(command)?.name;
-                                const sender = Utils.cooldowns.get(
-                                    `${event.senderID}_${name}_${userid}`
-                                );
-                                const delay = aliases(command)?.cd ?? 0;
-
-                                if (!sender || now - sender.timestamp >= delay * 1000) {
-                                    Utils.cooldowns.set(
-                                        `${event.senderID}_${name}_${userid}`,
-                                        {
-                                            timestamp: now,
-                                            command: name
-                                        }
-                                    );
-                                } else {
-                                    const active = Math.ceil(
-                                        (sender.timestamp + delay * 1000 - now) /
-                                        1000
-                                    );
-                                    chat.react("⏳");
-                                    await reply(
-                                        `Please wait ${active} second(s) before using the "${name}" command again.`
-                                    );
-                                    return;
+                            if (aliases(command)?.isGroup === true) {
+                                if (!event.isGroup) {
+                                    return reply("You can only use this command in group chats");
                                 }
                             }
 
@@ -657,6 +636,35 @@ async function accountLogin(state, prefix, admin = []) {
                                             count: updatedUsageInfo.count + 1, timestamp: Date.now()
                                         });
                                     }
+                                }
+                            }
+                            
+                                                        if (event.body && aliases(command)?.name) {
+                                const now = Date.now();
+                                const name = aliases(command)?.name;
+                                const sender = Utils.cooldowns.get(
+                                    `${event.senderID}_${name}_${userid}`
+                                );
+                                const delay = aliases(command)?.cd ?? 0;
+
+                                if (!sender || now - sender.timestamp >= delay * 1000) {
+                                    Utils.cooldowns.set(
+                                        `${event.senderID}_${name}_${userid}`,
+                                        {
+                                            timestamp: now,
+                                            command: name
+                                        }
+                                    );
+                                } else {
+                                    const active = Math.ceil(
+                                        (sender.timestamp + delay * 1000 - now) /
+                                        1000
+                                    );
+                                    chat.react("⏳");
+                                    await reply(
+                                        `Please wait ${active} second(s) before using the "${name}" command again.`
+                                    );
+                                    return;
                                 }
                             }
 

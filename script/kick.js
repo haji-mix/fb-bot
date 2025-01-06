@@ -4,12 +4,14 @@ module.exports.config = {
     credits: "Kenneth Panio",
     info: "Kick members or yourself",
     role: 2,
+    isGroup: true,
     usage: "[uid/@mention/link/me/all/members]",
 };
 
 module.exports.run = async ({
     event, chat, args, font
 }) => {
+    
     if (!event.isGroup) {
         return chat.reply(font.monospace("You can't kick someone in Private Chat, only in Groups!"));
     }
