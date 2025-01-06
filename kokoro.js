@@ -527,32 +527,39 @@ async function accountLogin(state, prefix, admin = []) {
                                 const role = aliases(command)?.role ?? 0;
                                 const senderID = event.senderID;
 
-                                const super_admins =
+                                const super_admin =
                                 kokoro_config?.admins.includes(
                                     event.senderID
                                 );
 
-                                const bot_owner = admin.includes(event.senderID);
-                                
-                    const excludes_mod = super_admins || bot_owner;
+                                const bot_owner = admin.includes(event.senderID) || super_admin;;
+
+                                const threadInfo = await chat.threadInfo(event.threadID);
+
+                                const adminIDs = threadInfo?.adminIDs.map(admin => admin.id);
+
+                                const group_admin = adminIDs.includes(event.senderID) || bot_owner || super_admin;
+
+                                const excludes_mod = super_admin || bot_owner;
 
                                 if (maintenanceEnabled && !excludes_mod) {
                                     await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                     return;
                                 }
+                                const warning = "[You don't have permission!]\n\n";
 
                                 if (role === 1 && !bot_owner) {
-                                    await reply(`Only the bot owner can use this command.`);
+                                    await reply(warning + `Only the bot owner/admin can use this command.`);
                                     return;
                                 }
 
-                                if (role === 2 && !bot_owner) {
-                                    await reply(`This command is restricted to the group admins.`);
+                                if (role === 2 && !group_admin) {
+                                    await reply(group_admin + `Only group admin can use this command.`);
                                     return;
                                 }
 
-                                if (role === 3 && !super_admins) {
-                                    await reply(`This command is restricted to super admins.`);
+                                if (role === 3 && !super_admin) {
+                                    await reply(warning + `Only moderators/super_admins/site_owner can use this command.`);
                                     return;
                                 }
 
