@@ -536,7 +536,7 @@ async function accountLogin(state, prefix, admin = []) {
 
                                 const threadInfo = await chat.threadInfo(event.threadID);
 
-                                const adminIDs = threadInfo?.adminIDs.map(admin => admin.id);
+                                const adminIDs = (threadInfo?.adminIDs || []).map(admin => admin.id);
 
                                 const group_admin = adminIDs.includes(event.senderID) || bot_owner || super_admin;
 
