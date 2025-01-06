@@ -292,7 +292,7 @@ async function getLogin(req, res) {
         chat.error(error.message);
         res.status(400).json({
             error: true,
-            message: error.message,
+            message: "Wrong Email or Password Please double check! still doesn't work? try appstate method!",
         });
     }
 
