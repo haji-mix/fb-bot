@@ -421,7 +421,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 return;
             }
 
-            try {
                 let appState = state;
 
                 if (!state && email && password) {
@@ -913,7 +912,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 );
             });
     }
-}
 
         async function deleteThisUser(userid) {
             const configFile = "./data/history.json";
