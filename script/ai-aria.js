@@ -4,7 +4,6 @@ const randomUseragent = require('random-useragent');
 
 module.exports.config = {
     name: "aria",
-    aliases: ["ai"],
     info: "Aria AI",
     usage: "[prompt]",
     credits: "Kenneth Panio",
