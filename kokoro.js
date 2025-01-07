@@ -139,6 +139,17 @@ async function loadModules(script) {
 
 loadModules(script);
 
+const blockedIPs = new Set();
+
+// Middleware to block suspicious IPs
+app.use((req, res, next) => {
+  if (blockedIPs.has(req.ip)) {
+    // Serve your custom 403 HTML file
+    return res.status(403).sendFile(path.join(__dirname, "public", "403.html"));
+  }
+  next();
+});
+
 // Security: anti-DDoS middleware
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
