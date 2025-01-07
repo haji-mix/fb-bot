@@ -140,26 +140,18 @@ async function loadModules(script) {
 loadModules(script);
 
 
-
-const blockedIPs = new Set();
-// Security: anti-DDoS middleware
-const rateLimit = require('express-rate-limit');
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Allow 100 requests per window
-  handler: (req, res) => {
-    // Add IP to the blocked list
-    blockedIPs.add(req.ip);
-
-    // Serve your custom 403 HTML file
-    res.status(403).sendFile(path.join(__dirname, "public", "403.html"));
-  },
-});
-app.use(limiter);
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
+
+// Security: anti-DDoS middleware
+const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Server is Down Too Many Request from this IP! just kidding! you have been blocked!'
+});
+app.use(limiter);
 
 // Routes definition
 const routes = [{
