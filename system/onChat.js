@@ -216,9 +216,7 @@ async killme(pogiko, lvl = 1) {
                 unsend: async (delay = 0) => {
                     if (!replyMsg.messageID) throw new Error("Missing Message ID");
                     await new Promise(res => setTimeout(res, delay));
-                    await this.api.unsendMessage(replyMsg.messageID).catch(() => {
-                        return;
-                    });
+                    await this.api.unsendMessage(replyMsg.messageID).catch(() => {});
                 }
             };
         }
