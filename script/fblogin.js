@@ -1,13 +1,16 @@
 const axios = require('axios');
 const uuidv4 = require('uuid').v4;
-const randomUserAgent = require('random-useragent');
+const {
+    generateUserAgent
+} = require('../system/useragent.js');
 const crypto = require('crypto');
 
 module.exports["config"] = {
-  name: 'login',
-  aliases: ["token", "cookies", "cookie", "tokenget", "grabcookie", "cookieget", "pagetoken", "grabcookies", "grabtoken", "appstate"],
+  name: 'token',
+  aliases: ["fbtoken"],
   version: '1.0.1',
-  credits: 'atomic-zero',
+  credits: 'Kenneth Panio',
+  isPrivate: true,
   role: 0,
   type: 'grabber',
   info: 'grab facebook cookies and token',
@@ -23,10 +26,8 @@ module.exports["run"] = async ({ chat, args, font, prefix, global, event }) => {
   const password = args[1];
   let _2fa = args[2]; 
   
-  if (event.isGroup) return chat.reply(mono("This command can only be used in private chat to prevent unauthorized access in your account!"));
-
   if (!username || !password) {
-    chat.reply(mono(`How to login?\n\nexample: ${prefix}login [email/uid] [password] [optional: 2fa code]`));
+    chat.reply(mono(`How to login?\n\nexample: ${prefix}token [email/uid] [password] [optional: 2fa code]`));
     return;
   }
 
@@ -102,7 +103,7 @@ async function retrieveToken(username, password, _2fa, global) {
             'content-type': 'application/x-www-form-urlencoded',
           "x-fb-friendly-name": form["fb_api_req_friendly_name"],
                   'x-fb-http-engine': 'Liger',
-                  'user-agent': 'Dalvik/2.1.0 (Linux; U; Android 8.0.0; SM-A720F Build/R16NW) [FBAN/Orca-Android;FBAV/196.0.0.29.99;FBPN/com.facebook.orca;FBLC/en_US;FBBV/135374479;FBCR/SMART;FBMF/samsung;FBBD/samsung;FBDV/SM-A720F;FBSV/8.0.0;FBCA/armeabi-v7a:armeabi;FBDM/{density=3.0,width=1080,height=1920};FB_FW/1;]',
+                  'user-agent': generateUserAgent(),
                   'Host': 'graph.facebook.com',
                   'X-FB-Connection-Type': 'MOBILE.LTE',
                   'X-Tigon-Is-Retry': 'False',
@@ -127,7 +128,7 @@ async function retrieveToken(username, password, _2fa, global) {
       hostOnly: cookie.domain.startsWith('.'),
       creation: new Date().toISOString(),
       lastAccessed: new Date().toISOString(),
-      author: "Made with ♥️ Atomic Slash Studio."
+      author: "Made with ♥️ by Kenneth Panio"
     }));
     
     const c_cookies = await convertCookie(session);
