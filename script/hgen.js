@@ -40,17 +40,10 @@ module.exports["run"] = async ({ chat, args, font }) => {
 
         generating.unsend();
 
-        if (imageUrls.length > 0) {
-            const attachments = await Promise.all(
-                imageUrls.map(async (url) => await chat.stream(url))
-            );
-
-            return chat.reply({
-                attachment: attachments,
+         chat.reply({
+                attachment: await chat.stream(imageUrls)
             });
-        }
 
-        chat.reply(font.thin("No images were generated."));
     } catch (error) {
         generating.unsend();
         chat.reply(font.thin(error.message));
