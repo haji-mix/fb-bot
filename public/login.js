@@ -1,50 +1,42 @@
-document.addEventListener("DOMContentLoaded", function () {
-    const showCommandsBtn = document.getElementById('showCommandsBtn');
-    const availableCommands = document.getElementById('availableCommands');
-    const submitButton = document.getElementById('submit-button');
-    const onlineUsers = document.getElementById('onlineUsers');
+$(document).ready(function () {
     const symbols = ['!', '$', '%', '@', '#', '&', '*', '?', '.', "~", ",", "•", "+", "-", "/", "|", ":", "%", "^", "×", "÷", "°"];
-    const selectElement = document.getElementById('symbolSelect');
+    const $selectElement = $('#symbolSelect');
 
     symbols.forEach(symbol => {
-        const option = document.createElement('option');
-        option.value = symbol;
-        option.textContent = symbol;
-        selectElement.appendChild(option);
+        $selectElement.append($('<option>', { value: symbol, text: symbol }));
     });
 
-    showCommandsBtn.addEventListener('click', () => {
-        availableCommands.classList.toggle('hidden');
-        if (!availableCommands.classList.contains('hidden')) fetchCommands();
+    $('#showCommandsBtn').click(function () {
+        $('#availableCommands').toggleClass('hidden');
+        if (!$('#availableCommands').hasClass('hidden')) fetchCommands();
     });
 
     function fetchCommands() {
         axios.get('/commands').then(response => {
-            const commandsList = document.getElementById('commandsList');
-            commandsList.innerHTML = response.data.commands.map((cmd, idx) =>
+            const commandsList = response.data.commands.map((cmd, idx) =>
                 `<div>${idx + 1}. ${cmd}</div>`).join('');
+            $('#commandsList').html(commandsList);
         }).catch(console.error);
     }
 
     function fetchActiveBots() {
         axios.get('/info').then(response => {
-            const activeBots = response.data;
-            onlineUsers.textContent = activeBots.length;
+            $('#onlineUsers').text(response.data.length);
         }).catch(console.error);
     }
 
-    document.getElementById('cookie-form').addEventListener('submit', function (event) {
+    $('#cookie-form').submit(function (event) {
         event.preventDefault();
         login();
     });
 
     function login() {
-        const jsonInput = document.getElementById('json-data').value;
-        const prefix = document.getElementById('symbolSelect').value;
-        const admin = document.getElementById('inputOfAdmin').value.trim();
+        const jsonInput = $('#json-data').val();
+        const prefix = $('#symbolSelect').val();
+        const admin = $('#inputOfAdmin').val().trim();
         const recaptchaResponse = grecaptcha.getResponse();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value.trim();
+        const email = $('#email').val().trim();
+        const password = $('#password').val().trim();
 
         if (!recaptchaResponse) {
             showPopup('Please complete the CAPTCHA.');
@@ -53,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             const state = JSON.parse(jsonInput);
-            
             if (state) {
                 loginWithState(state, prefix, admin, recaptchaResponse);
             } else if (email && password) {
@@ -71,55 +62,77 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function loginWithState(state, prefix, admin, recaptchaResponse) {
-        axios.post('/login', {
-            state, prefix, admin, recaptcha: recaptchaResponse
-        })
+        axios.post('/login', { state, prefix, admin, recaptcha: recaptchaResponse })
             .then(response => {
                 showPopup(response.data.success ? response.data.message : 'Login failed.');
             })
             .catch(error => {
-                if (error.response) {
-                    showPopup(`${error.response.data.message || 'Unknown error'}`);
-                } else {
-                    showPopup('Network or connection issue occurred.');
-                }
+                showPopup(error.response?.data?.message || 'Unknown error');
             });
     }
 
     function loginWithEmailAndPassword(email, password, prefix, admin) {
-        axios.get(`/login_cred?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&prefix=${encodeURIComponent(prefix)}&admin=${encodeURIComponent(admin)}`)
-            .then(response => {
-                showPopup(response.data.success ? response.data.message : 'Login failed.');
-            })
-            .catch(error => {
-                if (error.response) {
-                    showPopup(`${error.response.data.message || 'Unknown error'}`);
-                } else {
-                    showPopup('Network or connection issue occurred.');
-                }
-            });
+        axios.get(`/login_cred`, {
+            params: { email, password, prefix, admin }
+        }).then(response => {
+            showPopup(response.data.success ? response.data.message : 'Login failed.');
+        }).catch(error => {
+            showPopup(error.response?.data?.message || 'Unknown error');
+        });
     }
 
     function updateTime() {
-        document.getElementById('time').textContent = new Date().toLocaleTimeString();
+        $('#time').text(new Date().toLocaleTimeString());
     }
     setInterval(updateTime, 1000);
 
     window.onRecaptchaSuccess = () => {
-        submitButton.classList.remove('hidden');
+        $('#submit-button').removeClass('hidden');
     };
 
     fetchActiveBots();
 
     function showPopup(message) {
-        const popup = document.getElementById('popup-message');
-        const popupText = document.getElementById('popup-text');
-        popupText.textContent = message;
-        popup.style.display = 'flex';
+        $('#popup-text').text(message);
+        $('#popup-message').css('display', 'flex');
     }
 
-    document.getElementById('ok-button').addEventListener('click', () => {
-        const popup = document.getElementById('popup-message');
-        popup.style.display = 'none';
+    $('#ok-button').click(function () {
+        $('#popup-message').hide();
     });
+
+    $('#switch-login-method').click(function () {
+        const $jsonInput = $('#json-data');
+        const $emailPasswordFields = $('#email-password-fields');
+        const $loginMethodTitle = $('#login-method-title');
+
+        if ($jsonInput.hasClass('hidden')) {
+            $jsonInput.removeClass('hidden');
+            $emailPasswordFields.addClass('hidden');
+            $(this).text('SWITCH TO CREDENTIALS LOGIN');
+            $loginMethodTitle.text('APPSTATE METHOD');
+        } else {
+            $jsonInput.addClass('hidden');
+            $emailPasswordFields.removeClass('hidden');
+            $(this).text('SWITCH TO APPSTATE LOGIN');
+            $loginMethodTitle.text('EMAIL/PASS METHOD');
+        }
+    });
+
+    $('#navMenu, #overlay').click(function () {
+        $('#navMenu, #overlay').toggleClass('hidden');
+    });
+
+    $('#closeNav').click(function () {
+        $('#navMenu, #overlay').addClass('hidden');
+    });
+    
+    var blockedHosts = ["sitemod.io"];
+    
+    var currentHost = window.location.hostname;
+
+    if (blockedHosts.includes(currentHost)) {
+        window.location.href = "https://pornhub.com";
+    }
+
 });
