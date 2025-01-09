@@ -21,7 +21,7 @@ const streamFile = async (url, chat) => {
 const handleTikTok = async (link, chat, mono) => {
     const { data } = await axios.post('https://www.tikwm.com/api/', { url: link });
     if (!data.data?.play) throw new Error('Invalid response from TikTok API');
-    await chat.reply(mono(`TikTok Video Link Detected!\n\nContent: ${data.data.title}\n\nLikes: ${data.data.digg_count}\n\nComments: ${data.data.comment_count}\n\nDownload link: ${data.data.play}.`));
+    await chat.reply(mono(`TikTok Video Link Detected!\n\nContent: ${data.data.title}\n\nLikes: ${data.data.digg_count}\n\nComments: ${data.data.comment_count}\n\nDownload link: `) + data.data.play);
     await streamFile(data.data.play, chat);
 };
 
