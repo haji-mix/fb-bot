@@ -1,6 +1,9 @@
 const fs = require("fs");
 const axios = require("axios");
 const crypto = require("crypto");
+const {
+    generateUserAgent
+} = require('../system/useragent.js');
 
 module.exports = {
   config: {
@@ -27,40 +30,11 @@ module.exports = {
 
       api.sendMessage(`Creating ${amount} Facebook account(s)... Please wait.`, threadID);
 
-const userAgents = [
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Nexus 7;FBSV/4.1.1;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/iPhone 12;FBSV/14.2;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Samsung Galaxy S22;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Google Pixel 4;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/OnePlus 9 Pro;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Huawei P30 Pro;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Xiaomi Redmi 9;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Oppo Reno 4;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Vivo V21;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/HTC U20 5G;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/LG G8X ThinQ;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Motorola One Fusion+;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Nokia 5.3;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Sony Xperia 1 III;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Asus ZenFone 7 Pro;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Google Pixel 5;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/OnePlus 8 Pro;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Huawei P40 Pro;FBSV/10;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Xiaomi Mi 11 Ultra;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Oppo Find X3 Pro;FBSV/11;FBBK/0;]',
-        '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Vivo X60 Pro;FBSV/11;FBBK/0;]',
-      ];
-
-      let userAgentIndex = 0;
-      function getUserAgent() {
-        return userAgents[userAgentIndex++ % userAgents.length];
-      }
-
       const delayBetweenAccounts = 1000; // 1 second
 
       const accounts = [];
       for (let i = 0; i < amount; i++) {
-        const userAgent = getUserAgent();
+        const userAgent = generateUserAgent();
         const account = await createMailTmAccount(userAgent);
 
         if (account) {
