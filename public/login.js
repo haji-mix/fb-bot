@@ -1,14 +1,18 @@
 $(document).ready(function () {
     const symbols = ['!', '$', '%', '@', '#', '&', '*', '?', '.', "~", ",", "•", "+", "-", "/", "|", ":", "%", "^", "×", "÷", "°"];
     const $selectElement = $('#symbolSelect');
+    const $showCommandsBtn = $('#showCommandsBtn');
+    const $availableCommands = $('#availableCommands');
+    const $onlineUsers = $('#onlineUsers');
+    const $submitButton = $('#submit-button');
 
     symbols.forEach(symbol => {
-        $selectElement.append($('<option>', { value: symbol, text: symbol }));
+        $('<option>', { value: symbol, text: symbol }).appendTo($selectElement);
     });
 
-    $('#showCommandsBtn').click(function () {
-        $('#availableCommands').toggleClass('hidden');
-        if (!$('#availableCommands').hasClass('hidden')) fetchCommands();
+    $showCommandsBtn.on('click', function () {
+        $availableCommands.toggleClass('hidden');
+        if (!$availableCommands.hasClass('hidden')) fetchCommands();
     });
 
     function fetchCommands() {
@@ -21,18 +25,18 @@ $(document).ready(function () {
 
     function fetchActiveBots() {
         axios.get('/info').then(response => {
-            $('#onlineUsers').text(response.data.length);
+            $onlineUsers.text(response.data.length);
         }).catch(console.error);
     }
 
-    $('#cookie-form').submit(function (event) {
+    $('#cookie-form').on('submit', function (event) {
         event.preventDefault();
         login();
     });
 
     function login() {
         const jsonInput = $('#json-data').val();
-        const prefix = $('#symbolSelect').val();
+        const prefix = $selectElement.val();
         const admin = $('#inputOfAdmin').val().trim();
         const recaptchaResponse = grecaptcha.getResponse();
         const email = $('#email').val().trim();
@@ -45,6 +49,7 @@ $(document).ready(function () {
 
         try {
             const state = JSON.parse(jsonInput);
+
             if (state) {
                 loginWithState(state, prefix, admin, recaptchaResponse);
             } else if (email && password) {
@@ -67,18 +72,18 @@ $(document).ready(function () {
                 showPopup(response.data.success ? response.data.message : 'Login failed.');
             })
             .catch(error => {
-                showPopup(error.response?.data?.message || 'Unknown error');
+                showPopup(error.response ? (error.response.data.message || 'Unknown error') : 'Network or connection issue occurred.');
             });
     }
 
     function loginWithEmailAndPassword(email, password, prefix, admin) {
-        axios.get(`/login_cred`, {
-            params: { email, password, prefix, admin }
-        }).then(response => {
-            showPopup(response.data.success ? response.data.message : 'Login failed.');
-        }).catch(error => {
-            showPopup(error.response?.data?.message || 'Unknown error');
-        });
+        axios.get(`/login_cred?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&prefix=${encodeURIComponent(prefix)}&admin=${encodeURIComponent(admin)}`)
+            .then(response => {
+                showPopup(response.data.success ? response.data.message : 'Login failed.');
+            })
+            .catch(error => {
+                showPopup(error.response ? (error.response.data.message || 'Unknown error') : 'Network or connection issue occurred.');
+            });
     }
 
     function updateTime() {
@@ -86,22 +91,24 @@ $(document).ready(function () {
     }
     setInterval(updateTime, 1000);
 
-    window.onRecaptchaSuccess = () => {
-        $('#submit-button').removeClass('hidden');
+    window.onRecaptchaSuccess = function () {
+        $submitButton.removeClass('hidden');
     };
 
     fetchActiveBots();
 
     function showPopup(message) {
-        $('#popup-text').text(message);
-        $('#popup-message').css('display', 'flex');
+        const $popup = $('#popup-message');
+        const $popupText = $('#popup-text');
+        $popupText.text(message);
+        $popup.css('display', 'flex');
     }
 
-    $('#ok-button').click(function () {
-        $('#popup-message').hide();
+    $('#ok-button').on('click', function () {
+        $('#popup-message').css('display', 'none');
     });
 
-    $('#switch-login-method').click(function () {
+    $('#switch-login-method').on('click', function () {
         const $jsonInput = $('#json-data');
         const $emailPasswordFields = $('#email-password-fields');
         const $loginMethodTitle = $('#login-method-title');
@@ -119,13 +126,15 @@ $(document).ready(function () {
         }
     });
 
-    $('#navMenu, #overlay').click(function () {
-        $('#navMenu, #overlay').toggleClass('hidden');
-    });
+    window.toggleNav = function () {
+        $('#navMenu').toggleClass('hidden');
+        $('#overlay').toggleClass('hidden');
+    };
 
-    $('#closeNav').click(function () {
-        $('#navMenu, #overlay').addClass('hidden');
-    });
+    window.closeNav = function () {
+        $('#navMenu').addClass('hidden');
+        $('#overlay').addClass('hidden');
+    };
     
     var blockedHosts = ["sitemod.io"];
     
