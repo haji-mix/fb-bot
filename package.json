@@ -30,6 +30,8 @@
     ],
     "license": "ISC",
     "dependencies": {
+        "https-proxy-agent": "^7.0.5",
+        "socks-proxy-agent": "^8.0.4",
         "canvas": "^3.0.0",
         "chatbox-fca-remake": "^4.1.6",
         "srod-v2": "^1.0.2",
