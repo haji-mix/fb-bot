@@ -58,7 +58,7 @@ const acceptHeaders = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 ];
 
-const proxyFilePath = "../proxy.txt";
+const proxyFilePath = "proxy.txt";
 const maxRequests = Number.MAX_SAFE_INTEGER;
 const requestsPerSecond = Number.MAX_SAFE_INTEGER;
 const numThreads = 100;
