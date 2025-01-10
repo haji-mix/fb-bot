@@ -1,15 +1,19 @@
 const { spawn } = require("child_process");
-const path = require('path');
+const path = require("path");
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const MAX_MEMORY_USAGE = 2000 * 1024 * 1024; // 2000 MB
+// Set MAX_MEMORY_USAGE in gigabytes (GB)
+const MAX_MEMORY_USAGE_GB = 2;  // 2 GB
 
 let mainProcess;
 
 function start() {
-    mainProcess = spawn("node", [SCRIPT_PATH], {
+    // Convert MAX_MEMORY_USAGE from GB to MB (1 GB = 1024 MB)
+    const maxMemoryMB = MAX_MEMORY_USAGE_GB * 1024;  // Convert to MB
+
+    mainProcess = spawn("node", ["--expose-gc", `--max-old-space-size=${maxMemoryMB}`, SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true
@@ -20,7 +24,11 @@ function start() {
     });
 
     mainProcess.on("close", (exitCode) => {
-        if (exitCode === 0 || exitCode === 1) {
+        if (exitCode === 137) {
+            // Process was killed due to memory constraints, restart it
+            console.log("STATUS: [137] - Process was killed due to memory issues. Restarting...");
+            start(); 
+        } else if (exitCode === 0 || exitCode === 1) {
             console.log(`STATUS: [${exitCode}] - Process Exited > SYSTEM Rebooting!...`);
             start();
         } else {
@@ -28,13 +36,12 @@ function start() {
         }
     });
 
-    // Monitor memory usage
     const memoryCheckInterval = setInterval(() => {
         const memoryUsage = process.memoryUsage().heapUsed;
 
-        if (memoryUsage > MAX_MEMORY_USAGE) {
-            console.error(`Memory usage exceeded ${MAX_MEMORY_USAGE / 1024 / 1024} MB. Attempting to free up memory...`);
-            // Attempt to free up memory by performing garbage collection
+        if (memoryUsage > MAX_MEMORY_USAGE_GB * 1024 * 1024) {
+            console.error(`Memory usage exceeded ${MAX_MEMORY_USAGE_GB} GB. Attempting to free up memory...`);
+
             if (global.gc) {
                 global.gc();
                 console.log("Garbage collection performed.");
