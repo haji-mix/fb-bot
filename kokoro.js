@@ -517,8 +517,14 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 console.error(error, userid)
                                 process.exit(1);
                             }
+                            if (error.error === "Not logged in") {
+                                            
+                        Utils.account.delete(userid);
+                        deleteThisUser(userid);
+
+                        return;
+                            }
                             console.error(error);
-                            process.exit(1);
                         }
 
                         const chat = new OnChat(api, event);
@@ -940,7 +946,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                     }
                             });
                     } catch (error) {
-                        console.error("Error during API listen, outside of listen" + userid);
                         Utils.account.delete(userid);
                         deleteThisUser(userid);
 
