@@ -15,10 +15,11 @@ module.exports["config"] = {
 
 const userActivity = new Map();
 
+const timeFrame = 30000; // 30 seconds
+    const maxLinks = 3; // Max allowed links per timeframe
+
 const checkSpam = (userId) => {
     const now = Date.now();
-    const timeFrame = 30000; // 30 seconds
-    const maxLinks = 3; // Max allowed links per timeframe
 
     if (!userActivity.has(userId)) {
         userActivity.set(userId, [now]);
