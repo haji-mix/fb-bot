@@ -524,7 +524,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         return;
                             }
-                            console.error(error);
                         }
 
                         const chat = new OnChat(api, event);
@@ -532,9 +531,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         try {
 
-                            if (event.senderID && event.body) {
+                            if (event.senderID && event?.body) {
 
-                                chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${event.body}`));
+                                chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${event?.body}`));
                             }
                         } catch (error) {
                             chat.log("ACCOUNT HAS BEEN LOGOUT FOR A REASON.");
