@@ -5,7 +5,7 @@ const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 // Set MAX_MEMORY_USAGE in gigabytes (GB)
-const MAX_MEMORY_USAGE_GB = 2;  // 2 GB
+const MAX_MEMORY_USAGE_GB = 20;  // 2 GB
 
 let mainProcess;
 
