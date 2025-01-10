@@ -26,10 +26,10 @@ function start() {
         } else if (exitCode === 1) {
             console.log(`ERROR: [${exitCode}] - System Rebooting!...`);
             start();
-        } else if (exitCode === 137) {
+        } else /*if (exitCode === 137) {
             console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
             start();
-        } else {
+        } else*/ {
             console.error(`[${exitCode}] - Process Exited!`);
         }
     });
