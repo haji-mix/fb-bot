@@ -544,44 +544,45 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
 
                         const SPAM_THRESHOLD = 6;
-                        
                         const TIME_WINDOW = 10 * 1000;
 
                         if (event.body && event.senderID) {
                             const userId = event.senderID;
-                            const message = event.body.trim(); // Message content
+                            const message = event.body.trim();
                             const currentTime = Date.now();
 
-                            // Initialize user activity for this user if not present
                             if (!Utils.userActivity[userId]) {
-                                Utils.userActivity[userId] = [];
+                                Utils.userActivity[userId] = {
+                                    messages: [],
+                                    warned: false
+                                };
                             }
 
-                            // Clean up messages older than the time window
-                            Utils.userActivity[userId] = Utils.userActivity[userId].filter(
+                            Utils.userActivity[userId].messages = Utils.userActivity[userId].messages.filter(
                                 (msg) => currentTime - msg.timestamp <= TIME_WINDOW
                             );
 
                             // Add the new message
-                            Utils.userActivity[userId].push({
-                                message, timestamp: currentTime
+                            Utils.userActivity[userId].messages.push({
+                                message,
+                                timestamp: currentTime
                             });
 
                             // Check for spam
-                            const recentMessages = Utils.userActivity[userId].map((msg) => msg.message);
+                            const recentMessages = Utils.userActivity[userId].messages.map((msg) => msg.message);
                             const repeatedMessages = recentMessages.filter((msg) => msg === message);
 
                             if (repeatedMessages.length >= SPAM_THRESHOLD) {
-                                // If spam detected
                                 if (!Utils.userActivity[userId].warned) {
-                                    reply(`Warning to ${userId}: Please stop spamming!`);
+                                    reply(`Warning to userID: ${userId} Please stop spamming!`);
                                     Utils.userActivity[userId].warned = true; // Warn the user only once
                                 }
-                                return;
+                                return; // Ignore further reactions
                             }
 
                             Utils.userActivity[userId].warned = false;
                         }
+
 
 
 
