@@ -18,7 +18,7 @@ module.exports["config"] = {
 
 const {
     generateUserAgent
-} = require('./system/useragent.js');
+} = require('../system/useragent.js');
 
 
 const langHeader = [
