@@ -13,6 +13,25 @@ module.exports["config"] = {
     credits: "Hutchin (optimized by Kenneth Panio)"
 };
 
+const userActivity = new Map();
+
+const checkSpam = (userId) => {
+    const now = Date.now();
+    const timeFrame = 30000; // 30 seconds
+    const maxLinks = 3; // Max allowed links per timeframe
+
+    if (!userActivity.has(userId)) {
+        userActivity.set(userId, [now]);
+        return false;
+    }
+
+    const timestamps = userActivity.get(userId).filter((ts) => now - ts <= timeFrame);
+    timestamps.push(now);
+    userActivity.set(userId, timestamps);
+
+    return timestamps.length > maxLinks;
+};
+
 const streamFile = async (url, chat) => {
     const { data } = await axios.get(url, { responseType: 'stream' });
     chat.reply({ attachment: data });
@@ -66,6 +85,8 @@ const handleFacebook = async (link, chat, mono) => {
 module.exports["handleEvent"] = async ({ chat, event, font }) => {
     const mono = (txt) => font.monospace(txt);
     const message = event.body;
+    const userId = event.senderID;
+
     if (!message) return;
 
     const apiKey = 'AIzaSyCYUPzrExoT9f9TsNj7Jqks1ZDJqqthuiI';
@@ -76,7 +97,6 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
         youtube: /https:\/\/(www\.)?(youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)/g
     };
 
-    // Collect links for batch processing
     const links = [];
     for (const [key, regex] of Object.entries(regexPatterns)) {
         let match;
@@ -85,8 +105,14 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
         }
     }
 
-    if (links.length === 0) return; 
-    const limitedLinks = links.slice(0, 3);
+    if (links.length === 0) return;
+
+    if (checkSpam(userId)) {
+        chat.reply(mono("You are sending too many links in a short period. Please slow down."));
+        return;
+    }
+
+    const limitedLinks = links.slice(0, maxLinks);
 
     for (const { type, link } of limitedLinks) {
         try {
