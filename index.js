@@ -20,16 +20,10 @@ function start() {
     });
 
     mainProcess.on("close", (exitCode) => {
-        if (exitCode === 0) {
+        if (exitCode === 0 || exitCode === 1) {
             console.log(`STATUS: [${exitCode}] - Process Exited > SYSTEM Rebooting!...`);
             start();
-        } else if (exitCode === 1) {
-            console.log(`ERROR: [${exitCode}] - System Rebooting!...`);
-            start();
-        } else /*if (exitCode === 137) {
-            console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
-            start();
-        } else*/ {
+        } else {
             console.error(`[${exitCode}] - Process Exited!`);
         }
     });
@@ -37,15 +31,15 @@ function start() {
     // Monitor memory usage
     const memoryCheckInterval = setInterval(() => {
         const memoryUsage = process.memoryUsage().heapUsed;
-        /*  console.log(`Current memory usage: ${(memoryUsage / 1024 / 1024).toFixed(2)} MB`);*/
 
         if (memoryUsage > MAX_MEMORY_USAGE) {
-            console.error(`Memory usage exceeded ${MAX_MEMORY_USAGE / 1024 / 1024} MB. Restarting server...`);
-
-            // Graceful shutdown procedure
-            if (mainProcess && mainProcess.pid) {
-                mainProcess.kill('SIGTERM');
-                clearInterval(memoryCheckInterval);
+            console.error(`Memory usage exceeded ${MAX_MEMORY_USAGE / 1024 / 1024} MB. Attempting to free up memory...`);
+            // Attempt to free up memory by performing garbage collection
+            if (global.gc) {
+                global.gc();
+                console.log("Garbage collection performed.");
+            } else {
+                console.warn("Garbage collection is not exposed. Consider running Node.js with --expose-gc.");
             }
         }
     }, 5000);
@@ -54,7 +48,7 @@ function start() {
 function gracefulShutdown() {
     console.log("Starting graceful shutdown...");
     if (mainProcess && mainProcess.pid) {
-        mainProcess.kill('SIGTERM');
+        process.kill(mainProcess.pid, 'SIGTERM');
     }
 }
 
