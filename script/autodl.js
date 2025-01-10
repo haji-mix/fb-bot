@@ -108,7 +108,8 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
     if (links.length === 0) return;
 
     if (checkSpam(userId)) {
-        chat.reply(mono("You are sending too many links in a short period. Please slow down."));
+       const checksp = await chat.reply(mono("You are sending too many links in a short period. Please slow down."));
+       checksp.unsend(10000);
         return;
     }
 
