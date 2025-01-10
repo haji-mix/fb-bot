@@ -441,10 +441,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-            const userInfo = await api.getUserInfo(userid);
+      //      const userInfo = await api.getUserInfo(userid);
 
             try {
-                if (
+   /*             if (
                     !userInfo ||
                     !userInfo[userid]?.name ||
                     !userInfo[userid]?.profileUrl ||
@@ -457,7 +457,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     name,
                     profileUrl,
                     thumbSrc
-                } = userInfo[userid];
+                } = userInfo[userid];*/
+                
                 let time = (
                     JSON.parse(
                         fs.readFileSync("./data/history.json", "utf-8")
@@ -465,7 +466,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 ).time || 0;
 
                 Utils.account.set(userid, {
-                    name,
+                    name: "Anonymous",
                     profileUrl: profileUrl.replace(/profile.php\?id=/g, ''),
                     thumbSrc: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
                     time: time,
