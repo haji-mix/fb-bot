@@ -6,6 +6,7 @@ const HttpsProxyAgent = require("https-proxy-agent");
 module.exports["config"] = {
     name: "ddos",
     type: "tools",
+    role: 3,
     isPrefix: true,
     aliases: ["flood"],
     info: "Perform DDOS ATTACK on a target URL for testing purposes.",
