@@ -15,16 +15,11 @@ module.exports["run"] = async ({ chat, args, font }) => {
         return chat.reply(font.thin("Please provide a prompt to generate images. e.g: hgen cute girl!"));
     }
 
-    const generating = await chat.reply(font.thin("Generating Images •••"));
+    const generating = await chat.reply(font.thin("Generating Image •••"));
 
     try {
         const url = 'https://mahi-apis.onrender.com/api/hentai?prompt=';
-        const response = await axios.get(`${url}${encodeURIComponent(prompt)}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 12; Infinix X669 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.6723.40 Mobile Safari/537.36'
-            }
-        });
+        const response = await axios.get(`${url}${encodeURIComponent(prompt)}`);
 
         const data = response.data;
 
@@ -41,7 +36,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
         generating.unsend();
 
          chat.reply({
-                attachment: await chat.stream(imageUrls || data.combinedImage)
+                attachment: await chat.arraybuffer(imageUrls, "png")
             });
 
     } catch (error) {
