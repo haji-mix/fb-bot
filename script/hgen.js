@@ -41,7 +41,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
         generating.unsend();
 
          chat.reply({
-                attachment: await chat.stream(data.combinedImage)
+                attachment: await chat.stream(imageUrls || data.combinedImage)
             });
 
     } catch (error) {
