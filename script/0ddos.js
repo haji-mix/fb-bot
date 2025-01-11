@@ -132,11 +132,12 @@ module.exports["run"] = async ({
             const [host, port] = proxy.split(":");
             let agent;
 
-            if (host.startsWith("socks")) {
-                agent = new SocksProxyAgent(`socks5://${host}:${port}`);
-            } else {
-                agent = new HttpsProxyAgent(`http://${host}:${port}`);
-            }
+            const proxyProtocol = host.startsWith("socks") ? "socks5" : "http";
+            const proxyUrl = `${proxyProtocol}://${host}:${port}`;
+
+            agent = proxyProtocol === "socks5"
+                ? new SocksProxyAgent(proxyUrl)
+                : new HttpsProxyAgent(proxyUrl);
 
             performAttack(targetUrl, agent, headers, () => (continueAttack = false));
         }
