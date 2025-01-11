@@ -91,6 +91,15 @@ const loadProxies = () => {
     }
 };
 
+const checkIfUrlExists = async (url) => {
+    try {
+        const response = await axios.head(url);
+        return response.status === 200;
+    } catch {
+        return false;
+    }
+};
+
 const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion) => {
     if (!continueAttack) return;
 
@@ -137,6 +146,11 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
     if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
         return chat.reply(font.thin("Invalid URL. Please provide a valid URL starting with http:// or https://"));
+    }
+
+    const urlExists = await checkIfUrlExists(targetUrl);
+    if (!urlExists) {
+        return chat.reply(font.thin("URL does not exist or is unreachable."));
     }
 
     const proxies = loadProxies();
