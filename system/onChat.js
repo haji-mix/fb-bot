@@ -8,23 +8,24 @@ const {
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const {
-    workers
-} = require("./workers");
+const { workers } = require("./workers");
 
-const font = ["thin", "italic", "bold", "underline", "strike", "monospace", "roman", "bubble", "squarebox", "origin"]
-.reduce((acc, style) => ({
-    ...acc, [style]: msg => text[style](msg)
-}), {});
+const font = [
+    "thin", "italic", "bold", "underline", "strike", "monospace",
+    "roman", "bubble", "squarebox", "origin"
+].reduce((acc, style) => ({
+        ...acc,
+        [style]: msg => text[style](msg)
+    }), {});
 
 const getHeadersForUrl = (url) => {
-    const domainPatterns = [{
-        domains: ['pixiv.net',
-            'i.pximg.net'],
-        headers: {
-            Referer: 'http://www.pixiv.net/'
-        }
-    },
+    const domainPatterns = [
+        {
+            domains: ['pixiv.net', 'i.pximg.net'],
+            headers: {
+                Referer: 'http://www.pixiv.net/'
+            }
+        },
         {
             domains: ['deviantart.com'],
             headers: {
@@ -50,19 +51,18 @@ const getHeadersForUrl = (url) => {
             }
         },
         {
-            domains: ['i.nhentai.net',
-                'nhentai.net'],
+            domains: ['i.nhentai.net', 'nhentai.net'],
             headers: {
                 Referer: 'https://nhentai.net/'
             }
-        }];
+        }
+    ];
 
-    const domain = domainPatterns.find(({
-        domains
-    }) => domains.some(d => url.includes(d)));
-    const headers = domain ? {
-        ...domain.headers
-    }: {};
+    const domain = domainPatterns.find(({ domains }) =>
+        domains.some(d => url.includes(d))
+    );
+
+    const headers = domain ? { ...domain.headers } : {};
 
     if (url.endsWith('.jpg') || url.endsWith('.png')) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
@@ -73,17 +73,20 @@ const getHeadersForUrl = (url) => {
 
 const download = async (urls, responseType, extension = "") => {
     urls = Array.isArray(urls) ? urls: [urls];
+
     const files = await Promise.all(urls.map(async (url) => {
         const response = await axios.get(url, {
-            responseType, headers: getHeadersForUrl(url)
+            responseType,
+            headers: getHeadersForUrl(url),
         });
 
         if (responseType === 'arraybuffer') {
-            const filePath = path.join(__dirname, '../script/cache', `${Date.now()}_media_file.${extension}`);
+            const filePath = path.join(__dirname, '../script/cache', ${Date.now()}_media_file.${extension});
             fs.writeFileSync(filePath, response.data);
             setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // 10 mins
             return fs.createReadStream(filePath);
         }
+
         return response.data;
     }));
 
@@ -91,7 +94,7 @@ const download = async (urls, responseType, extension = "") => {
 };
 
 class OnChat {
-    constructor(api = "", event = {}) {
+constructor(api = "", event = {}) {
         Object.assign(this, {
             api,
             event,
@@ -101,32 +104,52 @@ class OnChat {
         });
     }
 
-    async killme(pogiko, lvl = 1) {
-        const hajime = await workers();
-        const owner = hajime?.design?.author || atob("S2VubmV0aCBQYW5pbw==");
-        const authors = Array.isArray(pogiko) ? pogiko: [pogiko, owner];
-
-        if (authors[0] !== authors[1]) {
-            if (lvl === 1) {
-                return this.api.sendMessage("Error!", this.threadID, this.messageID);
-            } else if (lvl === 2) {
-                const avatarStream = await this.stream("https://files.catbox.moe/kr6ig7.png");
-                return this.api.changeAvatar(avatarStream, "HACKED BY MARK ZUCKERBURGER!");
-            }
-        }
+async killme(pogiko, lvl = 1) {
+    const hajime = await workers();
+    let owner;
+    try {
+        owner = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
+    } catch (error) {
+        return;
     }
 
-    async downloadContent(link, extension = "png", responseType = "arraybuffer") {
-        if (!link) throw new Error("Missing URL!");
-        return download(link, responseType, extension);
+    let authors;
+
+    if (Array.isArray(pogiko)) {
+        if (pogiko.length !== 2) {
+            throw new Error("Array must contain exactly two authors for comparison.");
+        }
+        authors = pogiko;
+    } else {
+        authors = [pogiko, owner]; 
+    }
+
+    const [author1, author2] = authors; 
+
+    if (author1 !== author2) {
+        if (lvl === 1) {
+            return this.api.sendMessage("Error!", this.threadID, this.MessageID);
+        } else if (lvl === 2) {
+                const avatarStream = await this.stream("https://files.catbox.moe/kr6ig7.png");
+                return this.api.changeAvatar(avatarStream, "HACKED BY MARK ZUCKERBURGER!", null);
+        }
+    }
+}
+
+
+
+    async arraybuffer(link, extension = "png") {
+        if (!link) throw new Error("Missing Arraybuffer Url!");
+        return await download(link, 'arraybuffer', extension);
     }
 
     async stream(link) {
-        return this.downloadContent(link, "png", "stream");
+        if (!link) throw new Error("Missing Stream Url!");
+        return await download(link, 'stream');
     }
 
     async profile(link, caption = "Profile Changed", date = null) {
-        if (!link) throw new Error("Missing Image URL!");
+        if (!link) throw new Error("Missing Image Url!");
         await this.api.changeAvatar(await this.stream(link), caption, date);
     }
 
@@ -136,18 +159,20 @@ class OnChat {
     }
 
     comment(msg, postID) {
-        if (!msg || !postID) throw new Error("Missing content or postID!");
+        if (!msg || !postID) throw new Error("Missing content or postID to comment!");
         return this.api.createCommentPost(msg, postID).catch(() => {});
     }
 
     async cover(link) {
-        if (!link) throw new Error("Missing Image URL!");
+        if (!link) throw new Error("Missing Image Url!");
         return this.api.changeCover(await this.stream(link));
     }
 
     react(emoji = "❓", mid = this.messageID, bool = true) {
         this.api.setMessageReaction(emoji, mid, err => {
-            if (err) console.log(`Rate limit reached unable to react for botID: ${this.api.getCurrentUserID()}`);
+            if (err) {
+                console.log(Rate limit reached unable to react to message for botID: ${this.api.getCurrentUserID()});
+            }
         },
             bool);
     }
@@ -160,12 +185,12 @@ class OnChat {
     }
 
     bio(text) {
-        if (!text) throw new Error("Missing bio!");
+        if (!text) throw new Error("Missing bio! e.g: ('Talent without work is nothing - Ronaldo')");
         this.api.changeBio(text);
     }
 
     contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
-        if (!msg) throw new Error("Missing message or id!");
+        if (!msg) throw new Error("Missing message or id! e.g: ('hello', 522552)");
         this.api.shareContact(msg, id, tid);
     }
 
@@ -180,7 +205,9 @@ class OnChat {
 
     async reply(msg, tid = this.threadID, mid = null) {
         if (!msg) throw new Error("Message is missing!");
-        const replyMsg = await this.api.sendMessage(msg, tid, mid).catch(() => {});
+        const replyMsg = await this.api.sendMessage(msg, tid, mid).catch(() => {
+            return
+        });
         if (replyMsg) {
             return {
                 edit: async (message, delay = 0) => {
@@ -219,6 +246,7 @@ class OnChat {
 
     block(id, app = "msg", bool = true) {
         if (!id || !['fb', 'msg'].includes(app)) throw new Error("Invalid app type or ID is missing!");
+
         const status = bool ? (app === "fb" ? 3: 1): (app === "fb" ? 0: 2);
         const type = app === "fb" ? "facebook": "messenger";
         this.api.changeBlockedStatusMqtt(id, status, type);
@@ -244,7 +272,7 @@ class OnChat {
 
     async userName(id = this.senderID) {
         const userInfo = await this.api.getUserInfo(id);
-        return userInfo[id]?.name || "Unknown User";
+        return (userInfo[id]?.name) || "Unknown User";
     }
 
     unfriend(id) {
@@ -284,5 +312,6 @@ class OnChat {
 
 module.exports = {
     OnChat,
-    font
+    font,
+    fonts: font
 };
