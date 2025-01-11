@@ -73,6 +73,10 @@ const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
+function sanitizeUA(userAgent) {
+    return userAgent.replace(/[^\x20-\x7E]/g, "");
+}
+
 const loadProxies = () => {
     try {
         return fs.readFileSync(proxyFilePath, "utf-8").split("\n").map((line) => line.trim());
@@ -119,6 +123,7 @@ module.exports["run"] = async ({
     }
 
     const headers = {
+        "User-Agent": sanitizeUA(generateUserAgent()),
         "Accept": getRandomElement(acceptHeaders),
         "Accept-Language": getRandomElement(langHeaders),
         "Cache-Control": getRandomElement(cipherSuites),
