@@ -78,7 +78,7 @@ const userAgents = () => {
     try {
         return fs.readFileSync(ualist, "utf-8").split("\n").map(line => line.trim());
     } catch (error) {
-        console.error(Failed to read user agent list: ${error});
+        console.error(`Failed to read user agent list: ${error}`);
         return [];
     }
 };
