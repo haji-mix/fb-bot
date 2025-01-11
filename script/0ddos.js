@@ -174,7 +174,7 @@ module.exports.run = async ({
     };
 
     for (let i = 0; i < numThreads; i++) {
-        if (!continueAttack) break;
+        if (!continueAttack) return;
 
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
