@@ -1,6 +1,6 @@
 {
     "name": "chatbox-fca-remake",
-    "version": "4.2.2",
+    "version": "4.2.3",
     "description": "Unofficial Facebook Chat API",
     "main": "index.js",
     "scripts": {
