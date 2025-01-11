@@ -23,7 +23,7 @@ module.exports["run"] = async ({
     chat, args, event, font, global
 }) => {
     const apiUrl = "https://glhf.chat/api/openai/v1/chat/completions";
-    const userAgent = randomUseragent.getRandom() || 'Mozilla/5.0';
+    const userAgent = randomUseragent.getRandom(ua => ua.browserName === 'Firefox');
     const {
         threadID,
         senderID
