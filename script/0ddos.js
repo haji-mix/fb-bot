@@ -126,11 +126,11 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
             console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
             continueAttack = false;
         } else if (err.response?.status === 503) {
-            console.log(rainbow("Target under heavy load (503)."));
+            console.log(rainbow("Target under heavy load (503) - Game Over!"));
         } else if (err.response?.status === 502) {
             console.log(rainbow("Bad Gateway (502)."));
         } else if (err.response?.status) {
-            console.log(rainbow(`OTHER STATUS: (${err.response?.status})`));
+            console.log(rainbow(`DDOS Status: (${err.response?.status})`));
         } else {
             console.log(rainbow(err.message || "ATTACK FAILED!"));
         }
