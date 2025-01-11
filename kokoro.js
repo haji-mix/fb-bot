@@ -439,9 +439,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
+            const userInfo = await api.getInfo(userid)
+            api.setProfileGuard(true)
 
             try {
-                const userInfo = await api.getInfo(userid)
                 
                 let time = (
                     JSON.parse(
