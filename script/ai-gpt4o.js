@@ -21,7 +21,7 @@ const conversationHistories = {};
 
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const apiUrl = "https://api.eduide.cc/v1/chat/completions";
-  const userAgent = randomUseragent.getRandom() || 'Mozilla/5.0';
+  const userAgent = randomUseragent.getRandom(ua => ua.browserName === 'Firefox');
   const { threadID, senderID } = event;
   const query = args.join(" ");
 

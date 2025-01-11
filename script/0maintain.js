@@ -9,7 +9,7 @@ module.exports["config"] = {
   credits: "Markdevs69",
   info: "Turn on/off Maintenance mode.",
   type: "Admin",
-  usages: "[on/off]",
+  usage: "[on/off]",
   cd: 5,
 };
 

