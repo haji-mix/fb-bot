@@ -103,7 +103,6 @@ module.exports.run = async ({
     }
 
     const answering = await chat.reply(mono("Generating response..."));
-    chat.killme(module.exports.config.credits, 2);
 
     try {
         const response = await queryOperaAPI(prompt, event.senderID);

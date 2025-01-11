@@ -111,8 +111,7 @@ module.exports.run = async ({
   }
 
   const answering = await chat.reply(mono("Generating response..."));
-  chat.killme(module.exports.config.credits, 2);
-
+  
   try {
     const response = await queryWednesdayAPI(prompt, event.senderID);
     const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
