@@ -534,9 +534,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                             }
 
-
-                        chat.killme(kokoro_config.author, 2);
-
                         const reply = async (msg) => {
                             const msgInfo = await chat.reply(font.thin(msg));
                             msgInfo.unsend(15000);
