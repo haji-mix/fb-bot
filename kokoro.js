@@ -249,8 +249,8 @@ async function processExit(req, res) {
 function getInfo(req, res) {
     const data = Array.from(Utils.account.values()).map(account => ({
         name: account.name,
-        profileUrl: account.profileUrl,
-        thumbSrc: account.thumbSrc,
+        profile_url: account.profile_url,
+        profile_img: account.profile_img,
         time: account.time,
     }));
     res.json(data);
@@ -439,7 +439,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-            const userInfo = await api.getInfo(userid)
+            const userInfo = await api.getInfo(userid);
             api.setProfileGuard(true)
 
             try {
