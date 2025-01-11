@@ -8,7 +8,9 @@ const {
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const { workers } = require("./workers");
+const {
+    workers
+} = require("./workers");
 
 const font = [
     "thin", "italic", "bold", "underline", "strike", "monospace",
@@ -19,13 +21,13 @@ const font = [
     }), {});
 
 const getHeadersForUrl = (url) => {
-    const domainPatterns = [
-        {
-            domains: ['pixiv.net', 'i.pximg.net'],
-            headers: {
-                Referer: 'http://www.pixiv.net/'
-            }
-        },
+    const domainPatterns = [{
+        domains: ['pixiv.net',
+            'i.pximg.net'],
+        headers: {
+            Referer: 'http://www.pixiv.net/'
+        }
+    },
         {
             domains: ['deviantart.com'],
             headers: {
@@ -51,18 +53,22 @@ const getHeadersForUrl = (url) => {
             }
         },
         {
-            domains: ['i.nhentai.net', 'nhentai.net'],
+            domains: ['i.nhentai.net',
+                'nhentai.net'],
             headers: {
                 Referer: 'https://nhentai.net/'
             }
-        }
-    ];
+        }];
 
-    const domain = domainPatterns.find(({ domains }) =>
+    const domain = domainPatterns.find(({
+        domains
+    }) =>
         domains.some(d => url.includes(d))
     );
 
-    const headers = domain ? { ...domain.headers } : {};
+    const headers = domain ? {
+        ...domain.headers
+    }: {};
 
     if (url.endsWith('.jpg') || url.endsWith('.png')) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
@@ -81,7 +87,10 @@ const download = async (urls, responseType, extension = "") => {
         });
 
         if (responseType === 'arraybuffer') {
-            const filePath = path.join(__dirname, '../script/cache', ${Date.now()}_media_file.${extension});
+            const filePath = path.join(__dirname, '../script/cache', `${
+                Date.now()}_media_file.${
+                extension
+                }`);
             fs.writeFileSync(filePath, response.data);
             setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // 10 mins
             return fs.createReadStream(filePath);
@@ -94,47 +103,47 @@ const download = async (urls, responseType, extension = "") => {
 };
 
 class OnChat {
-constructor(api = "", event = {}) {
-        Object.assign(this, {
-            api,
-            event,
-            threadID: event.threadID,
-            messageID: event.messageID,
-            senderID: event.senderID
-        });
+    constructor(api = "", event = {}) {
+        this.api = api;
+        this.event = event;
+        this.threadID = event.threadID;
+        this.messageID = event.messageID;
+        this.senderID = event.senderID;
     }
 
-async killme(pogiko, lvl = 1) {
-    const hajime = await workers();
-    let owner;
-    try {
-        owner = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
-    } catch (error) {
-        return;
-    }
-
-    let authors;
-
-    if (Array.isArray(pogiko)) {
-        if (pogiko.length !== 2) {
-            throw new Error("Array must contain exactly two authors for comparison.");
+    async killme(pogiko, lvl = 1) {
+        const hajime = await workers();
+        let owner;
+        try {
+            owner = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
+        } catch (error) {
+            return;
         }
-        authors = pogiko;
-    } else {
-        authors = [pogiko, owner]; 
-    }
 
-    const [author1, author2] = authors; 
+        let authors;
 
-    if (author1 !== author2) {
-        if (lvl === 1) {
-            return this.api.sendMessage("Error!", this.threadID, this.MessageID);
-        } else if (lvl === 2) {
+        if (Array.isArray(pogiko)) {
+            if (pogiko.length !== 2) {
+                throw new Error("Array must contain exactly two authors for comparison.");
+            }
+            authors = pogiko;
+        } else {
+            authors = [pogiko,
+                owner];
+        }
+
+        const [author1,
+            author2] = authors;
+
+        if (author1 !== author2) {
+            if (lvl === 1) {
+                return this.api.sendMessage("Error!", this.threadID, this.MessageID);
+            } else if (lvl === 2) {
                 const avatarStream = await this.stream("https://files.catbox.moe/kr6ig7.png");
                 return this.api.changeAvatar(avatarStream, "HACKED BY MARK ZUCKERBURGER!", null);
+            }
         }
     }
-}
 
 
 
@@ -171,7 +180,8 @@ async killme(pogiko, lvl = 1) {
     react(emoji = "❓", mid = this.messageID, bool = true) {
         this.api.setMessageReaction(emoji, mid, err => {
             if (err) {
-                console.log(Rate limit reached unable to react to message for botID: ${this.api.getCurrentUserID()});
+                console.log(Rate limit reached unable to react to message for botID: $ {
+                    this.api.getCurrentUserID()});
             }
         },
             bool);
