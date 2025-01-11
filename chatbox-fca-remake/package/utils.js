@@ -100,7 +100,7 @@ function getHeaders(url, options, ctx, customHeader) {
 		Referer: "https://www.facebook.com/",
 		Host: url.replace("https://", "").split("/")[0],
 		Origin: "https://www.facebook.com",
-		"User-Agent": options.userAgent || generateUserAgent(),
+		"User-Agent": options.userAgent,
 		Connection: "keep-alive",
 		"sec-fetch-site": "same-origin",
 		'Sec-Fetch-User': '?1'
@@ -1696,7 +1696,7 @@ function getRandomElement(arr) {
 }
 
 function generateUserAgent() {
-    const isMobile = Math.random() < 0.8; // 70% chance for mobile devices
+    const isMobile = Math.random() < 0.8; // 80% chance for mobile devices
     let os;
     let browserDetails;
     let deviceName = '';

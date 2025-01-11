@@ -10,74 +10,78 @@ const readline = require('readline');
 const deasync = require('deasync');
 
 let checkVerified = null;
+let globalOptions = {};
 
 const defaultLogRecordSize = 100;
 log.maxRecordSize = defaultLogRecordSize;
 
-function setOptions(globalOptions, options) {
-	Object.keys(options).map(function (key) {
-		switch (key) {
-            case 'online':
-                globalOptions.online = Boolean(options.online);
-                break;
-			case 'logLevel':
-				log.level = options.logLevel;
-				globalOptions.logLevel = options.logLevel;
-				break;
-			case 'logRecordSize':
-				log.maxRecordSize = options.logRecordSize;
-				globalOptions.logRecordSize = options.logRecordSize;
-				break;
-			case 'selfListen':
-				globalOptions.selfListen = Boolean(options.selfListen);
-				break;
-			case 'selfListenEvent':
-				globalOptions.selfListenEvent = options.selfListenEvent;
-				break;
-			case 'listenEvents':
-				globalOptions.listenEvents = Boolean(options.listenEvents);
-				break;
-			case 'pageID':
-				globalOptions.pageID = options.pageID.toString();
-				break;
-			case 'updatePresence':
-				globalOptions.updatePresence = Boolean(options.updatePresence);
-				break;
-			case 'forceLogin':
-				globalOptions.forceLogin = Boolean(options.forceLogin);
-				break;
-			case 'userAgent':
-				globalOptions.userAgent = options.userAgent;
-				break;
-			case 'autoMarkDelivery':
-				globalOptions.autoMarkDelivery = Boolean(options.autoMarkDelivery);
-				break;
-			case 'autoMarkRead':
-				globalOptions.autoMarkRead = Boolean(options.autoMarkRead);
-				break;
-			case 'listenTyping':
-				globalOptions.listenTyping = Boolean(options.listenTyping);
-				break;
-			case 'proxy':
-				if (typeof options.proxy != "string") {
-					delete globalOptions.proxy;
-					utils.setProxy();
-				} else {
-					globalOptions.proxy = options.proxy;
-					utils.setProxy(globalOptions.proxy);
-				}
-				break;
-			case 'autoReconnect':
-				globalOptions.autoReconnect = Boolean(options.autoReconnect);
-				break;
-			case 'emitReady':
-				globalOptions.emitReady = Boolean(options.emitReady);
-				break;
-			default:
-				log.warn("setOptions", "Unrecognized option given to setOptions: " + key);
-				break;
-		}
-	});
+async function setOptions(globalOptions_from, options = {}) {
+  Object.keys(options).map((key) => {
+    switch (key) {
+      case 'online':
+        globalOptions_from.online = Boolean(options.online);
+        break;
+      case 'selfListen':
+        globalOptions_from.selfListen = Boolean(options.selfListen);
+        break;
+      case 'selfListenEvent':
+        globalOptions_from.selfListenEvent = options.selfListenEvent;
+        break;
+      case 'listenEvents':
+        globalOptions_from.listenEvents = Boolean(options.listenEvents);
+        break;
+      case 'pageID':
+        globalOptions_from.pageID = options.pageID.toString();
+        break;
+      case 'updatePresence':
+        globalOptions_from.updatePresence = Boolean(options.updatePresence);
+        break;
+      case 'forceLogin':
+        globalOptions_from.forceLogin = Boolean(options.forceLogin);
+        break;
+      case 'userAgent':
+        globalOptions_from.userAgent = options.userAgent;
+        break;
+      case 'autoMarkDelivery':
+        globalOptions_from.autoMarkDelivery = Boolean(options.autoMarkDelivery);
+        break;
+      case 'autoMarkRead':
+        globalOptions_from.autoMarkRead = Boolean(options.autoMarkRead);
+        break;
+      case 'listenTyping':
+        globalOptions_from.listenTyping = Boolean(options.listenTyping);
+        break;
+      case 'proxy':
+        if (typeof options.proxy != "string") {
+          delete globalOptions_from.proxy;
+          utils.setProxy();
+        } else {
+          globalOptions_from.proxy = options.proxy;
+          utils.setProxy(globalOptions_from.proxy);
+        }
+        break;
+      case 'autoReconnect':
+        globalOptions_from.autoReconnect = Boolean(options.autoReconnect);
+        break;
+      case 'emitReady':
+        globalOptions_from.emitReady = Boolean(options.emitReady);
+        break;
+      case 'randomUserAgent':
+        globalOptions_from.randomUserAgent = Boolean(options.randomUserAgent);
+        if (globalOptions_from.randomUserAgent){
+        globalOptions_from.userAgent = utils.generateUserAgent();
+        log.warn("login", "Random user agent enabled. This is an EXPERIMENTAL feature and I think this won't on some accounts. turn it on at your own risk. Contact the owner for more information about experimental features.");
+        log.warn("randomUserAgent", "UA selected:", globalOptions_from.userAgent);
+        }
+        break;
+      case 'bypassRegion':
+        globalOptions_from.bypassRegion = options.bypassRegion;
+        break;
+      default:
+        break;
+    }
+  });
+  globalOptions = globalOptions_from;
 }
 
 function updateDTSG(res, appstate = [], jar, ID) {
@@ -748,22 +752,22 @@ async function login(loginData, options, callback) {
         options = {};
     }
 
-    const globalOptions = {
-        selfListen: false,
-        listenEvents: true,
-        listenTyping: false,
-        updatePresence: true,
-        forceLogin: true,
-        autoMarkDelivery: false,
-        autoMarkRead: false,
-        autoReconnect: true,
-        logRecordSize: defaultLogRecordSize,
-        online: true,
-        emitReady: false,
-        userAgent: utils.generateUserAgent()
-    };
+const globalOptions = {
+    selfListen: false,
+    selfListenEvent: false,
+    listenEvents: true,
+    listenTyping: false,
+    updatePresence: false,
+    forceLogin: false,
+    autoMarkDelivery: false,
+    autoMarkRead: true,
+    autoReconnect: true,
+    online: true,
+    emitReady: false,
+    randomUserAgent: false
+  };
     
-    setOptions(globalOptions, options);
+    if (options) Object.assign(globalOptions, options);
 
     let prCallback = null;
     if (utils.getType(callback) !== 'Function' && utils.getType(callback) !== 'AsyncFunction') {
@@ -808,12 +812,8 @@ async function login(loginData, options, callback) {
         );
     };
 
-    try {
-        setOptions(globalOptions, options);
-        loginBox();
-    } catch (err) {
-       return callback(err);
-    }
+setOptions(globalOptions, options).then(loginBox());
+return;
 }
 
 
