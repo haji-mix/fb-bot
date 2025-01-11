@@ -760,53 +760,61 @@ async function login(loginData, options, callback) {
         logRecordSize: defaultLogRecordSize,
         online: true,
         emitReady: false,
-        userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:132.0) Gecko/20100101 Firefox/132.0"
+        userAgent: utils.generateUserAgent()
     };
-
-    setOptions(globalOptions, options);  
+    
+    setOptions(globalOptions, options);
 
     let prCallback = null;
-    if (utils.getType(callback) !== "Function" && utils.getType(callback) !== "AsyncFunction") {
-        let rejectFunc = null;
-        let resolveFunc = null;
-        var returnPromise = new Promise(function(resolve, reject) {
+    if (utils.getType(callback) !== 'Function' && utils.getType(callback) !== 'AsyncFunction') {
+        let rejectFunc, resolveFunc;
+        const returnPromise = new Promise((resolve, reject) => {
             resolveFunc = resolve;
             rejectFunc = reject;
         });
+
         prCallback = function(error, api) {
             if (error) return rejectFunc(error);
-            return resolveFunc(api);
+            resolveFunc(api);
         };
+
         callback = prCallback;
     }
-    
-const loginBox = () => {
-    loginHelper(
-        loginData?.appState,
-        loginData?.email,
-        loginData?.password,
-        globalOptions,
-        callback, {
-            hajime() {
-                loginBox();
-            }
-        },
-        (loginError, loginApi) => {
-            if (loginError) {
-                if (isBehavior) {
-                    log.warn("login", "Failed after dismiss behavior, will relogin automatically...");
-                    isBehavior = false;
+
+    const loginBox = () => {
+        loginHelper(
+            loginData?.appState,
+            loginData?.email,
+            loginData?.password,
+            globalOptions,
+            callback,
+            {
+                hajime() {
                     loginBox();
                 }
-                log.error("login", loginError);
-                return callback(loginError);
+            },
+            (loginError, loginApi) => {
+                if (loginError) {
+                    if (isBehavior) {
+                        log.warn("login", "Failed after dismiss behavior, will relogin automatically...");
+                        isBehavior = false;
+                        loginBox();
+                    }
+                    log.error("login", loginError);
+                    return callback(loginError);
+                }
+                callback(null, loginApi);
             }
-            callback(null, loginApi);
-        });
+        );
+    };
+
+    try {
+        setOptions(globalOptions, options);
+        loginBox();
+    } catch (err) {
+       return callback(err);
+    }
 }
-setOptions(globalOptions,
-    options).then(loginBox());
-return;
-}
+
 
 module.exports = login;
