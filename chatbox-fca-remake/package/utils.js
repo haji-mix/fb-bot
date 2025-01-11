@@ -100,7 +100,7 @@ function getHeaders(url, options, ctx, customHeader) {
 		Referer: "https://www.facebook.com/",
 		Host: url.replace("https://", "").split("/")[0],
 		Origin: "https://www.facebook.com",
-		"User-Agent": options.userAgent,
+		"User-Agent": options.userAgent || generateUserAgent(),
 		Connection: "keep-alive",
 		"sec-fetch-site": "same-origin",
 		'Sec-Fetch-User': '?1'

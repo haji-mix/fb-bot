@@ -425,8 +425,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 appState = api.getAppState();
             }
 
-            api.setProfileGuard(true);
-
             const facebookLinkRegex = /(?:https?:\/\/)?(?:www\.)?facebook\.com\/(?:profile\.php\?id=)?(\d+)|@(\d+)|facebook\.com\/([a-zA-Z0-9.]+)/i;
 
             let admin_uid = admin;
@@ -441,23 +439,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-      //      const userInfo = await api.getUserInfo(userid);
 
             try {
-   /*             if (
-                    !userInfo ||
-                    !userInfo[userid]?.name ||
-                    !userInfo[userid]?.profileUrl ||
-                    !userInfo[userid]?.thumbSrc
-                ) {
-                    throw new Error("Unable to locate the account; it appears to be in a temporary blocked or suspended/locked state.");
-                }
-
-                const {
-                    name,
-                    profileUrl,
-                    thumbSrc
-                } = userInfo[userid];*/
+                const userInfo = await api.getInfo(userid)
                 
                 let time = (
                     JSON.parse(
@@ -466,10 +450,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 ).time || 0;
 
                 Utils.account.set(userid, {
-                    name: "Anonymous",
+                    name: userInfo.name,
                     userid,
-                    profileUrl: "https://facebook.com/" + userid,
-                    thumbSrc: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+                    profile_url: userInfo.profile_url,
+                    profile_img: userInfo.profile_img,
                     time: time,
                     online: true
                 });
@@ -510,7 +494,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     autoMarkDelivery,
                     autoMarkRead
                 });
-
+                
                 try {
                     api.listenMqtt(async (error, event) => {
                         if (error) {

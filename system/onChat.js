@@ -246,8 +246,8 @@ class OnChat {
     }
 
     async userName(id = this.senderID) {
-        const userInfo = await this.api.getUserInfo(id);
-        return (userInfo[id]?.name) || "Unknown User";
+        const userInfo = await this.api.getInfo(id);
+        return userInfo.name || "Unknown User";
     }
 
     unfriend(id) {
