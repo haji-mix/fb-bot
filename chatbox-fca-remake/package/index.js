@@ -82,17 +82,18 @@ function setOptions(globalOptions, options) {
 
 function updateDTSG(res, appstate = [], jar, ID) {
     try {
-    let UID;
+        let UID;
 
-const appstateCUser = appstate.find(i => i.key === 'i_user') || appstate.find(i => i.key === 'c_user');
+        const appstateCUser = appstate.find(i => i.key === 'i_user') || appstate.find(i => i.key === 'c_user');
 
-if (!appstateCUser && !UID) {
-    const cookies = jar.getCookies("https://www.facebook.com");
-    const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
-    UID = userCookie ? userCookie.value : null;
-}
+        if (!appstateCUser && !UID) {
+            const cookies = jar.getCookies("https://www.facebook.com");
+            const userCookie = cookies.find(cookie => cookie.key === 'c_user' || cookie.key === 'i_user');
+            UID = userCookie ? userCookie.value : null;
+        }
 
-UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
+        UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
+
         if (!res || !res.body) {
             throw new Error("Invalid response: Response body is missing.");
         }
@@ -101,7 +102,7 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
         const jazoest = utils.getFrom(res.body, 'jazoest=', '",');
 
         if (fb_dtsg && jazoest) {
-            const filePath = 'fb_dtsg_data.json';
+            const filePath = path.join(__dirname, 'fb_dtsg_data.json');
             let existingData = {};
 
             if (fs.existsSync(filePath)) {
@@ -114,12 +115,14 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
             fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2), 'utf8');
             log.info('login', 'fb_dtsg_data.json updated successfully.');
         }
+
         return res;
     } catch (error) {
         log.error('updateDTSG', `Error updating DTSG for user ${UID}: ${error.message}`);
         return null;
     }
 }
+
 
 
 let isBehavior = false;
@@ -255,8 +258,7 @@ UID = UID || ID || (appstateCUser ? appstateCUser.value : null);
 function buildAPI(globalOptions, html, jar) {
     
     let fb_dtsg;
-   //  const fb_dtsg = utils.getFroms(html, '["DTSGInitData",[],{"token":"', '","')[0]; //my brain is not braining on here.
-    
+
     const tokenMatch = html.match(/DTSGInitialData.*?token":"(.*?)"/);
     
     if (tokenMatch) {
@@ -481,17 +483,24 @@ require('fs').readdirSync(__dirname + '/src/')
 //fix this error "Please try closing and re-opening your browser window" by automatically refreshing Fb_dtsg during midnight in Philippines.
 
 function refreshAction() {
-    const fbDtsgData = JSON.parse(fs.readFileSync('fb_dtsg_data.json', 'utf8'));
-    if (fbDtsgData && fbDtsgData[userID]) {
-        const userFbDtsg = fbDtsgData[userID];
+    try {
+        const filePath = path.join(__dirname, 'fb_dtsg_data.json');
+        const fbDtsgData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
 
-        api.refreshFb_dtsg(userFbDtsg)
-            .then(() => log.warn("login", `Fb_dtsg refreshed successfully for user ${userID}.`))
-            .catch((err) => log.error("login", `Error during Fb_dtsg refresh for user ${userID}:`, err));
-    } else {
-        log.error("login", `No fb_dtsg data found for user ${userID}.`);
+        if (fbDtsgData && fbDtsgData[userID]) {
+            const userFbDtsg = fbDtsgData[userID];
+
+            api.refreshFb_dtsg(userFbDtsg)
+                .then(() => log.warn("login", `Fb_dtsg refreshed successfully for user ${userID}.`))
+                .catch((err) => log.error("login", `Error during Fb_dtsg refresh for user ${userID}:`, err));
+        } else {
+            log.error("login", `No fb_dtsg data found for user ${userID}.`);
+        }
+    } catch (err) {
+        log.error("login", `Error reading fb_dtsg_data.json: ${err.message}`);
     }
 }
+
 
 log.info("cronjob", `fb_dtsg for ${userID} will automatically refresh at 12:00 AM in PH Time.`)
 
@@ -771,38 +780,33 @@ async function login(loginData, options, callback) {
         callback = prCallback;
     }
     
-const hajime = {
-    async relogin() {
-        return await loginBox();
-    },
-};
-
-async function loginBox() {
-    return new Promise((resolve, reject) => {
-        loginHelper(
-            loginData?.appState,
-            loginData?.email,
-            loginData?.password,
-            globalOptions,
-            callback,
-            hajime,
-            (loginError, loginApi) => {
-                if (loginError) {
-                    if (isBehavior) {
-                        log.warn("login", "Failed after dismiss behavior, will relogin automatically...");
-                        isBehavior = false;
-                        hajime.relogin().then(resolve).catch(reject);
-                    }
-                    log.error("login", loginError);
-                    return reject(loginError); 
-                }
-                resolve(loginApi);
+const loginBox = () => {
+    loginHelper(
+        loginData?.appState,
+        loginData?.email,
+        loginData?.password,
+        globalOptions,
+        callback, {
+            hajime() {
+                loginBox();
             }
-        );
-    });
+        },
+        (loginError, loginApi) => {
+            if (loginError) {
+                if (isBehavior) {
+                    log.warn("login", "Failed after dismiss behavior, will relogin automatically...");
+                    isBehavior = false;
+                    loginBox();
+                }
+                log.error("login", loginError);
+                return callback(loginError);
+            }
+            callback(null, loginApi);
+        });
 }
-  const login_result = await loginBox();
-    return login_result;
+setOptions(globalOptions,
+    options).then(loginBox());
+return;
 }
 
 module.exports = login;

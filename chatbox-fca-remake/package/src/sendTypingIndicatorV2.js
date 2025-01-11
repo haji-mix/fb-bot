@@ -3,10 +3,9 @@
 
 
 var utils = require("../utils");
-var log = require("npmlog");
 
 module.exports = function (defaultFuncs, api, ctx) {
-	return async function sendTypingIndicatorV2(sendTyping,threadID, callback) {
+	return async function sendTypingIndicatorV2(sendTyping, threadID, callback) {
 		let count_req = 0
 		var wsContent = {
 			app_id: 2220391788200892,
@@ -23,6 +22,6 @@ module.exports = function (defaultFuncs, api, ctx) {
 			request_id: ++count_req,
 			type: 4
 		};
-			await new Promise((resolve, reject) => mqttClient.publish('/ls_req', JSON.stringify(wsContent), {}, (err, _packet) => err ? reject(err) : resolve()));
+			await new Promise((resolve, reject) => ctx.mqttClient.publish('/ls_req', JSON.stringify(wsContent), {}, (err, _packet) => err ? reject(err) : resolve()));
 	};
 };

@@ -268,7 +268,7 @@ module.exports = function (defaultFuncs, api, ctx) {
         return cb(null, (res[0] || res).data.story_create.story.url);
       })
       .catch(function (err) {
-        log.error('createPost', err);
+       // log.error('createPost', err);
         return cb(err);
       });
 
