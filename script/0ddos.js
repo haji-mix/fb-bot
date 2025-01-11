@@ -93,7 +93,7 @@ const loadProxies = () => {
     }
 };
 
-const performAttack = (url, agent, headers, continueAttack, onComplete) => {
+const performAttack = (url, agent, headers, continueAttack, onComplete, chat) => {
     if (!continueAttack) return;
 
     const headersForRequest = {
@@ -163,6 +163,6 @@ module.exports["run"] = async ({
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
             }
-        });
+        }, chat);
     }
 };
