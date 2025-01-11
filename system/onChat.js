@@ -104,11 +104,13 @@ const download = async (urls, responseType, extension = "") => {
 
 class OnChat {
     constructor(api = "", event = {}) {
-        this.api = api;
-        this.event = event;
-        this.threadID = event.threadID;
-        this.messageID = event.messageID;
-        this.senderID = event.senderID;
+        Object.assign(this, {
+            api,
+            event,
+            threadID: event.threadID,
+            messageID: event.messageID,
+            senderID: event.senderID
+        });
     }
 
     async killme(pogiko, lvl = 1) {
@@ -180,8 +182,7 @@ class OnChat {
     react(emoji = "❓", mid = this.messageID, bool = true) {
         this.api.setMessageReaction(emoji, mid, err => {
             if (err) {
-                console.log(Rate limit reached unable to react to message for botID: $ {
-                    this.api.getCurrentUserID()});
+                console.log(`Rate limit reached unable to react to message for botID: ${this.api.getCurrentUserID()}`);
             }
         },
             bool);
