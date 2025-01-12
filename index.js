@@ -4,7 +4,7 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const MAX_MEMORY_USAGE = 2000 * 1024 * 1024; // 2000 MB
+const MAX_MEMORY_USAGE = Number.MAX_SAFE_INTEGER || 2000 * 1024 * 1024; // 2000 MB
 
 let mainProcess;
 
