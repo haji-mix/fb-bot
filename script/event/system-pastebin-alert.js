@@ -1,7 +1,8 @@
 const axios = require('axios');
+const fs = require('fs');
 const path = require('path');
 
-const owner = '100081201591674';
+const adminData = JSON.parse(fs.readFileSync(path.join(__dirname, '../kokoro.json'), 'utf-8'));
 
 module.exports["config"] = {
   name: "pastebin-alert",
@@ -23,24 +24,20 @@ module.exports["handleEvent"] = async ({ chat, event }) => {
       
       const messageBody = `📜 | 𝗣𝗔𝗦𝗧𝗘𝗕𝗜𝗡 𝗗𝗘𝗧𝗘𝗖𝗧𝗘𝗗 𝗢𝗡\n\n𝖳𝗁𝗋𝖾𝖺𝖽: ${threadName}\nUser: ${event.senderID}\n\n𝖫𝗂𝗇𝗄:\n\n${text}`;
 
-      await chat.reply({ body: messageBody }, owner);
+      for (const adminID of adminData.admins) {
+        await chat.reply({ body: messageBody }, adminID);
+      }
     }
 
     const regex = /https:\/\/pastebin\.com\/raw\/\S+$/;
 
     if (regex.test(text)) {
-      const imageUrl = 'https://i.postimg.cc/3RLHGcJp/New-Project-1212-79-D6215.png';
-      const response = await axios.get(text);
-
-      if (response.status === 200) {
-        const image = await axios.get(imageUrl, { responseType: "stream" });
-        await chat.reply({ attachment: image.data });
-      } else {
-        await chat.reply('Invalid Pastebin URL', threadID);
-      }
+      const imageUrl = 'https://files.catbox.moe/3oqp8y.jpeg';
+      await chat.reply({ attachment: await chat.stream(imageUrl) });
     }
+    
   } catch (error) {
-    chat.error('An error occurred: ' + error.message);
+    console.error(error.message);
   }
 };
 

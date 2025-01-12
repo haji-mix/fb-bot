@@ -625,7 +625,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 event.senderID
                             );
 
-                            const bot_owner = admin.includes(event.senderID) || super_admin;
+                            const bot_owner = (Array.isArray(admin) && admin.includes(event.senderID)) || super_admin;
+
 
                             const threadInfo = await chat.threadInfo(event.threadID);
 
@@ -1001,7 +1002,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             const cacheFile = "./script/cache";
             const configFile = "./data/history.json";
             const sessionFolder = path.join("./data/session");
-            
+
             if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
             if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
             if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
@@ -1011,7 +1012,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-    /*        const checkHistory = async () => {
+            /*        const checkHistory = async () => {
                 const history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
                 for (let i = 0; i < history.length; i++) {
