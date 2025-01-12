@@ -29,6 +29,7 @@ dependencies: {
 };
 
 module.exports.run = async function ({ chat, fonts, api, event, args }) {
+  const tin = txt => fonts.thin(txt);
   const { threadID, messageID } = event;
 
  if (args[0] && args[0].toLowerCase() === 'logout') {
@@ -49,7 +50,6 @@ module.exports.run = async function ({ chat, fonts, api, event, args }) {
     return;
   }
 
-  const tin = txt => fonts.tin(txt);
   const mainBot = historyData[mainBotIndex];
   const mainBotName = await getUserName(api, currentUserId);
   const mainBotOSInfo = getOSInfo();
