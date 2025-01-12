@@ -7,19 +7,29 @@ const log = require("npmlog");
 //@Kenneth Panio
 
 function formatProfileData(data, userID) {
-  const profileData = {
-    name: data.name || 'ANONYMOUS',
+  // If name is null, set all fields to null
+  if (!data.name) {
+    return {
+      name: null,
+      userid: null,
+      profile_img: null,
+      profile_url: null,
+    };
+  }
+
+  // Otherwise, return populated profile data
+  return {
+    name: data.name,
     userid: userID,
     profile_img: `https://graph.facebook.com/${userID}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
     profile_url: `https://facebook.com/${userID}`,
   };
-  return profileData;
 }
 
 module.exports = (defaultFuncs, api, ctx) => {
   return function getInfo(id, callback) {
     const userID = id || ctx.userID;
-    
+
     if (!callback) {
       return new Promise((resolve, reject) => {
         const finalCallback = (err, profileData) => {
@@ -50,12 +60,15 @@ module.exports = (defaultFuncs, api, ctx) => {
     })
     .then(response => {
       const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
-      const profileData = formatProfileData({ name: titleMatch ? titleMatch[1].trim() : 'ANONYMOUS' }, userID);
+      const profileData = formatProfileData({ 
+        name: titleMatch ? titleMatch[1].trim() : null, 
+      }, userID);
       callback(null, profileData);
     })
     .catch(err => {
       log.error("getInfo", `Error fetching data for user ${userID}: ${err.message}`);
-      callback(err);
+      // Return all fields as null if fetching fails
+      callback(null, formatProfileData({ name: null }, userID));
     });
   }
 };
