@@ -4,23 +4,15 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const MAX_MEMORY_THRESHOLD = 8000 * 1024 * 1024; // 8000 MB, threshold when to scale up memory
+// Set the memory limit to 100% of 8 GB (10,240 MB)
+const MAX_MEMORY_THRESHOLD = 8 * 1024 * 1024 * 1024; 
 let mainProcess;
 
 function calculateMaxMemoryUsage() {
-    const currentHeapUsage = process.memoryUsage().heapUsed;
-    console.log(`Current heap usage: ${currentHeapUsage / 1024 / 1024} MB`);  // Logs the current memory usage in MB
-    
-    // Increase memory by 100% (double the current memory)
-    let newMemoryLimit = currentHeapUsage * 2;
+    let newMemoryLimit = MAX_MEMORY_THRESHOLD;
 
-    // Set a minimum memory limit of 512 MB to ensure higher allocation
-    newMemoryLimit = Math.max(newMemoryLimit, 512 * 1024 * 1024); // 512 MB minimum
-
-    // Ensure it doesn't exceed MAX_MEMORY_THRESHOLD (8 GB in this case)
-    newMemoryLimit = Math.min(newMemoryLimit, MAX_MEMORY_THRESHOLD);
-
-    return Math.floor(newMemoryLimit / 1024 / 1024); // Return memory in MB
+    // Return memory in MB (convert bytes to MB)
+    return Math.floor(newMemoryLimit / 1024 / 1024);
 }
 
 function start() {
