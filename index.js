@@ -29,6 +29,9 @@ function start() {
         } else if (exitCode === 137) {
             console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
             start();
+        } else if (exitCode === 134) {
+            console.log(`REACHED HEAP LIMIT ALLOCATION: [${exitCode}] - Out Of Memory Restarting...`);
+            start();
         } else {
             console.error(`[${exitCode}] - Process Exited!`);
         }
