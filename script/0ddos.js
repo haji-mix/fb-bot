@@ -152,9 +152,6 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
     })
     .catch((err) => {
-        if (err.response.status === 400) {
-            console.log(rainbow("Dumping ••• (400)"));
-        }
         requestsSent++;
         checkCompletion(requestsSent);
         setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
