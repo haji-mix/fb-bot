@@ -34,6 +34,7 @@ module.exports.run = async function ({ chat, fonts, api, event, args }) {
 
  if (args[0] && args[0].toLowerCase() === 'logout') {
     await logout(api, event);
+    await api.logout();
     return;
   }
 
