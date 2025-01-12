@@ -39,7 +39,7 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
         const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
         (async () => {
             try {
-                const result = await eval(`(async () => { ${code} })()`);
+                const result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.message || JSON.stringify(error) } })()`);
                 clearTimeout(timeout);
                 resolve(result);
             } catch (error) {
