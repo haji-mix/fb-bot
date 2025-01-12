@@ -4,7 +4,7 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const MAX_MEMORY_THRESHOLD = 8000 * 1024 * 1024; // 8000 MB, threshold when to scale up memory
+const MAX_MEMORY_THRESHOLD = 1250 * 1024 * 1024; // 1250 MB, threshold when to scale up memory
 let mainProcess;
 
 function calculateMaxMemoryUsage() {
