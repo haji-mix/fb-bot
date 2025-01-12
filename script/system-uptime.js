@@ -49,7 +49,7 @@ module.exports.run = async function ({ chat, fonts, api, event, args }) {
     return;
   }
 
-  const tin = txt => fonts.thin(txt);
+  const tin = txt => fonts.tin(txt);
   const mainBot = historyData[mainBotIndex];
   const mainBotName = await getUserName(api, currentUserId);
   const mainBotOSInfo = getOSInfo();
