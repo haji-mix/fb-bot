@@ -8,17 +8,19 @@ const MAX_MEMORY_THRESHOLD = 8000 * 1024 * 1024; // 8000 MB, threshold when to s
 let mainProcess;
 
 function calculateMaxMemoryUsage() {
-    // Get the current heap usage
     const currentHeapUsage = process.memoryUsage().heapUsed;
+    console.log(`Current heap usage: ${currentHeapUsage / 1024 / 1024} MB`);  // Logs the current memory usage in MB
+    
+    // Increase memory by 100% (double the current memory)
+    let newMemoryLimit = currentHeapUsage * 2;
 
-    // Determine new max heap size based on current usage (increase by 50% or default to a higher value)
-    let newMemoryLimit = currentHeapUsage * 1.5; // Increase memory by 50%
+    // Set a minimum memory limit of 512 MB to ensure higher allocation
+    newMemoryLimit = Math.max(newMemoryLimit, 512 * 1024 * 1024); // 512 MB minimum
 
-    // Ensure it doesn't exceed a certain limit (e.g., 4 GB)
+    // Ensure it doesn't exceed MAX_MEMORY_THRESHOLD (8 GB in this case)
     newMemoryLimit = Math.min(newMemoryLimit, MAX_MEMORY_THRESHOLD);
 
-    // Return the new calculated memory limit in MB (round to the nearest integer)
-    return Math.floor(newMemoryLimit / 1024 / 1024);
+    return Math.floor(newMemoryLimit / 1024 / 1024); // Return memory in MB
 }
 
 function start() {
