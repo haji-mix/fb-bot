@@ -1011,7 +1011,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-            const checkHistory = async () => {
+    /*        const checkHistory = async () => {
                 const history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
                 for (let i = 0; i < history.length; i++) {
@@ -1032,7 +1032,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
             };
 
-            setInterval(checkHistory, 15 * 60 * 1000);
+            setInterval(checkHistory, 15 * 60 * 1000); */
             try {
                 const files = fs.readdirSync(sessionFolder);
 
@@ -1072,7 +1072,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 if (process.env.APPSTATE) {
                     try {
                         const envState = JSON.parse(process.env.APPSTATE);
-                        await accountLogin(envState, process.env.PREFIX || "#");
+                        await accountLogin(envState, process.env.PREFIX || "#", []);
                     } catch (error) {
                         console.error("Error logging in with APPSTATE:", error);
                     }
