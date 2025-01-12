@@ -1,19 +1,15 @@
 const { spawn } = require("child_process");
-const path = require("path");
+const path = require('path');
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-// Set MAX_MEMORY_USAGE in gigabytes (GB)
-const MAX_MEMORY_USAGE_GB = 1.5; 
+const MAX_MEMORY_USAGE = 2000 * 1024 * 1024; // 2000 MB
 
 let mainProcess;
 
 function start() {
-    // Convert MAX_MEMORY_USAGE from GB to MB (1 GB = 1024 MB)
-    const maxMemoryMB = MAX_MEMORY_USAGE_GB * 1024;  // Convert to MB
-
-    mainProcess = spawn("node", [`--max-old-space-size=${maxMemoryMB}`, SCRIPT_PATH], {
+    mainProcess = spawn("node", [SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true
@@ -24,23 +20,41 @@ function start() {
     });
 
     mainProcess.on("close", (exitCode) => {
-        if (exitCode === 137) {
-            // Process was killed due to memory constraints, restart it
-            console.log("STATUS: [137] - Process was killed due to memory issues. Restarting...");
-            start(); 
-        } else if (exitCode === 0 || exitCode === 1) {
+        if (exitCode === 0) {
             console.log(`STATUS: [${exitCode}] - Process Exited > SYSTEM Rebooting!...`);
+            start();
+        } else if (exitCode === 1) {
+            console.log(`ERROR: [${exitCode}] - System Rebooting!...`);
+            start();
+        } else if (exitCode === 137) {
+            console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
             start();
         } else {
             console.error(`[${exitCode}] - Process Exited!`);
         }
     });
+
+    // Monitor memory usage
+    const memoryCheckInterval = setInterval(() => {
+        const memoryUsage = process.memoryUsage().heapUsed;
+        /*  console.log(`Current memory usage: ${(memoryUsage / 1024 / 1024).toFixed(2)} MB`);*/
+
+        if (memoryUsage > MAX_MEMORY_USAGE) {
+            console.error(`Memory usage exceeded ${MAX_MEMORY_USAGE / 1024 / 1024} MB. Restarting server...`);
+
+            // Graceful shutdown procedure
+            if (mainProcess && mainProcess.pid) {
+                mainProcess.kill('SIGTERM');
+                clearInterval(memoryCheckInterval);
+            }
+        }
+    }, 5000);
 }
 
 function gracefulShutdown() {
     console.log("Starting graceful shutdown...");
     if (mainProcess && mainProcess.pid) {
-        process.kill(mainProcess.pid, 'SIGTERM');
+        mainProcess.kill('SIGTERM');
     }
 }
 
