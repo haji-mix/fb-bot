@@ -1001,7 +1001,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             const cacheFile = "./script/cache";
             const configFile = "./data/history.json";
             const sessionFolder = path.join("./data/session");
-            t
+            
             if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
             if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
             if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
