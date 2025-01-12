@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-const adminData = JSON.parse(fs.readFileSync(path.join(__dirname, '../kokoro.json'), 'utf-8'));
+const adminData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../kokoro.json'), 'utf-8'));
 
 module.exports["config"] = {
   name: "pastebin-alert",
