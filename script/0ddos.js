@@ -40,10 +40,18 @@ module.exports["run"] = async ({ args, chat, font }) => {
                 if (checkStatus.status === 503) {
                     chat.reply(thin("Boom! The target is down (503 Service Unavailable)."));
                     clearInterval(checkInterval);
+                } else if (checkStatus.status === 502) {
+                    chat.reply(thin("Bad Gateway (502)."));
+                    clearInterval(checkInterval);
                 }
             } catch (err) {
             }
         }, 5000);
+
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            chat.reply(thin("10 minutes passed, stopping the check status for " + url));
+        }, 600000); 
         
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
