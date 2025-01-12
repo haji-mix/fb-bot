@@ -1,11 +1,10 @@
 "use strict";
 
 const axios = require('axios');
-const utils = require('../utils');
 const log = require("npmlog");
+const utils = require('../utils');
 
 //@Kenneth Panio
-
 function formatProfileData(data, userID) {
   // If name is null, set all fields to null
   if (!data.name) {
@@ -26,6 +25,47 @@ function formatProfileData(data, userID) {
   };
 }
 
+function fetchProfileData(userID, callback) {
+  axios
+    .get(`https://www.facebook.com/profile.php?id=${userID}`, {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Referer": "https://www.facebook.com/",
+        "User-Agent": utils.generateUserAgent(),
+        "Connection": "keep-alive",
+        "Host": "www.facebook.com",
+        "Origin": "https://www.facebook.com",
+        "sec-fetch-site": "same-origin",
+        "Sec-Fetch-User": "?1",
+      },
+      maxRedirects: 5,
+    })
+    .then((response) => {
+      // Check for redirects (302 status)
+      if (response.status === 302 || response.request.res.statusCode === 302) {
+        callback(null, formatProfileData({ name: null }, userID));
+        return;
+      }
+
+      const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
+      if (!titleMatch) {
+        callback(null, formatProfileData({ name: null }, userID));
+        return;
+      }
+
+      const profileData = formatProfileData(
+        {
+          name: titleMatch[1].trim(),
+        },
+        userID
+      );
+      callback(null, profileData);
+    })
+    .catch((err) => {
+      callback(err, formatProfileData({ name: null }, userID));
+    });
+}
+
 module.exports = (defaultFuncs, api, ctx) => {
   return function getInfo(id, callback) {
     const userID = id || ctx.userID;
@@ -44,31 +84,4 @@ module.exports = (defaultFuncs, api, ctx) => {
       fetchProfileData(userID, callback);
     }
   };
-
-  function fetchProfileData(userID, callback) {
-    axios.get(`https://www.facebook.com/profile.php?id=${userID}`, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Referer": "https://www.facebook.com/",
-        'User-Agent': utils.generateUserAgent() || 'Mozilla/5.0',
-        'Connection': "keep-alive",
-        'Host': 'www.facebook.com',
-        'Origin': 'https://www.facebook.com',
-        "sec-fetch-site": "same-origin",
-        'Sec-Fetch-User': '?1'
-      }
-    })
-    .then(response => {
-      const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
-      const profileData = formatProfileData({ 
-        name: titleMatch ? titleMatch[1].trim() : null, 
-      }, userID);
-      callback(null, profileData);
-    })
-    .catch(err => {
-      log.error("getInfo", `Error fetching data for user ${userID}: ${err.message}`);
-      // Return all fields as null if fetching fails
-      callback(null, formatProfileData({ name: null }, userID));
-    });
-  }
 };
