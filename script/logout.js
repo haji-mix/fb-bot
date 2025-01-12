@@ -11,7 +11,6 @@ module.exports.run = async ({ api, chat, event }) => {
     try {
         await chat.reply("Successfully Logout Bot!");
         await api.logout();
-        process.exit(1);
     } catch (error) {
         chat.reply("Logout failed. Please try again.");
     }
