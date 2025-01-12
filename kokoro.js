@@ -1053,7 +1053,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         if (state) {
                             const decState = decryptSession(state);
-                            await accountLogin(decState, prefix, admin, blacklist);
+                            await accountLogin(decState, prefix, admin);
                         }
                     } catch (error) {
                         if (
@@ -1072,7 +1072,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 if (process.env.APPSTATE) {
                     try {
                         const envState = JSON.parse(process.env.APPSTATE);
-                        await accountLogin(envState, process.env.PREFIX || "#", null, null);
+                        await accountLogin(envState, process.env.PREFIX || "#");
                     } catch (error) {
                         console.error("Error logging in with APPSTATE:", error);
                     }
@@ -1080,7 +1080,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 if (process.env.EMAIL && process.env.PASSWORD) {
                     try {
-                        await accountLogin(null, process.env.PREFIX || "#", null, null, process.env.EMAIL, process.env.PASSWORD);
+                        await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
                     } catch (error) {
                         console.error("Error logging in with EMAIL and PASSWORD:", error);
                     }
