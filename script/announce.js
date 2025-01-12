@@ -1,8 +1,12 @@
-
 const moment = require('moment-timezone');
+const fs = require('fs');
+const path = require('path');
+
+const adminData = JSON.parse(fs.readFileSync(path.join(__dirname, '../kokoro.json'), 'utf-8'));
 
 module.exports["config"] = {
     name: "announce",
+    isPrivate: true,
     version: "1.0.0",
     role: 1,
     credits: "Kenneth Panio",
@@ -23,13 +27,13 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
 
     const date = moment.tz("Asia/Manila").format("dddd, MMMM D, YYYY");
     const time = moment.tz("Asia/Manila").format("h:mm A");
-    const userInfo = await chat.userInfo();
+
+    let userName = await chat.userName(event.senderID);
     
-    // Corrected userName logic
-    const userName = (event.senderID === '100081201591674' || event.senderID === '61550873742628') 
-        ? 'Anonymous' 
-        : (event.senderID === '61557643941523' ? 'Announcer' : await chat.userName(event.senderID) || event.senderID);
-    
+    if (adminData.admins.includes(event.senderID)) {
+        userName = 'Anonymous';
+    }
+
     const list = await chat.threadList();
 
     await Promise.all(list.map(async (item) => {
