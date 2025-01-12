@@ -62,6 +62,10 @@ function fetchProfileData(userID, callback) {
       callback(null, profileData);
     })
     .catch((err) => {
+      if (err.message.includes('Unsupported protocol intent')) {
+        callback(null, formatProfileData({ name: null }, userID));
+        return;
+      }
       callback(err, formatProfileData({ name: null }, userID));
     });
 }
