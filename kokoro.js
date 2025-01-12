@@ -384,6 +384,7 @@ const startServer = async () => {
 startServer();
 
 cron.schedule('*/5 * * * *', () => {
+    console.clear();
     axios.get(`http://localhost:${PORT}/online-users`)
     .then(() => {
         const time = new Date().toLocaleString("en-US", {
@@ -443,7 +444,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             api.setProfileGuard(true)
 
             try {
-                
+
                 let time = (
                     JSON.parse(
                         fs.readFileSync("./data/history.json", "utf-8")
@@ -495,29 +496,29 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     autoMarkDelivery,
                     autoMarkRead
                 });
-                
+
                 try {
                     api.listenMqtt(async (error, event) => {
                         if (error) {
                             if (error === "Connection closed.") {
                                 console.error(error, userid)
-                                process.exit(1);
+                                //                    process.exit(1);
                             }
                             if (error.error === "Not logged in") {
-                                            
-                        Utils.account.delete(userid);
-                        deleteThisUser(userid);
 
-                        return;
+                                Utils.account.delete(userid);
+                                deleteThisUser(userid);
+
+                                return;
                             }
                         }
 
                         const chat = new OnChat(api, event);
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
-                            if (event.senderID && event.body) {
-                                chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
-                            }
+                        if (event.senderID && event.body) {
+                            chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
+                        }
 
                         const reply = async (msg) => {
                             const msgInfo = await chat.reply(font.thin(msg));
@@ -1000,7 +1001,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             const cacheFile = "./script/cache";
             const configFile = "./data/history.json";
             const sessionFolder = path.join("./data/session");
-
+            t
             if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
             if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
             if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
@@ -1032,7 +1033,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             };
 
             setInterval(checkHistory, 15 * 60 * 1000);
-
             try {
                 const files = fs.readdirSync(sessionFolder);
 
@@ -1046,25 +1046,50 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             prefix,
                             admin,
                             blacklist
-                        } =
-                        config.find(item => item.userid === userId) || {};
+                        } = config.find(item => item.userid === userId) || {};
                         const state = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
-                        fs.writeFileSync(filePath, JSON.stringify(state), "utf-8");
+                        fs.writeFileSync(filePath, JSON.stringify(state, null, 2), "utf-8");
 
-                        const decState = decryptSession(state);
-                        await accountLogin(decState, prefix, admin, blacklist);
+                        if (state) {
+                            const decState = decryptSession(state);
+                            await accountLogin(decState, prefix, admin, blacklist);
+                        }
                     } catch (error) {
-                        if (error.error === "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify.") {
+                        if (
+                            error.error ===
+                            "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify."
+                        ) {
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
+                        } else {
+                            console.error(`Error logging in user ${userId}:`, error);
                         }
+                    }
+                }
+
+                // Handle environment-based logins (each as a separate user)
+                if (process.env.APPSTATE) {
+                    try {
+                        const envState = JSON.parse(process.env.APPSTATE);
+                        await accountLogin(envState, process.env.PREFIX || "#", null, null);
+                    } catch (error) {
+                        console.error("Error logging in with APPSTATE:", error);
+                    }
+                }
+
+                if (process.env.EMAIL && process.env.PASSWORD) {
+                    try {
+                        await accountLogin(null, process.env.PREFIX || "#", null, null, process.env.EMAIL, process.env.PASSWORD);
+                    } catch (error) {
+                        console.error("Error logging in with EMAIL and PASSWORD:", error);
                     }
                 }
             } catch (error) {
                 console.error(error);
             }
         }
+
 
         function createConfig() {
             const config = [{

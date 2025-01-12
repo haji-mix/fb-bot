@@ -53,30 +53,14 @@ function start() {
         if (memoryUsage > MAX_MEMORY_THRESHOLD) {
             console.error(`Memory usage exceeded threshold. Restarting server...`);
 
-            // Graceful shutdown procedure
+            // No graceful shutdown, just restart
             if (mainProcess && mainProcess.pid) {
-                mainProcess.kill('SIGTERM');
+                mainProcess.kill('SIGKILL');
                 clearInterval(memoryCheckInterval);
+                start(); // Restart process
             }
         }
     }, 5000);
 }
-
-function gracefulShutdown() {
-    console.log("Starting graceful shutdown...");
-    if (mainProcess && mainProcess.pid) {
-        mainProcess.kill('SIGTERM');
-    }
-}
-
-process.on('SIGINT', () => {
-    gracefulShutdown();
-    process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-    gracefulShutdown();
-    process.exit(0);
-});
 
 start();
