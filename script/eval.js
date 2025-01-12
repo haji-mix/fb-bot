@@ -36,18 +36,19 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
     console.error = (...args) => errorMessages.push(args.join(' '));
 
     const evalPromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
-        (async () => {
-            try {
-                const result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.message || JSON.stringify(error) } })()`);
-                clearTimeout(timeout);
-                resolve(result);
-            } catch (error) {
-                clearTimeout(timeout);
-                reject(error);
-            }
-        })();
-    });
+    const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
+    (async () => {
+        try {
+            const result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.message || JSON.stringify(error)); } })()`);
+            clearTimeout(timeout);
+            resolve(result);
+        } catch (error) {
+            clearTimeout(timeout);
+            reject(error);
+        }
+    })();
+});
+
 
     try {
         const result = await evalPromise;
