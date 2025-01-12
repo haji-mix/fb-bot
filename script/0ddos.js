@@ -41,10 +41,10 @@ module.exports["run"] = async ({ args, chat, font }) => {
                     chat.reply(thin("Boom! The target is down (503 Service Unavailable)."));
                     clearInterval(checkInterval);
                 }
-            } catch (err) {}
+            } catch (err) {
             }
-        }, 50000);
-
+        }, 5000);
+        
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             chat.reply(thin(status_msg));
