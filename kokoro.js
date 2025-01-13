@@ -140,6 +140,8 @@ async function loadModules(script) {
 
 loadModules(script);
 
+app.set('trust proxy', true); //use full when you run this behind proxy to allow clients ip pass 
+
 const blockedIPs = new Set();
 
 // Middleware to block suspicious IPs

