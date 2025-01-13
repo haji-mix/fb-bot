@@ -4,8 +4,6 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-// @kennethpanio
-
 // Set the memory limit to 100% of 8 GB (10,240 MB)
 const MAX_MEMORY_THRESHOLD = 8 * 1024 * 1024 * 1024;
 let mainProcess;
@@ -35,16 +33,13 @@ function start() {
     });
 
     mainProcess.on("close", (exitCode) => {
-        if (exitCode === 0 || exitCode === 1 || exitCode === 137 || exitCode === 134) {
-            console.log(`Process exited with code [${exitCode}]`);
-            if (restartEnabled) {
-                console.log("Restarting process...");
-                restartProcess();
-            } else {
-                console.log("Restart is disabled.");
-            }
+        console.log(`Process exited with code [${exitCode}]`);
+        if (restartEnabled) {
+            console.log("Restarting process...");
+            restartProcess();
         } else {
-            console.error(`[${exitCode}] - Process Exited!`);
+            console.log("Shutdown initiated...");
+            process.exit(exitCode);  // Exit with the same exit code
         }
     });
 
@@ -62,7 +57,8 @@ function start() {
                     console.log("Restarting process...");
                     restartProcess(); // Restart process after killing it
                 } else {
-                    console.log("Restart is disabled.");
+                    console.log("Restart is disabled. Shutting down.");
+                    process.exit(1); // Exit with error code (non-zero) to indicate abnormal termination
                 }
             }
         }

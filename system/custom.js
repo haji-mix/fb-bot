@@ -58,7 +58,7 @@ module.exports = ({ api, font }) => {
 
     // Task: Restart the system
     async function restart() {
-        process.exit(process.env.PID || 1);
+        process.exit(process.env.PID === undefined || process.env.PID === null ? 1 : process.env.PID);
     }
 
     // Task: Clear chat
