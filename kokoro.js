@@ -210,6 +210,11 @@ routes.forEach(route => {
     }
 });
 
+app.get('/random-status', (req, res) => {
+  const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
+  res.status(randomStatusCode).json({ message: `Random status code: ${randomStatusCode}`, code: randomStatusCode });
+});
+
 app.use((req, res, next) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
@@ -238,9 +243,9 @@ async function processExit(req, res) {
             message: "Server is restarting"
         });
 
-        process.exit(1); // This will stop the server
+        process.exit(0); // This will stop the server
     } catch (error) {
-        res.json({
+            res.status(400).json({
             success: false,
             error: error.message || error
         });
@@ -1019,10 +1024,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 for (let i = 0; i < history.length; i++) {
                     const user = history[i];
-                    if (!user || typeof user !== "object") process.exit(1);
+                    if (!user || typeof user !== "object") process.exit(0);
 
                     if (user.time === undefined || user.time === null || isNaN(user.time)) {
-                     //   process.exit(1);
+                        process.exit(0);
                     }
 
                     const update = Utils.account.get(user.userid);
