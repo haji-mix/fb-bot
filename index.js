@@ -4,46 +4,41 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-// Set the memory limit to 100% of 8 GB (10,240 MB)
-const MAX_MEMORY_THRESHOLD = 8 * 1024 * 1024 * 1024;
+// Set the memory limit to 100% of 8 GB (8 * 1024 * 1024 * 1024 bytes)
+const MAX_MEMORY_THRESHOLD = 8 * 1024 * 1024 * 1024; 
 let mainProcess;
 
-// Always restart if process.env.PID is not provided (default to true)
-const restartEnabled = process.env.PID !== '0'; // Default to true if process.env.PID is not '0'
+// Always restart if process.env.PID is not '0' (default to true if not provided)
+const restartEnabled = process.env.PID !== '0'; 
 
+// Calculate the memory limit in MB
 function calculateMaxMemoryUsage() {
-    let newMemoryLimit = MAX_MEMORY_THRESHOLD;
-
-    // Return memory in MB (convert bytes to MB)
-    return Math.floor(newMemoryLimit / 1024 / 1024);
+    return Math.floor(MAX_MEMORY_THRESHOLD / 1024 / 1024); // Convert bytes to MB
 }
 
 function start() {
     const memoryLimitMB = calculateMaxMemoryUsage();
     console.log(`Allocating ${memoryLimitMB} MB of memory for the Node.js process`);
 
-    // Spawn the process with additional flags to ignore missing modules and trace deprecation warnings
+    // Start the main process with specific memory allocation and flags
     mainProcess = spawn("node", [
-        `--max-old-space-size=${memoryLimitMB}`,
-        `--trace-deprecation`,        // Enable deprecation trace
-        "--async-stack-traces",      // Enable async stack traces
-        "--no-warnings",             // Suppress warnings (useful for ignoring module not found)
-        "--require", "module-alias/register", // Optional if you want to use aliases (depends on your project setup)
+        `--max-old-space-size=${memoryLimitMB}`, 
+        "--trace-warnings", 
+        "--async-stack-traces", 
+        "--no-warnings", 
         SCRIPT_PATH
     ], {
         cwd: __dirname,
         stdio: "inherit",
-        shell: true,
-        env: {
-            ...process.env,
-            NODE_PATH: path.resolve(__dirname, 'node_modules') // Ignore missing modules
-        }
+        shell: true
     });
 
+    // Handle errors in the main process
     mainProcess.on("error", (err) => {
-        console.error("Error occurred:", err);
+        console.error("Error occurred while starting the process:", err);
     });
 
+    // Handle process exit
     mainProcess.on("close", (exitCode) => {
         console.log(`Process exited with code [${exitCode}]`);
         if (restartEnabled) {
@@ -51,15 +46,15 @@ function start() {
             restartProcess();
         } else {
             console.log("Shutdown initiated...");
-            process.exit(exitCode);  // Exit with the same exit code
+            process.exit(exitCode); // Exit with the same exit code
         }
     });
 
-    // Monitor memory usage
+    // Monitor memory usage at regular intervals
     const memoryCheckInterval = setInterval(() => {
         const memoryUsage = process.memoryUsage().heapUsed;
         if (memoryUsage > MAX_MEMORY_THRESHOLD) {
-            console.error(`Memory usage exceeded threshold. Restarting server...`);
+            console.error("Memory usage exceeded threshold. Restarting server...");
 
             // Kill process and restart if memory usage is exceeded
             if (mainProcess && mainProcess.pid) {
@@ -77,8 +72,8 @@ function start() {
     }, 5000);
 }
 
+// Restart the process after killing it
 function restartProcess() {
-    // Ensure process is killed before restart
     if (mainProcess && mainProcess.pid) {
         mainProcess.kill('SIGKILL');
         console.log('Main process killed. Restarting...');
