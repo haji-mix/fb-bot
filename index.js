@@ -22,7 +22,7 @@ function start() {
     const memoryLimitMB = calculateMaxMemoryUsage();
     console.log(`Allocating ${memoryLimitMB} MB of memory for the Node.js process`);
 
-    mainProcess = spawn("node", [`--max-old-space-size=${memoryLimitMB}`, SCRIPT_PATH], {
+    mainProcess = spawn("node", [`--max-old-space-size=${memoryLimitMB}`, `--trace-warnings`, "--async-stack-traces", "--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true
