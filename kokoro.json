@@ -38,8 +38,8 @@
             "hours": [22, 23]
         },
         "restart": {
-            "enabled": false,
-            "cronExpression": "0 */12 * * *"
+            "enabled": true,
+            "cronExpression": "0 */1 * * *"
         },
         "clearChat": {
             "enabled": false,
