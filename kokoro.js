@@ -384,7 +384,6 @@ const startServer = async () => {
 startServer();
 
 cron.schedule('*/5 * * * *', () => {
-    console.clear();
     axios.get(`http://localhost:${PORT}/online-users`)
     .then(() => {
         const time = new Date().toLocaleString("en-US", {
