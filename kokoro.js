@@ -1012,7 +1012,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-            /*        const checkHistory = async () => {
+                  const checkHistory = async () => {
                 const history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
                 for (let i = 0; i < history.length; i++) {
@@ -1020,7 +1020,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     if (!user || typeof user !== "object") process.exit(1);
 
                     if (user.time === undefined || user.time === null || isNaN(user.time)) {
-                        process.exit(1);
+                     //   process.exit(1);
                     }
 
                     const update = Utils.account.get(user.userid);
@@ -1033,7 +1033,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
             };
 
-            setInterval(checkHistory, 15 * 60 * 1000); */
+            setInterval(checkHistory, 15 * 60 * 1000);
             try {
                 const files = fs.readdirSync(sessionFolder);
 
