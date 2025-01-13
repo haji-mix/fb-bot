@@ -22,10 +22,22 @@ function start() {
     const memoryLimitMB = calculateMaxMemoryUsage();
     console.log(`Allocating ${memoryLimitMB} MB of memory for the Node.js process`);
 
-    mainProcess = spawn("node", [`--max-old-space-size=${memoryLimitMB}`, `--trace-warnings`, "--async-stack-traces", "--no-warnings", SCRIPT_PATH], {
+    // Spawn the process with additional flags to ignore missing modules and trace deprecation warnings
+    mainProcess = spawn("node", [
+        `--max-old-space-size=${memoryLimitMB}`,
+        `--trace-deprecation`,        // Enable deprecation trace
+        "--async-stack-traces",      // Enable async stack traces
+        "--no-warnings",             // Suppress warnings (useful for ignoring module not found)
+        "--require", "module-alias/register", // Optional if you want to use aliases (depends on your project setup)
+        SCRIPT_PATH
+    ], {
         cwd: __dirname,
         stdio: "inherit",
-        shell: true
+        shell: true,
+        env: {
+            ...process.env,
+            NODE_PATH: path.resolve(__dirname, 'node_modules') // Ignore missing modules
+        }
     });
 
     mainProcess.on("error", (err) => {
