@@ -1,5 +1,6 @@
 const { spawn } = require("child_process");
 const path = require('path');
+const ps = require('ps-node');
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
@@ -21,48 +22,56 @@ function start() {
     const memoryLimitMB = calculateMaxMemoryUsage();
     console.log(`Allocating ${memoryLimitMB} MB of memory for the Node.js process`);
 
-    mainProcess = spawn("node", [`--max-old-space-size=${memoryLimitMB}`, SCRIPT_PATH], {
-        cwd: __dirname,
-        stdio: "inherit",
-        shell: true
-    });
-
-    mainProcess.on("error", (err) => {
-        console.error("Error occurred:", err);
-    });
-
-    mainProcess.on("close", (exitCode) => {
-        if (exitCode === 0) {
-            console.log(`STATUS: [${exitCode}] - Process Exited > SYSTEM Rebooting!...`);
-            restartProcess();
-        } else if (exitCode === 1) {
-            console.log(`ERROR: [${exitCode}] - System Rebooting!...`);
-            restartProcess();
-        } else if (exitCode === 137) {
-            console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
-            restartProcess();
-        } else if (exitCode === 134) {
-            console.log(`REACHED HEAP LIMIT ALLOCATION: [${exitCode}] - Out Of Memory Restarting...`);
-            restartProcess();
-        } else {
-            console.error(`[${exitCode}] - Process Exited!`);
+    // Ensure previous process is not running
+    checkExistingProcess((processExists) => {
+        if (processExists) {
+            console.log('Process already running. Exiting to prevent duplication...');
+            return;
         }
-    });
 
-    // Monitor memory usage
-    const memoryCheckInterval = setInterval(() => {
-        const memoryUsage = process.memoryUsage().heapUsed;
-        if (memoryUsage > MAX_MEMORY_THRESHOLD) {
-            console.error(`Memory usage exceeded threshold. Restarting server...`);
+        mainProcess = spawn("node", [`--max-old-space-size=${memoryLimitMB}`, SCRIPT_PATH], {
+            cwd: __dirname,
+            stdio: "inherit",
+            shell: true
+        });
 
-            // Kill process and restart if memory usage is exceeded
-            if (mainProcess && mainProcess.pid) {
-                mainProcess.kill('SIGKILL');
-                clearInterval(memoryCheckInterval);
-                restartProcess(); // Restart process after killing it
+        mainProcess.on("error", (err) => {
+            console.error("Error occurred:", err);
+        });
+
+        mainProcess.on("close", (exitCode) => {
+            if (exitCode === 0) {
+                console.log(`STATUS: [${exitCode}] - Process Exited > SYSTEM Rebooting!...`);
+                restartProcess();
+            } else if (exitCode === 1) {
+                console.log(`ERROR: [${exitCode}] - System Rebooting!...`);
+                restartProcess();
+            } else if (exitCode === 137) {
+                console.log(`POTENTIAL DDOS: [${exitCode}] - Out Of Memory Restarting...`);
+                restartProcess();
+            } else if (exitCode === 134) {
+                console.log(`REACHED HEAP LIMIT ALLOCATION: [${exitCode}] - Out Of Memory Restarting...`);
+                restartProcess();
+            } else {
+                console.error(`[${exitCode}] - Process Exited!`);
             }
-        }
-    }, 5000);
+        });
+
+        // Monitor memory usage
+        const memoryCheckInterval = setInterval(() => {
+            const memoryUsage = process.memoryUsage().heapUsed;
+            if (memoryUsage > MAX_MEMORY_THRESHOLD) {
+                console.error(`Memory usage exceeded threshold. Restarting server...`);
+
+                // Kill process and restart if memory usage is exceeded
+                if (mainProcess && mainProcess.pid) {
+                    mainProcess.kill('SIGKILL');
+                    clearInterval(memoryCheckInterval);
+                    restartProcess(); // Restart process after killing it
+                }
+            }
+        }, 5000);
+    });
 }
 
 function restartProcess() {
@@ -72,6 +81,20 @@ function restartProcess() {
         console.log('Main process killed. Restarting...');
     }
     start();
+}
+
+function checkExistingProcess(callback) {
+    // Check if the process is already running by looking for the script name
+    ps.lookup({ command: SCRIPT_FILE }, function(err, processList) {
+        if (err) {
+            console.error("Error checking existing processes:", err);
+            return callback(false);
+        }
+
+        // If a process is found, return true, otherwise false
+        const processExists = processList.some(process => process && process.pid);
+        callback(processExists);
+    });
 }
 
 start();
