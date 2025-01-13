@@ -1096,12 +1096,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             const config = [{
                 fcaOption: {
                     userAgent: generateUserAgent(),
-                    forceLogin: true,
+                    forceLogin: false,
                     listenEvents: true,
                     logLevel: "silent",
                     updatePresence: true,
                     selfListen: false,
-                    online: true,
+                    online: false,
                     autoMarkDelivery: false,
                     autoMarkRead: false
 
