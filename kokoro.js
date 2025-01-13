@@ -516,9 +516,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const chat = new OnChat(api, event);
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
-                        if (event.senderID && event.body) {
+                        if (event && event.senderID && event.body) {
                             chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                         }
+
 
                         const reply = async (msg) => {
                             const msgInfo = await chat.reply(font.thin(msg));
@@ -530,7 +531,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const SPAM_THRESHOLD = 6;
                         const TIME_WINDOW = 10 * 1000;
 
-                        if (event.body && event.senderID) {
+                        if (event && event.body && event.senderID) {
                             const userId = event.senderID;
                             const message = (event.body || "").trim();
                             const currentTime = Date.now();
@@ -616,7 +617,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         const maintenanceEnabled = kokoro_config?.maintenance?.enabled ?? false;
 
-                        if (event.body && aliases(command?.toLowerCase())?.name) {
+                        if (event && event.body && aliases(command?.toLowerCase())?.name) {
                             const role = aliases(command)?.role ?? 0;
                             const senderID = event.senderID;
 
@@ -661,7 +662,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
 
 
-                        if (event.body && event.body
+                        if (event && event.body && event.body
                             ?.toLowerCase()
                             .startsWith(prefix.toLowerCase()) &&
                             aliases(command)?.name) {
@@ -736,7 +737,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }
                         }
 
-                        if (event.body && aliases(command)?.name) {
+                        if (event && event.body && aliases(command)?.name) {
                             const now = Date.now();
                             const name = aliases(command)?.name;
                             const sender = Utils.cooldowns.get(
@@ -769,7 +770,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         let activeThreadID = null;
 
                         if (kokoro_config.typingbot) {
-                            if (event.type === "typ") {
+                            if (event && event.type === "typ") {
                                 if (event.isTyping) {
                                     if (activeThreadID !== event.threadID) {
                                         activeThreadID = event.threadID;
@@ -792,13 +793,13 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }*/
 
 
-                        if (event.type === "message_reaction") {
+                        if (event && event.type === "message_reaction") {
                             if (event.senderID === userid && ["🗑️", "🚮", "👎"].includes(event.reaction)) {
                                 return api.unsendMessage(event.messageID);
                             }
                         }
 
-                        if (event.body &&
+                        if (event && event.body &&
                             !command &&
                             event.body
                             ?.toLowerCase()
@@ -809,7 +810,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             return;
                         }
 
-                        if (event.body &&
+                        if (event && event.body &&
                             command &&
                             prefix &&
                             event.body
