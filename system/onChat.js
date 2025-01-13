@@ -233,6 +233,10 @@ class OnChat {
                     await this.api.editMessage(message, replyMsg.messageID);
                 },
                 unsend: async (delay = 0) => {
+                    if (!replyMsg.messageID) {
+                        this.log("Missing Message ID!");
+                        return;
+                    }
                     await new Promise(res => setTimeout(res, delay));
                     await this.api.unsendMessage(replyMsg.messageID);
                 }
