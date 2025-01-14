@@ -776,7 +776,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                                             args,
                                                             chat, box: chat,
                                                             message: chat,
-                                                            fonts:,
+                                                            font,
                                                             font: fonts,
                                                             global,
                                                             admin,
