@@ -13,8 +13,7 @@ async function loadModule(modulePath, Utils, logger, count) {
         } = require(modulePath);
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
-            aliases: [...config.aliases || [],
-                config.name],
+            aliases: [...config.aliases || [], config.name],
             name: config.name || [],
             role: config.role || "0",
             version: config.version || "1.0.0",
@@ -40,36 +39,35 @@ async function loadModule(modulePath, Utils, logger, count) {
             ...moduleInfo, run
         });
 
-        count++; 
+        count++;
     } catch (error) {
         logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
     }
-    return count; 
+    return count;
 }
 
-async function loadFromDirectory(directory, Utils, logger) {
+async function loadFromDirectory(directory, Utils, logger, count) {
     const files = fs.readdirSync(directory);
-    let count = 0;  
     const loadPromises = files.map(async (file) => {
         const filePath = path.join(directory, file);
         const stats = fs.statSync(filePath);
 
         if (stats.isDirectory()) {
-            count = await loadFromDirectory(filePath, Utils, logger);
+            count = await loadFromDirectory(filePath, Utils, logger, count);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
             logger.pastel(`LOADED MODULE [${formattedName}]`);
-            count = await loadModule(filePath, Utils, logger, count);
+            count = await loadModule(filePath, Utils, logger, count); 
         }
     });
 
     await Promise.all(loadPromises);
-    logger.pastel(`TOTAL MODULES: ${count}`);
     return count; 
 }
 
 async function loadModules(Utils, logger) {
-    await loadFromDirectory(scriptDir, Utils, logger);
+    let count = await loadFromDirectory(scriptDir, Utils, logger, 0); 
+    logger.pastel(`TOTAL MODULES: ${count}`);
 }
 
 module.exports = {
