@@ -39,7 +39,7 @@ async function loadModule(modulePath, Utils, logger, count) {
             ...moduleInfo, run
         });
 
-        count++;
+        count++;  
     } catch (error) {
         logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
     }
@@ -47,21 +47,20 @@ async function loadModule(modulePath, Utils, logger, count) {
 }
 
 async function loadFromDirectory(directory, Utils, logger, count) {
-    const files = fs.readdirSync(directory);
-    const loadPromises = files.map(async (file) => {
+    const files = fs.readdirSync(directory);  
+    for (const file of files) {
         const filePath = path.join(directory, file);
-        const stats = fs.statSync(filePath);
+        const stats = fs.statSync(filePath); 
 
         if (stats.isDirectory()) {
             count = await loadFromDirectory(filePath, Utils, logger, count);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
             logger.pastel(`LOADED MODULE [${formattedName}]`);
-            count = await loadModule(filePath, Utils, logger, count); 
+            count = await loadModule(filePath, Utils, logger, count);
         }
-    });
+    }
 
-    await Promise.all(loadPromises);
     return count; 
 }
 
