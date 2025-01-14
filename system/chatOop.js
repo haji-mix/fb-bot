@@ -1,4 +1,4 @@
-const workers = require("./workers");
+const { workers } = require("./workers");
 
 const {
     download
