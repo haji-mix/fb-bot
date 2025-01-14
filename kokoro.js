@@ -381,8 +381,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 const cronjob = require('./system/cronjob')({
                     api,
-                    font,
-                    fonts: font
+                    font: fonts,
+                    font
                 });
 
                 const {
