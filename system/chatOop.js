@@ -1,3 +1,5 @@
+const workers = require("./workers");
+
 const {
     download
 } = require("./stream");

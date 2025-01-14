@@ -9,19 +9,27 @@ const cron = require("node-cron");
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 const {
-    kokoro
-} = require ("./system/service");
+    workers
+} = require("./system/workers");
 const {
-    workers,
-    logger,
-    fonts,
-    OnChat,
+    logger
+} = require("./system/logger");
+const {
+    fonts
+} = require("./system/fonts");
+const {
+    OnChat
+} = require("./system/chatOop");
+const {
+    loadModules
+} = require("./system/cmdload");
+const {
     encryptSession,
-    decryptSession,
-    loadModules,
+    decryptSession
+} = require("./system/security");
+const {
     generateUserAgent
-} = require("./system/custom");
-
+} = require("./system/useragent");
 const chat = new OnChat();
 
 const Utils = {
@@ -278,7 +286,6 @@ async function postLogin(req, res) {
 
 const startServer = async () => {
     const hajime = await workers();
-    console.log(hajime.host.port);
     PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
