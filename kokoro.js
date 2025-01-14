@@ -1,12 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const login = require("chatbox-fca-remake");
-const {
-    generateUserAgent
-} = require('./system/useragent.js');
-const {
-    workers
-} = require("./system/workers.js");
 const express = require("express");
 const app = express();
 let PORT = 25645;
@@ -15,20 +9,18 @@ const cron = require("node-cron");
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 const {
-    encryptSession,
-    decryptSession
-} = require("./system/security");
-const {
     kokoro
 } = require ("./system/service");
 const {
+    generateUserAgent,
+    workers,
+    encryptSession,
+    decryptSession,
+    loadModules,
     logger,
     OnChat,
     font
 } = require("./system/custom");
-const {
-    loadModules
-} = require("./system/cmdload");
 
 const chat = new OnChat();
 
@@ -289,7 +281,7 @@ const startServer = async () => {
     PORT = kokoro_config.port || process.env.PORT || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
-        logger.green(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
+        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
     });
 };
 
@@ -301,10 +293,10 @@ cron.schedule('*/5 * * * *', () => {
         const time = new Date().toLocaleString("en-US", {
             timeZone: "Asia/Manila", hour12: true
         });
-        logger.green(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
+        logger.pastel(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
     })
     .catch((error) => {
-        logger.red('SELF PING FAILED: ', error.message);
+        logger.instagram('SELF PING FAILED: ', error.message);
     });
 });
 
@@ -863,7 +855,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             try {
                 fs.unlinkSync(sessionFile);
             } catch (error) {
-                logger.red(error);
+                logger.instagram(error);
             }
         }
         async function addThisUser(userid, state, prefix, admin, blacklist) {

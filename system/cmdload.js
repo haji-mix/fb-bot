@@ -29,7 +29,7 @@ async function loadModule(modulePath, Utils, logger) {
         if (run) Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run });
 
     } catch (error) {
-        logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
+        logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
     }
 }
 
@@ -43,7 +43,7 @@ async function loadFromDirectory(directory, Utils, logger) {
             await loadFromDirectory(filePath, Utils, logger);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
-            logger.green(`LOADING MODULE••• [${formattedName}]`);
+            logger.rainbow(`LOADING MODULE••• [${formattedName}]`);
             await loadModule(filePath, Utils, logger);
         }
     });
