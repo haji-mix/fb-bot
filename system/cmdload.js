@@ -3,7 +3,7 @@ const fs = require("fs");
 const scriptDir = path.join(__dirname, "../script");
 const allowedExtensions = [".js", ".ts"];
 
-async function loadModule(modulePath, Utils, logger) {
+async function loadModule(modulePath, Utils, logger, count) {
     try {
         const {
             config,
@@ -40,34 +40,36 @@ async function loadModule(modulePath, Utils, logger) {
             ...moduleInfo, run
         });
 
+        count++; 
     } catch (error) {
         logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
     }
+    return count; 
 }
 
 async function loadFromDirectory(directory, Utils, logger) {
     const files = fs.readdirSync(directory);
+    let count = 0;  
     const loadPromises = files.map(async (file) => {
         const filePath = path.join(directory, file);
         const stats = fs.statSync(filePath);
 
         if (stats.isDirectory()) {
-            await loadFromDirectory(filePath, Utils, logger);
+            count = await loadFromDirectory(filePath, Utils, logger);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
-            logger.pastel(`INSTALLING MODULE [${formattedName}]`);
-            await loadModule(filePath, Utils, logger);
+            logger.pastel(`LOADED MODULE [${formattedName}]`);
+            count = await loadModule(filePath, Utils, logger, count);
         }
     });
 
     await Promise.all(loadPromises);
-    logger.pastel(`ALL MODULE SUCCESSFULLY INSTALLED!`);
+    logger.pastel(`TOTAL MODULES: ${count}`);
+    return count; 
 }
 
 async function loadModules(Utils, logger) {
-    await loadFromDirectory(scriptDir,
-        Utils,
-        logger);
+    await loadFromDirectory(scriptDir, Utils, logger);
 }
 
 module.exports = {
