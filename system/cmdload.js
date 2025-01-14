@@ -2,8 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const script = path.join(__dirname, "../script");
 
-
-async function loadModule(modulePath, eventType, Utils) {
+async function loadModule(modulePath, Utils, logger) {
     const {
         config,
         run,
@@ -40,59 +39,55 @@ async function loadModule(modulePath, eventType, Utils) {
         usage,
         guide,
         version,
-        isPrefix: config.isPrefix,
-        isPremium: config.isPremium,
-        isGroup: config.isGroup,
-        isPrivate: config.isPrivate,
+        isPrefix,
+        isPremium,
+        isGroup,
+        isPrivate,
         limit,
         credits,
         cd
     };
 
-    if (handleEvent) Utils.handleEvent.set(aliases, {
-        ...moduleInfo, handleEvent
-    });
-    if (handleReply) Utils.ObjectReply.set(aliases, {
-        ...moduleInfo, handleReply
-    });
-    if (run) Utils.commands.set(aliases, {
-        ...moduleInfo, run
-    });
+    if (handleEvent) {
+        Utils.handleEvent.set(aliases, { ...moduleInfo, handleEvent });
+    }
+
+    if (handleReply) {
+        Utils.ObjectReply.set(aliases, { ...moduleInfo, handleReply });
+    }
+
+    if (run) {
+        Utils.commands.set(aliases, { ...moduleInfo, run });
+    }
 }
 
 async function loadModules(Utils, logger) {
     const files = fs.readdirSync(script);
-    const loadPromises = files.map(async file => {
+    const loadPromises = files.map(async (file) => {
         const modulePath = path.join(script, file);
         const stats = fs.statSync(modulePath);
 
         if (stats.isDirectory()) {
             const nestedFiles = fs.readdirSync(modulePath);
             await Promise.all(
-                nestedFiles.map(async nestedFile => {
+                nestedFiles.map(async (nestedFile) => {
                     const filePath = path.join(modulePath, nestedFile);
                     if ([".js", ".ts"].includes(path.extname(filePath)?.toLowerCase())) {
-                        logger(
-                            `[${nestedFile?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
-                        );
+                        logger(`[${nestedFile.toUpperCase().replace(".JS", "").replace(".TS", "")}]`);
                         try {
-                            await loadModule(filePath, "event", Utils);
+                            await loadModule(filePath, Utils, logger);
                         } catch (error) {
-                            logger(
-                                `[${nestedFile}]: ${error.stack}`
-                            );
+                            logger(`[${nestedFile}]: ${error.stack}`);
                         }
                     }
                 })
             );
         } else if ([".js", ".ts"].includes(path.extname(modulePath)?.toLowerCase())) {
-            logger(
-                `[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
-            );
+            logger(`[${file.toUpperCase().replace(".JS", "").replace(".TS", "")}]`);
             try {
-                await loadModule(modulePath, Utils);
+                await loadModule(modulePath, Utils, logger);
             } catch (error) {
-                logger(`[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
+                logger(`[${file.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
             }
         }
     });
@@ -102,4 +97,4 @@ async function loadModules(Utils, logger) {
 
 module.exports = {
     loadModules
-}
+};
