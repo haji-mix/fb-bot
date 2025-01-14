@@ -362,7 +362,7 @@ class OnChat {
 
 module.exports = {
     OnChat,
-    logger: (txt) => console.log(rainbow(JSON.stringify(txt))),
+    logger: (txt) => console.log(rainbow(txt)),
     font,
     fonts: font
 };

@@ -90,7 +90,7 @@ async function loadModules(Utils, logger) {
                 `[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
             );
             try {
-                await loadModule(modulePath);
+                await loadModule(modulePath, Utils);
             } catch (error) {
                 logger(`[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
             }
