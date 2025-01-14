@@ -24,7 +24,6 @@ const {
 module.exports = {
     workers,
     logger,
-    font: fonts,
     fonts,
     OnChat,
     encryptSession,

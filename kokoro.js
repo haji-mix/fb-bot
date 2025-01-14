@@ -14,7 +14,6 @@ const {
 const {
     workers,
     logger,
-    font: fonts,
     fonts,
     OnChat,
     encryptSession,
@@ -381,8 +380,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 const cronjob = require('./system/cronjob')({
                     api,
+                    fonts,
                     font: fonts,
-                    font
                 });
 
                 const {
@@ -737,8 +736,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                     chat,
                                     message: chat,
                                     box: chat,
-                                    font,
-                                    fonts: font,
+                                    fonts,
+                                    font: fonts,
                                     global,
                                     event,
                                     admin,
