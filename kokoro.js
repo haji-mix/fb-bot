@@ -21,8 +21,6 @@ const {
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
-const chat = new OnChat();
-
 const Utils = {
     commands: new Map(),
     handleEvent: new Map(),
@@ -778,8 +776,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                                             args,
                                                             chat, box: chat,
                                                             message: chat,
-                                                            font,
-                                                            fonts: font,
+                                                            fonts:,
+                                                            font: fonts,
                                                             global,
                                                             admin,
                                                             prefix,
@@ -810,8 +808,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                                             chat,
                                                             box: chat,
                                                             message: chat,
-                                                            font,
-                                                            fonts: font,
+                                                            font: fonts,
+                                                            font: fonts,
                                                             global,
                                                             admin,
                                                             prefix,
