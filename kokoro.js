@@ -9,27 +9,16 @@ const cron = require("node-cron");
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 const {
-    workers
-} = require("./system/workers");
-const {
-    logger
-} = require("./system/logger");
-const {
-    fonts
-} = require("./system/fonts");
-const {
-    OnChat
-} = require("./system/chatOop");
-const {
-    loadModules
-} = require("./system/cmdload");
-const {
+    workers,
+    logger,
+    fonts,
+    OnChat,
+    loadModules,
     encryptSession,
-    decryptSession
-} = require("./system/security");
-const {
+    decryptSession,
     generateUserAgent
-} = require("./system/useragent");
+} = require("./system/modules");
+
 const chat = new OnChat();
 
 const Utils = {
