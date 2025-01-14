@@ -140,8 +140,6 @@ async function loadModules(script) {
 
 loadModules(script);
 
-app.set('trust proxy', true); //use full when you run this behind proxy to allow clients ip pass 
-
 const blockedIPs = new Set();
 
 // Middleware to block suspicious IPs
@@ -212,7 +210,7 @@ routes.forEach(route => {
 
 app.get('/random-status', (req, res) => {
   const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
-  res.status(randomStatusCode).json({ message: `Random status code: ${randomStatusCode}`, code: randomStatusCode });
+  res.status(randomStatusCode).json({ code: randomStatusCode });
 });
 
 app.use((req, res, next) => {

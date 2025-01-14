@@ -4,12 +4,11 @@ const path = require('path');
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-// Set the memory limit to 100% of 8 GB (8 * 1024 * 1024 * 1024 bytes)
-const MAX_MEMORY_THRESHOLD = 8 * 1024 * 1024 * 1024; 
+const MAX_MEMORY_THRESHOLD = 2 * 1024 * 1024 * 1024; // 2 GB memory limit (reduce this based on your server capacity)
 let mainProcess;
 
 // Always restart if process.env.PID is not '0' (default to true if not provided)
-const restartEnabled = process.env.PID !== '0'; 
+const restartEnabled = process.env.PID !== '0';
 
 // Calculate the memory limit in MB
 function calculateMaxMemoryUsage() {
@@ -43,7 +42,7 @@ function start() {
         console.log(`Process exited with code [${exitCode}]`);
         if (restartEnabled) {
             console.log("Restarting process...");
-            restartProcess();
+            restartProcess(); // Restart process after exit
         } else {
             console.log("Shutdown initiated...");
             process.exit(exitCode); // Exit with the same exit code
@@ -54,7 +53,7 @@ function start() {
     const memoryCheckInterval = setInterval(() => {
         const memoryUsage = process.memoryUsage().heapUsed;
         if (memoryUsage > MAX_MEMORY_THRESHOLD) {
-            console.error("Memory usage exceeded threshold. Restarting server...");
+            console.error("Memory usage exceeded threshold. Restarting process...");
 
             // Kill process and restart if memory usage is exceeded
             if (mainProcess && mainProcess.pid) {
