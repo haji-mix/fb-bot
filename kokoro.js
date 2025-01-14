@@ -6,8 +6,7 @@ const app = express();
 let PORT = 10000;
 const axios = require("axios");
 const cron = require("node-cron");
-const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
-let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
+
 const {
     workers,
     logger,
@@ -15,10 +14,12 @@ const {
     OnChat,
     loadModules,
     encryptSession,
-    decryptSession
+    decryptSession,
+    generateUserAgent
 } = require("./system/modules");
 
-const { generateUserAgent } =require("./system/useragent");
+const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
+let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
 const chat = new OnChat();
 
