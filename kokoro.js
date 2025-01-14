@@ -414,12 +414,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
                         if (event && event.senderID && event.body) {
-                            logger.blue(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
+                            logger.blue(fonts.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                         }
 
 
                         const reply = async (msg) => {
-                            const msgInfo = await chat.reply(font.thin(msg));
+                            const msgInfo = await chat.reply(fonts.thin(msg));
                             msgInfo.unsend(15000);
                         };
 
@@ -538,7 +538,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                 return;
                             }
-                            const warning = font.bold("[You don't have permission!]\n\n");
+                            const warning = fonts.bold("[You don't have permission!]\n\n");
 
                             if (role === 1 && !bot_owner) {
                                 await reply(warning + `Only the bot owner/admin have access to this command.`);
