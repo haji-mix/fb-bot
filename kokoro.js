@@ -15,9 +15,10 @@ const {
     OnChat,
     loadModules,
     encryptSession,
-    decryptSession,
-    generateUserAgent
+    decryptSession
 } = require("./system/modules");
+
+const { generateUserAgent } =require("./system/useragent");
 
 const chat = new OnChat();
 
