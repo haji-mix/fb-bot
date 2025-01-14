@@ -22,13 +22,13 @@ const {
 } = require("./useragent");
 
 module.exports = {
-    generateUserAgent,
     workers,
-    encryptSession,
-    decryptSession,
-    OnChat,
     logger,
     font: fonts,
     fonts,
-    loadModules
+    OnChat,
+    encryptSession,
+    decryptSession,
+    loadModules,
+    generateUserAgent
 };
