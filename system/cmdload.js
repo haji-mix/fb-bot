@@ -1,100 +1,58 @@
 const path = require("path");
 const fs = require("fs");
-const script = path.join(__dirname, "../script");
+const scriptDir = path.join(__dirname, "../script");
+const allowedExtensions = [".js", ".ts"];
 
 async function loadModule(modulePath, Utils, logger) {
-    const {
-        config,
-        run,
-        handleEvent,
-        handleReply
-    } = require(modulePath);
+    try {
+        const { config, run, handleEvent, handleReply } = require(modulePath);
+        const moduleInfo = {
+            ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
+            aliases: [...config.aliases || [], config.name],
+            name: config.name || [],
+            role: config.role || "0",
+            version: config.version || "1.0.0",
+            isPrefix: config.isPrefix ?? true,
+            isPremium: config.isPremium ?? false,
+            isPrivate: config.isPrivate ?? false,
+            isGroup: config.isGroup ?? false,
+            limit: config.limit || "5",
+            credits: config.credits || "",
+            cd: config.cd || "5",
+            usage: config.usage || "",
+            guide: config.guide || "",
+            info: config.info || ""
+        };
 
-    const {
-        name = [],
-        role = "0",
-        version = "1.0.0",
-        isPrefix = true,
-        isPremium = false,
-        isPrivate = false,
-        isGroup = false,
-        limit = "5",
-        aliases = [],
-        info = "",
-        usage = "",
-        guide = "",
-        credits = "",
-        cd = "5"
-    } = Object.fromEntries(
-        Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])
-    );
+        if (handleEvent) Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent });
+        if (handleReply) Utils.ObjectReply.set(moduleInfo.aliases, { ...moduleInfo, handleReply });
+        if (run) Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run });
 
-    aliases.push(name);
-
-    const moduleInfo = {
-        name,
-        role,
-        aliases,
-        info,
-        usage,
-        guide,
-        version,
-        isPrefix,
-        isPremium,
-        isGroup,
-        isPrivate,
-        limit,
-        credits,
-        cd
-    };
-
-    if (handleEvent) {
-        Utils.handleEvent.set(aliases, { ...moduleInfo, handleEvent });
-    }
-
-    if (handleReply) {
-        Utils.ObjectReply.set(aliases, { ...moduleInfo, handleReply });
-    }
-
-    if (run) {
-        Utils.commands.set(aliases, { ...moduleInfo, run });
+    } catch (error) {
+        logger(`Error loading module at ${modulePath}: ${error.stack}`);
     }
 }
 
-async function loadModules(Utils, logger) {
-    const files = fs.readdirSync(script);
+async function loadFromDirectory(directory, Utils, logger) {
+    const files = fs.readdirSync(directory);
     const loadPromises = files.map(async (file) => {
-        const modulePath = path.join(script, file);
-        const stats = fs.statSync(modulePath);
+        const filePath = path.join(directory, file);
+        const stats = fs.statSync(filePath);
 
         if (stats.isDirectory()) {
-            const nestedFiles = fs.readdirSync(modulePath);
-            await Promise.all(
-                nestedFiles.map(async (nestedFile) => {
-                    const filePath = path.join(modulePath, nestedFile);
-                    if ([".js", ".ts"].includes(path.extname(filePath)?.toLowerCase())) {
-                        logger(`[${nestedFile.toUpperCase().replace(".JS", "").replace(".TS", "")}]`);
-                        try {
-                            await loadModule(filePath, Utils, logger);
-                        } catch (error) {
-                            logger(`[${nestedFile}]: ${error.stack}`);
-                        }
-                    }
-                })
-            );
-        } else if ([".js", ".ts"].includes(path.extname(modulePath)?.toLowerCase())) {
-            logger(`[${file.toUpperCase().replace(".JS", "").replace(".TS", "")}]`);
-            try {
-                await loadModule(modulePath, Utils, logger);
-            } catch (error) {
-                logger(`[${file.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
-            }
+            await loadFromDirectory(filePath, Utils, logger); // Recursive call for nested directories
+        } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
+            const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
+            logger(`LOADING MODULE > [${formattedName}] from ${filePath}`);
+            await loadModule(filePath, Utils, logger);
         }
     });
 
     await Promise.all(loadPromises);
 }
 
-module.exports = {
-    loadModules
-};
+async function loadModules(Utils, logger) {
+    await loadFromDirectory(scriptDir, Utils, logger);
+}
+
+module.exports = { loadModules };
