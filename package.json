@@ -30,10 +30,8 @@
     ],
     "license": "ISC",
     "dependencies": {
-        "asynckit": "^0.4.0",
         "https-proxy-agent": "^7.0.5",
         "socks-proxy-agent": "^8.0.4",
-        "canvas": "^3.0.0",
         "chatbox-fca-remake": "^4.2.7",
         "srod-v2": "^1.0.2",
         "@google/generative-ai": "^0.16.0",
