@@ -12,7 +12,7 @@ const _debug = (namespace) => debug(`[hajime]:[${namespace}]`.toUpperCase());
 const logger = {
   cmd: _debug('command'),
   event: _debug('event'),
-  api; _debug('api'),
+  api: _debug('api'),
   server: _debug('server'),
   system: _debug('system')
 };
