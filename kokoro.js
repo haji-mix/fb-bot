@@ -12,14 +12,15 @@ const {
     kokoro
 } = require ("./system/service");
 const {
-    generateUserAgent,
     workers,
+    logger,
+    font: fonts,
+    fonts,
+    OnChat,
     encryptSession,
     decryptSession,
     loadModules,
-    logger,
-    OnChat,
-    font
+    generateUserAgent
 } = require("./system/custom");
 
 const chat = new OnChat();
