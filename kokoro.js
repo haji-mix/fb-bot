@@ -379,7 +379,7 @@ async function postLogin(req, res) {
 
 const startServer = async () => {
     const hajime = await workers();
-    PORT = kokoro_config.port || process.env.PORT || hajime.host.port;
+    PORT = kokoro_config.port || process.env.PORT || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
         chat.log(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
