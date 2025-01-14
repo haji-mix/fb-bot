@@ -39,7 +39,7 @@
         },
         "restart": {
             "enabled": true,
-            "cronExpression": "0 */1 * * *"
+            "cronExpression": "0 */4 * * *"
         },
         "clearChat": {
             "enabled": false,

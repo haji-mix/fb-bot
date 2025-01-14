@@ -11,11 +11,9 @@ const express = require("express");
 const app = express();
 let PORT = 25645;
 const axios = require("axios");
-const script = path.join(__dirname, "script");
 const cron = require("node-cron");
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
-
 const {
     encryptSession,
     decryptSession
@@ -24,9 +22,13 @@ const {
     kokoro
 } = require ("./system/service");
 const {
+    logger,
     OnChat,
     font
-} = require("./system/onChat");
+} = require("./system/custom");
+const {
+    loadModules
+} = require("./system/cmdload");
 
 const chat = new OnChat();
 
@@ -41,104 +43,7 @@ const Utils = {
     userActivity: {}
 };
 
-async function loadModule(modulePath, eventType) {
-    const {
-        config,
-        run,
-        handleEvent,
-        handleReply
-    } = require(modulePath);
-
-    const {
-        name = [],
-        role = "0",
-        version = "1.0.0",
-        isPrefix = true,
-        isPremium = false,
-        isPrivate = false,
-        isGroup = false,
-        limit = "5",
-        aliases = [],
-        info = "",
-        usage = "",
-        guide = "",
-        credits = "",
-        cd = "5"
-    } = Object.fromEntries(
-        Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])
-    );
-
-    aliases.push(name);
-
-    const moduleInfo = {
-        name,
-        role,
-        aliases,
-        info,
-        usage,
-        guide,
-        version,
-        isPrefix: config.isPrefix,
-        isPremium: config.isPremium,
-        isGroup: config.isGroup,
-        isPrivate: config.isPrivate,
-        limit,
-        credits,
-        cd
-    };
-
-    if (handleEvent) Utils.handleEvent.set(aliases, {
-        ...moduleInfo, handleEvent
-    });
-    if (handleReply) Utils.ObjectReply.set(aliases, {
-        ...moduleInfo, handleReply
-    });
-    if (run) Utils.commands.set(aliases, {
-        ...moduleInfo, run
-    });
-}
-
-async function loadModules(script) {
-    const files = fs.readdirSync(script);
-    const loadPromises = files.map(async file => {
-        const modulePath = path.join(script, file);
-        const stats = fs.statSync(modulePath);
-
-        if (stats.isDirectory()) {
-            const nestedFiles = fs.readdirSync(modulePath);
-            await Promise.all(
-                nestedFiles.map(async nestedFile => {
-                    const filePath = path.join(modulePath, nestedFile);
-                    if ([".js", ".ts"].includes(path.extname(filePath)?.toLowerCase())) {
-                        chat.log(
-                            `LOADING EVENT: [${nestedFile?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
-                        );
-                        try {
-                            await loadModule(filePath, "event");
-                        } catch (error) {
-                            chat.error(
-                                `ERROR LOADING EVENT [${nestedFile}]: ${error.stack}`
-                            );
-                        }
-                    }
-                })
-            );
-        } else if ([".js", ".ts"].includes(path.extname(modulePath)?.toLowerCase())) {
-            chat.log(
-                `LOADING COMMAND: [${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
-            );
-            try {
-                await loadModule(modulePath);
-            } catch (error) {
-                chat.error(`ERROR LOADING COMMAND [${file}]: ${error.stack}`);
-            }
-        }
-    });
-
-    await Promise.all(loadPromises);
-}
-
-loadModules(script);
+loadModules(Utils, logger);
 
 const blockedIPs = new Set();
 
@@ -209,8 +114,10 @@ routes.forEach(route => {
 });
 
 app.get('/random-status', (req, res) => {
-  const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
-  res.status(randomStatusCode).json({ code: randomStatusCode });
+    const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
+    res.status(randomStatusCode).json({
+        code: randomStatusCode
+    });
 });
 
 app.use((req, res, next) => {
@@ -243,7 +150,7 @@ async function processExit(req, res) {
 
         process.exit(0); // This will stop the server
     } catch (error) {
-            res.status(400).json({
+        res.status(400).json({
             success: false,
             error: error.message || error
         });
@@ -382,7 +289,7 @@ const startServer = async () => {
     PORT = kokoro_config.port || process.env.PORT || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
-        chat.log(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
+        logger.server(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
     });
 };
 
@@ -394,10 +301,10 @@ cron.schedule('*/5 * * * *', () => {
         const time = new Date().toLocaleString("en-US", {
             timeZone: "Asia/Manila", hour12: true
         });
-        chat.log(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
+        logger.server(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
     })
     .catch((error) => {
-        console.error('SELF PING FAILED: ', error.message);
+        logger.server('SELF PING FAILED: ', error.message);
     });
 });
 
@@ -479,8 +386,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 },
                     1000);
 
-                const cronjob = require('./system/custom.js')({
-                    api: api,
+                const cronjob = require('./system/cronjob')({
+                    api,
                     font,
                     fonts: font
                 });
@@ -521,7 +428,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
                         if (event && event.senderID && event.body) {
-                            chat.log(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
+                            logger.event(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                         }
 
 
@@ -956,7 +863,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             try {
                 fs.unlinkSync(sessionFile);
             } catch (error) {
-                chat.log(error.message);
+                logger.system(error);
             }
         }
         async function addThisUser(userid, state, prefix, admin, blacklist) {
@@ -1017,12 +924,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-                  const checkHistory = async () => {
+            const checkHistory = async () => {
                 const history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
                 for (let i = 0; i < history.length; i++) {
                     const user = history[i];
-                 /*   if (!user || typeof user !== "object")  process.exit(0);
+                    /*   if (!user || typeof user !== "object")  process.exit(0);
 
                     if (user.time === undefined || user.time === null || isNaN(user.time)) {
                      //   process.exit(0);
