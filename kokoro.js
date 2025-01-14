@@ -3,7 +3,7 @@ const path = require("path");
 const login = require("chatbox-fca-remake");
 const express = require("express");
 const app = express();
-let PORT = 25645;
+let PORT = 10000;
 const axios = require("axios");
 const cron = require("node-cron");
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
@@ -278,7 +278,7 @@ async function postLogin(req, res) {
 
 const startServer = async () => {
     const hajime = await workers();
-    PORT = kokoro_config.port || process.env.PORT || hajime.host.port || PORT;
+    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
         logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
