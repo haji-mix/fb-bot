@@ -94,9 +94,6 @@ const routes = [{
         path: '/login', method: 'post', handler: postLogin
     },
     {
-        path: '/ai', method: 'get', handler: kokoro
-    },
-    {
         path: '/restart', method: 'get', handler: processExit
     },
     {
