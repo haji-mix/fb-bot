@@ -5,10 +5,16 @@ const allowedExtensions = [".js", ".ts"];
 
 async function loadModule(modulePath, Utils, logger) {
     try {
-        const { config, run, handleEvent, handleReply } = require(modulePath);
+        const {
+            config,
+            run,
+            handleEvent,
+            handleReply
+        } = require(modulePath);
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
-            aliases: [...config.aliases || [], config.name],
+            aliases: [...config.aliases || [],
+                config.name],
             name: config.name || [],
             role: config.role || "0",
             version: config.version || "1.0.0",
@@ -24,9 +30,15 @@ async function loadModule(modulePath, Utils, logger) {
             info: config.info || ""
         };
 
-        if (handleEvent) Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent });
-        if (handleReply) Utils.ObjectReply.set(moduleInfo.aliases, { ...moduleInfo, handleReply });
-        if (run) Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run });
+        if (handleEvent) Utils.handleEvent.set(moduleInfo.aliases, {
+            ...moduleInfo, handleEvent
+        });
+        if (handleReply) Utils.ObjectReply.set(moduleInfo.aliases, {
+            ...moduleInfo, handleReply
+        });
+        if (run) Utils.commands.set(moduleInfo.aliases, {
+            ...moduleInfo, run
+        });
 
     } catch (error) {
         logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
@@ -43,16 +55,21 @@ async function loadFromDirectory(directory, Utils, logger) {
             await loadFromDirectory(filePath, Utils, logger);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
-            logger.rainbow(`LOADING MODULE••• [${formattedName}]`);
+            logger.pastel(`INSTALLING MODULE [${formattedName}]`);
             await loadModule(filePath, Utils, logger);
         }
     });
 
     await Promise.all(loadPromises);
+    logger.pastel(`ALL MODULE SUCCESSFULLY INSTALLED!`);
 }
 
 async function loadModules(Utils, logger) {
-    await loadFromDirectory(scriptDir, Utils, logger);
+    await loadFromDirectory(scriptDir,
+        Utils,
+        logger);
 }
 
-module.exports = { loadModules };
+module.exports = {
+    loadModules
+};
