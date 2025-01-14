@@ -72,13 +72,13 @@ async function loadModules(Utils, logger) {
                 nestedFiles.map(async nestedFile => {
                     const filePath = path.join(modulePath, nestedFile);
                     if ([".js", ".ts"].includes(path.extname(filePath)?.toLowerCase())) {
-                        logger.event(
+                        logger(
                             `[${nestedFile?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
                         );
                         try {
                             await loadModule(filePath, "event");
                         } catch (error) {
-                            logger.event(
+                            logger(
                                 `[${nestedFile}]: ${error.stack}`
                             );
                         }
@@ -86,13 +86,13 @@ async function loadModules(Utils, logger) {
                 })
             );
         } else if ([".js", ".ts"].includes(path.extname(modulePath)?.toLowerCase())) {
-            logger.cmd(
+            logger(
                 `[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
             );
             try {
                 await loadModule(modulePath);
             } catch (error) {
-                logger.cmd(`[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
+                logger(`[${file?.toUpperCase().replace(".JS", "").replace(".TS", "")}]: ${error.stack}`);
             }
         }
     });
