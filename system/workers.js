@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const workers = async () => {
     try {
-        const url = `https://github.com/haji-mix/-`;
+        const url = `https://raw.githubusercontent.com/haji-mix/-/refs/heads/master/haxor/global.json`;
         const response = await axios.get(url);
         return response.data;
     } catch (error) {
@@ -10,4 +10,6 @@ const workers = async () => {
     }
 };
 
-module.exports = workers;
+module.exports = {
+    workers
+};
