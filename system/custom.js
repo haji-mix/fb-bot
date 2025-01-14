@@ -1,22 +1,10 @@
 const text = require("fontstyles");
 const { rainbow } = require("gradient-string");
 const { red } = require("chalk");
-const debug = require('debug');
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 const { workers } = require("./workers");
-
-const _debug = (namespace) => debug(`[hajime]:[${namespace}]`.toUpperCase());
-
-const logger = {
-  cmd: _debug('command'),
-  event: _debug('event'),
-  api: _debug('api'),
-  server: _debug('server'),
-  system: _debug('system')
-};
-
 
 const font = [
     "thin", "italic", "bold", "underline", "strike", "monospace",
@@ -374,7 +362,7 @@ class OnChat {
 
 module.exports = {
     OnChat,
-    logger,
+    logger: (txt) => console.log(rainbow(JSON.stringify(txt))),
     font,
     fonts: font
 };
