@@ -1,10 +1,16 @@
 const text = require("fontstyles");
-const { rainbow } = require("gradient-string");
-const { red } = require("chalk");
+const {
+    rainbow
+} = require("gradient-string");
+const {
+    red
+} = require("chalk");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const { workers } = require("./workers");
+const {
+    workers
+} = require("./workers");
 
 const font = [
     "thin", "italic", "bold", "underline", "strike", "monospace",
@@ -14,14 +20,66 @@ const font = [
         [style]: msg => text[style](msg)
     }), {});
 
+// Default color: White
+const defaultColor = "\x1b[37m"; // White
+
+// Custom Logger
+const logger = (msg, color = defaultColor) => {
+    console.log(`${color}%s\x1b[0m`, msg); // Default color is applied if none is provided
+};
+
+// Named color methods
+logger.red = (msg) => logger(msg, "\x1b[31m"); // Red
+logger.green = (msg) => logger(msg, "\x1b[32m"); // Green
+logger.yellow = (msg) => logger(msg, "\x1b[33m"); // Yellow
+logger.blue = (msg) => logger(msg, "\x1b[34m"); // Blue
+logger.magenta = (msg) => logger(msg, "\x1b[35m"); // Magenta
+logger.cyan = (msg) => logger(msg, "\x1b[36m"); // Cyan
+logger.white = (msg) => logger(msg, "\x1b[37m"); // White
+logger.gray = (msg) => logger(msg, "\x1b[90m"); // Gray
+logger.bgRed = (msg) => logger(msg, "\x1b[41m"); // Red Background
+logger.bgGreen = (msg) => logger(msg, "\x1b[42m"); // Green Background
+logger.bgYellow = (msg) => logger(msg, "\x1b[43m"); // Yellow Background
+logger.bgBlue = (msg) => logger(msg, "\x1b[44m"); // Blue Background
+
+// Rainbow Logger
+logger.rainbow = (msg) => {
+    const colors = [
+        "\x1b[31m",
+        // Red
+        "\x1b[33m",
+        // Yellow
+        "\x1b[32m",
+        // Green
+        "\x1b[34m",
+        // Blue
+        "\x1b[35m",
+        // Magenta
+        "\x1b[36m",
+        // Cyan
+        "\x1b[37m",
+        // White
+    ];
+
+    let rainbowMessage = '';
+    let colorIndex = 0;
+
+    for (let i = 0; i < msg.length; i++) {
+        rainbowMessage += colors[colorIndex % colors.length] + msg[i];
+        colorIndex++;
+    }
+
+    console.log(rainbowMessage + "\x1b[0m");
+};
+
 const getHeadersForUrl = (url) => {
-    const domainPatterns = [
-        {
-            domains: ['pixiv.net', 'i.pximg.net'],
-            headers: {
-                Referer: 'http://www.pixiv.net/'
-            }
-        },
+    const domainPatterns = [{
+        domains: ['pixiv.net',
+            'i.pximg.net'],
+        headers: {
+            Referer: 'http://www.pixiv.net/'
+        }
+    },
         {
             domains: ['deviantart.com'],
             headers: {
@@ -47,18 +105,22 @@ const getHeadersForUrl = (url) => {
             }
         },
         {
-            domains: ['i.nhentai.net', 'nhentai.net'],
+            domains: ['i.nhentai.net',
+                'nhentai.net'],
             headers: {
                 Referer: 'https://nhentai.net/'
             }
-        }
-    ];
+        }];
 
-    const domain = domainPatterns.find(({ domains }) =>
+    const domain = domainPatterns.find(({
+        domains
+    }) =>
         domains.some(d => url.includes(d))
     );
 
-    const headers = domain ? { ...domain.headers } : {};
+    const headers = domain ? {
+        ...domain.headers
+    }: {};
 
     if (url.endsWith('.jpg') || url.endsWith('.png')) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
@@ -118,10 +180,12 @@ class OnChat {
             }
             authors = pogiko;
         } else {
-            authors = [pogiko, owner]; 
+            authors = [pogiko,
+                owner];
         }
 
-        const [author1, author2] = authors; 
+        const [author1,
+            author2] = authors;
 
         if (author1 !== author2) {
             if (lvl === 1) {
@@ -178,7 +242,7 @@ class OnChat {
                 this.log(`Rate limit reached unable to react to message for botID: ${this.api.getCurrentUserID()}`);
             }
         },
-        bool);
+            bool);
     }
 
     nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊",
@@ -362,7 +426,7 @@ class OnChat {
 
 module.exports = {
     OnChat,
-    logger: (txt) => console.log(rainbow(txt)),
+    logger,
     font,
     fonts: font
 };

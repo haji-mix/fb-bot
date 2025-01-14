@@ -1,54 +1,82 @@
-const {
-    spawn
-} = require("child_process");
-const path = require('path');
+const { spawn } = require("child_process");
+const path = require("path");
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
+const npmPackages = [
+    "canvas@latest"
+];
+
+const restartEnabled = process.env.PID !== "0";
+
 let mainProcess;
 
-// Always restart if process.env.PID is not '0' (default to true if not provided)
-const restartEnabled = process.env.PID !== '0';
+function installPackages(callback) {
+    console.log("Installing latest npm packages...");
+
+    let installCount = 0;
+    let totalPackages = npmPackages.length;
+
+    npmPackages.forEach((pkg) => {
+        const installProcess = spawn("npm", ["install", pkg], {
+            cwd: __dirname,
+            stdio: "inherit",
+            shell: true,
+        });
+
+        installProcess.on("error", (err) => {
+            console.error(`Error installing package ${pkg}:`, err);
+        });
+
+        installProcess.on("close", (exitCode) => {
+            installCount++;
+
+            if (exitCode !== 0) {
+                console.error(`Failed to install package ${pkg} with exit code [${exitCode}]`);
+            } else {
+                console.log(`Package ${pkg} installed successfully.`);
+            }
+
+            if (installCount === totalPackages) {
+                callback(); 
+            }
+        });
+    });
+}
+
 
 function start() {
     console.log("Starting main process...");
 
-    // Start the main process without memory allocation flags
-    mainProcess = spawn("node", [
-        "--no-warnings",
-        SCRIPT_PATH
-    ], {
+    mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
-        shell: true
+        shell: true,
     });
 
-    // Handle errors in the main process
     mainProcess.on("error", (err) => {
         console.error("Error occurred while starting the process:", err);
     });
 
-    // Handle process exit
     mainProcess.on("close", (exitCode) => {
         console.log(`Process exited with code [${exitCode}]`);
         if (restartEnabled) {
             console.log("Restarting process...");
-            restartProcess(); // Restart process after exit
+            restartProcess();
         } else {
             console.log("Shutdown initiated...");
-            process.exit(exitCode); // Exit with the same exit code
+            process.exit(exitCode);
         }
     });
 }
 
-// Restart the process after killing it
 function restartProcess() {
     if (mainProcess && mainProcess.pid) {
-        mainProcess.kill('SIGKILL');
-        console.log('Main process killed. Restarting...');
+        mainProcess.kill("SIGKILL");
+        console.log("Main process killed. Restarting...");
     }
     start();
 }
 
-start();
+installPackages(start); 

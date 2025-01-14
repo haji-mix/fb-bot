@@ -289,7 +289,7 @@ const startServer = async () => {
     PORT = kokoro_config.port || process.env.PORT || hajime.host.port || PORT;
 
     app.listen(PORT, () => {
-        logger(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
+        logger.green(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
     });
 };
 
@@ -301,10 +301,10 @@ cron.schedule('*/5 * * * *', () => {
         const time = new Date().toLocaleString("en-US", {
             timeZone: "Asia/Manila", hour12: true
         });
-        logger(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
+        logger.green(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
     })
     .catch((error) => {
-        logger('SELF PING FAILED: ', error.message);
+        logger.red('SELF PING FAILED: ', error.message);
     });
 });
 
@@ -428,7 +428,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
                         if (event && event.senderID && event.body) {
-                            clogger(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
+                            logger.blue(font.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                         }
 
 
@@ -863,7 +863,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             try {
                 fs.unlinkSync(sessionFile);
             } catch (error) {
-                logger(error);
+                logger.red(error);
             }
         }
         async function addThisUser(userid, state, prefix, admin, blacklist) {

@@ -29,7 +29,7 @@ async function loadModule(modulePath, Utils, logger) {
         if (run) Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run });
 
     } catch (error) {
-        logger(`Error loading module at ${modulePath}: ${error.stack}`);
+        logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
     }
 }
 
@@ -40,10 +40,10 @@ async function loadFromDirectory(directory, Utils, logger) {
         const stats = fs.statSync(filePath);
 
         if (stats.isDirectory()) {
-            await loadFromDirectory(filePath, Utils, logger); // Recursive call for nested directories
+            await loadFromDirectory(filePath, Utils, logger);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
             const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
-            logger(`LOADING MODULE > [${formattedName}] from ${filePath}`);
+            logger.green(`LOADING MODULE••• [${formattedName}]`);
             await loadModule(filePath, Utils, logger);
         }
     });
