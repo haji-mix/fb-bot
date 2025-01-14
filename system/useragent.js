@@ -1,15 +1,14 @@
+// Data for browsers, mobile devices, and desktop platforms
 const browsers = [{
     name: 'Mozilla/5.0',
     engines: [{
         engine: 'AppleWebKit/537.36 (KHTML, like Gecko)',
-        browsers: ['Chrome',
-            'Safari',
-            'Edge']
+        browsers: ['Chrome', 'Safari', 'Edge']
     },
-        {
-            engine: 'Gecko/20100101',
-            browsers: ['Firefox']
-        },
+    {
+        engine: 'Gecko/20100101',
+        browsers: ['Firefox']
+    },
     ]
 }];
 
@@ -183,7 +182,8 @@ function getRandomElement(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateUserAgent() {
+// The constant function that generates a user agent string
+const generateUserAgent = () => {
     const isMobile = Math.random() < 0.8; // 70% chance for mobile devices
     let os;
     let browserDetails;
@@ -203,19 +203,22 @@ function generateUserAgent() {
         const selectedPlatform = getRandomElement(desktopPlatforms);
         os = selectedPlatform.platform;
         const browser = getRandomElement(selectedPlatform.browsers);
-        const engine = browser === 'Firefox' ? 'Gecko/20100101': 'AppleWebKit/537.36 (KHTML, like Gecko)';
+        const engine = browser === 'Firefox' ? 'Gecko/20100101' : 'AppleWebKit/537.36 (KHTML, like Gecko)';
         browserDetails = {
             name: browser,
             engine: engine
         };
     }
 
-    const browserVersion = browserDetails.name === 'Chrome' ? '117.0.5938.92': browserDetails.name === 'Safari' ? '605.1.15': '91.0.4472.124';
-    const safariVersion = browserDetails.name === 'Safari' ? '605.1': '537.36';
+    const browserVersion = browserDetails.name === 'Chrome' ? '117.0.5938.92' :
+        browserDetails.name === 'Safari' ? '605.1.15' :
+        browserDetails.name === 'Firefox' ? '91.0.4472.124' : 'Unknown Version';
+    const safariVersion = browserDetails.name === 'Safari' ? '605.1' : '537.36';
 
     return `${browsers[0].name} (${os}${deviceName}) ${browserDetails.engine} ${browserDetails.name}/${browserVersion} Safari/${safariVersion}`;
-}
+};
 
+// Export the function to be used in other files
 module.exports = {
     generateUserAgent
-}
+};
