@@ -76,7 +76,7 @@ async function loadModules(Utils, logger) {
                             `[${nestedFile?.toUpperCase().replace(".JS", "").replace(".TS", "")}]`
                         );
                         try {
-                            await loadModule(filePath, "event");
+                            await loadModule(filePath, "event", Utils);
                         } catch (error) {
                             logger(
                                 `[${nestedFile}]: ${error.stack}`
