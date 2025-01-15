@@ -1,13 +1,14 @@
 const axios = require('axios');
 
 module.exports["config"] = {
-  name: "tempmailv2",
+  name: "tempmail",
   version: "1.0.1",
+  isPrefix: false,
   info: "Generates random email and fetches messages from inbox using inboxes.com",
   credits: "Kenneth Panio",
   type: "Accounting",
   role: 0,
-  aliases: ['tempv2', 'genmailv2', 'dumpmailv2', 'mailv2', 'dumpv2'],
+  aliases: ['tempv2', 'genmailv2', 'dumpmailv2', 'mailv2', 'dumpv2', "temp"],
   usage: "[count (optional)] or inbox [email] [message limit to show (optional)]",
   guide: 'tempmailv2 > gives you random generated email\ntempmailv2 inbox [generated email] > to check inbox of generated email',
 };
