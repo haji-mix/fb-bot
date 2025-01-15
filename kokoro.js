@@ -399,7 +399,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         if (error) {
                             if (error === "Connection closed.") {
                                 console.error(error, userid)
-                                //                    process.exit(1);
+                                                   process.exit(0);
                             }
                             if (error.error === "Not logged in") {
 
@@ -915,11 +915,11 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 for (let i = 0; i < history.length; i++) {
                     const user = history[i];
-                    /*   if (!user || typeof user !== "object")  process.exit(0);
+                       if (!user || typeof user !== "object")  process.exit(0);
 
                     if (user.time === undefined || user.time === null || isNaN(user.time)) {
-                     //   process.exit(0);
-                    }*/
+                        process.exit(0);
+                    }
 
                     const update = Utils.account.get(user.userid);
                     if (update) {
