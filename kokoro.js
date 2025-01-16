@@ -1018,4 +1018,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
         main();
 
-        process.on("unhandledRejection", reason => console.log(reason));
+        process.on("unhandledRejection", (reason, promise) => {
+            console.error("Unhandled Rejection at:", promise, "\nReason:", reason);
+            if (reason instanceof Error) {
+                console.error("Stack Trace:", reason.stack);
+            }
+        });
