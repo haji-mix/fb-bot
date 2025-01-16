@@ -249,14 +249,21 @@ class OnChat {
     }
 
     async userInfo(id = this.senderID) {
-        return await this.api.getInfo(id);
+        return await this.api.getUserInfo(id);
     }
 
     async userName(id = this.senderID) {
-        const fetch = await this.userInfo(id);
+        const fetch = await this.api.getInfo(id);
         const name = fetch.name;
-        return name || "Facebook User";
+
+        if (!name) {
+            const userInfo = await this.userInfo(id);
+            return userInfo[id]?.name || "Facebook User";
+        }
+
+        return name;
     }
+
 
     unfriend(id) {
         if (!id) {
