@@ -2,18 +2,24 @@ const path = require("path");
 const fs = require("fs");
 const scriptDir = path.join(__dirname, "../script");
 const allowedExtensions = [".js", ".ts"];
-const loadedModuleNames = new Set(); // Track loaded module names
+const loadedModuleNames = new Set();
 
 async function loadModule(modulePath, Utils, logger, count) {
     try {
-        const {
-            config,
-            run,
-            handleEvent,
-            handleReply
-        } = require(modulePath);
+        const module = require(modulePath);
+        const config = module.config || module.meta;
+
+        if (!config) {
+            logger.instagram(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
+            return count;
+        }
 
         const moduleName = config.name;
+        if (!moduleName) {
+            logger.instagram(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
+            return count;
+        }
+
         if (loadedModuleNames.has(moduleName)) {
             logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded. Skipping...`);
             return count;
@@ -24,7 +30,7 @@ async function loadModule(modulePath, Utils, logger, count) {
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
             aliases: [...config.aliases || [], moduleName],
-            name: moduleName || [],
+            name: moduleName,
             role: config.role || "0",
             version: config.version || "1.0.0",
             isPrefix: config.isPrefix ?? true,
@@ -36,25 +42,33 @@ async function loadModule(modulePath, Utils, logger, count) {
             cd: config.cd || "5",
             usage: config.usage || "",
             guide: config.guide || "",
-            info: config.info || ""
+            info: config.info || config.description || ""
         };
 
-        if (handleEvent) Utils.handleEvent.set(moduleInfo.aliases, {
-            ...moduleInfo, handleEvent
-        });
-        if (handleReply) Utils.ObjectReply.set(moduleInfo.aliases, {
-            ...moduleInfo, handleReply
-        });
-        if (run) Utils.commands.set(moduleInfo.aliases, {
-            ...moduleInfo, run
-        });
+        if (module.handleEvent) {
+            Utils.handleEvent.set(moduleInfo.aliases, {
+                ...moduleInfo, handleEvent: module.handleEvent
+            });
+        }
+        if (module.handleReply) {
+            Utils.ObjectReply.set(moduleInfo.aliases, {
+                ...moduleInfo, handleReply: module.handleReply
+            });
+        }
+        if (module.run) {
+            Utils.commands.set(moduleInfo.aliases, {
+                ...moduleInfo, run: module.run
+            });
+        }
 
+        logger.pastel(`LOADED MODULE [${moduleName}]`);
         count++;
     } catch (error) {
         logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
     }
     return count;
 }
+
 
 async function loadFromDirectory(directory, Utils, logger, count) {
     const files = fs.readdirSync(directory);
@@ -65,8 +79,6 @@ async function loadFromDirectory(directory, Utils, logger, count) {
         if (stats.isDirectory()) {
             count = await loadFromDirectory(filePath, Utils, logger, count);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
-            const formattedName = file.replace(/\.(js|ts)$/i, "").toUpperCase();
-            logger.pastel(`LOADED MODULE [${formattedName}]`);
             count = await loadModule(filePath, Utils, logger, count);
         }
     }
@@ -76,7 +88,7 @@ async function loadFromDirectory(directory, Utils, logger, count) {
 
 async function loadModules(Utils, logger) {
     let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
-    logger.pastel(`TOTAL MODULES: ${count}`);
+    logger.pastel(`TOTAL MODULES: [${count}]`);
 }
 
 module.exports = {

@@ -76,7 +76,7 @@ module.exports["run"] = async ({ font, event, args, chat }) => {
       }
 
       chat.reply(mono(`Successful! Displaying the latest ${displayLimit} Inbox 📥.\nCheck your message request or spam if you haven't seen the mail yet.`));
-      chat.reply(font.monospace(messageText), event.senderID);
+      chat.reply(mono(messageText), event.senderID);
       chat.react("📮");
     } else {
       const count = Math.min(args[0] || 1, MAX_EMAIL_COUNT);

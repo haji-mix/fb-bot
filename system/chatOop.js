@@ -1,4 +1,6 @@
-const { workers } = require("./workers");
+const {
+    workers
+} = require("./workers");
 
 const {
     download
@@ -134,32 +136,50 @@ class OnChat {
     }
 
     async reply(msg, tid = this.threadID, mid = null) {
-        if (!msg) {
-            this.log("Message is missing!");
-            return;
-        }
-        const replyMsg = await this.api.sendMessage(msg, tid, mid).catch(() => {});
-        if (replyMsg) {
+        try {
+            if (!msg) {
+                this.log("Message is missing!");
+                return;
+            }
+
+            const replyMsg = await this.api.sendMessage(msg, tid, mid);
+
+            if (!replyMsg) {
+                this.log("Failed to send the message!");
+                return;
+            }
+
             return {
                 edit: async (message, delay = 0) => {
-                    if (!message) {
-                        this.log("Missing Edit Message!");
-                        return;
+                    try {
+                        if (!message) {
+                            this.log("Missing edit message content!");
+                            return;
+                        }
+                        await new Promise(res => setTimeout(res, delay));
+                        await this.api.editMessage(message, replyMsg.messageID);
+                    } catch (err) {
+                        this.log(`Error while editing the message: ${err.message}`);
                     }
-                    await new Promise(res => setTimeout(res, delay));
-                    await this.api.editMessage(message, replyMsg.messageID);
                 },
                 unsend: async (delay = 0) => {
-                    if (!replyMsg.messageID) {
-                        this.log("Missing Message ID!");
-                        return;
+                    try {
+                        if (!replyMsg.messageID) {
+                            this.log("Missing message ID for unsend!");
+                            return;
+                        }
+                        await new Promise(res => setTimeout(res, delay));
+                        await this.api.unsendMessage(replyMsg.messageID);
+                    } catch (err) {
+                        this.log(`Error while unsending the message: ${err.message}`);
                     }
-                    await new Promise(res => setTimeout(res, delay));
-                    await this.api.unsendMessage(replyMsg.messageID);
                 }
             };
+        } catch (err) {
+            this.log(`Error in reply function: ${err.message}`);
         }
     }
+
 
     editmsg(msg, mid) {
         if (!msg || !mid) {
