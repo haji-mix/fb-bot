@@ -36,8 +36,7 @@ function formatFont(text) {
 module.exports["run"] = async function ({ api, event, args, chat }) {
   const { threadID, messageID, senderID } = event;
 
-  let dataa = await chat.userName(senderID);
-  let namee = await dataa[senderID].name;
+  let namee = await chat.userName(senderID);
 
   let loz = await api.getThreadInfo(threadID);
   let participants = loz.participantIDs;
@@ -48,12 +47,9 @@ module.exports["run"] = async function ({ api, event, args, chat }) {
     id2 = participants[Math.floor(Math.random() * participants.length)];
   } while (id2 === id1);
 
-  let data1 = await chat.userName(id1);
-  let name1 = data1[id1].name;
+  let name1 = await chat.userName(id1);
 
-  let data2 = await chat.userName(id2);
-  let name2 = data2[id2].name;
-
+  let name2 = await chat.userName(id2);
   let arraytag = [];
   arraytag.push({ id: id1, tag: name1 });
   arraytag.push({ id: id2, tag: name2 });

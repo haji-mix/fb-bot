@@ -53,7 +53,7 @@ module.exports["run"] = async function({ api, event, args, chat }) {
   var text = args.join(" ");
   let name = await chat.userName(senderID);
   let get_info = await chat.userInfo(senderID);
-  var linkAvatar = get_info.profile_url;
+  var linkAvatar = get_info.profile_img;
   if (!text) return api.sendMessage("Enter the content of the comment on p*rnhub", event.threadID, event.messageID);
   let getAvatar = (await axios.get(linkAvatar, { responseType: 'arraybuffer' })).data;
   let getSaiki = (await axios.get(`https://i.imgur.com/XrgnIyK.png`, { responseType: 'arraybuffer' })).data;
