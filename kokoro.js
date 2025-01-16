@@ -414,7 +414,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
                         if (event && event.senderID && event.body) {
-                            logger.instagram(fonts.origin(`USER ID: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
+                            logger.instagram(fonts.origin(`${await chat.userName(event.senderID)}: ${event.senderID}\nEVENT MESSAGE: ${(event.body || "").trim()}`));
                         }
 
 
