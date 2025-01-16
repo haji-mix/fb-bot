@@ -3,6 +3,7 @@ const fs = require("fs");
 const scriptDir = path.join(__dirname, "../script");
 const allowedExtensions = [".js", ".ts"];
 const loadedModuleNames = new Set();
+let autoDelete = true; // Set to `false` to disable auto-delete
 
 async function loadModule(modulePath, Utils, logger, count) {
     try {
@@ -21,7 +22,19 @@ async function loadModule(modulePath, Utils, logger, count) {
         }
 
         if (loadedModuleNames.has(moduleName)) {
-            logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded. Skipping...`);
+            logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded.`);
+
+            if (autoDelete) {
+                try {
+                    fs.unlinkSync(modulePath);
+                    logger.pastel(`Deleted already loaded module file: ${modulePath}`);
+                } catch (deleteError) {
+                    logger.instagram(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
+                }
+            } else {
+                logger.instagram(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
+            }
+
             return count;
         }
 
@@ -69,7 +82,6 @@ async function loadModule(modulePath, Utils, logger, count) {
     return count;
 }
 
-
 async function loadFromDirectory(directory, Utils, logger, count) {
     const files = fs.readdirSync(directory);
     for (const file of files) {
@@ -92,5 +104,8 @@ async function loadModules(Utils, logger) {
 }
 
 module.exports = {
-    loadModules
+    loadModules,
+    setAutoDelete: (value) => {
+        autoDelete = value;
+    }
 };
