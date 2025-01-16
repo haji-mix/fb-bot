@@ -12,7 +12,7 @@ module.exports["config"] = {
 const getUserName = async (chat, senderID) => {
   try {
     const userName = await chat.userName(senderID);
-    return userName || "Facebook User";
+    return userName;
   } catch (error) {
     return "User";
   }

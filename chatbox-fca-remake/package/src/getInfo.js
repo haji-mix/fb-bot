@@ -1,22 +1,12 @@
 "use strict";
 
-const axios = require("axios");
-const { wrapper } = require("axios-cookiejar-support");
-const tough = require("tough-cookie");
+const axios = require('axios');
 const log = require("npmlog");
-const utils = require("../utils");
+const utils = require('../utils');
 
-// Create a cookie jar to manage cookies
-const jar = new tough.CookieJar();
-const axiosInstance = wrapper(
-  axios.create({
-    withCredentials: true,
-    jar,
-  })
-);
-
-// Format profile data
+//@Kenneth Panio
 function formatProfileData(data, userID) {
+  // If name is null or empty, set all fields to null
   if (!data.name) {
     return {
       name: null,
@@ -26,6 +16,7 @@ function formatProfileData(data, userID) {
     };
   }
 
+  // Otherwise, return populated profile data
   return {
     name: data.name,
     userid: userID,
@@ -34,9 +25,8 @@ function formatProfileData(data, userID) {
   };
 }
 
-// Fetch profile data using Axios and Cookie Management
 function fetchProfileData(userID, callback) {
-  axiosInstance
+  axios
     .get(`https://www.facebook.com/profile.php?id=${userID}`, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -48,30 +38,33 @@ function fetchProfileData(userID, callback) {
         "sec-fetch-site": "same-origin",
         "Sec-Fetch-User": "?1",
       },
-      maxRedirects: 5, // Follow up to 5 redirects
-      validateStatus: (status) => status < 400, // Accepts redirects as valid
+      maxRedirects: 5,
     })
     .then((response) => {
-      // Check for redirection or login pages
-      const currentURL = response.request.res.responseUrl;
-      if (currentURL.includes("login") || currentURL.includes("error")) {
-        log.warn(
-          "fetchProfileData",
-          `Redirected to login or error page for userID: ${userID}`
-        );
-        callback(null, formatProfileData({ name: "Redirect Detected" }, userID));
+      if (response.status === 302 || response.request.res.statusCode === 302) {
+        callback(null, formatProfileData({ name: null }, userID));
         return;
       }
 
-      // Extract profile name from the page's meta or title
       const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
-      const name = titleMatch ? titleMatch[1].trim() : null;
+      if (!titleMatch || titleMatch[1].includes("Redirecting...")) {
+        callback(null, formatProfileData({ name: null }, userID));
+        return;
+      }
 
-      const profileData = formatProfileData({ name }, userID);
+      const profileData = formatProfileData(
+        {
+          name: titleMatch[1].trim(),
+        },
+        userID
+      );
       callback(null, profileData);
     })
     .catch((err) => {
-      log.error("fetchProfileData", "Error fetching profile data:", err.message);
+      if (err.message.includes('Unsupported protocol intent')) {
+        callback(null, formatProfileData({ name: null }, userID));
+        return;
+      }
       callback(err, formatProfileData({ name: null }, userID));
     });
 }
