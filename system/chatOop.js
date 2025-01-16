@@ -3,6 +3,10 @@ const {
 } = require("./workers");
 
 const {
+    logger
+} = require("./logger");
+
+const {
     download
 } = require("./stream");
 
