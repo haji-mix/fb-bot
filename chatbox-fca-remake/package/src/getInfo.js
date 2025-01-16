@@ -1,12 +1,11 @@
 "use strict";
 
-const axios = require('axios');
+const axios = require("axios");
 const log = require("npmlog");
-const utils = require('../utils');
+const utils = require("../utils");
 
 //@Kenneth Panio
 function formatProfileData(data, userID) {
-  // If name is null, set all fields to null
   if (!data.name) {
     return {
       name: null,
@@ -16,7 +15,6 @@ function formatProfileData(data, userID) {
     };
   }
 
-  // Otherwise, return populated profile data
   return {
     name: data.name,
     userid: userID,
@@ -38,15 +36,8 @@ function fetchProfileData(userID, callback) {
         "sec-fetch-site": "same-origin",
         "Sec-Fetch-User": "?1",
       },
-      maxRedirects: 5,
     })
     .then((response) => {
-      // Check for redirects (302 status)
-      if (response.status === 302 || response.request.res.statusCode === 302) {
-        callback(null, formatProfileData({ name: null }, userID));
-        return;
-      }
-
       const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
       if (!titleMatch) {
         callback(null, formatProfileData({ name: null }, userID));
@@ -62,10 +53,6 @@ function fetchProfileData(userID, callback) {
       callback(null, profileData);
     })
     .catch((err) => {
-      if (err.message.includes('Unsupported protocol intent')) {
-        callback(null, formatProfileData({ name: null }, userID));
-        return;
-      }
       callback(err, formatProfileData({ name: null }, userID));
     });
 }

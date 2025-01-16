@@ -255,7 +255,7 @@ class OnChat {
     async userName(id = this.senderID) {
         const fetch = await this.userInfo(id);
         const name = fetch.name;
-        return name;
+        return name || "Facebook User";
     }
 
     unfriend(id) {
