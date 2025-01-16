@@ -52,8 +52,8 @@ module.exports["run"] = async function({ api, event, args, chat }) {
   let pathImg = __dirname + '/cache/porn.png';
   var text = args.join(" ");
   let name = await chat.userName(senderID);
-  let get_info = await chat.userInfo(senderID);
-  var linkAvatar = get_info.profile_img;
+  let get_info = await api.getInfo(senderID);
+  var linkAvatar = get_info.profile_img || `https://graph.facebook.com/${senderID}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
   if (!text) return api.sendMessage("Enter the content of the comment on p*rnhub", event.threadID, event.messageID);
   let getAvatar = (await axios.get(linkAvatar, { responseType: 'arraybuffer' })).data;
   let getSaiki = (await axios.get(`https://i.imgur.com/XrgnIyK.png`, { responseType: 'arraybuffer' })).data;

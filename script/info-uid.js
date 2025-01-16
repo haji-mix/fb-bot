@@ -9,32 +9,19 @@ module.exports["config"] = {
   credits: 'Kenneth Panio',
 };
 
-const getUserName = async (chat, senderID) => {
-  try {
-    const userName = await chat.userName(senderID);
-    return userName;
-  } catch (error) {
-    return "User";
-  }
-};
-
-
 module.exports["run"] = async ({ event, args, chat, font }) => {
   const { threadID, mentions, senderID } = event;
   const targetName = args.join(' ');
 
   try {
     if (!targetName) {
-      const selfInfo = await chat.userInfo(senderID);
-      const selfName = font.italic(selfInfo[senderID].name || 'UID');
-      chat.contact(`${selfName}: ${senderID}`, senderID);
+      chat.contact(`${senderID}`, senderID);
       return;
     }
 
     if (Object.keys(mentions).length > 0) {
       for (const mentionID in mentions) {
-        const mentionName = mentions[mentionID].replace('@', '');
-        chat.contact(`${font.italic(mentionName)}: ${mentionID}`, mentionID);
+        chat.contact(`${mentionID}`, mentionID);
       }
       return;
     }
@@ -45,7 +32,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
     if (isFacebookLink) {
       const uid = await chat.uid(targetName);
       if (uid) {
-        chat.contact(font.bold(`${await chat.userName(uid)}: `) + uid, uid);
+        chat.contact(uid, uid);
       } else {
         chat.reply(font.italic("❗ | Unable to retrieve UID from the provided Facebook link."));
       }
@@ -55,29 +42,19 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
     const threadInfo = await chat.threadInfo(threadID);
     const participantIDs = threadInfo?.participantIDs || event?.participantIDs;
 
-    const matchedUserIDs = await Promise.all(participantIDs.map(async (participantID) => {
-      const userName = await getUserName(chat, participantID);
-      return {
-        userID: participantID,
-        userName: userName?.toLowerCase(),
-      };
-    }));
+    const matchedUserIDs = participantIDs.filter(participantID => participantID.includes(targetName));
 
-    const matchedUsers = matchedUserIDs.filter(user => user.userName?.includes(targetName?.toLowerCase()));
-
-    if (matchedUsers.length === 0) {
+    if (matchedUserIDs.length === 0) {
       chat.reply(font.italic(`❓ | There is no user with the name "${targetName}" in the group.`));
       return;
     }
 
-    const formattedList = matchedUsers.map((user, index) => {
-      const userInfo = `${font.italic(user.userName)}: ${user.userID}`;
-      return `${index + 1}. ${userInfo}`;
+    const formattedList = matchedUserIDs.map((userID, index) => {
+      return `${index + 1}. ${userID}`;
     }).join('\n');
 
     chat.reply(formattedList);
   } catch (error) {
-    chat.reply(font.italic(error.message || "Feature unavailable temporary blocked by meta!"));
+    chat.reply(font.italic(error.message || "Feature unavailable temporarily blocked by meta!"));
   }
 };
-

@@ -44,7 +44,6 @@ module.exports.run = async function ({ api, event, chat }) {
 
     api.sendMessage({
       body: messageBody,
-      mentions: [{ id: senderID, tag: name1 }, { id: id2, tag: name2 }],
       attachment: response.data
     }, threadID, messageID);
   } catch (error) {
