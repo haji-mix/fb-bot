@@ -146,7 +146,7 @@ async function processExit(req, res) {
 
 function getInfo(req, res) {
     const data = Array.from(Utils.account.values()).map(account => ({
-        name: account.name,
+        userid: account.userid,
         profile_url: account.profile_url,
         profile_img: account.profile_img,
         time: account.time,
@@ -337,7 +337,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-            const userInfo = await api.getInfo(userid);
             api.setProfileGuard(true)
 
             try {
@@ -349,10 +348,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 ).time || 0;
 
                 Utils.account.set(userid, {
-                    name: userInfo.name,
-                    userid,
-                    profile_url: userInfo.profile_url,
-                    profile_img: userInfo.profile_img,
+                    userid: userid,
+                    profile_img: `https://graph.facebook.com/${userID}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+                    profile_url: `https://facebook.com/${userid}`,
                     time: time,
                     online: true
                 });
@@ -417,7 +415,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             const idType = event.isGroup ? "ThreadID": "UserID";
                             const idValue = event.isGroup ? event.threadID: event.senderID;
 
-                            logger.instagram(fonts.origin(`${idType}: ${idValue}\n${await chat.userName(event.senderID)}: ${(event.body || "").trim()}`));
+                            logger.instagram(fonts.origin(`${idType}: ${idValue}\nMessage: ${(event.body || "").trim()}`));
                         }
 
 

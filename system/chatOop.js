@@ -254,12 +254,12 @@ class OnChat {
 
     async userName(id = this.senderID) {
         const fetch = await this.api.getInfo(id);
-        const name = fetch.name;
+        const name = fetch.name || "Facebook User";
 
-        if (!name) {
+     /*   if (!name) {
             const userInfo = await this.userInfo(id);
             return userInfo[id]?.name || "Facebook User";
-        }
+        }*/
 
         return name;
     }
