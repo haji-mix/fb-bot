@@ -2,6 +2,7 @@
 
 const axios = require("axios");
 const log = require("npmlog");
+const cheerio = require("cheerio");
 const utils = require("../utils");
 
 //@Kenneth Panio
@@ -38,21 +39,27 @@ function fetchProfileData(userID, callback) {
       },
     })
     .then((response) => {
-      const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
-      if (!titleMatch) {
-        callback(null, formatProfileData({ name: null }, userID));
-        return;
+      const $ = cheerio.load(response.data);
+
+      let name =
+        $('meta[property="og:title"]').attr("content") ||
+        $('meta[name="title"]').attr("content") ||
+        null;
+
+      if (!name) {
+        const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
+        name = titleMatch ? titleMatch[1].trim() : null;
       }
 
-      const profileData = formatProfileData(
-        {
-          name: titleMatch[1].trim(),
-        },
-        userID
-      );
+      if (!name) {
+        log.warn("fetchProfileData", "Failed to extract name for userID:", userID);
+      }
+
+      const profileData = formatProfileData({ name }, userID);
       callback(null, profileData);
     })
     .catch((err) => {
+      log.error("fetchProfileData", "Error fetching profile data:", err.message);
       callback(err, formatProfileData({ name: null }, userID));
     });
 }
