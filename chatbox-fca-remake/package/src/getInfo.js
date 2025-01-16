@@ -25,7 +25,7 @@ function formatProfileData(data, userID) {
   };
 }
 
-function fetchProfileData(userID, callback) {
+function fetchProfileData(userID, retryCount, callback) {
   axios
     .get(`https://www.facebook.com/profile.php?id=${userID}`, {
       headers: {
@@ -48,7 +48,13 @@ function fetchProfileData(userID, callback) {
 
       const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
       if (!titleMatch || titleMatch[1].includes("Redirecting...")) {
-        callback(null, formatProfileData({ name: null }, userID));
+        if (retryCount < 3) {
+          setTimeout(() => {
+            fetchProfileData(userID, retryCount + 1, callback);
+          }, 1000);  // Wait a second before retrying
+        } else {
+          callback(null, formatProfileData({ name: null }, userID));
+        }
         return;
       }
 
@@ -81,10 +87,10 @@ module.exports = (defaultFuncs, api, ctx) => {
           }
           resolve(profileData);
         };
-        fetchProfileData(userID, finalCallback);
+        fetchProfileData(userID, 0, finalCallback);  // Start with 0 retries
       });
     } else {
-      fetchProfileData(userID, callback);
+      fetchProfileData(userID, 0, callback);  // Start with 0 retries
     }
   };
 };

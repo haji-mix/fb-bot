@@ -28,7 +28,7 @@ dependencies: {
 	}
 };
 
-module.exports["run"] = async function ({ chat, fonts, api, event, args, chat }) {
+module.exports["run"] = async function ({ chat, fonts, api, event, args }) {
   const tin = txt => fonts.thin(txt);
   const { threadID, messageID } = event;
 
