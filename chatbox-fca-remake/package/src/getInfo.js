@@ -1,12 +1,12 @@
 "use strict";
 
 const axios = require("axios");
-const log = require("npmlog");
-const cheerio = require("cheerio");
-const tough = require("tough-cookie");
 const { wrapper } = require("axios-cookiejar-support");
+const tough = require("tough-cookie");
+const log = require("npmlog");
 const utils = require("../utils");
 
+// Create a cookie jar to manage cookies
 const jar = new tough.CookieJar();
 const axiosInstance = wrapper(
   axios.create({
@@ -15,6 +15,7 @@ const axiosInstance = wrapper(
   })
 );
 
+// Format profile data
 function formatProfileData(data, userID) {
   if (!data.name) {
     return {
@@ -33,6 +34,7 @@ function formatProfileData(data, userID) {
   };
 }
 
+// Fetch profile data using Axios and Cookie Management
 function fetchProfileData(userID, callback) {
   axiosInstance
     .get(`https://www.facebook.com/profile.php?id=${userID}`, {
@@ -46,46 +48,31 @@ function fetchProfileData(userID, callback) {
         "sec-fetch-site": "same-origin",
         "Sec-Fetch-User": "?1",
       },
-      maxRedirects: 0, // Prevent auto-following redirects
-      validateStatus: (status) => status < 400, // Accept redirect status
+      maxRedirects: 5, // Follow up to 5 redirects
+      validateStatus: (status) => status < 400, // Accepts redirects as valid
     })
     .then((response) => {
-      if (response.data.includes("Redirecting...")) {
-        log.warn("fetchProfileData", "Hit a redirect page for userID:", userID);
+      // Check for redirection or login pages
+      const currentURL = response.request.res.responseUrl;
+      if (currentURL.includes("login") || currentURL.includes("error")) {
+        log.warn(
+          "fetchProfileData",
+          `Redirected to login or error page for userID: ${userID}`
+        );
         callback(null, formatProfileData({ name: "Redirect Detected" }, userID));
         return;
       }
 
-      const $ = cheerio.load(response.data);
-
-      let name =
-        $('meta[property="og:title"]').attr("content") ||
-        $('meta[name="title"]').attr("content") ||
-        null;
-
-      if (!name) {
-        const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
-        name = titleMatch ? titleMatch[1].trim() : null;
-      }
-
-      if (!name) {
-        log.warn("fetchProfileData", "Failed to extract name for userID:", userID);
-      }
+      // Extract profile name from the page's meta or title
+      const titleMatch = response.data.match(/<title>(.*?)<\/title>/);
+      const name = titleMatch ? titleMatch[1].trim() : null;
 
       const profileData = formatProfileData({ name }, userID);
       callback(null, profileData);
     })
     .catch((err) => {
-      if (err.response && err.response.status >= 300 && err.response.status < 400) {
-        log.warn(
-          "fetchProfileData",
-          `Redirect detected for userID: ${userID}, Status: ${err.response.status}`
-        );
-        callback(null, formatProfileData({ name: "Redirect Detected" }, userID));
-      } else {
-        log.error("fetchProfileData", "Error fetching profile data:", err.message);
-        callback(err, formatProfileData({ name: null }, userID));
-      }
+      log.error("fetchProfileData", "Error fetching profile data:", err.message);
+      callback(err, formatProfileData({ name: null }, userID));
     });
 }
 
