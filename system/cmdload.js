@@ -42,21 +42,23 @@ async function loadModule(modulePath, Utils, logger, count) {
 
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
-            aliases: [...config.aliases || [], moduleName],
+            aliases: [...config.aliases || [],
+                moduleName],
             name: moduleName,
-            role: config.role || "0",
-            version: config.version || "1.0.0",
-            isPrefix: config.isPrefix ?? true,
+            role: config.role ?? "0",
+            version: config.version ?? "1.0.0",
+            isPrefix: config.isPrefix ?? config.usePrefix ?? config.prefix ?? true,
             isPremium: config.isPremium ?? false,
             isPrivate: config.isPrivate ?? false,
             isGroup: config.isGroup ?? false,
-            limit: config.limit || "5",
-            credits: config.credits || "",
-            cd: config.cd || "5",
-            usage: config.usage || "",
-            guide: config.guide || "",
-            info: config.info || config.description || ""
+            limit: config.limit ?? "5",
+            credits: config.credits ?? config.author ?? "",
+            cd: config.cd ?? config.cooldowns ?? config.cooldown ?? "5",
+            usage: config.usage ?? config.usages ?? "",
+            guide: config.guide ?? "",
+            info: config.info ?? config.description ?? ""
         };
+
 
         if (module.handleEvent) {
             Utils.handleEvent.set(moduleInfo.aliases, {
