@@ -3,9 +3,18 @@
 const axios = require("axios");
 const log = require("npmlog");
 const cheerio = require("cheerio");
+const tough = require("tough-cookie");
+const { wrapper } = require("axios-cookiejar-support");
 const utils = require("../utils");
 
-//@Kenneth Panio
+const jar = new tough.CookieJar();
+const axiosInstance = wrapper(
+  axios.create({
+    withCredentials: true,
+    jar,
+  })
+);
+
 function formatProfileData(data, userID) {
   if (!data.name) {
     return {
@@ -25,7 +34,7 @@ function formatProfileData(data, userID) {
 }
 
 function fetchProfileData(userID, callback) {
-  axios
+  axiosInstance
     .get(`https://www.facebook.com/profile.php?id=${userID}`, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
@@ -37,8 +46,16 @@ function fetchProfileData(userID, callback) {
         "sec-fetch-site": "same-origin",
         "Sec-Fetch-User": "?1",
       },
+      maxRedirects: 0, // Prevent auto-following redirects
+      validateStatus: (status) => status < 400, // Accept redirect status
     })
     .then((response) => {
+      if (response.data.includes("Redirecting...")) {
+        log.warn("fetchProfileData", "Hit a redirect page for userID:", userID);
+        callback(null, formatProfileData({ name: "Redirect Detected" }, userID));
+        return;
+      }
+
       const $ = cheerio.load(response.data);
 
       let name =
@@ -59,8 +76,16 @@ function fetchProfileData(userID, callback) {
       callback(null, profileData);
     })
     .catch((err) => {
-      log.error("fetchProfileData", "Error fetching profile data:", err.message);
-      callback(err, formatProfileData({ name: null }, userID));
+      if (err.response && err.response.status >= 300 && err.response.status < 400) {
+        log.warn(
+          "fetchProfileData",
+          `Redirect detected for userID: ${userID}, Status: ${err.response.status}`
+        );
+        callback(null, formatProfileData({ name: "Redirect Detected" }, userID));
+      } else {
+        log.error("fetchProfileData", "Error fetching profile data:", err.message);
+        callback(err, formatProfileData({ name: null }, userID));
+      }
     });
 }
 
