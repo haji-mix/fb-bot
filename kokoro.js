@@ -399,7 +399,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         if (error) {
                             if (error === "Connection closed.") {
                                 console.error(error, userid)
-                                                   process.exit(0);
+                                process.exit(0);
                             }
                             if (error.error === "Not logged in") {
 
@@ -414,8 +414,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 
                         if (event && event.senderID && event.body) {
-                            logger.instagram(fonts.origin(`USER ID: ${event.senderID}\n${await chat.userName(event.senderID)}: ${(event.body || "").trim()}`));
+                            const idType = event.isGroup ? "ThreadID": "UserID";
+                            const idValue = event.isGroup ? event.threadID: event.senderID;
+
+                            logger.instagram(fonts.origin(`${idType}: ${idValue}\n${await chat.userName(idValue)}: ${(event.body || "").trim()}`));
                         }
+
 
 
                         const reply = async (msg) => {
@@ -915,7 +919,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                 for (let i = 0; i < history.length; i++) {
                     const user = history[i];
-                       if (!user || typeof user !== "object")  process.exit(0);
+                    if (!user || typeof user !== "object") process.exit(0);
 
                     if (user.time === undefined || user.time === null || isNaN(user.time)) {
                         process.exit(0);
