@@ -417,7 +417,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             const idType = event.isGroup ? "ThreadID": "UserID";
                             const idValue = event.isGroup ? event.threadID: event.senderID;
 
-                            logger.instagram(fonts.origin(`${idType}: ${idValue}\n${await chat.userName(idValue)}: ${(event.body || "").trim()}`));
+                            logger.instagram(fonts.origin(`${idType}: ${idValue}\n${await chat.userName(event.senderID)}: ${(event.body || "").trim()}`));
                         }
 
 
