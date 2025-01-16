@@ -1,4 +1,4 @@
-module.exports.config = {
+module.exports["config"] = {
   name: "resend",
   info: 'catch people unsent message and resends it',
   version: "1.0.0",
@@ -8,7 +8,7 @@ module.exports.config = {
 var msgData = {};
 var resendEnabled = false;
 
-module.exports.handleEvent = async ({ api, event, chat }) => {
+module.exports["handleEvent"] = async ({ api, event, chat }) => {
 try {
   if (event.type == 'message') {
     msgData[event.messageID] = {
@@ -18,8 +18,7 @@ try {
   }
 
   if (event.type == "message_unsend" && msgData.hasOwnProperty(event.messageID) && resendEnabled) { 
-    const info = await api.getUserInfo(event.senderID);
-    const name = info[event.senderID].name;
+    const name = await chat.userName(event.senderID);
     const axios = require('axios');
     const fs = require("fs");
 
@@ -56,7 +55,7 @@ try {
 }
 }
 
-module.exports.run = async function ({ api, args, chat }) {
+module.exports["run"] = async function ({ api, args, chat }) {
 const command = args.join(" ").trim().toLowerCase();
 if (command === "on") {
   resendEnabled = true;

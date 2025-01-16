@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-module.exports.config = {
+module.exports["config"] = {
   name: "whowouldwin",
   version: "1.0.0",
   role: 0,
@@ -33,10 +33,10 @@ function formatFont(text) {
   return formattedText;
 }
 
-module.exports.run = async function ({ api, event, args }) {
+module.exports["run"] = async function ({ api, event, args, chat }) {
   const { threadID, messageID, senderID } = event;
 
-  let dataa = await api.getUserInfo(senderID);
+  let dataa = await chat.userName(senderID);
   let namee = await dataa[senderID].name;
 
   let loz = await api.getThreadInfo(threadID);
@@ -48,10 +48,10 @@ module.exports.run = async function ({ api, event, args }) {
     id2 = participants[Math.floor(Math.random() * participants.length)];
   } while (id2 === id1);
 
-  let data1 = await api.getUserInfo(id1);
+  let data1 = await chat.userName(id1);
   let name1 = data1[id1].name;
 
-  let data2 = await api.getUserInfo(id2);
+  let data2 = await chat.userName(id2);
   let name2 = data2[id2].name;
 
   let arraytag = [];

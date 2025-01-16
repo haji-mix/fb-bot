@@ -51,8 +51,9 @@ module.exports["run"] = async function({ api, event, args, chat }) {
  let avatar = __dirname + '/cache/avt.png';
   let pathImg = __dirname + '/cache/porn.png';
   var text = args.join(" ");
-  let name = (await api.getUserInfo(senderID))[senderID].name
-  var linkAvatar = (await api.getUserInfo(senderID))[senderID].thumbSrc;
+  let name = await chat.userName(senderID);
+  let get_info = await chat.userInfo(senderID);
+  var linkAvatar = get_info.profile_url;
   if (!text) return api.sendMessage("Enter the content of the comment on p*rnhub", event.threadID, event.messageID);
   let getAvatar = (await axios.get(linkAvatar, { responseType: 'arraybuffer' })).data;
   let getSaiki = (await axios.get(`https://i.imgur.com/XrgnIyK.png`, { responseType: 'arraybuffer' })).data;

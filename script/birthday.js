@@ -16,7 +16,7 @@ module.exports["run"] = async function({ api, args, event }) {
         return api.sendMessage("Please provide your birthday in the format MM/DD/YYYY.", event.threadID);
     }
 
-    const name = (await api.getUserInfo(event.senderID))[event.senderID].name;
+    const name = await chat.userName(event.senderID);
 
     const birthdayDate = new Date(userBirthday);
     const today = new Date();

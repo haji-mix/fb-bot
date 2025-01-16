@@ -10,7 +10,7 @@ module.exports["config"] = {
   aliases: [],
 };
 
-module.exports.run = async function({ api, event, args }) {
+module.exports.run = async function({ api, event, args, chat  }) {
   try {
 const mentionID = Object.keys(event.mentions)[0] || (event.messageReply && event.messageReply.senderID);
 
@@ -18,8 +18,8 @@ const mentionID = Object.keys(event.mentions)[0] || (event.messageReply && event
       return api.sendMessage('Please mention or reply a user!', event.threadID, event.messageID);
     }
 
-    const userInfo = await api.getUserInfo(mentionID);
-    const realName = userInfo[mentionID]?.name;
+   
+    const realName = await chat.userName(mentionID);
 
 
     const response = `https://api-canvass.vercel.app/gay?uid1=${event.senderID}&uid2=${mentionID}`;

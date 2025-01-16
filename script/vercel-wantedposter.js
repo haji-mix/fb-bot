@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-module.exports.config = {
+module.exports["config"] = {
   name: "wanted-poster",
   role: 0,
   credits: "Cliff",
@@ -10,7 +10,7 @@ module.exports.config = {
   aliases: [],
 };
 
-module.exports.run = async function({ api, event, args }) {
+module.exports["run"] = async function({ api, event, args, chat }) {
   try {
     const mentionID = Object.keys(event.mentions)[0] || (event.messageReply && event.messageReply.senderID);
     const h = args.join(" ");
@@ -19,8 +19,7 @@ module.exports.run = async function({ api, event, args }) {
       return api.sendMessage('Please mention or reply and provide the reward', event.threadID, event.messageID);
     }
 
-    const userInfo = await api.getUserInfo(mentionID);
-    const realName = userInfo[mentionID]?.name;
+    const realName = await chat.userName(mentionID);
 
     const response = `https://api-canvass.vercel.app/wanted-poster?userid=${mentionID}&name=${encodeURIComponent(realName)}&reward=${encodeURIComponent(h)}`;
 

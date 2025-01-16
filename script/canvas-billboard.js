@@ -45,7 +45,7 @@ const wrapText = (ctx, text, maxWidth) => {
     });
 }
 
-module.exports["run"] = async function({ api, event, args, botname}) {
+module.exports["run"] = async function({ api, event, args, botname, chat }) {
   const { senderID } = event;
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const pathImg = __dirname + '/cache/' + `${timestamp}_billboard.png`
@@ -56,10 +56,9 @@ module.exports["run"] = async function({ api, event, args, botname}) {
     }
 
     try {
-        const name = (await api.getUserInfo(senderID))[senderID].name
-  //const linkAvatar = (await api.getUserInfo(senderID))[senderID].thumbSrc;
-
-     // const getAvatar = (await axios.get(linkAvatar, { responseType: 'arraybuffer' })).data;
+      
+        const name = await chat.userName(senderID);
+        
         const getPorn = (await axios.get(`https://i.imgur.com/nRoikQP.png`, { responseType: 'arraybuffer' })).data;
         api.setMessageReaction("🧐", event.messageID, () => {}, true);
       //fs.writeFileSync(getAvatar, Buffer.from(getAvatar, 'utf-8'));

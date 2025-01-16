@@ -3,16 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const devs = require(__dirname.replace("/script", "") + '/system/api');
 
-async function getUserName(api, senderID) {
-  try {
-    const userInfo = await api.getUserInfo(senderID);
-    return userInfo[senderID]?.name || "User";
-  } catch (error) {
-    console.log(error);
-    return "User";
-  }
-}
-
 module.exports["config"] = {
   name: "beautiful",
   version: "1.0.0",
@@ -30,8 +20,7 @@ module.exports["run"] = async function ({ api, event, args }) {
     return api.sendMessage('Please mention a user', event.threadID, event.messageID);
   }
 
-  const userInfo = await api.getUserInfo(mentionID);
-  const realName = userInfo[mentionID].name;
+  const realName = await chat.userName(mentionID);
 
   const senderID = event.senderID;
   const url = `${devs.cliffcan}/beautiful?userid=${mentionID}`;
@@ -40,7 +29,7 @@ module.exports["run"] = async function ({ api, event, args }) {
   try {
     let response = await get(url, { responseType: 'arraybuffer' });
     fs.writeFileSync(filePath, Buffer.from(response.data, "utf8"));
-    let name = await getUserName(api, event.senderID);
+    let name = await chat.userName(event.senderID);
     let mentions = [];
     mentions.push({
       tag: name,

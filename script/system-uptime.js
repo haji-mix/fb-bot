@@ -15,7 +15,7 @@ try {
   console.error('Error reading history.json:', readError);
 }
 
-module.exports.config = {
+module.exports["config"] = {
   name: 'session',
   aliases: ["active-session","activelist"],
   info: 'List all active bots in the history session.',
@@ -28,7 +28,7 @@ dependencies: {
 	}
 };
 
-module.exports.run = async function ({ chat, fonts, api, event, args }) {
+module.exports["run"] = async function ({ chat, fonts, api, event, args, chat }) {
   const tin = txt => fonts.thin(txt);
   const { threadID, messageID } = event;
 
@@ -52,14 +52,14 @@ module.exports.run = async function ({ chat, fonts, api, event, args }) {
   }
 
   const mainBot = historyData[mainBotIndex];
-  const mainBotName = await getUserName(api, currentUserId);
+  const mainBotName = await chat.userName(currentUserId);
   const mainBotOSInfo = getOSInfo();
   const mainBotRunningTime = convertTime(mainBot.time);
 
   const userPromises = historyData
     .filter((user) => user.userid !== currentUserId)
     .map(async (user, index) => {
-      const userName = await getUserName(api, user.userid);
+      const userName = await chat.userName(user.userid);
       const userRunningTime = convertTime(user.time);
       return `${index + 1}. 𝗡𝗔𝗠𝗘: ${userName}\n𝗨𝗣𝗧𝗜𝗠𝗘: ${userRunningTime}`;
     });
@@ -87,14 +87,6 @@ async function logout(api, event) {
   }
 }
 
-async function getUserName(api, userID) {
-  try {
-    const userInfo = await api.getUserInfo(userID);
-    return userInfo && userInfo[userID] ? userInfo[userID].name : "unknown";
-  } catch (error) {
-    return "unknown";
-  }
-}
 
 function getOSInfo() {
   const osInfo = `${os.type()} ${os.release()} ${os.arch()} (${os.platform()})`;

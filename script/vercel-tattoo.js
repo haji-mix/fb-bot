@@ -2,17 +2,7 @@ const { get } = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-async function getUserName(api, senderID) {
-  try {
-    const userInfo = await api.getUserInfo(senderID);
-    return userInfo[senderID]?.name || "User";
-  } catch (error) {
-    console.log(error);
-    return "User";
-  }
-}
-
-module.exports.config = {
+module.exports["config"] = {
   name: "tattoo",
   version: "1.0.0",
   role: 0,
@@ -23,14 +13,13 @@ module.exports.config = {
   aliases: []
 };
 
-module.exports.run = async function ({ api, event, args }) {
+module.exports["run"] = async function ({ api, event, args, chat }) {
   const mentionID = Object.keys(event.mentions)[0] || event.senderID || event.messageReply.senderID;
   if (!mentionID) {
     return api.sendMessage('Please mention a user', event.threadID, event.messageID);
   }
 
-  const userInfo = await api.getUserInfo(mentionID);
-  const realName = userInfo[mentionID].name;
+  const realName = await chat.userName(mentionID);
 
   const senderID = event.senderID;
   const url = `https://api-canvass.vercel.app/tattoo?userid=${mentionID}`;
@@ -39,7 +28,7 @@ module.exports.run = async function ({ api, event, args }) {
   try {
     let response = await get(url, { responseType: 'arraybuffer' });
     fs.writeFileSync(filePath, Buffer.from(response.data, "utf8"));
-    let name = await getUserName(api, event.senderID);
+    let name = await chat.userName(event.senderID);
     let mentions = [];
     mentions.push({
       tag: name,

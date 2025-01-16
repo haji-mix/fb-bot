@@ -20,6 +20,16 @@ if (fs.existsSync(filePath)) {
   chatStore = JSON.parse(data);
 }
 
+const getUserName = async (chat, senderID) => {
+  try {
+    const userName = await chat.userName(senderID);
+    return userName;
+  } catch (error) {
+    return "User";
+  }
+};
+
+
 module.exports["handleEvent"] = async ({ chat, event }) => {
     
   if (!event.isGroup) return;
@@ -78,12 +88,3 @@ module.exports["run"] = async ({ chat, event, args }) => {
   return chat.reply(`🛡️ | Chat off has been ${option === "off" ? "activated" : "deactivated"} for this thread.`);
 };
 
-async function getUserName(chat, senderID) {
-  try {
-    const userInfo = await chat.userInfo(senderID);
-    return userInfo[senderID]?.name || "User";
-  } catch (error) {
-    chat.log(error);
-    return "User";
-  }
-}

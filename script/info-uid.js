@@ -9,6 +9,16 @@ module.exports["config"] = {
   credits: 'Kenneth Panio',
 };
 
+const getUserName = async (chat, senderID) => {
+  try {
+    const userName = await chat.userName(senderID);
+    return userName;
+  } catch (error) {
+    return "User";
+  }
+};
+
+
 module.exports["run"] = async ({ event, args, chat, font }) => {
   const { threadID, mentions, senderID } = event;
   const targetName = args.join(' ');
@@ -71,15 +81,3 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
   }
 };
 
-async function getUserName(chat, userID) {
-  try {
-    const userInfo = await chat.userInfo(userID);
-    if (userInfo && userInfo[userID]) {
-      return userInfo[userID].name?.toLowerCase();
-    } else {
-      return "Unknown";
-    }
-  } catch (error) {
-    return "Unknown";
-  }
-}

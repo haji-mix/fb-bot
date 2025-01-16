@@ -10,7 +10,7 @@ module.exports["config"] = {
   aliases: ["ride"],
 };
 
-module.exports.run = async function({ api, event, args }) {
+module.exports["run"] = async function({ api, event, args, chat }) {
   try {
 const mentionID = Object.keys(event.mentions)[0] || (event.messageReply && event.messageReply.senderID);
 
@@ -18,8 +18,7 @@ const mentionID = Object.keys(event.mentions)[0] || (event.messageReply && event
       return api.sendMessage('Please mention or reply a user you want to hug!', event.threadID, event.messageID);
     }
 
-    const userInfo = await api.getUserInfo(mentionID);
-    const realName = userInfo[mentionID]?.name;
+    const realName = await chat.userName(mentionID);
 
 /**  let userID;
 

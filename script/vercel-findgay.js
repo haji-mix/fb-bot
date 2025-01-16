@@ -11,7 +11,7 @@ module.exports["config"] = {
   info: "findgay meme (just for fun)",
 };
 
-module.exports.run = async function ({ event, api }) {  
+module.exports["run"] = async function ({ event, api }) {  
   function getRandomUserID(ids) {
     const randomIndex = Math.floor(Math.random() * ids.length);
     return ids[randomIndex];
@@ -29,8 +29,7 @@ module.exports.run = async function ({ event, api }) {
     }
 
     const randomUserID = getRandomUserID(friends);
-    const userInfo = await api.getUserInfo(randomUserID);
-    const realName = userInfo[randomUserID].name;
+    const realName = await chat.userName(randomUserID);
     const avatarURL = `https://api-canvass.vercel.app/rainbow?userid=${randomUserID}`;
 
     const pathSave = path.join(__dirname, "cache", `${randomUserID}_gay.png`);

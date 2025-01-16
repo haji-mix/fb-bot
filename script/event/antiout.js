@@ -1,6 +1,6 @@
 let antiOutEnabled = true;
 
-module.exports.config = {
+module.exports["config"] = {
   name: "anti-out",
   aliases: ["antiout"],
   info: "Prevents user or members from leaving the group.",
@@ -11,7 +11,7 @@ module.exports.config = {
 const fs = require("fs").promises;
 const filePath = './data/history.json';
 
-module.exports.handleEvent = async ({ event, api, chat, font }) => {
+module.exports["handleEvent"] = async ({ event, api, chat, font }) => {
   var mono = txt => font.monospace(txt);
   if (!antiOutEnabled) return;
   
@@ -29,8 +29,7 @@ module.exports.handleEvent = async ({ event, api, chat, font }) => {
       return;
     }
 
-    const info = await api.getUserInfo(event.logMessageData.leftParticipantFbId);
-    const { name } = info[event.logMessageData.leftParticipantFbId];
+    const name = await chat.userName(event.logMessageData.leftParticipantFbId);
     api.addUserToGroup(event.logMessageData.leftParticipantFbId, event.threadID, (error) => {
       if (error) {
         api.sendMessage(mono(`Unable to re-add member ${name} to the group!`), event.threadID);

@@ -24,10 +24,9 @@ if (fs.existsSync(filePath)) {
 
 const getUserName = async (chat, senderID) => {
     try {
-        const userInfo = await chat.userInfo(senderID);
-        return userInfo[senderID]?.name || "User";
+        const userName = await chat.userName(senderID);
+        return userName;
     } catch (error) {
-        console.log(error.message);
         return "User";
     }
 };
