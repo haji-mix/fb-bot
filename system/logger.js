@@ -1,22 +1,41 @@
 const gradient = require('gradient-string');
-
-const logger = (msg, color = gradient('white')) => {
-    console.log(color(msg));
+const chalk = require('chalk');
+const logger = (msg, colorFunc = chalk.reset) => {
+    console.log(colorFunc(msg));
 };
 
-logger.cristal = (msg) => logger(msg, gradient.cristal);
-logger.teen = (msg) => logger(msg, gradient.teen);
-logger.mind = (msg) => logger(msg, gradient.mind);
-logger.morning = (msg) => logger(msg, gradient.morning);
-logger.vice = (msg) => logger(msg, gradient.vice);
-logger.passion = (msg) => logger(msg, gradient.passion);
-logger.fruit = (msg) => logger(msg, gradient.fruit);
-logger.instagram = (msg) => logger(msg, gradient.instagram);
-logger.atlas = (msg) => logger(msg, gradient.atlas);
-logger.retro = (msg) => logger(msg, gradient.retro);
-logger.summer = (msg) => logger(msg, gradient.summer);
-logger.pastel = (msg) => logger(msg, gradient.pastel);
-logger.rainbow = (msg) => logger(msg, gradient.rainbow);
+const chalkStyles = {
+    textStyles: [
+        'reset', 'bold', 'dim', 'italic', 'underline', 'overline', 'inverse',
+        'hidden', 'strikethrough', 'visible'
+    ],
+    colors: [
+        'black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white',
+        'gray', 'grey', 'redBright', 'greenBright', 'yellowBright', 'blueBright',
+        'magentaBright', 'cyanBright', 'whiteBright'
+    ],
+    bgColors: [
+        'bgBlack', 'bgRed', 'bgGreen', 'bgYellow', 'bgBlue', 'bgMagenta',
+        'bgCyan', 'bgWhite', 'bgGray', 'bgGrey', 'bgBlackBright', 'bgRedBright',
+        'bgGreenBright', 'bgYellowBright', 'bgBlueBright', 'bgMagentaBright',
+        'bgCyanBright', 'bgWhiteBright'
+    ]
+};
+
+Object.entries(chalkStyles).forEach(([styleType, styles]) => {
+    styles.forEach(style => {
+        logger[style] = (msg) => logger(msg, chalk[style]);
+    });
+});
+
+const gradients = [
+    'cristal', 'teen', 'mind', 'morning', 'vice', 'passion', 'fruit',
+    'instagram', 'atlas', 'retro', 'summer', 'pastel', 'rainbow'
+];
+
+gradients.forEach(gradientStyle => {
+    logger[gradientStyle] = (msg) => logger(msg, gradient[gradientStyle]);
+});
 
 module.exports = {
     logger

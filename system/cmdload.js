@@ -11,13 +11,13 @@ async function loadModule(modulePath, Utils, logger, count) {
         const config = module.config || module.meta;
 
         if (!config) {
-            logger.instagram(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
+            logger.red(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
             return count;
         }
 
         const moduleName = config.name;
         if (!moduleName) {
-            logger.instagram(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
+            logger.red(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
             return count;
         }
 
@@ -27,12 +27,12 @@ async function loadModule(modulePath, Utils, logger, count) {
             if (autoDelete) {
                 try {
                     fs.unlinkSync(modulePath);
-                    logger.pastel(`Deleted already loaded module file: ${modulePath}`);
+                    logger.yellow(`Deleted already loaded module file: ${modulePath}`);
                 } catch (deleteError) {
-                    logger.instagram(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
+                    logger.red(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
                 }
             } else {
-                logger.instagram(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
+                logger.yellow(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
             }
 
             return count;
@@ -79,7 +79,7 @@ async function loadModule(modulePath, Utils, logger, count) {
         logger.pastel(`LOADED MODULE [${moduleName}]`);
         count++;
     } catch (error) {
-        logger.instagram(`Error loading module at ${modulePath}: ${error.stack}`);
+        logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
     }
     return count;
 }

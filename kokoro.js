@@ -291,7 +291,7 @@ cron.schedule('*/5 * * * *', () => {
         logger.pastel(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
     })
     .catch((error) => {
-        logger.instagram('SELF PING FAILED: ', error.message);
+        logger.red('SELF PING FAILED: ', error.message);
     });
 });
 
@@ -398,7 +398,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     api.listenMqtt(async (error, event) => {
                         if (error) {
                             if (error === "Connection closed.") {
-                                console.error(error, userid)
+                                logger.red(error, userid)
                                 process.exit(0);
                             }
                             if (error.error === "Not logged in") {
@@ -834,7 +834,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         resolve();
                     } catch (error) {
-                        console.error(error);
+                        logger.red(error);
                     }
 
                 }
@@ -853,7 +853,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             try {
                 fs.unlinkSync(sessionFile);
             } catch (error) {
-                logger.instagram(error);
+                logger.red(error);
             }
         }
         async function addThisUser(userid, state, prefix, admin, blacklist) {
@@ -966,7 +966,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
                         } else {
-                            console.error(`Error logging in user ${userId}:`, error);
+                            logger.red(`Error logging in user ${userId}:`, error);
                         }
                     }
                 }
@@ -977,7 +977,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const envState = JSON.parse(process.env.APPSTATE);
                         await accountLogin(envState, process.env.PREFIX || "#", []);
                     } catch (error) {
-                        console.error("Error logging in with APPSTATE:", error);
+                        logger.red("Error logging in with APPSTATE:", error);
                     }
                 }
 
@@ -985,11 +985,11 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     try {
                         await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
                     } catch (error) {
-                        console.error("Error logging in with EMAIL and PASSWORD:", error);
+                        logger.red("Error logging in with EMAIL and PASSWORD:", error);
                     }
                 }
             } catch (error) {
-                console.error(error);
+                logger.red(error);
             }
         }
 
@@ -1019,13 +1019,13 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         main();
 
         process.on("unhandledRejection", (reason, promise) => {
-            console.error("Unhandled Rejection at:", promise);
+            logger.red("Unhandled Rejection at:", promise);
 
             if (reason instanceof Error) {
-                console.error("Reason:", reason.message);
-                console.error("Stack Trace:", reason.stack);
+                logger.red("Reason:", reason.message);
+                logger.red("Stack Trace:", reason.stack);
             } else {
-                console.error("Reason:", reason);
-                console.error("Synthetic Stack Trace:", new Error("Synthetic error for tracing").stack);
+                logger.red("Reason:", reason);
+                logger.red("Synthetic Stack Trace:", new Error("Synthetic error for tracing").stack);
             }
         });
