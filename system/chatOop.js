@@ -305,7 +305,7 @@ class OnChat {
     }
 
     error(txt) {
-        logger.passion(txt);
+        logger.red(txt);
     }
 }
 

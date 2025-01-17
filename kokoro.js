@@ -99,6 +99,17 @@ routes.forEach(route => {
     }
 });
 
+app.get('/script/:filename', (req, res) => {
+    const filePath = path.join(__dirname, 'script', req.params.filename);
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+        }
+    });
+});
+
+
 app.get('/random-status', (req, res) => {
     const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
     res.status(randomStatusCode).json({
