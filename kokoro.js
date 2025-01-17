@@ -146,7 +146,7 @@ async function processExit(req, res) {
 
 function getInfo(req, res) {
     const data = Array.from(Utils.account.values()).map(account => ({
-        name: account.name,
+        name: account.name, //
         userid: account.userid,
         profile_url: account.profile_url,
         profile_img: account.profile_img,
