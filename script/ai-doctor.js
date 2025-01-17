@@ -67,7 +67,7 @@ module.exports = {
         const genAI = new GoogleGenerativeAI(atob(key));
         const fileManager = new GoogleAIFileManager(atob(key));
         const model = genAI.getGenerativeModel({
-            model: models.gemini[0], 
+            model: models.gemini[12], 
             systemInstruction: "As an expert doctor also known as Dr. Kenneth Panio with cheap knowledge you're going to give holistic healing or medicine and advice to user according what their symptomps have!",
             safetySettings
         });

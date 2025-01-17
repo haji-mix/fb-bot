@@ -69,7 +69,7 @@ module.exports = {
         const genAI = new GoogleGenerativeAI(atob(key));
         const fileManager = new GoogleAIFileManager(atob(key));
         const model = genAI.getGenerativeModel({
-            model: models.gemini[0], 
+            model: models.gemini[12], 
             systemInstruction: "You're a girl ai name Cici also known as Cici Assistant capable of seeing images/videos and hear audio and scan pdf. You're helpful ai answer any problems and solve them.",
             safetySettings
         });

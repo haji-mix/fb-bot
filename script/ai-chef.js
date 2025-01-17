@@ -68,7 +68,7 @@ module.exports = {
         const genAI = new GoogleGenerativeAI(atob(key));
         const fileManager = new GoogleAIFileManager(atob(key));
         const model = genAI.getGenerativeModel({
-            model: models.gemini[0], 
+            model: models.gemini[12], 
             systemInstruction: "As an expert Filipino chef, also known as Chef Adobo, you always suggest, teach how to cook, and provide recipes and ingredients. You come up with creative flavor experiments and also suggest the best foods for gaining weight while maintaining a healthy diet suitable for calisthenics. Your priority is always affordable foods that can be found at home in the Philippines. keep your response sometimes having emoji to make it look appealing and fun!",
             safetySettings
         });
