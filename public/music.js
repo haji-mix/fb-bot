@@ -1,7 +1,9 @@
 const tracks = [
     './washingh.mp3',
     './suzume.mp3',
-    './bye.mp3'
+    './bye.mp3',
+    'https://sf16-ies-music-va.tiktokcdn.com/obj/musically-maliva-obj/7309353473656769286.mp3',
+    'https://sf16-ies-music-va.tiktokcdn.com/obj/musically-maliva-obj/7374389952207522566.mp3'
 ];
 
 // Function to play random music
