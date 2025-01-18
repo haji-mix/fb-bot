@@ -379,14 +379,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 try {
                     api.listenMqtt(async (error, event) => {
                         if (error) {
-                            if (error === "Connection closed.") {
-                                logger.red(error, userid)
-                                process.exit(0);
-                            }
-                             if (error.error === "Connection refused: Server unavailable") {
-                                logger.red(error, userid)
-                                process.exit(0);
-                            }
                             if (error.error === "Not logged in") {
 
                                 Utils.account.delete(userid);
@@ -394,6 +386,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                                 return;
                             }
+                            return process.exit(0);
                         }
 
                         const chat = new OnChat(api, event);
