@@ -84,5 +84,6 @@ module.exports["run"] = async ({
         }
     } catch (error) {
         infoMSG.edit(thin(error.message));
+        booru.unsend(5000);
     }
 };
