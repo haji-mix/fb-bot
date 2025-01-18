@@ -119,22 +119,32 @@ app.get('/random-status', (req, res) => {
 
 app.get('/screenshot', async (req, res) => {
     try {
-        const { url } = req.query;
+        const {
+            url
+        } = req.query;
 
         if (!url) {
-            return res.status(400).send("URL parameter is required.");
+            return res.status(400).json("URL parameter is required.");
+        }
+
+        // Validate URL using regex
+        const urlRegex = /^(https?:\/\/)[\w.-]+(\.[a-z]{2,})+(\/[\w.-]*)*$/i;
+        if (!urlRegex.test(url)) {
+            return res.status(400).json("Invalid URL. Must start with http:// or https:// and be properly formatted.");
         }
 
         const thumUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodeURIComponent(url)}`;
         const response = await axios({
             url: thumUrl,
             method: "GET",
-            responseType: "stream",
+            responseType: "arraybuffer",
         });
+
+        const buffer = Buffer.from(response.data);
 
         res.setHeader("Content-Type", response.headers["content-type"]);
         res.setHeader("Content-Disposition", "inline");
-        response.data.pipe(res);
+        res.send(buffer);
     } catch (error) {
         res.status(500).send(error.message);
     }
