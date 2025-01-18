@@ -21,6 +21,7 @@ const USER_AGENT =
 module.exports["run"] = async ({ font, chat }) => {
   const mono = txt => font.monospace(txt);
 
+  // Function to create temporary email
   async function createTempEmail() {
     try {
       const response = await axios.post(
@@ -40,6 +41,7 @@ module.exports["run"] = async ({ font, chat }) => {
     }
   }
 
+  // Function to check inbox for messages
   async function checkInbox(token) {
     try {
       const response = await axios.get(`${TEMPMAIL_BASE_URL}/inbox?token=${token}`, {
@@ -48,7 +50,7 @@ module.exports["run"] = async ({ font, chat }) => {
           Referer: 'https://tempmail.lol/en/',
         },
       });
-      return response.data;
+      return response.data.emails || []; // Fix to ensure response data contains emails array
     } catch (error) {
       throw new Error("Failed to check inbox: " + error.message);
     }
@@ -58,9 +60,9 @@ module.exports["run"] = async ({ font, chat }) => {
     chat.reply(mono('Generating temporary email...'));
 
     const { address, token } = await createTempEmail();
-    chat.reply(`Temporary Email: ${address}\n\nAuto-fetching messages for the next 3 minutes...`);
+    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for the next 3 minutes...`);
 
-    const stopTime = Date.now() + 3 * 60 * 1000;
+    const stopTime = Date.now() + 3 * 60 * 1000; // 3 minutes from now
 
     const intervalId = setInterval(async () => {
       if (Date.now() >= stopTime) {
@@ -84,7 +86,7 @@ module.exports["run"] = async ({ font, chat }) => {
           });
           chat.reply(messages);
         } else {
-          chat.reply(mono('No new messages.'));
+          chat.reply(mono('No new messages. re-checking inbox...'));
         }
       } catch (error) {
         chat.reply(mono('Error while fetching messages: ' + error.message));
