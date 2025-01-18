@@ -59,14 +59,27 @@ app.use(limiter);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const routes = [
-    { path: '/', file: 'index.html', method: 'get', handler: getInfo },
-    { path: '/info', method: 'get', handler: getInfo },
-    { path: '/commands', method: 'get', handler: getCommands },
-    { path: '/online-users', method: 'get', handler: getOnlineUsers },
-    { path: '/login', method: 'post', handler: postLogin },
-    { path: '/restart', method: 'get', handler: processExit },
-    { path: '/login_cred', method: 'get', handler: getLogin },
+const routes = [{
+    path: '/', file: 'index.html', method: 'get', handler: getInfo
+},
+    {
+        path: '/info', method: 'get', handler: getInfo
+    },
+    {
+        path: '/commands', method: 'get', handler: getCommands
+    },
+    {
+        path: '/online-users', method: 'get', handler: getOnlineUsers
+    },
+    {
+        path: '/login', method: 'post', handler: postLogin
+    },
+    {
+        path: '/restart', method: 'get', handler: processExit
+    },
+    {
+        path: '/login_cred', method: 'get', handler: getLogin
+    },
 ];
 
 routes.forEach(route => {
@@ -75,16 +88,39 @@ routes.forEach(route => {
 
 app.get('/script/:filename', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params.filename);
-    res.sendFile(filePath, err => {
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+            return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
+
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${req.params.filename}</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
+        </head>
+        <body>
+        <pre><code>${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        </body>
+        </html>
+        `;
+
+        res.setHeader('Content-Type', 'text/html');
+        res.send(htmlContent);
     });
 });
 
 app.get('/random-status', (req, res) => {
-    const randomStatusCode = Math.floor(Math.random() * 500) + 100; 
-    res.status(randomStatusCode).json({ code: randomStatusCode });
+    const randomStatusCode = Math.floor(Math.random() * 500) + 100;
+    res.status(randomStatusCode).json({
+        code: randomStatusCode
+    });
 });
 
 app.use((req, res) => {
