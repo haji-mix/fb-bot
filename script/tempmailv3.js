@@ -21,9 +21,9 @@ const USER_AGENT =
 module.exports["run"] = async ({ font, chat }) => {
   const mono = txt => font.monospace(txt);
 
-  async function createTempEmail() {
+  const createTempEmail = async () => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         `${TEMPMAIL_BASE_URL}/inbox/create`,
         { domain: null },
         {
@@ -34,34 +34,34 @@ module.exports["run"] = async ({ font, chat }) => {
           },
         }
       );
-      return response.data;
+      return data;
     } catch (error) {
       throw new Error("Failed to generate a temporary email: " + error.message);
     }
-  }
+  };
 
-  async function checkInbox(token) {
+  const checkInbox = async (token) => {
     try {
-      const response = await axios.get(`${TEMPMAIL_BASE_URL}/inbox?token=${token}`, {
+      const { data } = await axios.get(`${TEMPMAIL_BASE_URL}/inbox?token=${token}`, {
         headers: {
           'User-Agent': USER_AGENT,
           Referer: 'https://tempmail.lol/en/',
         },
       });
-      return response.data.emails || [];
+      return data.emails || [];
     } catch (error) {
       throw new Error("Failed to check inbox: " + error.message);
     }
-  }
+  };
 
   try {
     chat.reply(mono('Generating temporary email...'));
 
     const { address, token } = await createTempEmail();
-    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for 3 minutes until the email expires...`);
+    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for 5 minutes until the email expires...`);
 
-    const stopTime = Date.now() + 3 * 60 * 1000;
-    let recheckCount = 0;
+    const stopTime = Date.now() + 5 * 60 * 1000;
+    let lastMessageCount = 0;
 
     const intervalId = setInterval(async () => {
       if (Date.now() >= stopTime) {
@@ -72,26 +72,19 @@ module.exports["run"] = async ({ font, chat }) => {
 
       try {
         const inbox = await checkInbox(token);
-        recheckCount++;
-        if (inbox && inbox.length > 0) {
-          let messages = font.bold(`📥 New Messages in Inbox (Recheck #${recheckCount})\n\n`);
-          inbox.forEach((message, index) => {
-            const date = new Date(message.date).toLocaleString();
-            messages += `📧 𝗠𝗲𝘀𝘀𝗮𝗴𝗲 ${index + 1}:\n`;
-            messages += `🖋️ 𝗙𝗿𝗼𝗺: ${message.from}\n`;
-            messages += `📨 𝗧𝗼: ${message.to}\n`;
-            messages += `📜 𝗦𝘂𝗯𝗷𝗲𝗰𝘁: ${message.subject || '[No Subject]'}\n`;
-            messages += `📅 𝗥𝗲𝗰𝗲𝗶𝘃𝗲𝗱: ${date}\n`;
-            messages += `📄 𝗕𝗼𝗱𝘆:\n${message.body || '[No Content]'}\n\n`;
+        if (inbox.length > lastMessageCount) {
+          lastMessageCount = inbox.length;
+          let messages = font.bold(`📥 New Messages in Inbox:\n\n`);
+          inbox.forEach(({ from, to, subject, date, body }, index) => {
+            messages += `📧 Message ${index + 1}:\n`;
+            messages += `🖋️ From: ${from}\n📨 To: ${to}\n📜 Subject: ${subject || '[No Subject]'}\n📅 Received: ${new Date(date).toLocaleString()}\n📄 Body:\n${body || '[No Content]'}\n\n`;
           });
           chat.reply(messages);
-        } else {
-          chat.reply(mono(`No new messages. Re-checking inbox... (#${recheckCount})`));
         }
       } catch (error) {
         chat.reply(mono('Error while fetching messages: ' + error.message));
       }
-    }, 30000);
+    }, 1000);
   } catch (error) {
     chat.reply(mono(error.message));
   }
