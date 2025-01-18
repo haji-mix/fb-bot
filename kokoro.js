@@ -101,9 +101,24 @@ app.get('/script/:filename', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${req.params.filename}</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/default.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script>
+        <style>
+        body {
+        background-color: #272822; /* Monokai background color */
+        color: #f8f8f2; /* Default Monokai text color */
+        font-family: 'Courier New', Courier, monospace;
+        margin: 0;
+        padding: 1rem;
+        }
+        pre {
+        overflow: auto;
+        padding: 1rem;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        </style>
         </head>
         <body>
         <pre><code>${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
