@@ -13,6 +13,7 @@ const {
     fonts,
     OnChat,
     loadModules,
+    download,
     encryptSession,
     decryptSession,
     generateUserAgent
@@ -130,23 +131,13 @@ app.get('/screenshot', async (req, res) => {
         // Validate URL using regex
         const urlRegex = /^(https?:\/\/)[\w.-]+(\.[a-z]{2,})+(\/[\w.-]*)*$/i;
         if (!urlRegex.test(url)) {
-            return res.status(400).json("Invalid URL. Must start with http:// or https:// and be properly formatted.");
+            return res.status(400).json({ error: "Invalid URL. Must start with http:// or https:// and be properly formatted." });
         }
 
         const thumUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodeURIComponent(url)}`;
-        const response = await axios({
-            url: thumUrl,
-            method: "GET",
-            responseType: "arraybuffer",
-        });
-
-        const buffer = Buffer.from(response.data);
-
-        res.setHeader("Content-Type", response.headers["content-type"]);
-        res.setHeader("Content-Disposition", "inline");
-        res.send(buffer);
+        res.send(await download(thumUrl, "arraybuffer", "png"));
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 

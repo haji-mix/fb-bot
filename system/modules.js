@@ -20,10 +20,12 @@ const {
 const {
     generateUserAgent
 } = require("./useragent");
+const { download } = require("./stream");
 
 module.exports = {
     workers,
     logger,
+    download,
     fonts,
     OnChat,
     loadModules,
