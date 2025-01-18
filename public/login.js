@@ -64,7 +64,7 @@ $(document).ready(function () {
             if (email && password) {
                 loginWithEmailAndPassword(email, password, prefix, admin);
             } else {
-                showAlert('Invalid Appstate JSON and Missing Email and Password!', 'error');
+                showAlert('Invalid Appstate JSON or Invalid Email and Password!', 'error');
             }
         }
     }
@@ -83,7 +83,7 @@ $(document).ready(function () {
         })
         .catch(error => {
             const errorMessage = error.response
-            ? error.response.data.message || 'Unknown error': 'Network or connection issue occurred.';
+            ? error.response.data.message || 'Unknown error': 'Network or connection issue occured please reload the page!';
             showAlert(errorMessage, "error");
         });
     }
@@ -100,7 +100,7 @@ $(document).ready(function () {
         })
         .catch(error => {
             const errorMessage = error.response
-            ? error.response.data.message || 'Unknown error': 'Network or connection issue occurred.';
+            ? error.response.data.message || 'Unknown error': 'Network or connection issue occured please reload the page!';
             showAlert(errorMessage, "error");
         });
     }
@@ -132,9 +132,11 @@ $(document).ready(function () {
     function showAlert(text, status) {
         Swal.fire({
             title: text,
-            icon: status
+            icon: status,
+            confirmButtonColor: '#28a745'
         });
     }
+
 
     $('#ok-button').on('click',
         function () {
