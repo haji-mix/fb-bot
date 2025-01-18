@@ -117,6 +117,29 @@ app.get('/random-status', (req, res) => {
     });
 });
 
+app.get('/screenshot', async (req, res) => {
+    try {
+        const { url } = req.query;
+
+        if (!url) {
+            return res.status(400).send("URL parameter is required.");
+        }
+
+        const thumUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodeURIComponent(url)}`;
+        const response = await axios({
+            url: thumUrl,
+            method: "GET",
+            responseType: "stream",
+        });
+
+        res.setHeader("Content-Type", response.headers["content-type"]);
+        res.setHeader("Content-Disposition", "inline");
+        response.data.pipe(res);
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
+});
+
 app.use((req, res, next) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
