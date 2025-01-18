@@ -40,7 +40,6 @@ module.exports["run"] = async ({ font, chat }) => {
     }
   }
 
-  // Function to check inbox for messages
   async function checkInbox(token) {
     try {
       const response = await axios.get(`${TEMPMAIL_BASE_URL}/inbox?token=${token}`, {
