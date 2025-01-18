@@ -8,7 +8,7 @@ module.exports["config"] = {
   credits: "Kenneth Panio",
   type: "tools",
   role: 0,
-  aliases: ['autotemp', 'autogenmail', 'autodumpmail', 'autoinbox', "tempmail", "tempv3", "tempmailv3"],
+  aliases: ['autotemp', 'autogenmail', 'autodumpmail', 'autoinbox', "tempmail", "tempv3", "tempmailv3", "temp"],
   usage: "",
   guide: 'autotempmail > Generates an email and auto-fetches messages for 3 minutes or until the email expires.',
   cd: 8
