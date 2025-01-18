@@ -86,48 +86,114 @@ routes.forEach(route => {
     app[route.method](route.path, route.handler);
 });
 
-app.get('/script/:filename', (req, res) => {
-    const filePath = path.join(__dirname, 'script', req.params.filename);
+app.get('/script/:filename?', (req, res) => {
+    const filePath = path.join(__dirname, 'script', req.params.filename || '');
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
+    // Check if the path exists
+    fs.stat(filePath, (err, stats) => {
         if (err) {
             return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
 
-        const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${req.params.filename}</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-        <script>hljs.highlightAll();</script>
-        <style>
-        body {
-        background-color: #272822; /* Monokai background color */
-        color: #f8f8f2; /* Default Monokai text color */
-        font-family: 'Courier New', Courier, monospace;
-        margin: 0;
-        padding: 1rem;
-        }
-        pre {
-        overflow: auto;
-        padding: 1rem;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-        </style>
-        </head>
-        <body>
-        <pre><code>${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
-        </body>
-        </html>
-        `;
+        if (stats.isDirectory()) {
+            // Generate HTML to list directory contents
+            fs.readdir(filePath, (err, files) => {
+                if (err) {
+                    return res.status(500).send('Error reading directory');
+                }
 
-        res.setHeader('Content-Type', 'text/html');
-        res.send(htmlContent);
+                const listHtml = files
+                .map(
+                    file =>
+                    `<li><a href="/script/${encodeURIComponent(
+                        req.params.filename ? path.join(req.params.filename, file): file
+                    )}">${file}</a></li>`
+                )
+                .join('');
+
+                const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Directory Listing</title>
+                <style>
+                body {
+                font-family: Arial, sans-serif;
+                background-color: #272822;
+                color: #f8f8f2;
+                margin: 0;
+                padding: 1rem;
+                }
+                ul {
+                list-style-type: none;
+                padding: 0;
+                }
+                li {
+                margin: 0.5rem 0;
+                }
+                a {
+                color: #66d9ef;
+                text-decoration: none;
+                }
+                a:hover {
+                text-decoration: underline;
+                }
+                </style>
+                </head>
+                <body>
+                <h1>Directory Listing</h1>
+                <ul>${listHtml}</ul>
+                </body>
+                </html>
+                `;
+                res.setHeader('Content-Type', 'text/html');
+                res.send(htmlContent);
+            });
+        } else {
+            // Serve the file content
+            fs.readFile(filePath, 'utf8', (err, data) => {
+                if (err) {
+                    return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+                }
+
+                const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${req.params.filename}</title>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+                <script>hljs.highlightAll();</script>
+                <style>
+                body {
+                background-color: #272822;
+                color: #f8f8f2;
+                font-family: 'Courier New', Courier, monospace;
+                margin: 0;
+                padding: 1rem;
+                }
+                pre {
+                overflow: auto;
+                padding: 1rem;
+                border-radius: 5px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+                }
+                </style>
+                </head>
+                <body>
+                <pre><code>${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                </body>
+                </html>
+                `;
+
+                res.setHeader('Content-Type', 'text/html');
+                res.send(htmlContent);
+            });
+        }
     });
 });
 
@@ -139,7 +205,9 @@ app.get('/random-status', (req, res) => {
 });
 
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    res.status(404).sendFile(path.join(__dirname,
+        'public',
+        '404.html'));
 });
 
 
