@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
+const rateLimit = require('express-rate-limit');
 const app = express();
 let PORT = 10000;
 const axios = require("axios");
@@ -37,119 +38,59 @@ loadModules(Utils, logger);
 
 const blockedIPs = new Set();
 
-// Middleware to block suspicious IPs
 app.use((req, res, next) => {
     if (blockedIPs.has(req.ip)) {
-        // Serve your custom 403 HTML file
-        return res.status(403).sendFile(path.join(__dirname, "public", "403.html"));
+        return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
     }
     next();
 });
 
-// Security: anti-DDoS middleware
-const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    // 15 minutes
     max: 100,
-    // Allow 100 requests per window
     handler: (req, res) => {
-        // Add IP to the blocked list
         blockedIPs.add(req.ip);
-
-        // Serve your custom 403 HTML file
-        res.status(403).sendFile(path.join(__dirname, "public", "403.html"));
+        res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
     },
 });
+
 app.use(limiter);
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.use(express.json());
 
-// Routes definition
-const routes = [{
-    path: '/', file: 'index.html', method: 'get', handler: getInfo
-},
-    {
-        path: '/info', method: 'get', handler: getInfo
-    },
-    {
-        path: '/commands', method: 'get', handler: getCommands
-    },
-    {
-        path: '/online-users', method: 'get', handler: getOnlineUsers
-    },
-    {
-        path: '/login', method: 'post', handler: postLogin
-    },
-    {
-        path: '/restart', method: 'get', handler: processExit
-    },
-    {
-        path: '/login_cred', method: 'get',
-        handler: getLogin
-    }];
+const routes = [
+    { path: '/', file: 'index.html', method: 'get', handler: getInfo },
+    { path: '/info', method: 'get', handler: getInfo },
+    { path: '/commands', method: 'get', handler: getCommands },
+    { path: '/online-users', method: 'get', handler: getOnlineUsers },
+    { path: '/login', method: 'post', handler: postLogin },
+    { path: '/restart', method: 'get', handler: processExit },
+    { path: '/login_cred', method: 'get', handler: getLogin },
+];
 
-// Define route handlers
 routes.forEach(route => {
-    if (route.method === 'post') {
-        app.post(route.path, route.handler);
-    } else {
-        app.get(route.path, route.handler);
-    }
+    app[route.method](route.path, route.handler);
 });
 
 app.get('/script/:filename', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params.filename);
-
-    res.sendFile(filePath, (err) => {
+    res.sendFile(filePath, err => {
         if (err) {
             res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
     });
 });
 
-
 app.get('/random-status', (req, res) => {
-    const randomStatusCode = Math.floor(Math.random() * (599 - 100 + 1)) + 100;
-    res.status(randomStatusCode).json({
-        code: randomStatusCode
-    });
+    const randomStatusCode = Math.floor(Math.random() * 500) + 100; 
+    res.status(randomStatusCode).json({ code: randomStatusCode });
 });
 
-app.get('/screenshot', async (req, res) => {
-    try {
-        const {
-            url
-        } = req.query;
-
-        if (!url) {
-            return res.status(400).json("URL parameter is required.");
-        }
-
-        // Validate URL using regex
-        const urlRegex = /^(https?:\/\/)[\w.-]+(\.[a-z]{2,})+(\/[\w.-]*)*$/i;
-        if (!urlRegex.test(url)) {
-            return res.status(400).json({ error: "Invalid URL. Must start with http:// or https:// and be properly formatted." });
-        }
-
-        const thumUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodeURIComponent(url)}`;
-        const fileStream = await download(thumUrl, 'arraybuffer', 'png');
-
-        // Set headers to return the file
-        res.setHeader("Content-Type", "image/png");
-        res.setHeader("Content-Disposition", "inline; filename=screenshot.png");
-
-        fileStream.pipe(res);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.use((req, res, next) => {
+app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
+
 
 async function processExit(req, res) {
     try {
