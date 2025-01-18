@@ -383,6 +383,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 logger.red(error, userid)
                                 process.exit(0);
                             }
+                             if (error.error === "Connection refused: Server unavailable") {
+                                logger.red(error, userid)
+                                process.exit(0);
+                            }
                             if (error.error === "Not logged in") {
 
                                 Utils.account.delete(userid);
