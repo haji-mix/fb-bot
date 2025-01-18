@@ -10,7 +10,7 @@ module.exports["config"] = {
   role: 0,
   aliases: ['autotemp', 'autogenmail', 'autodumpmail', 'autoinbox', "tempmail", "tempv3", "tempmailv3"],
   usage: "",
-  guide: 'autotempmail > Generates an email and auto-fetches messages for 5 minutes.',
+  guide: 'autotempmail > Generates an email and auto-fetches messages for 3 minutes or until the email expires.',
   cd: 8
 };
 
@@ -21,7 +21,6 @@ const USER_AGENT =
 module.exports["run"] = async ({ font, chat }) => {
   const mono = txt => font.monospace(txt);
 
-  // Function to create temporary email
   async function createTempEmail() {
     try {
       const response = await axios.post(
@@ -50,7 +49,7 @@ module.exports["run"] = async ({ font, chat }) => {
           Referer: 'https://tempmail.lol/en/',
         },
       });
-      return response.data.emails || []; // Fix to ensure response data contains emails array
+      return response.data.emails || [];
     } catch (error) {
       throw new Error("Failed to check inbox: " + error.message);
     }
@@ -60,24 +59,26 @@ module.exports["run"] = async ({ font, chat }) => {
     chat.reply(mono('Generating temporary email...'));
 
     const { address, token } = await createTempEmail();
-    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for the next 3 minutes...`);
+    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for 3 minutes until the email expires...`);
 
-    const stopTime = Date.now() + 3 * 60 * 1000; // 3 minutes from now
+    const stopTime = Date.now() + 3 * 60 * 1000;
+    let recheckCount = 0;
 
     const intervalId = setInterval(async () => {
       if (Date.now() >= stopTime) {
         clearInterval(intervalId);
-        chat.reply(mono('Stopped auto-fetching messages after 3 minutes.'));
+        chat.reply(mono('Stopped auto-fetching messages. The email has expired.'));
         return;
       }
 
       try {
         const inbox = await checkInbox(token);
+        recheckCount++;
         if (inbox && inbox.length > 0) {
-          let messages = `📥 New Messages in Inbox\n\n`;
+          let messages = font.bold(`📥 New Messages in Inbox (Recheck #${recheckCount})\n\n`);
           inbox.forEach((message, index) => {
             const date = new Date(message.date).toLocaleString();
-            messages += `📧 Message ${index + 1}:\n`;
+            messages += `📧 𝗠𝗲𝘀𝘀𝗮𝗴𝗲 ${index + 1}:\n`;
             messages += `🖋️ 𝗙𝗿𝗼𝗺: ${message.from}\n`;
             messages += `📨 𝗧𝗼: ${message.to}\n`;
             messages += `📜 𝗦𝘂𝗯𝗷𝗲𝗰𝘁: ${message.subject || '[No Subject]'}\n`;
@@ -86,7 +87,7 @@ module.exports["run"] = async ({ font, chat }) => {
           });
           chat.reply(messages);
         } else {
-          chat.reply(mono('No new messages. re-checking inbox...'));
+          chat.reply(mono(`No new messages. Re-checking inbox... (#${recheckCount})`));
         }
       } catch (error) {
         chat.reply(mono('Error while fetching messages: ' + error.message));
