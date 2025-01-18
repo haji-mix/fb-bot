@@ -135,7 +135,13 @@ app.get('/screenshot', async (req, res) => {
         }
 
         const thumUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodeURIComponent(url)}`;
-        res.send(await download(thumUrl, "arraybuffer", "png"));
+        const fileStream = await download(thumUrl, 'arraybuffer', 'png');
+
+        // Set headers to return the file
+        res.setHeader("Content-Type", "image/png");
+        res.setHeader("Content-Disposition", "inline; filename=screenshot.png");
+
+        fileStream.pipe(res);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
