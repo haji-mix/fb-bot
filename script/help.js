@@ -66,7 +66,7 @@ module.exports["run"] = async ({
                 attachment: url
             });
         }
-    } else if (input === 'all') {
+    } else /* if (input === 'all') {
     let helpMessage = font.bold(`📚 | CMD LIST 〔${prefix || 'NO PREFIX'}〕\n`);
     helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
 
@@ -78,7 +78,7 @@ module.exports["run"] = async ({
 
     const ireply = await chat.reply(helpMessage);
     ireply.unsend(150000);
-  } else if (!isNaN(input)) {
+  } else */ if (!isNaN(input)) {
         const page = parseInt(input);
         const totalPages = Math.ceil(totalCommands / perPage);
 
