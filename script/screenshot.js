@@ -13,7 +13,7 @@ module.exports["config"] = {
     role: 0,
 };
 
-const urlRegex = /^(https?:\/\/)?([a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+)(\/[a-zA-Z0-9-._~:?#[@!$&'()*+,;=]*)?$/;
+const urlRegex = /^(https:\/\/|http:\/\/)[a-z0-9-]+(\.[a-z0-9-]+)+([\/?%&=]*)$/i;
 
 module.exports["run"] = async ({ event, args, chat, font, global }) => {
     let url;

@@ -88,15 +88,15 @@ module.exports["run"] = async ({
     while (attempts < maxRetries && !success) {
         try {
             const response = await getResponse();
-            let fragments = response.data;
+            let fragments = response.data.replace(/\\n/g, '\n');
             let fragmentArray = fragments.match(/0:".*?"/g);
             if (fragmentArray) {
                 let cleanedResponse = fragmentArray.map(fragment => fragment.substring(3, fragment.length - 1)).join("");
                 answer = cleanedResponse;
-                answer = answer.replace(/\\n/g, '\n');
                 success = true;
             } else {
-                answer = `I don't have an answer for that : (`;
+                answer = fragments;
+                success = true;
             }
 
         } catch (error) {
