@@ -54,6 +54,8 @@ module.exports["run"] = async ({ font, chat }) => {
     }
   };
 
+  let errorReported = false; 
+
   try {
     chat.reply(mono('Generating temporary email...'));
 
@@ -66,7 +68,7 @@ module.exports["run"] = async ({ font, chat }) => {
     const intervalId = setInterval(async () => {
       if (Date.now() >= stopTime) {
         clearInterval(intervalId);
-        chat.reply(mono('Stopped auto-fetching messages. The email has expired.'));
+        chat.reply(mono(`The temporary email ${address} has expired.`));
         return;
       }
 
@@ -82,7 +84,10 @@ module.exports["run"] = async ({ font, chat }) => {
           chat.reply(messages);
         }
       } catch (error) {
-        chat.reply(mono('Error while fetching messages: ' + error.message));
+        if (!errorReported) {
+          chat.reply(mono('Error while fetching messages: ' + error.message));
+          errorReported = true;
+        }
       }
     }, 1000);
   } catch (error) {
