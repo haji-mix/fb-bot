@@ -13,10 +13,9 @@ module.exports["config"] = {
     role: 0,
 };
 
-const urlRegex = /^(https?:\/\/(?:[a-z0-9-]+\.)+[a-z0-9]{2,})(\/[^\s]*)?$/i;
-
 module.exports["run"] = async ({ event, args, chat, font, global }) => {
     let url;
+
     if (event.type === "message_reply" && event.messageReply.body) {
         url = event.messageReply.body;
     } else {
@@ -26,8 +25,8 @@ module.exports["run"] = async ({ event, args, chat, font, global }) => {
         url = args.join(' ');
     }
 
-    if (!urlRegex.test(url)) {
-        return chat.reply('Invalid URL format. Please provide a valid URL.');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return chat.reply('Invalid URL format. Please provide a valid URL starting with http:// or https://.');
     }
 
     try {
