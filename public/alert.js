@@ -6,7 +6,7 @@ fetch('alert.json')
     return response.json();
 })
 .then(data => {
-    const updateMessage = `Update: ${data.update}\nFeatures: Commands and Optimization\n~${data.features.join('\n~')}\n\nAdded CMD: ~${data.cmd.join('\n~')}`;
+    const updateMessage = `Update: ${data.update}\nFeatures: \n~${data.features.join('\n~')}\n\nAdded CMD: \n~${data.cmd.join('\n~')}`;
     alert(updateMessage);
 })
 .catch(error => {
