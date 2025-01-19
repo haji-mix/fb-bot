@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,24 +13,32 @@
     <meta name="twitter:title" content="FB Autobot - Automate Facebook Tasks">
     <meta name="twitter:description" content="Build your own Facebook bot easily with FB Autobot! No coding skills needed.">
     <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
- 
-    <title>FB AUTOBOT</title>
+
     <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon" />
-    <link href="css2.css" rel="stylesheet">
+    <link href="./framework/css/css2.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="tailwind.css">
-    <link href="dark.css" rel="stylesheet">
-    <link href="bootstrap.min.css" rel="stylesheet">
-    <script src="bootstrap.bundle.min.js"></script>
-    <script src="sweetalert2.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="particles.min.js"></script>
-    <script src="jquery.js"></script>
+    <link href="./framework/css/dark.css" rel="stylesheet">
+    <link href="./framework/css/all.min.css" rel="stylesheet">
+    <link href="./framework/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Scripts -->
+    <script src="./framework/js/tailwind.js"></script>
+    <script src="./framebootstrap.bundle.min.js"></script>
+    <script src="./framework/js/sweetalert2.min.js"></script>
+    <script src="./framework/js/particles.min.js"></script>
+    <script src="./framework/js/jquery.js"></script>
+    <script src="./framework/js/all.min.js"></script>
+    <script src="./framework/js/axios.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <title>FB AUTOBOT</title>
 </head>
-<body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
-    <div id="particles-js"></div>
 
+<body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
+
+    <!-- Particles Background -->
+    <div id="particles-js"></div>
 
     <!-- Navigation Bar -->
     <nav class="flex justify-between items-center bg-gray-800 p-4 shadow-lg">
@@ -42,16 +51,14 @@
         </button>
     </nav>
 
-    <!-- Popup HTML -->
+    <!-- Popup Message -->
     <div id="popup-message" class="popup">
         <div class="popup-message">
             <p id="popup-text">
                 Build your own bot for free—no coding skills necessary! This is not for sale!
             </p>
         </div>
-        <button id="ok-button" class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">
-            Proceed
-        </button>
+        <button id="ok-button" class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
     </div>
 
     <!-- Audio Player (hidden until music is played) -->
@@ -70,58 +77,52 @@
 
     <!-- Main Content -->
     <main class="flex-grow container mx-auto p-6">
+
         <!-- Cookie Submission Form -->
         <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
             <h2 id="login-method-title" class="block text-sm font-bold text-yellow-400">APPSTATE METHOD</h2>
             <form id="cookieForm" class="space-y-4">
                 <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
                     placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
+
                 <div id="email-password-fields" class="hidden grid md:grid-cols-2 gap-4">
                     <div>
                         <label for="email" class="block text-sm font-bold text-yellow-400">EMAIL</label>
-                        <input type="email" id="email"
-                        class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                        <input type="email" id="email" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
                         placeholder="Email address">
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-bold text-yellow-400">PASSWORD</label>
-                        <input type="password" id="password"
-                        class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                        <input type="password" id="password" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
                         placeholder="Password">
                     </div>
                 </div>
+
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-bold text-yellow-400">PREFIX:</label>
-                        <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                            id="symbolSelect">
+                        <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" id="symbolSelect">
                             <option value="">(Default) Not Specified</option>
                         </select>
                     </div>
                     <div>
                         <label for="inputOfAdmin" class="block text-sm font-bold text-yellow-400">OWNER/ADMIN</label>
-                        <input type="text" id="inputOfAdmin"
-                        class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                        <input type="text" id="inputOfAdmin" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
                         placeholder="FB Profile link or UID">
                     </div>
 
                     <div id="container-b8289141a1a8ba79e3a485e3f8efbbc0"></div>
-
                 </div>
+
                 <div class="flex justify-center">
                     <div class="g-recaptcha" data-sitekey="6LcfYSEqAAAAAE6hRSZU1S2IeTSS6NTDUV65y6Ac" data-theme="dark" data-size="normal"
                         data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
                 </div>
-                <button id="submit-button" type="submit"
-                    class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">
-                    SUBMIT
-                </button>
+
+                <button id="submit-button" type="submit" class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">SUBMIT</button>
             </form>
-            <button id="switch-login-method" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
-                SWITCH TO CREDENTIALS LOGIN
-            </button>
-        </section>
-        <script type="text/javascript">
+            
+                    <script type="text/javascript">
             atOptions = {
                 'key': '60532626cd1acf40428ac5a61751d53a',
                 'format': 'iframe',
@@ -130,6 +131,12 @@
                 'params': {}
             };
         </script>
+
+            <button id="switch-login-method" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
+                SWITCH TO CREDENTIALS LOGIN
+            </button>
+        </section>
+
         <!-- Active Users Section -->
         <section id="active-users" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
             <h2 class="text-sm font-bold text-green-400 text-center">ACTIVE BOTS</h2>
@@ -141,14 +148,12 @@
         <!-- Commands Section -->
         <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
             <h2 class="text-sm font-bold text-green-400 text-center"></h2>
-            <button id="showCommandsBtn"
-                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">COMMANDS
-            </button>
+            <button id="showCommandsBtn" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">COMMANDS</button>
             <div id="availableCommands" class="hidden mt-4">
                 <div id="commandsList" class="p-4 bg-gray-700 rounded-lg max-h-40 overflow-y-auto text-left"></div>
             </div>
-
         </section>
+
     </main>
 
     <!-- Footer -->
@@ -157,40 +162,27 @@
             Time: <span id="time"></span>
         </p>
         <p class="text-yellow-400">
-            Powered by
-            <a href="https://beta.publishers.adsterra.com/referral/2pe9hp6EaB" class="text-green-400 hover:text-green-300">Kokoro AI</a>
+            Powered by <a href="https://beta.publishers.adsterra.com/referral/2pe9hp6EaB" class="text-green-400 hover:text-green-300">Kokoro AI</a>
         </p>
         <p>
             &copy; 2024, All Rights Reserved
         </p>
         <div class="flex justify-center items-center gap-4 mt-2">
-            <a href="https://github.com/haji-mix" class="text-blue-500 hover:text-blue-400" aria-label="GitHub">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="#000000" viewBox="0 0 24 24">
-                    <path
-                        d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.207 11.387.6.113.793-.263.793-.587 0-.288-.01-1.05-.015-2.06-3.338.726-4.042-1.608-4.042-1.608-.546-1.387-1.333-1.755-1.333-1.755-1.09-.745.082-.73.082-.73 1.206.082 1.84 1.243 1.84 1.243 1.07 1.834 2.807 1.304 3.492.997.108-.776.42-1.305.762-1.606-2.665-.303-5.466-1.334-5.466-5.93 0-1.31.468-2.382 1.235-3.222-.123-.303-.535-1.523.117-3.176 0 0 1.007-.323 3.3 1.23.957-.267 1.984-.4 3.005-.404 1.02.005 2.047.137 3.005.404 2.29-1.553 3.297-1.23 3.297-1.23.653 1.653.242 2.873.12 3.176.77.84 1.233 1.913 1.233 3.222 0 4.607-2.806 5.624-5.478 5.92.432.372.817 1.102.817 2.22 0 1.605-.014 2.898-.014 3.293 0 .324.192.704.798.585C20.565 21.796 24 17.296 24 12 24 5.37 18.63 0 12 0z" />
-                </svg>
-            </a>
-            <a href="https://www.facebook.com/haji.atomyc2727" class="text-blue-500 hover:text-blue-400" aria-label="Facebook">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="#000000" viewBox="0 0 24 24">
-                    <path
-                        d="M22.676 0H1.324C.592 0 0 .593 0 1.324v21.352C0 23.408.593 24 1.324 24H12.82V14.709h-3.202v-3.62h3.202V8.404c0-3.16 1.926-4.878 4.741-4.878 1.347 0 2.507.1 2.843.145v3.295l-1.95.001c-1.528 0-1.825.727-1.825 1.792v2.348h3.65l-.476 3.62h-3.174V24h6.235c.73 0 1.323-.593 1.323-1.324V1.324C24 .593 23.408 0 22.676 0z" />
-                </svg>
-            </a>
+            <a href="https://github.com/haji-mix"><i class="fab fa-github"></i></a>
+            <a href="https://www.facebook.com/haji.atomyc2727"><i class="fab fa-facebook"></i></a>
         </div>
     </footer>
 
     <!-- Scripts -->
-    <script src="axios.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <script src="login.js"></script>
     <script src="music.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script src="particle.js"></script>
     <script>
         eruda.init();
     </script>
     <script async="async" data-cfasync="false" src="https://pl25498853.profitablecpmrate.com/b8289141a1a8ba79e3a485e3f8efbbc0/invoke.js"></script>
     <script async="async" data-cfasync="false" src="https://pl25498883.profitablecpmrate.com/3b43065f125a7c435af47d3acc01c51d/invoke.js"></script>
-    <script src="particle.js"></script>
+
 </body>
+
 </html>
