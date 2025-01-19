@@ -21,6 +21,8 @@ const USER_AGENT =
 module.exports["run"] = async ({ font, chat }) => {
   const mono = txt => font.monospace(txt);
 
+  const gen_msg = await chat.reply(mono('Generating temporary email...'));
+
   const createTempEmail = async () => {
     try {
       const { data } = await axios.post(
@@ -50,17 +52,19 @@ module.exports["run"] = async ({ font, chat }) => {
       });
       return data.emails || [];
     } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error("Inbox expired or token is invalid.");
+      }
       throw new Error("Failed to check inbox: " + error.message);
     }
   };
 
-  let errorReported = false; 
+  let errorReported = false;
 
   try {
-    chat.reply(mono('Generating temporary email...'));
-
     const { address, token } = await createTempEmail();
-    chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for 5 minutes until the email expires...`);
+    const fetch_msg = await chat.reply(`Temporary Email:\n\n${address}\n\nAuto-fetching messages for 5 minutes until the email expires...`);
+    gen_msg.unsend();
 
     const stopTime = Date.now() + 5 * 60 * 1000;
     let lastMessageCount = 0;
@@ -69,7 +73,7 @@ module.exports["run"] = async ({ font, chat }) => {
       if (Date.now() >= stopTime) {
         clearInterval(intervalId);
         chat.reply(mono(`The temporary email ${address} has expired.`));
-        return;
+        return fetch_msg.unsend();
       }
 
       try {
@@ -82,15 +86,18 @@ module.exports["run"] = async ({ font, chat }) => {
             messages += `🖋️ From: ${from}\n📨 To: ${to}\n📜 Subject: ${subject || '[No Subject]'}\n📅 Received: ${new Date(date).toLocaleString()}\n📄 Body:\n${body || '[No Content]'}\n\n`;
           });
           chat.reply(messages);
+          fetch_msg.unsend();
         }
       } catch (error) {
         if (!errorReported) {
+          fetch_msg.unsend();
           chat.reply(mono('Error while fetching messages: ' + error.message));
           errorReported = true;
         }
       }
     }, 1000);
   } catch (error) {
+    gen_msg.unsend();
     chat.reply(mono(error.message));
   }
 };
