@@ -4,22 +4,24 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports["config"] = {
-  name: "openai4o",
+  name: "gpt4o",
   isPrefix: false,
+  aliases: ["gpt", "gpt4"],
   version: "1.0.0",
   credits: "Kenneth Panio",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with GPT-4o AI.",
+  info: "Interact with the chatbot AI.",
   usage: "[prompt]",
-  guide: "gpt4o How does quantum mechanics work?",
+  guide: "chatbot How does quantum mechanics work?",
   cd: 6 
 };
+
 
 const conversationHistories = {};
 
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
-  const apiUrl = "https://api.eduide.cc/v1/chat/completions";
+  const apiUrl = "https://copyofgeneralassistant-27005.chipp.ai/api/chat";
   const userAgent = randomUseragent.getRandom(ua => ua.browserName === 'Firefox');
   const { threadID, senderID } = event;
   const query = args.join(" ");
@@ -42,13 +44,26 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
 
   const getResponse = async () => {
     return axios.post(apiUrl, {
-      model: "gpt-4o",
+      chatSessionId: "acab4b36-51b8-4320-bcb4-cacc1b45aa70",
       messages: conversationHistories[senderID]
     }, {
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': userAgent,
-        'Referer': 'https://aiassistantbot.surge.sh/',
+        'Referer': 'https://copyofgeneralassistant-27005.chipp.ai/w/chat',
+        'accept': '*/*',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9',
+        'cookie': 'GAESA=Co4BMDBjYTM2OTVkMmY2ZDZhNWM4MWE4NWQzODk0NjE3YjE1ZGY0YmM3N2JkNTkyZDJjNDU4NmFmY2QyYzJmZmU1NWY0MzM1MjQzYzZhMGRkNTlmMjE3NTM5NDM2OTM4Y2VjMDY1OGMyMDBmYzVjZWI0NjQ0MmNkOTA5ZGNkZjcyMTRiYzIyZTdiOTAxNGFhZhDcvv_FxzI',
+        'origin': 'https://copyofgeneralassistant-27005.chipp.ai',
+        'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'sec-gpc': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
       }
     });
   };
@@ -56,20 +71,28 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const maxRetries = 3;
   let attempts = 0;
   let success = false;
-  let answer = "Under Maintenance!\n\nPlease use other models; get started with 'help'.";
+  let answer = "Under Maintenance!\n\nPlease try again later.";
 
   while (attempts < maxRetries && !success) {
     try {
       const response = await getResponse();
-      answer = response.data.choices[0].message.content;
-      success = true;
+      let fragments = response.data;
+      let fragmentArray = fragments.match(/0:".*?"/g);
+      if (fragmentArray) {
+        let cleanedResponse = fragmentArray.map(fragment => fragment.substring(3, fragment.length - 1)).join("");
+        answer = cleanedResponse;
+        success = true;
+      } else {
+        answer = `I don't have an answer for that : (`;
+      }
+
     } catch (error) {
       attempts++;
       if (attempts < maxRetries) {
-        await answering.edit(font.monospace(`No response from GPT-4o. Retrying... (${attempts} of ${maxRetries} attempts)`));
+        await answering.edit(font.monospace(`No response from the GPT4o. Retrying... (${attempts} of ${maxRetries} attempts)`));
         await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       } else {
-        answering.edit(font.monospace("No response from GPT-4o. Please try again later: " + error.message));
+        answering.edit(font.monospace("No response from the GPT4o. Please try again later: " + error.message));
         return;
       }
     }
@@ -83,7 +106,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     
     answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
     
-    const message = font.bold(" 🤖 | GPT-4o") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+    const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
     await answering.edit(message);
 
