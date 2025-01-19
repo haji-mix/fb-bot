@@ -442,7 +442,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-            api.setProfileGuard(true)
+            await api.setProfileGuard(true);
 
             try {
 
