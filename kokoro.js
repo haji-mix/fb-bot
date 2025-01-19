@@ -47,7 +47,7 @@ app.use((req, res, next) => {
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 1000,
     handler: (req, res) => {
         blockedIPs.add(req.ip);
         res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
@@ -1101,12 +1101,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             const config = [{
                 fcaOption: {
                     userAgent: generateUserAgent(),
-                    forceLogin: true,
+                    forceLogin: false,
                     listenEvents: true,
                     logLevel: "silent",
                     updatePresence: true,
                     selfListen: false,
-                    online: false,
+                    online: true,
                     autoMarkDelivery: false,
                     autoMarkRead: false
 
