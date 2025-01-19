@@ -1069,7 +1069,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
                         } else {
-                            logger.red(`Error logging in user ${userId}:`, error);
+                            logger.red(`Error logging in user ${userId}:` + JSON.stringify(error, null, 2));
                         }
                     }
                 }
@@ -1080,7 +1080,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const envState = JSON.parse(process.env.APPSTATE);
                         await accountLogin(envState, process.env.PREFIX || "#", []);
                     } catch (error) {
-                        logger.red("Error logging in with APPSTATE:", error);
+                        logger.red("Error logging in with APPSTATE:" + JSON.stringify(error, null, 2));
                     }
                 }
 
@@ -1088,7 +1088,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     try {
                         await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
                     } catch (error) {
-                        logger.red("Error logging in with EMAIL and PASSWORD:", error);
+                        logger.red("Error logging in with EMAIL and PASSWORD:" + JSON.stringify(error, null, 2));
                     }
                 }
             } catch (error) {
@@ -1122,13 +1122,13 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         main();
 
         process.on("unhandledRejection", (reason, promise) => {
-            logger.red("Unhandled Rejection at:", promise);
+            logger.red("Unhandled Rejection at:" + promise);
 
             if (reason instanceof Error) {
                 logger.red("Reason:", reason.message);
-                logger.red("Stack Trace:", reason.stack);
+                logger.red("Stack Trace:" + reason.stack);
             } else {
-                logger.red("Reason:", reason);
-                logger.red("Synthetic Stack Trace:", new Error("Synthetic error for tracing").stack);
+                logger.red("Reason:" + reason);
+                logger.red("Synthetic Stack Trace:" + new Error("Synthetic error for tracing").stack);
             }
         });
