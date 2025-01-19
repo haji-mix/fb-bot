@@ -39,6 +39,11 @@ loadModules(Utils, logger);
 const blockedIPs = new Set();
 
 app.use((req, res, next) => {
+  res.setHeader('x-powered-by', 'Kokoro AI');
+  next();
+});
+
+app.use((req, res, next) => {
     if (blockedIPs.has(req.ip)) {
         return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
     }
