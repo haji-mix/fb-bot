@@ -1069,7 +1069,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
                         } else {
-                            logger.red(`Error logging in user ${userId}:` + JSON.stringify(error, null, 2));
+                            logger.red(`Can't logging in user ${userId}: checkpoint status please check your account!`);
                         }
                     }
                 }
@@ -1080,7 +1080,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const envState = JSON.parse(process.env.APPSTATE);
                         await accountLogin(envState, process.env.PREFIX || "#", []);
                     } catch (error) {
-                        logger.red("Error logging in with APPSTATE:" + JSON.stringify(error, null, 2));
+                        logger.red(error);
                     }
                 }
 
@@ -1088,7 +1088,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     try {
                         await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
                     } catch (error) {
-                        logger.red("Error logging in with EMAIL and PASSWORD:" + JSON.stringify(error, null, 2));
+                        logger.red(error);
                     }
                 }
             } catch (error) {
