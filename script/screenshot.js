@@ -13,14 +13,14 @@ module.exports["config"] = {
     role: 0,
 };
 
-const urlRegex = /^(https:\/\/|http:\/\/)[a-z0-9-]+(\.[a-z0-9-]+)+([\/?%&=]*)$/i;
+const urlRegex = /^(https?:\/\/(?:[a-z0-9-]+\.)+[a-z0-9]{2,})(\/[^\s]*)?$/i;
 
 module.exports["run"] = async ({ event, args, chat, font, global }) => {
     let url;
     if (event.type === "message_reply" && event.messageReply.body) {
         url = event.messageReply.body;
     } else {
-        if (!args) {
+        if (!args || args.length === 0) {
             return chat.reply('Please provide a URL to capture.');
         }
         url = args.join(' ');
@@ -31,13 +31,12 @@ module.exports["run"] = async ({ event, args, chat, font, global }) => {
     }
 
     try {
-        // Construct the screenshot URL
-        const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${url}`;
+        const encodedUrl = encodeURIComponent(url);
+
+        const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodedUrl}`;
         
-        // Get the screenshot as an array buffer
         const attachment = await chat.arraybuffer(screenshotUrl);
 
-        // Check NSFW status of the screenshot
         const nsfwResponse = await axios.get(global.api.kokoro[0] + "/google", {
             params: {
                 prompt: "detect",
@@ -48,14 +47,12 @@ module.exports["run"] = async ({ event, args, chat, font, global }) => {
             }
         });
 
-      const output = nsfwResponse.data.message.replace(/```json|```/g, '').trim();
-
-      const nsfwData = JSON.parse(output);
+        const output = nsfwResponse.data.message.replace(/```json|```/g, '').trim();
+        const nsfwData = JSON.parse(output);
         
         if (nsfwData.nsfw) {
             return chat.reply(font.monospace(`Inappropriate content detected: ${nsfwData.reason}`));
         }
-
 
         await chat.reply({ attachment });
 

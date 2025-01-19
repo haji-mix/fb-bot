@@ -10,19 +10,21 @@ module.exports = {
 
   handleEvent: async ({ chat, event, font, global }) => {
     try {
-      const link = event.body?.split(' ')[0]?.trim(); 
+      const link = event.body?.split(' ')[0]?.trim();
 
-      const urlRegex = /^(https:\/\/|http:\/\/)[a-z0-9-]+(\.[a-z0-9-]+)+([\/?%&=]*)?$/i;
+      const urlRegex = /^(https?:\/\/(?:[a-z0-9-]+\.)+[a-z0-9]{2,})(\/[^\s]*)?$/i;
 
       const excludedExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|tiff|svg|mp3|mp4|wav|ogg|webm)(\?.*)?$/i;
 
       const excludedDomains = /(facebook\.com|fb\.com|pixiv\.net|tiktok\.com)/i;
 
       if (!link || !urlRegex.test(link) || excludedExtensions.test(link) || excludedDomains.test(link)) {
-        return; 
+        return;
       }
 
-      const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${link}`;
+      const encodedLink = encodeURIComponent(link);
+
+      const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodedLink}`;
 
       const attachment = await chat.arraybuffer(screenshotUrl);
 
