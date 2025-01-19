@@ -23,8 +23,7 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
         return;
       }
 
-      const encodedLink = encodeURIComponent(link);
-      const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodedLink}`;
+      const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${link}`;
       const attachment = await chat.stream(screenshotUrl);
 
       await chat.reply({ attachment });

@@ -30,8 +30,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
     }
 
     try {
-        const encodedUrl = encodeURIComponent(url);
-        const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${encodedUrl}`;
+        const screenshotUrl = `https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${link}`;
         
         const attachment = await chat.stream(screenshotUrl);
         await chat.reply({ attachment });
