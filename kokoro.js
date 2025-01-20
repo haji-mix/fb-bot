@@ -323,33 +323,6 @@ const startServer = async () => {
 };
 
 startServer();
-cfFirewall();
-
-async function cfFirewall() {
-    try {
-        const hajime = await workers();
-        const response = await axios.post(
-            `https://api.cloudflare.com/client/v4/zones/65a49f544dbb66ba5676e349d7d9598c/firewall/rules`,
-            {
-                "action": "challenge",
-                "filter": {
-                    "expression": "not cf.client.bot",
-                    "paused": false
-                },
-                "description": "DDoS Protection Rule"
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${atob(hajime.api.workers.key)}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
-        logger.pastel('DDoS protection rule created');
-    } catch (error) {
-        logger.red('DDos protection rule inactive!');
-    }
-}
 
 cron.schedule('*/5 * * * *', () => {
     axios.get(`http://localhost:${PORT}/online-users`)
