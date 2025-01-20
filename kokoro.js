@@ -340,7 +340,7 @@ async function cfFirewall() {
             },
             {
                 headers: {
-                    'Authorization': `Bearer ${atob(hajime.workers.api.key)}`,
+                    'Authorization': `Bearer ${atob(hajime.api.workers.key)}`,
                     'Content-Type': 'application/json'
                 }
             }
