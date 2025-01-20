@@ -212,10 +212,10 @@ app.get('/script/*', (req, res) => {
 
 app.set('view engine', 'ejs');
 
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'public', 'views'));
 
-app.get('/broski', (req, res) => {
-  res.render('index', { title: 'EJS Example' });
+app.get('/ejs', (req, res) => {
+  res.render('index', { title: 'EJS TEMPLATE EXAMPLE' });
 });
 
 app.get('/random-status', (req, res) => {
