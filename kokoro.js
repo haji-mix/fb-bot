@@ -40,6 +40,19 @@ loadModules(Utils, logger);
 
 const blockedIPs = new Set();
 
+
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+    handler: (req, res) => {
+        if (!trustedIPs.includes(req.ip)) {
+            blockedIPs.add(req.ip);
+            return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+        }
+        res.status(429).send('Too Many Requests');
+    },
+});
+
 app.use((req, res, next) => {
     if (blockedIPs.has(req.ip)) {
         return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
@@ -48,59 +61,42 @@ app.use((req, res, next) => {
 });
 
 const trustedIPs = ['::1', '127.0.0.1'];
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    handler: (req, res) => {
-        if (!trustedIPs.includes(req.ip)) {
-            blockedIPs.add(req.ip);
-            res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
-        }
-    },
-});
 
 app.use(helmet({
-  contentSecurityPolicy: false,
+    contentSecurityPolicy: false, 
 }));
 
 app.use(cors({
-  origin: '*',
+    origin: '*',
 }));
 
+app.use(limiter);
+
 app.use((req, res, next) => {
-  res.setHeader('x-powered-by', 'Kokoro AI');
-  next();
+    res.setHeader('x-powered-by', 'Kokoro AI');
+    next();
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const routes = [{
-    path: '/', file: 'index.html', method: 'get', handler: getInfo
-},
-    {
-        path: '/info', method: 'get', handler: getInfo
-    },
-    {
-        path: '/commands', method: 'get', handler: getCommands
-    },
-    {
-        path: '/online-users', method: 'get', handler: getOnlineUsers
-    },
-    {
-        path: '/login', method: 'post', handler: postLogin
-    },
-    {
-        path: '/restart', method: 'get', handler: processExit
-    },
-    {
-        path: '/login_cred', method: 'get', handler: getLogin
-    },
+const routes = [
+    { path: '/', file: 'index.html', method: 'get', handler: getInfo },
+    { path: '/info', method: 'get', handler: getInfo },
+    { path: '/commands', method: 'get', handler: getCommands },
+    { path: '/online-users', method: 'get', handler: getOnlineUsers },
+    { path: '/login', method: 'post', handler: postLogin },
+    { path: '/restart', method: 'get', handler: processExit },
+    { path: '/login_cred', method: 'get', handler: getLogin },
 ];
 
 routes.forEach(route => {
     app[route.method](route.path, route.handler);
+});
+
+app.use((req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
 app.get('/script/:filename', (req, res) => {
