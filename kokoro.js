@@ -66,7 +66,10 @@ app.use(cors({
     origin: "*"
 }));
 
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
+
 
 app.use(limiter);
 
