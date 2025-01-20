@@ -96,21 +96,26 @@ routes.forEach(route => {
     app[route.method](route.path, route.handler);
 });
 
-app.get('/script/:filename', (req, res) => {
-    const filePath = path.join(__dirname, 'script', req.params.filename);
+app.get('/script/*', (req, res) => {
+    const filePath = path.join(__dirname, 'script', req.params[0]);
+
+    if (!filePath.startsWith(path.join(__dirname, 'script'))) {
+        return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+    }
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
 
+        // Generate HTML content
         const htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${req.params.filename}</title>
+        <title>${req.params[0]}</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
         <script>hljs.highlightAll();</script>
