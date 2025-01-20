@@ -210,6 +210,13 @@ app.get('/script/*', (req, res) => {
     });
 });
 
+app.set('view engine', 'ejs');
+
+app.get('/', (req, res) => {
+  const items = ['Item 1', 'Item 2', 'Item 3'];
+  res.render('index', { items });
+});
+
 app.get('/random-status', (req, res) => {
     const randomStatusCode = Math.floor(Math.random() * 500) + 100;
     res.status(randomStatusCode).json({
