@@ -40,14 +40,6 @@ loadModules(Utils, logger);
 
 const blockedIPs = new Set();
 
-app.use(helmet());
-app.use(cors());
-
-app.use((req, res, next) => {
-  res.setHeader('x-powered-by', 'Kokoro AI');
-  next();
-});
-
 app.use((req, res, next) => {
     if (blockedIPs.has(req.ip)) {
         return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
@@ -55,16 +47,30 @@ app.use((req, res, next) => {
     next();
 });
 
+const trustedIPs = ['::1', '127.0.0.1'];
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 1000,
     handler: (req, res) => {
-        blockedIPs.add(req.ip);
-        res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+        if (!trustedIPs.includes(req.ip)) {
+            blockedIPs.add(req.ip);
+            res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+        }
     },
 });
 
-app.use(limiter);
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
+app.use(cors({
+  origin: '*',
+}));
+
+app.use((req, res, next) => {
+  res.setHeader('x-powered-by', 'Kokoro AI');
+  next();
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
