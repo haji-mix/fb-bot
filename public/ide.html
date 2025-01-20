@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Code Editor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.min.js"></script>
   <!-- Include Prettier from CDN -->
@@ -26,7 +26,7 @@
     }
     #editor-container {
       position: relative;
-      margin-top: 60px; /* Adjust space from title */
+      margin-top: 60px;
     }
     #editor {
       height: 400px;
@@ -67,9 +67,9 @@
       bottom: 10px;
       right: 10px;
       padding: 8px;
-      background-color: rgba(255, 255, 255, 0.2); /* Transparent background */
+      background-color: rgba(255, 255, 255, 0.2);
       color: #f8f8f2;
-      border: 1px solid rgba(255, 255, 255, 0.5); /* Slight border to make it visible */
+      border: 1px solid rgba(255, 255, 255, 0.5);
       border-radius: 5px;
       cursor: pointer;
       font-size: 1.5rem;
@@ -77,13 +77,13 @@
       align-items: center;
       justify-content: center;
       transition: background-color 0.3s, transform 0.2s, border 0.3s;
-      z-index: 10; /* Ensure the button is above other elements */
+      z-index: 10;
     }
 
     #action-btn:hover {
-      background-color: rgba(255, 115, 0, 0.5); /* Orange transparent background on hover */
+      background-color: rgba(255, 115, 0, 0.5);
       transform: scale(1.1);
-      border-color: rgba(255, 115, 0, 0.7); /* Change border on hover */
+      border-color: rgba(255, 115, 0, 0.7);
     }
 
     /* Dropdown menu style */
@@ -118,7 +118,7 @@
   <!-- Editor Container with the action button inside -->
   <div id="editor-container">
     <button id="action-btn">
-      <i class="fas fa-cogs"></i> <!-- Default icon for menu -->
+      <i class="fas fa-cogs"></i>
     </button>
     <div id="menu">
       <a href="#" id="format-code">Format Code</a>
@@ -138,25 +138,26 @@
     function clearErrorMarkers() {
       var markers = editor.session.getMarkers(true);
       for (var key in markers) {
-        editor.session.removeMarker(markers[key].id); 
+        editor.session.removeMarker(markers[key].id);
       }
     }
 
     // Function to check syntax errors
     function checkSyntax() {
       const code = editor.getValue();
-
       clearErrorMarkers();
 
       try {
-        new Function(code);
-        document.getElementById('error-message').style.display = 'none';
+        new Function(code); // Try to run the code
+        document.getElementById('error-message').style.display = 'none'; // Hide error message if no errors
       } catch (e) {
-        const lineNumber = e.lineNumber - 1;
+        const lineNumber = e.lineNumber - 1; // Adjust for 0-based index
         const errorText = e.message;
 
+        // Highlight the line with the error
         editor.session.addMarker(new ace.Range(lineNumber, 0, lineNumber, 1), "error-line", "background", true);
 
+        // Display the error message
         document.getElementById('error-message').style.display = 'block';
         document.getElementById('error-message').innerText = `Syntax Error on line ${e.lineNumber}: ${errorText}`;
       }
@@ -166,7 +167,7 @@
     function formatCode() {
       const code = editor.getValue();
       const formattedCode = prettier.format(code, {
-        parser: "babel",  // Use Babel parser for JavaScript code
+        parser: "babel",
         plugins: prettierPlugins
       });
       editor.setValue(formattedCode);
@@ -180,7 +181,6 @@
       link.href = URL.createObjectURL(blob);
       link.download = prompt("Enter a filename", "code.js");
 
-      // Trigger the download on the mobile device
       link.click();
     }
 
@@ -230,11 +230,9 @@
       input.click();
     });
 
-    // Attach syntax checker
-    let debounceTimer;
-    editor.session.on("change", function() {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(checkSyntax, 1000);
+    // Automatically check syntax on editor content change
+    editor.getSession().on('change', function() {
+      checkSyntax();
     });
   </script>
 </body>
