@@ -67,7 +67,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-    origin: '*',
+    origin: 'http://haji-mix.hidenhosting.net:25645',
 }));
 
 app.use(limiter);
