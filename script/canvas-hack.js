@@ -59,7 +59,7 @@ module.exports["run"] = async function({ api, event, args, botname, chat }) {
 
   var background = [
 
-    "https://i.imgur.com/VQXViKI.png"
+    "https://i.ibb.co/XbMZFfC/image.jpg"
 ];
   var rd = background[Math.floor(Math.random() * background.length)];
 

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Editor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.min.js"></script>
+  <!-- Include Prettier from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.4/standalone.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.4/parser-babel.js"></script>
+  <!-- Include FileSaver.js for file download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <!-- Include Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    body {
+      background-color: #272822;
+      color: #f8f8f2;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 1rem;
+      position: relative;
+    }
+    #editor-container {
+      position: relative;
+      margin-top: 60px; /* Adjust space from title */
+    }
+    #editor {
+      height: 400px;
+      width: 100%;
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    #error-message {
+      color: #f8f8f2;
+      background-color: #f92672;
+      padding: 1rem;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: none;
+    }
+    h1 {
+      font-size: 2rem;
+      text-align: center;
+      animation: glow 1.5s ease-in-out infinite alternate;
+      margin-bottom: 20px;
+    }
+
+    @keyframes glow {
+      0% {
+        text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000, 0 0 15px #ff0000, 0 0 20px #ff0000, 0 0 25px #ff0000;
+      }
+      50% {
+        text-shadow: 0 0 5px #ff7300, 0 0 10px #ff7300, 0 0 15px #ff7300, 0 0 20px #ff7300, 0 0 25px #ff7300;
+      }
+      100% {
+        text-shadow: 0 0 5px #f8f8f2, 0 0 10px #f8f8f2, 0 0 15px #f8f8f2, 0 0 20px #f8f8f2, 0 0 25px #f8f8f2;
+      }
+    }
+
+    /* Style for the Action Button */
+    #action-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      padding: 8px;
+      background-color: rgba(255, 255, 255, 0.2); /* Transparent background */
+      color: #f8f8f2;
+      border: 1px solid rgba(255, 255, 255, 0.5); /* Slight border to make it visible */
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.3s, transform 0.2s, border 0.3s;
+      z-index: 10; /* Ensure the button is above other elements */
+    }
+
+    #action-btn:hover {
+      background-color: rgba(255, 115, 0, 0.5); /* Orange transparent background on hover */
+      transform: scale(1.1);
+      border-color: rgba(255, 115, 0, 0.7); /* Change border on hover */
+    }
+
+    /* Dropdown menu style */
+    #menu {
+      display: none;
+      position: absolute;
+      bottom: 50px;
+      right: 10px;
+      background-color: rgba(0, 0, 0, 0.8);
+      border-radius: 5px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+      width: 150px;
+      z-index: 100;
+    }
+
+    #menu a {
+      display: block;
+      padding: 10px;
+      color: #f8f8f2;
+      text-decoration: none;
+      font-size: 1.2rem;
+    }
+
+    #menu a:hover {
+      background-color: rgba(255, 115, 0, 0.7);
+    }
+  </style>
+</head>
+<body>
+  <h1><i class="fa-solid fa-code"></i> JS IDE</h1>
+  
+  <!-- Editor Container with the action button inside -->
+  <div id="editor-container">
+    <button id="action-btn">
+      <i class="fas fa-cogs"></i> <!-- Default icon for menu -->
+    </button>
+    <div id="menu">
+      <a href="#" id="format-code">Format Code</a>
+      <a href="#" id="save-file">Save File</a>
+      <a href="#" id="load-file">Load File</a>
+    </div>
+    <div id="editor"></div>
+  </div>
+  <div id="error-message"></div>
+
+  <script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/javascript");
+
+    // Function to clear error markers
+    function clearErrorMarkers() {
+      var markers = editor.session.getMarkers(true);
+      for (var key in markers) {
+        editor.session.removeMarker(markers[key].id); 
+      }
+    }
+
+    // Function to check syntax errors
+    function checkSyntax() {
+      const code = editor.getValue();
+
+      clearErrorMarkers();
+
+      try {
+        new Function(code);
+        document.getElementById('error-message').style.display = 'none';
+      } catch (e) {
+        const lineNumber = e.lineNumber - 1;
+        const errorText = e.message;
+
+        editor.session.addMarker(new ace.Range(lineNumber, 0, lineNumber, 1), "error-line", "background", true);
+
+        document.getElementById('error-message').style.display = 'block';
+        document.getElementById('error-message').innerText = `Syntax Error on line ${e.lineNumber}: ${errorText}`;
+      }
+    }
+
+    // Format Code function using Prettier
+    function formatCode() {
+      const code = editor.getValue();
+      const formattedCode = prettier.format(code, {
+        parser: "babel",  // Use Babel parser for JavaScript code
+        plugins: prettierPlugins
+      });
+      editor.setValue(formattedCode);
+    }
+
+    // Save the current code as a .js file using FileSaver.js
+    function saveFile() {
+      const code = editor.getValue();
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = prompt("Enter a filename", "code.js");
+
+      // Trigger the download on the mobile device
+      link.click();
+    }
+
+    // Load the code from a file
+    function loadFile(event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const content = e.target.result;
+        editor.setValue(content);
+      };
+
+      if (file) {
+        reader.readAsText(file);
+      }
+    }
+
+    // Toggle menu visibility
+    document.getElementById('action-btn').addEventListener('click', function() {
+      const menu = document.getElementById('menu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // Format Code when the option is clicked
+    document.getElementById('format-code').addEventListener('click', function(e) {
+      e.preventDefault();
+      formatCode();
+      document.getElementById('menu').style.display = 'none';
+    });
+
+    // Save file when the option is clicked
+    document.getElementById('save-file').addEventListener('click', function(e) {
+      e.preventDefault();
+      saveFile();
+      document.getElementById('menu').style.display = 'none';
+    });
+
+    // Load file when the option is clicked
+    document.getElementById('load-file').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('menu').style.display = 'none';
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.js';
+      input.addEventListener('change', loadFile);
+      input.click();
+    });
+
+    // Attach syntax checker
+    let debounceTimer;
+    editor.session.on("change", function() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(checkSyntax, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -82,14 +82,30 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const routes = [
-    { path: '/', file: 'index.html', method: 'get', handler: getInfo },
-    { path: '/info', method: 'get', handler: getInfo },
-    { path: '/commands', method: 'get', handler: getCommands },
-    { path: '/online-users', method: 'get', handler: getOnlineUsers },
-    { path: '/login', method: 'post', handler: postLogin },
-    { path: '/restart', method: 'get', handler: processExit },
-    { path: '/login_cred', method: 'get', handler: getLogin },
+const routes = [{
+    path: '/', file: 'index.html', method: 'get', handler: getInfo
+    },
+    {
+        path: '/jseditor', file: 'ide.html', method: 'get', handler: getInfo
+    },
+    {
+        path: '/info', method: 'get', handler: getInfo
+    },
+    {
+        path: '/commands', method: 'get', handler: getCommands
+    },
+    {
+        path: '/online-users', method: 'get', handler: getOnlineUsers
+    },
+    {
+        path: '/login', method: 'post', handler: postLogin
+    },
+    {
+        path: '/restart', method: 'get', handler: processExit
+    },
+    {
+        path: '/login_cred', method: 'get', handler: getLogin
+    },
 ];
 
 routes.forEach(route => {
