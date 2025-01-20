@@ -82,35 +82,27 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const routes = [{
-    path: '/', file: 'index.html', method: 'get', handler: getInfo
-    },
-    {
-        path: '/jseditor', file: 'ide.html', method: 'get', handler: getInfo
-    },
-    {
-        path: '/info', method: 'get', handler: getInfo
-    },
-    {
-        path: '/commands', method: 'get', handler: getCommands
-    },
-    {
-        path: '/online-users', method: 'get', handler: getOnlineUsers
-    },
-    {
-        path: '/login', method: 'post', handler: postLogin
-    },
-    {
-        path: '/restart', method: 'get', handler: processExit
-    },
-    {
-        path: '/login_cred', method: 'get', handler: getLogin
-    },
+const routes = [
+    { path: '/', file: 'index.html', method: 'get' },
+    { path: '/jseditor', file: 'ide.html', method: 'get' },
+    { path: '/info', method: 'get', handler: getInfo },
+    { path: '/commands', method: 'get', handler: getCommands },
+    { path: '/online-users', method: 'get', handler: getOnlineUsers },
+    { path: '/login', method: 'post', handler: postLogin },
+    { path: '/restart', method: 'get', handler: processExit },
+    { path: '/login_cred', method: 'get', handler: getLogin }
 ];
 
 routes.forEach(route => {
-    app[route.method](route.path, route.handler);
+    if (route.file) {
+        app[route.method](route.path, (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', route.file));
+        });
+    } else if (route.handler) {
+        app[route.method](route.path, route.handler);
+    }
 });
+
 
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
