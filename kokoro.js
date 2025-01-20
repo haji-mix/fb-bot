@@ -95,10 +95,6 @@ routes.forEach(route => {
     app[route.method](route.path, route.handler);
 });
 
-app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
-});
-
 app.get('/script/:filename', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params.filename);
 
