@@ -130,46 +130,47 @@ app.get('/script/*', (req, res) => {
             return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
 
-        const htmlContent = `
-        <!DOCTYPE html>
+        const htmlContent =
+        `<!DOCTYPE html>
         <html lang="en">
         <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${req.params[0]}</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script>
         <style>
         body {
-        background-color: #272822; /* Monokai background color */
-        color: #f8f8f2; /* Default Monokai text color */
+        background-color: #272822;
+        color: #f8f8f2;
         font-family: 'Courier New', Courier, monospace;
         margin: 0;
         padding: 1rem;
         }
         pre {
-        overflow: auto;
+        background-color: #272822; 
+        color: #f8f8f2;
+        font-family: 'Courier New', Courier, monospace;
         padding: 1rem;
         border-radius: 5px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        background-color: #272822; /* Monokai background color */
-        color: #f8f8f2; /* Default Monokai text color */
+        overflow: auto;
+        }
+        
+        .ace-monokai {
+        background-color: #272822;
+        color: #f8f8f2;
         }
         </style>
         </head>
         <body>
-        <pre><code class="language-javascript">${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-javascript.min.js"></script>
-        <script>
-        ace.config.set("modePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/");
-        ace.config.set("themePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/");
-        var editor = ace.edit("editor");
-        editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/javascript"); // Change mode based on content type
-        </script>
+        <pre><code class="html">${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
         </body>
-        </html>
-        `;
+        </html>`;
+
 
 
         res.setHeader('Content-Type', 'text/html');
