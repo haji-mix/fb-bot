@@ -329,7 +329,7 @@ async function cfFirewall() {
     try {
         const hajime = await workers();
         const response = await axios.post(
-            `https://api.cloudflare.com/client/v4/zones/dc32e1808c6ae177089f5701fb1697f0/firewall/rules`,
+            `https://api.cloudflare.com/client/v4/zones/65a49f544dbb66ba5676e349d7d9598c/firewall/rules`,
             {
                 "action": "challenge",
                 "filter": {
