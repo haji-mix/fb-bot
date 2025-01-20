@@ -62,16 +62,9 @@ app.use((req, res, next) => {
 
 const trustedIPs = ['::1', '127.0.0.1'];
 
-app.use(cors({
-  origin: async () => {
-    const hajime = await workers();
-    return hajime.host.server[0] || kokoro_config.weblink || "*";
-  }
-}));
+app.use(cors());
 
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+app.use(helmet());
 
 app.use(limiter);
 
