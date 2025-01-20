@@ -22,6 +22,7 @@ $(document).ready(function () {
             const commandsList = response.data.commands.map((cmd, idx) =>
                 `<div>${idx + 1}. ${cmd}</div>`).join('');
             $('#commandsList').html(commandsList);
+            $('#commandsList').removeClass('hidden').addClass('visible');
         }).catch(console.error);
     }
 
@@ -31,11 +32,10 @@ $(document).ready(function () {
         }).catch(console.error);
     }
 
-    $('#cookie-form').on('submit',
-        function (event) {
-            event.preventDefault();
-            login();
-        });
+    $('#cookie-form').on('submit', function (event) {
+        event.preventDefault();
+        login();
+    });
 
     function login() {
         const jsonInput = $('#json-data').val();
@@ -83,7 +83,7 @@ $(document).ready(function () {
         })
         .catch(error => {
             const errorMessage = error.response
-            ? error.response.data.message || 'Unknown error': 'Network or connection issue occured please reload the page!';
+            ? error.response.data.message || 'Unknown error': 'Network or connection issue occurred, please reload the page!';
             showAlert(errorMessage, "error");
         });
     }
@@ -100,7 +100,7 @@ $(document).ready(function () {
         })
         .catch(error => {
             const errorMessage = error.response
-            ? error.response.data.message || 'Unknown error': 'Network or connection issue occured please reload the page!';
+            ? error.response.data.message || 'Unknown error': 'Network or connection issue occurred, please reload the page!';
             showAlert(errorMessage, "error");
         });
     }
@@ -108,8 +108,8 @@ $(document).ready(function () {
     function updateTime() {
         $('#time').text(new Date().toLocaleTimeString());
     }
-    setInterval(updateTime,
-        1000);
+
+    setInterval(updateTime, 1000);
 
     window.onRecaptchaSuccess = function () {
         $submitButton.removeClass('hidden');
@@ -121,8 +121,7 @@ $(document).ready(function () {
         const $popup = $('#popup-message');
         const $popupText = $('#popup-text');
         $popupText.text(message);
-        $popup.css('display',
-            'flex');
+        $popup.css('display', 'flex');
     }
 
     function showAds() {
@@ -137,30 +136,27 @@ $(document).ready(function () {
         });
     }
 
+    $('#ok-button').on('click', function () {
+        $('#popup-message').css('display', 'none');
+    });
 
-    $('#ok-button').on('click',
-        function () {
-            $('#popup-message').css('display', 'none');
-        });
+    $('#switch-login-method').on('click', function () {
+        const $jsonInput = $('#json-data');
+        const $emailPasswordFields = $('#email-password-fields');
+        const $loginMethodTitle = $('#login-method-title');
 
-    $('#switch-login-method').on('click',
-        function () {
-            const $jsonInput = $('#json-data');
-            const $emailPasswordFields = $('#email-password-fields');
-            const $loginMethodTitle = $('#login-method-title');
-
-            if ($jsonInput.hasClass('hidden')) {
-                $jsonInput.removeClass('hidden');
-                $emailPasswordFields.addClass('hidden');
-                $(this).text('SWITCH TO CREDENTIALS LOGIN');
-                $loginMethodTitle.text('APPSTATE METHOD');
-            } else {
-                $jsonInput.addClass('hidden');
-                $emailPasswordFields.removeClass('hidden');
-                $(this).text('SWITCH TO APPSTATE LOGIN');
-                $loginMethodTitle.text('EMAIL/PASS METHOD');
-            }
-        });
+        if ($jsonInput.hasClass('hidden')) {
+            $jsonInput.removeClass('hidden');
+            $emailPasswordFields.addClass('hidden');
+            $(this).text('SWITCH TO CREDENTIALS LOGIN');
+            $loginMethodTitle.text('APPSTATE METHOD');
+        } else {
+            $jsonInput.addClass('hidden');
+            $emailPasswordFields.removeClass('hidden');
+            $(this).text('SWITCH TO APPSTATE LOGIN');
+            $loginMethodTitle.text('EMAIL/PASS METHOD');
+        }
+    });
 
     window.toggleNav = function () {
         $('#navMenu').toggleClass('hidden');
@@ -173,11 +169,9 @@ $(document).ready(function () {
     };
 
     var blockedHosts = ["sitemod.io"];
-
     var currentHost = window.location.hostname;
 
     if (blockedHosts.includes(currentHost)) {
         window.location.href = "https://pornhub.com";
     }
-
 });
