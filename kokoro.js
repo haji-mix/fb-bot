@@ -212,9 +212,10 @@ app.get('/script/*', (req, res) => {
 
 app.set('view engine', 'ejs');
 
-app.get('/', (req, res) => {
-  const items = ['Item 1', 'Item 2', 'Item 3'];
-  res.render('index', { items });
+app.set('views', path.join(__dirname, 'views'));
+
+app.get('/broski', (req, res) => {
+  res.render('index', { title: 'EJS Example' });
 });
 
 app.get('/random-status', (req, res) => {
