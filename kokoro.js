@@ -82,16 +82,30 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-const routes = [
-    { path: '/', file: 'index.html', method: 'get' },
-    { path: '/jseditor', file: 'ide.html', method: 'get' },
-    { path: '/info', method: 'get', handler: getInfo },
-    { path: '/commands', method: 'get', handler: getCommands },
-    { path: '/online-users', method: 'get', handler: getOnlineUsers },
-    { path: '/login', method: 'post', handler: postLogin },
-    { path: '/restart', method: 'get', handler: processExit },
-    { path: '/login_cred', method: 'get', handler: getLogin }
-];
+const routes = [{
+    path: '/', file: 'index.html', method: 'get'
+},
+    {
+        path: '/jseditor', file: 'ide.html', method: 'get'
+    },
+    {
+        path: '/info', method: 'get', handler: getInfo
+    },
+    {
+        path: '/commands', method: 'get', handler: getCommands
+    },
+    {
+        path: '/online-users', method: 'get', handler: getOnlineUsers
+    },
+    {
+        path: '/login', method: 'post', handler: postLogin
+    },
+    {
+        path: '/restart', method: 'get', handler: processExit
+    },
+    {
+        path: '/login_cred', method: 'get', handler: getLogin
+    }];
 
 routes.forEach(route => {
     if (route.file) {
@@ -116,7 +130,6 @@ app.get('/script/*', (req, res) => {
             return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
 
-        // Generate HTML content
         const htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -124,9 +137,8 @@ app.get('/script/*', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${req.params[0]}</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/monokai.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-        <script>hljs.highlightAll();</script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-monokai.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
         <style>
         body {
         background-color: #272822; /* Monokai background color */
@@ -140,14 +152,25 @@ app.get('/script/*', (req, res) => {
         padding: 1rem;
         border-radius: 5px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        background-color: #272822; /* Monokai background color */
+        color: #f8f8f2; /* Default Monokai text color */
         }
         </style>
         </head>
         <body>
-        <pre><code>${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        <pre><code class="language-javascript">${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-javascript.min.js"></script>
+        <script>
+        ace.config.set("modePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/");
+        ace.config.set("themePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/");
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/javascript"); // Change mode based on content type
+        </script>
         </body>
         </html>
         `;
+
 
         res.setHeader('Content-Type', 'text/html');
         res.send(htmlContent);
