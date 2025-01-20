@@ -62,10 +62,6 @@ app.use((req, res, next) => {
 
 const trustedIPs = ['::1', '127.0.0.1'];
 
-app.use(helmet({
-    contentSecurityPolicy: false, 
-}));
-
 app.use(limiter);
 
 app.use((req, res, next) => {
