@@ -67,19 +67,14 @@ app.use(helmet({
 }));
 
 app.use(cors({
-    origin: 'http://haji-mix.hidenhosting.net:25645',
+    origin: '*',
 }));
 
 app.use(limiter);
 
-app.use((req, res, next) => {
-    res.setHeader('x-powered-by', 'Kokoro AI');
-    next();
-});
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 const routes = [
     { path: '/', file: 'index.html', method: 'get', handler: getInfo },
@@ -154,77 +149,6 @@ app.get('/random-status', (req, res) => {
 app.use((req, res) => {
     res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
-
-const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN || "ptoken";
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN || "vtoken";
-
-app.get('/webhook', (req, res) => {
-  let mode = req.query['hub.mode'];
-  let token = req.query['hub.verify_token'];
-  let challenge = req.query['hub.challenge'];
-
-  if (mode && token === VERIFY_TOKEN) {
-    if (mode === 'subscribe') {
-      res.status(200).send(challenge);
-    } else {
-      res.sendStatus(403);
-    }
-  } else {
-    res.sendStatus(403);
-  }
-});
-
-app.post('/webhook', (req, res) => {
-  let body = req.body;
-
-  if (body.object === 'page') {
-    body.entry.forEach(entry => {
-      let webhook_event = entry.messaging[0];
-      let sender_psid = webhook_event.sender.id;
-
-      if (webhook_event.message) {
-        handleMessage(sender_psid, webhook_event.message);
-      } else if (webhook_event.postback) {
-        handlePostback(sender_psid, webhook_event.postback);
-      }
-    });
-
-    res.status(200).send('EVENT_RECEIVED');
-  } else {
-    res.sendStatus(404);
-  }
-});
-
-function handleMessage(sender_psid, received_message) {
-  let response;
-
-  if (received_message.text) {
-    response = { 'text': `You sent the message: "${received_message.text}"` };
-  }
-
-  callSendAPI(sender_psid, response);
-}
-
-function handlePostback(sender_psid, received_postback) {
-  let response;
-
-  response = { 'text': 'Postback received' };
-
-  callSendAPI(sender_psid, response);
-}
-
-function callSendAPI(sender_psid, response) {
-  axios.post(`https://graph.facebook.com/v12.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
-    recipient: { id: sender_psid },
-    message: response
-  })
-  .then(() => {
-    console.log('Message sent!');
-  })
-  .catch((error) => {
-    console.error('Unable to send message:', error);
-  });
-}
 
 async function processExit(req, res) {
     try {
