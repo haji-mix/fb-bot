@@ -62,7 +62,9 @@ app.use((req, res, next) => {
 
 const trustedIPs = ['::1', '127.0.0.1'];
 
-app.use(cors());
+app.use(cors({
+    origin: "*"
+}));
 
 app.use(helmet());
 
