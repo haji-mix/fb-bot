@@ -7,6 +7,8 @@ const app = express();
 let PORT = 10000;
 const axios = require("axios");
 const cron = require("node-cron");
+const helmet = require('helmet');
+const cors = require('cors');
 
 const {
     workers,
@@ -37,6 +39,9 @@ const Utils = {
 loadModules(Utils, logger);
 
 const blockedIPs = new Set();
+
+app.use(helmet());
+app.use(cors());
 
 app.use((req, res, next) => {
   res.setHeader('x-powered-by', 'Kokoro AI');

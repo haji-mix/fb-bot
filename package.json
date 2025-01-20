@@ -30,6 +30,8 @@
     ],
     "license": "ISC",
     "dependencies": {
+        "helmet": "^5.0.0",
+        "cors": "^2.8.5",
         "debug": "^4.4.0",
         "https-proxy-agent": "^7.0.5",
         "socks-proxy-agent": "^8.0.4",
