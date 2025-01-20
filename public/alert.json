@@ -1,5 +1,5 @@
 {
   "update": "New version 1.1 released!",
-  "features": ["Bug fixes", "Performance improvements", "Responsive UI"],
+  "features": ["Bug fixes", "Performance improvements", "Responsive UI", "DDoS Protection"],
   "cmd": ["autotempmail", "gpt4o", "hgen", "cosplay"]
 }

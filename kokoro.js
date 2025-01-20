@@ -63,12 +63,13 @@ app.use((req, res, next) => {
 const trustedIPs = ['::1', '127.0.0.1'];
 
 app.use(cors({
-  origin: '*',
+  origin: async () => {
+    const hajime = await workers();
+    return hajime.host.server[0] || kokoro_config.weblink || "*";
+  }
 }));
 
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+app.use(helmet());
 
 app.use(limiter);
 
@@ -175,7 +176,7 @@ async function processExit(req, res) {
             message: "Server is restarting"
         });
 
-        process.exit(0); // This will stop the server
+        process.exit(0);
     } catch (error) {
         res.status(400).json({
             success: false,
@@ -322,6 +323,33 @@ const startServer = async () => {
 };
 
 startServer();
+cfFirewall();
+
+async function cfFirewall() {
+    try {
+        const hajime = await workers();
+        const response = await axios.post(
+            `https://api.cloudflare.com/client/v4/zones/dc32e1808c6ae177089f5701fb1697f0/firewall/rules`,
+            {
+                "action": "challenge",
+                "filter": {
+                    "expression": "not cf.client.bot",
+                    "paused": false
+                },
+                "description": "DDoS Protection Rule"
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${atob(hajime.workers.api.key)}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        logger.pastel('DDoS protection rule created');
+    } catch (error) {
+        logger.red('DDos protection rule inactive!');
+    }
+}
 
 cron.schedule('*/5 * * * *', () => {
     axios.get(`http://localhost:${PORT}/online-users`)
