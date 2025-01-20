@@ -12,9 +12,13 @@ $(document).ready(function () {
         }).appendTo($selectElement);
     });
 
+    let commandsFetched = false;
     $showCommandsBtn.on('click', function () {
         $availableCommands.toggleClass('hidden');
-        if (!$availableCommands.hasClass('hidden')) fetchCommands();
+        if (!$availableCommands.hasClass('hidden') && !commandsFetched) {
+            fetchCommands();
+            commandsFetched = true;
+        }
     });
 
     function fetchCommands() {
@@ -31,6 +35,9 @@ $(document).ready(function () {
             $onlineUsers.text(response.data.length);
         }).catch(console.error);
     }
+
+    // Fetch active bots every 10 seconds (or set your desired interval)
+    setInterval(fetchActiveBots, 10000);
 
     $('#cookie-form').on('submit', function (event) {
         event.preventDefault();
