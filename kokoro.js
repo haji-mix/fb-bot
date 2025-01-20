@@ -66,11 +66,12 @@ app.use(helmet({
     contentSecurityPolicy: false, 
 }));
 
-app.use(cors({
-    origin: '*',
-}));
-
 app.use(limiter);
+
+app.use((req, res, next) => {
+    res.setHeader('x-powered-by', 'Kokoro AI');
+    next();
+});
 
 
 app.use(express.static(path.join(__dirname, 'public')));
