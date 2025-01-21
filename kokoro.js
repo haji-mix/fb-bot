@@ -130,19 +130,20 @@ routes.forEach(route => {
     }
 });
 
-// Serve script files
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
 
     if (!filePath.startsWith(path.join(__dirname, 'script'))) {
-        return res.render('403', {
-            cssFiles, jsFiles
-        });
+        return res.render('403', { cssFiles, jsFiles });
     }
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             return res.render('404', { cssFiles, jsFiles });
+        }
+
+        if (req.query.raw === 'true') {
+            return res.type('text/plain').send(data);
         }
 
         res.render('snippet', {
@@ -151,6 +152,7 @@ app.get('/script/*', (req, res) => {
         });
     });
 });
+
 
 // 404 handling
 app.use((req, res) => {
