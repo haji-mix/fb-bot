@@ -1,7 +1,7 @@
 {
-    "name": "kokoro-project",
+    "name": "fb-autobot",
     "version": "3.0.5",
-    "description": "A Powerful Chatbot Messenger with various ai models.",
+    "description": "FB Autobot is a free tool that helps you automate Facebook tasks without coding skills. Build your own bot today!",
     "main": "index.js",
     "engines": {
         "node": "18.x"
@@ -10,6 +10,8 @@
         "start": "node index.js"
     },
     "keywords": [
+        "fb-bot",
+        "fb-autobot",
         "kokoro",
         "kokoro-project",
         "kokoro-ai"

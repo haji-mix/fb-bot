@@ -181,4 +181,6 @@ $(document).ready(function () {
     if (blockedHosts.includes(currentHost)) {
         window.location.href = "https://pornhub.com";
     }
+    
+    eruda.init();
 });

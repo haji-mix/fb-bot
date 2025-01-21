@@ -24,6 +24,7 @@ const {
 
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
+let pkg_config = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 
 const Utils = {
     commands: new Map(),
@@ -78,15 +79,16 @@ app.use((req, res, next) => {
     next();
 });
 
-
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'public', 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 const routes = [{
-    path: '/', file: 'index.html', method: 'get'
+    path: '/', file: 'index.ejs', method: 'get'
 },
     {
-        path: '/jseditor', file: 'ide.html', method: 'get'
+        path: '/jseditor', file: 'ide.ejs', method: 'get'
     },
     {
         path: '/info', method: 'get', handler: getInfo
@@ -107,30 +109,38 @@ const routes = [{
         path: '/login_cred', method: 'get', handler: getLogin
     }];
 
+const {
+    description, keywords, author, name
+} = pkg_config;
+const cssFiles = getFilesFromDir('public/framework/css', '.css').map(file => `./framework/css/${file}`);
+const scriptFiles = getFilesFromDir('public/views/extra', '.js').map(file => `./views/extra/${file}`);
+const styleFiles = getFilesFromDir('public/views/extra', '.css').map(file => `./views/extra/${file}`);
+const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
+
 routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', route.file));
+            res.render(route.file, {
+                cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles
+            });
         });
     } else if (route.handler) {
         app[route.method](route.path, route.handler);
     }
 });
 
-
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'public', 'views'));
-
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
 
     if (!filePath.startsWith(path.join(__dirname, 'script'))) {
-        return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+        return res.render('403', {
+            cssFiles, jsFiles
+        });
     }
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+            return res.render('404');
         }
 
         res.render('snippet', {
@@ -140,27 +150,27 @@ app.get('/script/*', (req, res) => {
     });
 });
 
-app.get('/ejs', (req, res) => {
-  res.render('index', { title: 'EJS TEMPLATE EXAMPLE' });
-});
-
-app.get('/random-status', (req, res) => {
-    const randomStatusCode = Math.floor(Math.random() * 500) + 100;
-    res.status(randomStatusCode).json({
-        code: randomStatusCode
-    });
-});
-
 app.use((req, res) => {
-    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+    res.render('404',
+        {
+            cssFiles,
+            jsFiles
+        });
 });
+
+function getFilesFromDir(directory, fileExtension) {
+    const dirPath = path.join(__dirname, directory);
+    if (!fs.existsSync(dirPath)) return [];
+    return fs.readdirSync(dirPath).filter(file => file.endsWith(fileExtension));
+}
 
 async function processExit(req, res) {
     try {
         const hajime = await workers();
 
         const {
-            pass, key
+            pass,
+            key
         } = req.query;
 
         if (!pass && !key) {

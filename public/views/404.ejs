@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found</title>
-    <link href="./framework/css/css2.css" rel="stylesheet">
-    <script src="./framework/js/tailwind.js"></script>
+    <% cssFiles.forEach(file => {
+        %>
+        <link rel="stylesheet" href="<%= file %>">
+        <%
+    }) %>
+    <% jsFiles.forEach(file => {
+        %>
+        <script src="<%= file %>"></script>
+        <%
+    }) %>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
