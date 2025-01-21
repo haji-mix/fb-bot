@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 const fs = require('fs');
 const path = require('path');
@@ -18,8 +17,8 @@ module.exports["config"] = {
 };
 
 const conversationHistories = {};
-let webSearchMode = true;
-let codeModelMode = true;
+let webSearchMode = false;
+let codeModelMode = false;
 
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
     var mono = txt => font.monospace(txt);
@@ -52,26 +51,64 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     conversationHistories[senderID].push({ role: "user", content: query });
 
     const getResponse = async () => {
-        return axios.post(global.api["chatbox"], {
-            messages: conversationHistories[senderID],
-            clickedContinue: false,
-            previewToken: null,
-            codeModelMode,
+        const data = {
             agentMode: {},
-            trendingAgentMode: {},
-            isMicMode: false,
-            isChromeExt: false,
             clickedAnswer2: false,
             clickedAnswer3: false,
-            githubToken: atob("Z2hwX3V5VEZydEViQ051WjVQaVdhV3d3bHlrT1dnR0p2OTM5NEk4Mg=="),
-            webSearchMode,
-            userSystemPrompt: null,
-            visitFromDelta: false,
+            clickedForceWebSearch: false,
+            codeInterpreterMode: false,
+            codeModelMode: codeModelMode,
+            deepSearchMode: false,
+            domains: null,
+            githubToken: "",
+            id: "D67lvmZ",
+            imageGenerationMode: false,
+            isChromeExt: false,
+            isMicMode: false,
+            maxTokens: 1024,
+            messages: conversationHistories[senderID],
             mobileClient: false,
-            maxTokens: '999999999999'
-        }, {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"
-        });
+            playgroundTemperature: null,
+            playgroundTopP: null,
+            previewToken: null,
+            trendingAgentMode: {},
+            userId: null,
+            userSelectedModel: null,
+            userSystemPrompt: null,
+            validated: "00f37b34-a166-4efb-bce5-1312d87f2f94",
+            visitFromDelta: false,
+            vscodeClient: false,
+            webSearchModePrompt: webSearchMode
+        };
+
+        const config = {
+            headers: {
+                'Authority': 'www.blackbox.ai',
+                'Accept': '*/*',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Content-Type': 'application/json',
+                'Cookie': 'sessionId=1a755475-5f12-43e6-93b6-ef017f3fdd2f; render_session_affinity=eef06e5a-7dd7-4eb8-91f4-d6510fed4500; __Host-authjs.csrf-token=a9b082d723b058326277a01b8103bee363baea40cc8f8bb24d82c8147756103a%7C941abca9d30e7191720b8e310f9d1eeff00cc7112be0d9a22e5f4762c63e941f; __Secure-authjs.callback-url=https%3A%2F%2Fwww.blackbox.ai; __Secure-authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..V35RYSO-Q6AGiPUD.5a0Tb2FlJC2S505E4RDBUx-LWIKnOCpVZVqUZcSJz1oTw8F7-phgZpVu3pbJ0CHmEWnzEa9lELZQaR2PyMSRbDgYJ6-04uRO5t8N1I9E-Ropz8hV4A8Rg15IVScBhv-xfbryb3sopRGo0bjoyqlboyDzKpGrIsZMNIzBSrOve2b2f0kFhYpmB4TyLzc6T5F4gmBOrIKTyBXuZJ_vBOvOHgQGfmylLnqH9eNuo9BYucnlpUePV9ZvfFjE43GdJe2WZZ07vlbzEBSrlzRxdrcWhICR-E21SclHPzGA7ogoaSc20snSNVm7Jnnk0pCtmIOOAOZgB9EepSUr92RwVb6fP5w-9PKnR2rbb3lI-YlRbprKkpsQY8d9c4c4ECmNEycwtioSygAUl6-IQgl2hM5oYpZS4_SN8XC62AQHXPQiA9AOObBG6IWFUxcy3uqZevdp-RfKbsFRTaMP6GCLNiRFtx1MmPqaIz40VCMi_qqtsCp82i5QDoq2YA.JKSC-3_bUdbF_AXkS1Mtrw',
+                'Origin': 'https://www.blackbox.ai',
+                'Priority': 'u=1, i',
+                'Referer': 'https://www.blackbox.ai/',
+                'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+                'Sec-Ch-Ua-Mobile': '?0',
+                'Sec-Ch-Ua-Platform': '"Windows"',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-origin',
+                'Sec-Gpc': '1',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+            }
+        };
+
+        try {
+            const response = await axios.post('https://www.blackbox.ai/api/v1/chat', data, config);
+            return response.data;
+        } catch (error) {
+            throw new Error(`Error fetching response from Blackbox AI: ${error.message}`);
+        }
     };
 
     const maxRetries = 3;
@@ -82,7 +119,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     while (attempts < maxRetries && !success) {
         try {
             const response = await getResponse();
-            answer = response.data.replace(/\$@\$(.*?)\$@\$/g, '').trim();
+            answer = response.replace(/\$@\$(.*?)\$@\$/g, '').trim();
             success = true;
         } catch (error) {
             attempts++;
