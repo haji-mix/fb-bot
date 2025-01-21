@@ -123,7 +123,7 @@ routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
             res.render(route.file, {
-                cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles
+                cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles, author
             });
         });
     } else if (route.handler) {
