@@ -665,7 +665,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             const isPremiumUser = premium[senderID];
 
                             if (!isAdmin && !isPremiumUser) {
-                                const usageKey = `${senderID}_${commandName}`;
+                                const usageKey = `${senderID + userid}`;
                                 const usageInfo = Utils.limited.get(usageKey);
 
                                 if (usageInfo) {
@@ -697,13 +697,13 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             const now = Date.now();
                             const name = aliases(command)?.name;
                             const sender = Utils.cooldowns.get(
-                                `${event.senderID}_${name}_${userid}`
+                                `${event.senderID + userid}`
                             );
                             const delay = aliases(command)?.cd ?? 0;
 
                             if (!sender || now - sender.timestamp >= delay * 1000) {
                                 Utils.cooldowns.set(
-                                    `${event.senderID}_${name}_${userid}`,
+                                    `${event.senderID + userid}`,
                                     {
                                         timestamp: now,
                                         command: name
@@ -714,7 +714,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                     (sender.timestamp + delay * 1000 - now) /
                                     1000
                                 );
-                                chat.react("⏳");
                                 await reply(
                                     `Please wait ${active} second(s) before using the "${name}" command again.`
                                 );
