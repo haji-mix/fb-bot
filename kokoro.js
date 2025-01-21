@@ -41,6 +41,8 @@ loadModules(Utils, logger);
 
 const blockedIPs = new Set();
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'public', 'views'));
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -48,7 +50,7 @@ const limiter = rateLimit({
     handler: (req, res) => {
         if (!trustedIPs.includes(req.ip)) {
             blockedIPs.add(req.ip);
-            return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+            return res.render('403');
         }
         res.status(429).send('Too Many Requests');
     },
@@ -56,7 +58,7 @@ const limiter = rateLimit({
 
 app.use((req, res, next) => {
     if (blockedIPs.has(req.ip)) {
-        return res.status(403).sendFile(path.join(__dirname, 'public', '403.html'));
+        return res.render('403');
     }
     next();
 });
@@ -79,9 +81,6 @@ app.use((req, res, next) => {
     next();
 });
 
-// Set up view engine and static files
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'public', 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
