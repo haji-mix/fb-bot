@@ -114,8 +114,8 @@ const routes = [{
 // Destructure values from pkg_config
 const { description, keywords, author, name } = pkg_config;
 const cssFiles = getFilesFromDir('public/framework/css', '.css').map(file => `./framework/css/${file}`);
-const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => `./views/extra/${file}`);
-const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/${file}`);
+const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => `./views/extra/js/${file}`);
+const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/css/${file}`);
 const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
 
 // Route setup
