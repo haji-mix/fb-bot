@@ -65,7 +65,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
             imageGenerationMode: false,
             isChromeExt: false,
             isMicMode: false,
-            maxTokens: 1024,
+            maxTokens: 32000,
             messages: conversationHistories[senderID],
             mobileClient: false,
             playgroundTemperature: null,
@@ -104,7 +104,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         };
 
         try {
-            const response = await axios.post('https://www.blackbox.ai/api/v1/chat', data, config);
+            const response = await axios.post('https://www.blackbox.ai/api/chat', data, config);
             return response.data;
         } catch (error) {
             throw new Error(`Error fetching response from Blackbox AI: ${error.message}`);
