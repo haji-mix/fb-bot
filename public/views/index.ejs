@@ -16,14 +16,21 @@
     <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
 
     <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
-
-    <!-- Style and JS File Inclusions -->
-    <% styleFiles.concat(cssFiles).forEach(file => { %>
+    <% styleFiles.forEach(file => {
+        %>
         <link rel="stylesheet" href="<%= file %>">
-    <% }) %>
-    <% jsFiles.forEach(file => { %>
+        <%
+    }) %>
+    <% cssFiles.forEach(file => {
+        %>
+        <link rel="stylesheet" href="<%= file %>">
+        <%
+    }) %>
+    <% jsFiles.forEach(file => {
+        %>
         <script src="<%= file %>"></script>
-    <% }) %>
+        <%
+    }) %>
 
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -57,7 +64,7 @@
         <button id="ok-button" class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
     </div>
 
-    <!-- Audio Player -->
+    <!-- Audio Player (hidden until music is played) -->
     <audio id="audio-player" preload="auto" style="display:none;"></audio>
 
     <!-- Overlay and Navigation Menu -->
@@ -106,6 +113,8 @@
                         <input type="text" id="inputOfAdmin" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
                         placeholder="FB Profile link or UID">
                     </div>
+
+                    <div id="container-b8289141a1a8ba79e3a485e3f8efbbc0"></div>
                 </div>
 
                 <div class="flex justify-center">
@@ -140,6 +149,7 @@
             </div>
         </section>
 
+
     </main>
 
     <!-- Footer -->
@@ -160,10 +170,12 @@
     </footer>
 
     <!-- Scripts -->
-    <% scriptFiles.forEach(file => { %>
+    <% scriptFiles.forEach(file => {
+        %>
         <script src="<%= file %>"></script>
-    <% }) %>
-
+        <%
+    }) %>
+    
 </body>
 
 </html>
