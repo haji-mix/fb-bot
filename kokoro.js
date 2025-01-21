@@ -118,6 +118,9 @@ routes.forEach(route => {
 });
 
 
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'public', 'views'));
+
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
 
@@ -130,89 +133,12 @@ app.get('/script/*', (req, res) => {
             return res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
         }
 
-        const htmlContent =
-        `<!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${req.params[0]}</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-        <!-- Load Babel for JSX or modern JavaScript support -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
-        <!-- Load Prettier for automatic formatting -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/prettier.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/parser-babel.min.js"></script>
-        <script>
-        window.onload = function() {
-        // Initialize ACE editor
-        var editor = ace.edit("editor");
-        editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/javascript"); // Change the mode based on your code type
-        editor.setReadOnly(true);
-
-        // Format the code inside the editor using Prettier and Babel
-        var code = editor.getValue();
-        var formattedCode = prettier.format(code, {
-        parser: "babel",
-        plugins: [prettier.parserBabel],
-        singleQuote: true, // Optional: Customize formatting options
-        semi: true          // Optional: Customize formatting options
+        res.render('snippet', {
+            title: req.params[0],
+            code: data
         });
-
-        // Set the formatted code back into the editor
-        editor.setValue(formattedCode);
-        }
-        </script>
-        <style>
-        /* General Body Styles */
-        body {
-        background-color: #272822;
-        color: #f8f8f2;
-        font-family: 'Courier New', Courier, monospace;
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        }
-
-        /* Editor container */
-        #editor {
-        width: 100%;
-        height: 100vh; /* Full viewport height */
-        padding: 1rem;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        box-sizing: border-box; /* Ensures padding doesn't overflow the width */
-        }
-
-        /* Ensure responsiveness on small devices */
-        @media (max-width: 768px) {
-        body {
-        padding: 1rem;
-        }
-
-        #editor {
-        height: calc(100vh - 2rem); /* Subtracting padding for smaller screens */
-        }
-        }
-        </style>
-        </head>
-        <body>
-        <div id="editor">${data.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-        </body>
-        </html>
-        `;
-
-
-        res.setHeader('Content-Type', 'text/html');
-        res.send(htmlContent);
     });
 });
-
-app.set('view engine', 'ejs');
-
-app.set('views', path.join(__dirname, 'public', 'views'));
 
 app.get('/ejs', (req, res) => {
   res.render('index', { title: 'EJS TEMPLATE EXAMPLE' });
