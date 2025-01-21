@@ -79,44 +79,46 @@ app.use((req, res, next) => {
     next();
 });
 
+// Set up view engine and static files
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
+// Routes array
 const routes = [{
     path: '/', file: 'index.ejs', method: 'get'
 },
-    {
-        path: '/jseditor', file: 'ide.ejs', method: 'get'
-    },
-    {
-        path: '/info', method: 'get', handler: getInfo
-    },
-    {
-        path: '/commands', method: 'get', handler: getCommands
-    },
-    {
-        path: '/online-users', method: 'get', handler: getOnlineUsers
-    },
-    {
-        path: '/login', method: 'post', handler: postLogin
-    },
-    {
-        path: '/restart', method: 'get', handler: processExit
-    },
-    {
-        path: '/login_cred', method: 'get', handler: getLogin
-    }];
+{
+    path: '/jseditor', file: 'ide.ejs', method: 'get'
+},
+{
+    path: '/info', method: 'get', handler: getInfo
+},
+{
+    path: '/commands', method: 'get', handler: getCommands
+},
+{
+    path: '/online-users', method: 'get', handler: getOnlineUsers
+},
+{
+    path: '/login', method: 'post', handler: postLogin
+},
+{
+    path: '/restart', method: 'get', handler: processExit
+},
+{
+    path: '/login_cred', method: 'get', handler: getLogin
+}];
 
-const {
-    description, keywords, author, name
-} = pkg_config;
+// Destructure values from pkg_config
+const { description, keywords, author, name } = pkg_config;
 const cssFiles = getFilesFromDir('public/framework/css', '.css').map(file => `./framework/css/${file}`);
 const scriptFiles = getFilesFromDir('public/views/extra', '.js').map(file => `./views/extra/${file}`);
 const styleFiles = getFilesFromDir('public/views/extra', '.css').map(file => `./views/extra/${file}`);
 const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
 
+// Route setup
 routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
@@ -129,6 +131,7 @@ routes.forEach(route => {
     }
 });
 
+// Serve script files
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
 
@@ -140,7 +143,7 @@ app.get('/script/*', (req, res) => {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.render('404');
+            return res.render('404', { cssFiles, jsFiles });
         }
 
         res.render('snippet', {
@@ -150,13 +153,14 @@ app.get('/script/*', (req, res) => {
     });
 });
 
+// 404 handling
 app.use((req, res) => {
-    res.render('404',
-        {
-            cssFiles,
-            jsFiles
-        });
+    res.render('404', {
+        cssFiles,
+        jsFiles
+    });
 });
+
 
 function getFilesFromDir(directory, fileExtension) {
     const dirPath = path.join(__dirname, directory);
