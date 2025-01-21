@@ -4,8 +4,7 @@ const axios = require('axios');
 const ffmpeg = require('fluent-ffmpeg');
 
 module.exports["config"] = {
-        name: "tts",
-        aliases: ["speak", "texttospeech"],
+        name: "ttslite",
         usage: "[text] or reply to a message containing text",
         info: "Convert text to speech and reply with the audio.",
         guide: "Use 'tts [text]' to convert text directly or reply to a message with 'tts' to convert the message text.",
