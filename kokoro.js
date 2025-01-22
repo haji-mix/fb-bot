@@ -209,12 +209,7 @@ app.get('/script/*', (req, res) => {
                 return res.status(500).send('Error rendering HTML');
             }
 
-            const sConfig = {
-                minifyJS: true,
-                minifyCSS: true
-            };
-
-            res.send(minifyHtml(renderedHtml, sConfig));
+            res.send(minifyHtml(renderedHtml));
         });
     });
 });
