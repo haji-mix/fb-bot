@@ -119,7 +119,9 @@ const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => 
 const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/css/${file}`);
 const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
 
-const { minify } = require('html-minifier');
+const {
+    minify
+} = require('html-minifier');
 
 const minifyConfig = {
     collapseWhitespace: true,
@@ -130,7 +132,8 @@ const minifyConfig = {
 };
 
 function minifyHtml(renderedHtml, mconfig = minifyConfig) {
-    return minify(renderedHtml, mconfig);
+    return minify(renderedHtml,
+        mconfig);
 }
 
 routes.forEach(route => {
@@ -156,12 +159,16 @@ app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0] || '');
     const normalizedPath = path.normalize(filePath);
     if (!normalizedPath.startsWith(path.join(__dirname, 'script'))) {
-        return res.render('403', { cssFiles, jsFiles });
+        return res.render('403', {
+            cssFiles, jsFiles
+        });
     }
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.render('404', { cssFiles, jsFiles });
+            return res.render('404', {
+                cssFiles, jsFiles
+            });
         }
 
         if (req.query.raw === 'true') {
@@ -173,11 +180,18 @@ app.get('/script/*', (req, res) => {
             code: data
         }, (err, renderedHtml) => {
             if (err) {
-                console.error('Error rendering HTML:', err);
                 return res.status(500).send('Error rendering HTML');
             }
 
-            res.send(minifyHtml(renderedHtml));
+            const sConfig = {
+                collapseWhitespace: true,
+                removeComments: true,
+                removeEmptyAttributes: true,
+                minifyJS: false,
+                minifyCSS: true
+            };
+
+            res.send(minifyHtml(renderedHtml, sConfig));
         });
     });
 });
@@ -185,7 +199,10 @@ app.get('/script/*', (req, res) => {
 
 
 app.use((req, res) => {
-    res.render('404', { cssFiles, jsFiles }, (err, renderedHtml) => {
+    res.render('404', {
+        cssFiles, jsFiles
+    }, (err,
+        renderedHtml) => {
         if (err) {
             res.status(500).send('Error rendering template');
             return;
