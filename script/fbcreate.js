@@ -62,7 +62,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
         }
 
         async function main() {
-            await chat.reply(font.thin("Creating FB Accounts...."));
+            await chat.reply(font.thin("PRESS ENTER TO START...."));
 
             for (let make = 0; make < amount; make++) {
                 const session = axios.create({ withCredentials: true });
@@ -103,23 +103,25 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 let accountStatus = ""; // Store the status of each account
                 let cookieString = ""; // To store the cookie string if available
 
-                if (py_submit.headers['set-cookie'] && py_submit.headers['set-cookie'].some(cookie => cookie.includes('c_user'))) {
-                    const uid = py_submit.headers['set-cookie'].find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
+                // Make sure to check if cookies are available and get the UID correctly
+                const cookies = py_submit.headers['set-cookie'];
+                if (cookies && cookies.some(cookie => cookie.includes('c_user'))) {
+                    const uid = cookies.find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
                     const otp = await getCode(email); // Get OTP for email
                     if (otp) {
                         await confirmId(email, uid, otp, session);
-                        cookieString = py_submit.headers['set-cookie'].join('; '); // Convert cookies to a string
+                        cookieString = cookies.join('; '); // Convert cookies to a string
                         accountStatus = `${uid}\n${email}\n${password}\nOTP: ${otp}\nCookie: ${cookieString}\n`;
                         createdAccounts.push({ uid, email, password, cookie: cookieString });
                     } else {
                         accountStatus = `${uid}\n${email}\n${password}\nOTP FAILED\n`;
                     }
                 } else if (py_submit.data.includes("disabled")) {
-                    accountStatus = `${uid}\n${email}\n${password}\nAccount DISABLED\n`;
+                    accountStatus = `Account Disabled\n${email}\n${password}\n`;
                 } else {
-                    accountStatus = `${uid}\n${email}\n${password}\nCHECKPOINT\n`;
+                    accountStatus = `Account Checkpoint\n${email}\n${password}\n`;
                 }
 
                 // Accumulate the status message in the statusMessages string with line breaks
@@ -127,7 +129,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
             }
 
             // Send all statuses as a single message
-            await chat.reply(statusMessages); // Send the combined message
+            await chat.reply(font.thin(statusMessages)); // Send the combined message
 
         }
 
