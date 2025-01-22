@@ -204,13 +204,7 @@ app.get('/script/*', (req, res) => {
         res.render('snippet', {
             title: req.params[0],
             code: data
-        }, (err, renderedHtml) => {
-            if (err) {
-                return res.status(500).send('Error rendering HTML');
-            }
-
-            res.send(minifyHtml(renderedHtml));
-        });
+        })
     });
 });
 
