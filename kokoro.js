@@ -88,30 +88,32 @@ app.use(express.json());
 const routes = [{
     path: '/', file: 'index.ejs', method: 'get'
 },
-{
-    path: '/jseditor', file: 'ide.ejs', method: 'get'
-},
-{
-    path: '/info', method: 'get', handler: getInfo
-},
-{
-    path: '/commands', method: 'get', handler: getCommands
-},
-{
-    path: '/online-users', method: 'get', handler: getOnlineUsers
-},
-{
-    path: '/login', method: 'post', handler: postLogin
-},
-{
-    path: '/restart', method: 'get', handler: processExit
-},
-{
-    path: '/login_cred', method: 'get', handler: getLogin
-}];
+    {
+        path: '/jseditor', file: 'ide.ejs', method: 'get'
+    },
+    {
+        path: '/info', method: 'get', handler: getInfo
+    },
+    {
+        path: '/commands', method: 'get', handler: getCommands
+    },
+    {
+        path: '/online-users', method: 'get', handler: getOnlineUsers
+    },
+    {
+        path: '/login', method: 'post', handler: postLogin
+    },
+    {
+        path: '/restart', method: 'get', handler: processExit
+    },
+    {
+        path: '/login_cred', method: 'get', handler: getLogin
+    }];
 
 // Destructure values from pkg_config
-const { description, keywords, author, name } = pkg_config;
+const {
+    description, keywords, author, name
+} = pkg_config;
 const cssFiles = getFilesFromDir('public/framework/css', '.css').map(file => `./framework/css/${file}`);
 const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => `./views/extra/js/${file}`);
 const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/css/${file}`);
@@ -119,11 +121,21 @@ const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./fra
 
 const { minify } = require('html-minifier');
 
-// Route setup
+const minifyConfig = {
+    collapseWhitespace: true,
+    removeComments: true,
+    removeEmptyAttributes: true,
+    minifyJS: true,
+    minifyCSS: true
+};
+
+function minifyHtml(renderedHtml, mconfig = minifyConfig) {
+    return minify(renderedHtml, mconfig);
+}
+
 routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
-            // Render the EJS template with the provided data
             res.render(route.file, {
                 cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles, author
             }, (err, renderedHtml) => {
@@ -132,24 +144,13 @@ routes.forEach(route => {
                     return;
                 }
 
-                // Minify the rendered HTML
-                const minifiedHtml = minify(renderedHtml, {
-                    collapseWhitespace: true,
-                    removeComments: true,
-                    removeEmptyAttributes: true,
-                    minifyJS: true,
-                    minifyCSS: true
-                });
-
-                // Send the minified HTML as the response
-                res.send(minifiedHtml);
+                res.send(minifyHtml(renderedHtml));
             });
         });
     } else if (route.handler) {
         app[route.method](route.path, route.handler);
     }
 });
-
 
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
@@ -170,18 +171,28 @@ app.get('/script/*', (req, res) => {
         res.render('snippet', {
             title: req.params[0],
             code: data
+        }, (err, renderedHtml) => {
+            if (err) {
+                return res.status(500).send('Error rendering HTML');
+            }
+
+            res.send(minifyHtml(renderedHtml));
         });
     });
 });
 
 
-// 404 handling
 app.use((req, res) => {
-    res.render('404', {
-        cssFiles,
-        jsFiles
+    res.render('404', { cssFiles, jsFiles }, (err, renderedHtml) => {
+        if (err) {
+            res.status(500).send('Error rendering template');
+            return;
+        }
+
+        res.send(minifyHtml(renderedHtml));
     });
 });
+
 
 
 function getFilesFromDir(directory, fileExtension) {
