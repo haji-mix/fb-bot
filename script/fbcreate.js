@@ -2,6 +2,7 @@ const axios = require('axios');
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const FormData = require('form-data');
+const randomUseragent = require('random-useragent');  // Import the random-useragent package
 
 module.exports["config"] = {
     name: "fbcreate",
@@ -13,17 +14,14 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, font, args }) => {
     try {
+        const password = "@Ken2024";  // Declare password for reusability
         const amount = parseInt(args[0], 10) || 1;
         const createdAccounts = [];
-        const statusMessages = [];
+        let statusMessages = ""; // Accumulate status messages here
 
+        // Function to get a random user-agent using the random-useragent package
         async function ugenX() {
-            const userAgents = [
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1 Safari/605.1.15',
-                'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',
-            ];
-            return userAgents[Math.floor(Math.random() * userAgents.length)];
+            return randomUseragent.getRandom();  // Get a random user-agent
         }
 
         async function getEmail() {
@@ -63,28 +61,8 @@ module.exports["run"] = async ({ chat, font, args }) => {
             return { first, last };
         }
 
-        function extractor(data) {
-            try {
-                const dom = new JSDOM(data);
-                const document = dom.window.document;
-                const inputs = document.querySelectorAll("input");
-                const formData = {};
-                inputs.forEach(input => {
-                    const name = input.name;
-                    const value = input.value;
-                    if (name && value) {
-                        formData[name] = value;
-                    }
-                });
-                return formData;
-            } catch (e) {
-                console.error("Error extracting data: ", e);
-                return { error: String(e) };
-            }
-        }
-
         async function main() {
-            await chat.reply(font.thin("Creating FB ACCOUNTS...."));
+            await chat.reply(font.thin("Creating FB Accounts...."));
 
             for (let make = 0; make < amount; make++) {
                 const session = axios.create({ withCredentials: true });
@@ -112,41 +90,45 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 formData.append('lastname', last);
                 formData.append('reg_email__', email);
                 formData.append('sex', '2');
-                formData.append('reg_passwd__', `MrCode@123`);
+                formData.append('reg_passwd__', password);  // Use the declared password
 
                 const headers = {
                     ...formData.getHeaders(),
-                    "User-Agent": await ugenX(),
+                    "User-Agent": await ugenX(),  // Use the random user-agent
                 };
 
                 const reg_url = "https://www.facebook.com/reg/submit/";
                 const py_submit = await session.post(reg_url, formData, { headers });
 
-                let accountStatus = "";
+                let accountStatus = ""; // Store the status of each account
+                let cookieString = ""; // To store the cookie string if available
+
                 if (py_submit.headers['set-cookie'] && py_submit.headers['set-cookie'].some(cookie => cookie.includes('c_user'))) {
                     const uid = py_submit.headers['set-cookie'].find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
-                    const otp = await getCode(email);
+                    const otp = await getCode(email); // Get OTP for email
                     if (otp) {
                         await confirmId(email, uid, otp, session);
-                        accountStatus = `SUCCESS - ${uid} | ${email} | ${otp}`;
-                        createdAccounts.push({ uid, email, password: '@Ken2024' });
+                        cookieString = py_submit.headers['set-cookie'].join('; '); // Convert cookies to a string
+                        accountStatus = `${uid}\n${email}\n${password}\nOTP: ${otp}\nCookie: ${cookieString}\n`;
+                        createdAccounts.push({ uid, email, password, cookie: cookieString });
                     } else {
-                        accountStatus = `OTP FAILED - ${email}`;
+                        accountStatus = `${uid}\n${email}\n${password}\nOTP FAILED\n`;
                     }
+                } else if (py_submit.data.includes("disabled")) {
+                    accountStatus = `${uid}\n${email}\n${password}\nAccount DISABLED\n`;
                 } else {
-                    accountStatus = `CHECKPOINT - ${email}`;
+                    accountStatus = `${uid}\n${email}\n${password}\nCHECKPOINT\n`;
                 }
 
-                statusMessages.push(accountStatus);
+                // Accumulate the status message in the statusMessages string with line breaks
+                statusMessages += accountStatus + "\n"; // Adding one line break
             }
 
-            const allStatuses = statusMessages.join('\n\n');
-            await chat.reply(font.thin(allStatuses));
+            // Send all statuses as a single message
+            await chat.reply(statusMessages); // Send the combined message
 
-            const accountMessages = createdAccounts.map(acc => `UID: ${acc.uid}, Email: ${acc.email}, Password: ${acc.password}`).join('\n');
-            await chat.reply(font.thin(`Created Accounts:\n${accountMessages}`));
         }
 
         async function confirmId(mail, uid, otp, session) {
@@ -170,8 +152,8 @@ module.exports["run"] = async ({ chat, font, args }) => {
                     console.log(`ID DISABLED`);
                 } else {
                     const cookie = response.headers['set-cookie'].join(";");
-                    console.log(`SUCCESS - ${uid}|MrCode@123|${cookie}`);
-                    fs.appendFileSync("/sdcard/SUCCESS-OK-ID.txt", `${uid}|MrCode@123|${cookie}\n`);
+                    console.log(`SUCCESS - ${uid}|${password}|${cookie}`);
+                    // Removed file saving of cookies, now just showing the status.
                 }
             } catch (e) {
                 console.log(e.message);
