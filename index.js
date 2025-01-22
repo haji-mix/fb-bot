@@ -5,7 +5,7 @@ const { execSync } = require("child_process");
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const npmPackages = ["canvas@latest"];
+const npmPackages = ["canvas@latest", "faker@latest", "jsdom@latest"];
 
 const restartEnabled = process.env.PID !== "0";
 
