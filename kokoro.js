@@ -122,6 +122,10 @@ const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./fra
 const {
     minify
 } = require('html-minifier');
+const {
+    obfuscate
+} = require('html-obfuscator');
+
 
 const minifyConfig = {
     caseSensitive: false,
@@ -173,7 +177,7 @@ routes.forEach(route => {
                     return;
                 }
 
-                res.send(minifyHtml(renderedHtml));
+                res.send(obfuscate(minifyHtml(renderedHtml)));
             });
         });
     } else if (route.handler) {
@@ -211,17 +215,20 @@ app.get('/script/*', (req, res) => {
 
 
 app.use((req, res) => {
-    res.render('404', {
-        cssFiles, jsFiles
-    }, (err,
-        renderedHtml) => {
-        if (err) {
-            res.status(500).send('Error rendering template');
-            return;
-        }
+    res.render('404',
+        {
+            cssFiles,
+            jsFiles
+        },
+        (err,
+            renderedHtml) => {
+            if (err) {
+                res.status(500).send('Error rendering template');
+                return;
+            }
 
-        res.send(minifyHtml(renderedHtml));
-    });
+            res.send(minifyHtml(renderedHtml));
+        });
 });
 
 
