@@ -117,18 +117,39 @@ const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => 
 const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/css/${file}`);
 const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
 
+const { minify } = require('html-minifier');
+
 // Route setup
 routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
+            // Render the EJS template with the provided data
             res.render(route.file, {
                 cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles, author
+            }, (err, renderedHtml) => {
+                if (err) {
+                    res.status(500).send('Error rendering template');
+                    return;
+                }
+
+                // Minify the rendered HTML
+                const minifiedHtml = minify(renderedHtml, {
+                    collapseWhitespace: true,
+                    removeComments: true,
+                    removeEmptyAttributes: true,
+                    minifyJS: true,
+                    minifyCSS: true
+                });
+
+                // Send the minified HTML as the response
+                res.send(minifiedHtml);
             });
         });
     } else if (route.handler) {
         app[route.method](route.path, route.handler);
     }
 });
+
 
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0]);
