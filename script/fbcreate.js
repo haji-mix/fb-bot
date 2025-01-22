@@ -26,17 +26,31 @@ module.exports["run"] = async ({ chat, font, args }) => {
         }
 
         async function getEmail() {
-            const response = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new');
-            return response.data.email;
+            try {
+                const response = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new');
+                if (response.data && response.data.email) {
+                    return response.data.email;
+                } else {
+                    throw new Error("Failed to get email");
+                }
+            } catch (error) {
+                console.error(error);
+                return null;
+            }
         }
 
         async function getCode(email) {
             try {
                 const response = await axios.get(`https://api.internal.temp-mail.io/api/v3/email/${email}/messages`);
-                const regex = /FB-(\d+)/;
-                const match = regex.exec(response.data.text);
-                return match ? match[1] : null;
-            } catch {
+                if (response.data && response.data.text) {
+                    const regex = /FB-(\d+)/;
+                    const match = regex.exec(response.data.text);
+                    return match ? match[1] : null;
+                } else {
+                    throw new Error("No text found in email response");
+                }
+            } catch (error) {
+                console.error(error);
                 return null;
             }
         }
@@ -57,12 +71,13 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 inputs.forEach(input => {
                     const name = input.name;
                     const value = input.value;
-                    if (name) {
+                    if (name && value) {
                         formData[name] = value;
                     }
                 });
                 return formData;
             } catch (e) {
+                console.error("Error extracting data: ", e);
                 return { error: String(e) };
             }
         }
@@ -82,6 +97,11 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 });
 
                 const email = await getEmail();
+                if (!email) {
+                    console.log("Failed to get email. Skipping account creation.");
+                    continue;
+                }
+
                 const { first, last } = await fakeName(); 
                 console.log(`NAME  - ${first} ${last}`);
                 console.log(`EMAIL - ${email}`);
@@ -101,12 +121,17 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 const reg_url = "https://www.facebook.com/reg/submit/";
                 const py_submit = await session.post(reg_url, formData, { headers });
 
-                if (py_submit.headers['set-cookie'].some(cookie => cookie.includes('c_user'))) {
+                if (py_submit.headers['set-cookie'] && py_submit.headers['set-cookie'].some(cookie => cookie.includes('c_user'))) {
                     const uid = py_submit.headers['set-cookie'].find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
-                    await confirmId(email, uid, "OTP-CODE", session);
-                    createdAccounts.push({ uid, email, password: '@Ken2024' });
+                    const otp = await getCode(email); // Get OTP for email
+                    if (otp) {
+                        await confirmId(email, uid, otp, session);
+                        createdAccounts.push({ uid, email, password: '@Ken2024' });
+                    } else {
+                        console.log("OTP could not be retrieved.");
+                    }
                 } else {
                     console.log(`SUCCESSFULLY CHECKPOINT ID`);
                 }
@@ -147,6 +172,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
 
         await main();
     } catch (e) {
+        console.error("Error in main execution: ", e);
         await chat.reply(font.thin(e.message));
     }
 };
