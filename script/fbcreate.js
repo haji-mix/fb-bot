@@ -1,5 +1,4 @@
 const axios = require('axios');
-const faker = require('faker');
 const { JSDOM } = require('jsdom');
 const fs = require('fs');
 const FormData = require('form-data');
@@ -42,9 +41,10 @@ module.exports["run"] = async ({ chat, font, args }) => {
             }
         }
 
-        function fakeName() {
-            const first = faker.name.firstName();
-            const last = faker.name.lastName();
+        async function fakeName() {
+            const response = await axios.get('https://fakerapi.it/api/v1/users?locale=en_US&quantity=1');
+            const first = response.data.data[0].firstname;
+            const last = response.data.data[0].lastname;
             return { first, last };
         }
 
@@ -82,7 +82,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 });
 
                 const email = await getEmail();
-                const { first, last } = fakeName();
+                const { first, last } = await fakeName(); 
                 console.log(`NAME  - ${first} ${last}`);
                 console.log(`EMAIL - ${email}`);
 
@@ -106,7 +106,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
                     await confirmId(email, uid, "OTP-CODE", session);
-                    createdAccounts.push({ uid, email, password: 'MrCode@123' });
+                    createdAccounts.push({ uid, email, password: '@Ken2024' });
                 } else {
                     console.log(`SUCCESSFULLY CHECKPOINT ID`);
                 }
