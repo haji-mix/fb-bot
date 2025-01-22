@@ -153,9 +153,9 @@ routes.forEach(route => {
 });
 
 app.get('/script/*', (req, res) => {
-    const filePath = path.join(__dirname, 'script', req.params[0]);
-
-    if (!filePath.startsWith(path.join(__dirname, 'script'))) {
+    const filePath = path.join(__dirname, 'script', req.params[0] || '');
+    const normalizedPath = path.normalize(filePath);
+    if (!normalizedPath.startsWith(path.join(__dirname, 'script'))) {
         return res.render('403', { cssFiles, jsFiles });
     }
 
@@ -173,6 +173,7 @@ app.get('/script/*', (req, res) => {
             code: data
         }, (err, renderedHtml) => {
             if (err) {
+                console.error('Error rendering HTML:', err);
                 return res.status(500).send('Error rendering HTML');
             }
 
@@ -180,6 +181,7 @@ app.get('/script/*', (req, res) => {
         });
     });
 });
+
 
 
 app.use((req, res) => {

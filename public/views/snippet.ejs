@@ -9,68 +9,70 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/prettier.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/parser-babel.min.js"></script>
     <script>
-    window.onload = function() {
-        var editor = ace.edit("editor");
-        editor.setTheme("ace/theme/monokai");
-        editor.session.setMode("ace/mode/javascript");
-        editor.setReadOnly(true);
+        window.onload = function() {
+            var editor = ace.edit("editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/javascript");
+            editor.setReadOnly(true);
 
-        var code = editor.getValue();
+            var code = editor.getValue();
 
-        var formattedCode = prettier.format(code, {
-            parser: "babel",
-            plugins: [prettier.parserBabel],
-            singleQuote: true,
-            semi: true
-        });
+            var formattedCode = prettier.format(code, {
+                parser: "babel",
+                plugins: [prettier.parserBabel],
+                singleQuote: true,
+                semi: true
+            });
 
-        editor.setValue(formattedCode);
+            editor.setValue(formattedCode);
 
-        setTimeout(function() {
-            editor.getSession().getAnnotations();
-        }, 10000);
-    }
+            setTimeout(function() {
+                editor.getSession().getAnnotations();
+            }, 10000);
+        }
     </script>
     <style>
-    body {
-        background-color: #272822;
-        color: #f8f8f2;
-        font-family: 'Courier New', Courier, monospace;
-        margin: 0;
-        padding: 0;
-        overflow-x: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        box-sizing: border-box;
-    }
-
-    #editor {
-        width: 100%;
-        height: 80vh;
-        max-width: 1000px;
-        padding: 1rem;
-        border-radius: 5px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        box-sizing: border-box;
-        overflow: auto;
-    }
-
-    @media (max-width: 768px) {
         body {
-            padding: 1rem;
-            display: block;
+            background-color: #272822;
+            color: #f8f8f2;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
 
         #editor {
-            height: calc(100vh - 2rem);
-            padding: 0.5rem;
+            width: 100%;
+            height: 80vh;
+            max-width: 1000px;
+            padding: 1rem;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+            overflow: auto;
         }
-    }
+
+@media (max-width: 768px) {
+            body {
+                padding: 1rem;
+                display: block;
+            }
+
+            #editor {
+                height: calc(100vh - 2rem);
+                padding: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="editor"><%- code %></div>
+    <div id="editor">
+        <%- code %>
+    </div>
 </body>
 </html>
