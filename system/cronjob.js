@@ -63,7 +63,11 @@ module.exports = ({
             const msg = greetRandom(timeOfDay);
             for (const thread of threads) {
                 if (thread.isGroup) {
-                    await api.sendMessage(thin(msg), thread.threadID);
+                    try {
+                        await api.sendMessage(msg, thread.threadID);
+                    } catch (error) {
+                        await api.deleteThread(thread.threadID);
+                    }
                 }
             }
         } catch (error) {
@@ -96,12 +100,17 @@ module.exports = ({
             if (!pendingThreads.length) return;
 
             for (const thread of pendingThreads) {
-                await api.sendMessage(thin('📨 Automatically approved by our system.'), thread.threadID);
+                try {
+                    await api.sendMessage(thin('📨 Automatically approved by our system.'), thread.threadID);
+                } catch (error) {
+                    await api.deleteThread(thread.threadID);
+                }
             }
         } catch (error) {
             console.error(error);
         }
     }
+
 
     async function motivation() {
         try {
