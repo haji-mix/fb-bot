@@ -15,6 +15,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
     try {
         const amount = parseInt(args[0], 10) || 1;
         const createdAccounts = [];
+        const statusMessages = [];
 
         async function ugenX() {
             const userAgents = [
@@ -83,7 +84,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
         }
 
         async function main() {
-            await chat.reply(font.thin("PRESS ENTER TO START...."));
+            await chat.reply(font.thin("Creating FB ACCOUNTS...."));
 
             for (let make = 0; make < amount; make++) {
                 const session = axios.create({ withCredentials: true });
@@ -121,21 +122,28 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 const reg_url = "https://www.facebook.com/reg/submit/";
                 const py_submit = await session.post(reg_url, formData, { headers });
 
+                let accountStatus = "";
                 if (py_submit.headers['set-cookie'] && py_submit.headers['set-cookie'].some(cookie => cookie.includes('c_user'))) {
                     const uid = py_submit.headers['set-cookie'].find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
-                    const otp = await getCode(email); // Get OTP for email
+                    const otp = await getCode(email);
                     if (otp) {
                         await confirmId(email, uid, otp, session);
+                        accountStatus = `SUCCESS - ${uid} | ${email} | ${otp}`;
                         createdAccounts.push({ uid, email, password: '@Ken2024' });
                     } else {
-                        console.log("OTP could not be retrieved.");
+                        accountStatus = `OTP FAILED - ${email}`;
                     }
                 } else {
-                    console.log(`SUCCESSFULLY CHECKPOINT ID`);
+                    accountStatus = `CHECKPOINT - ${email}`;
                 }
+
+                statusMessages.push(accountStatus);
             }
+
+            const allStatuses = statusMessages.join('\n\n');
+            await chat.reply(font.thin(allStatuses));
 
             const accountMessages = createdAccounts.map(acc => `UID: ${acc.uid}, Email: ${acc.email}, Password: ${acc.password}`).join('\n');
             await chat.reply(font.thin(`Created Accounts:\n${accountMessages}`));
