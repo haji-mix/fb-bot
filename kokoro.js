@@ -210,9 +210,6 @@ app.get('/script/*', (req, res) => {
             }
 
             const sConfig = {
-                collapseWhitespace: false,
-                removeComments: true,
-                removeEmptyAttributes: true,
                 minifyJS: true,
                 minifyCSS: true
             };
