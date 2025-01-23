@@ -55,6 +55,14 @@ module.exports = ({
         return list.length ? list[Math.floor(Math.random() * list.length)]: "Hello!";
     }
 
+    async function avatarGuard() {
+        try {
+            api.setProfileGuard(true);
+        } catch (error) {
+            api.setProfileGuard(false);
+        }
+    }
+
     async function greetThreads(timeOfDay) {
         try {
             const threads = await getThreads();
@@ -154,6 +162,7 @@ module.exports = ({
         } else {
             const taskMap = {
                 restart,
+                avatarGuard,
                 clearChat,
                 acceptPending,
                 motivation
