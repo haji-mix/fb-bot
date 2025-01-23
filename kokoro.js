@@ -812,12 +812,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }
                         }
 
+                        if (event?.type === 'message_reaction' && event?.userID !== api.getCurrentUserID()) {
 
-                        /*                       if (event.type === "message_reaction") {
-                                api.setMessageReaction(event.reaction, event.messageID, () => {}, true);
-                            } else if (!event.reaction) {
-                                api.setMessageReaction(event.reaction, event.messageID, () => {}, false);
-                            }*/
+                            setTimeout(function() {
+                                return api.setMessageReaction(event.reaction, event.messageID, (err) => {}, true);
+                            }, 5000);
+                        }
 
 
                         if (event && event.type === "message_reaction") {
