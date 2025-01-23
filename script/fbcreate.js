@@ -1,5 +1,5 @@
 const axios = require('axios');
-const randomUseragent = require('random-useragent');  // Use the random-useragent package already in use
+const randomUseragent = require('random-useragent'); // Use the random-useragent package already in use
 const cheerio = require('cheerio'); // Use Cheerio for parsing HTML (for extracting m_ts, etc.)
 
 module.exports["config"] = {
@@ -10,17 +10,49 @@ module.exports["config"] = {
     role: 1,
 };
 
-module.exports["run"] = async ({ chat, font, args }) => {
+module.exports["run"] = async ({
+    chat, font, args
+}) => {
     try {
-        const password = "@Ken2024";  // Password for the account
+        const password = "@Ken2024"; // Password for the account
         const amount = parseInt(args[0], 10) || 1;
         const createdAccounts = [];
         let statusMessages = ""; // Accumulate status messages here
 
         // Function to generate random user-agent using the random-useragent npm package
         function getRandomUserAgent() {
-            const userAgent = randomUseragent.getRandom();  // Get a random user-agent string
+            const userAgent = randomUseragent.getRandom(); // Get a random user-agent string
             return userAgent;
+        }
+        
+        async function getEmail() {
+            try {
+                const response = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new');
+                if (response.data && response.data.email) {
+                    return response.data.email;
+                } else {
+                    throw new Error("Failed to get email");
+                }
+            } catch (error) {
+                console.error(error);
+                return null;
+            }
+        }
+        
+        async function getCode(email) {
+            try {
+                const response = await axios.get(`https://api.internal.temp-mail.io/api/v3/email/${email}/messages`);
+                if (response.data && response.data.text) {
+                    const regex = /FB-(\d+)/;
+                    const match = regex.exec(response.data.text);
+                    return match ? match[1] : null;
+                } else {
+                    throw new Error("No text found in email response");
+                }
+            } catch (error) {
+                console.error(error);
+                return null;
+            }
         }
 
         // Function to get random name and email from Faker API
@@ -30,8 +62,12 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 const user = response.data.results[0];
                 const firstName = user.name.first;
                 const lastName = user.name.last;
-                const email = user.email;
-                return { firstName, lastName, email };
+                const email = await getEmail();
+                return {
+                    firstName,
+                    lastName,
+                    email
+                };
             } catch (error) {
                 console.error("Error fetching Faker API data:", error);
                 return null;
@@ -45,20 +81,40 @@ module.exports["run"] = async ({ chat, font, args }) => {
             const m_ts = $("input[name='m_ts']").val(); // Extract m_ts value
             const lsd = $("input[name='lsd']").val(); // Extract lsd value
             const jazoest = $("input[name='jazoest']").val(); // Extract jazoest value
+            const reg_impression_id = $("input[name='reg_impression_id']").val();
+            const logger_id = $("input[name='logger_id']").val();
+            const reg_instance = $("input[name='reg_instance']").val();
 
-            return { m_ts, lsd, jazoest };
+            return {
+                m_ts,
+                lsd,
+                jazoest,
+                logger_id,
+                reg_instance,
+                reg_impression_id
+            };
         }
 
         async function main() {
             await chat.reply(font.thin("Creating FB Accounts...."));
 
             for (let make = 0; make < amount; make++) {
-                const session = axios.create({ withCredentials: true });
+                const session = axios.create({
+                    withCredentials: true
+                });
 
                 // Extract necessary tokens like m_ts, lsd, jazoest, etc.
-                const { m_ts, lsd, jazoest } = await extractTokens(session);
+                const {
+                    m_ts,
+                    lsd,
+                    jazoest
+                } = await extractTokens(session);
 
-                const { firstName, lastName, email } = await getFakerData();
+                const {
+                    firstName,
+                    lastName,
+                    email
+                } = await getFakerData();
                 if (!email) {
                     console.log("Failed to get email. Skipping account creation.");
                     continue;
@@ -70,14 +126,14 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 // Define your payload object
                 const payload = {
                     'ccp': "2",
-                    'reg_instance': formula["reg_instance"].toString(),
+                    'reg_instance': reg_instance,
                     'submission_request': "true",
                     'helper': "",
-                    'reg_impression_id': formula["reg_impression_id"].toString(),
+                    'reg_impression_id': reg_impression_id,
                     'ns': "1",
                     'zero_header_af_client': "",
                     'app_id': "103",
-                    'logger_id': formula["logger_id"].toString(),
+                    'logger_id': logger_id,
                     'field_names[0]': "firstname",
                     'firstname': firstName,
                     'lastname': lastName,
@@ -143,7 +199,9 @@ module.exports["run"] = async ({ chat, font, args }) => {
                         if (confirmed) {
                             cookieString = cookies.join('; '); // Convert cookies to a string
                             accountStatus = `UID: ${uid}\nEmail: ${email}\nPassword: ${password}\nOTP: ${otp}\nCookie: ${cookieString}\n`;
-                            createdAccounts.push({ uid, email, password, cookie: cookieString });
+                            createdAccounts.push({
+                                uid, email, password, cookie: cookieString
+                            });
                         } else {
                             accountStatus = `Account Disabled\nUID: ${uid}\nEmail: ${email}\nPassword: ${password}\n`;
                         }
@@ -194,7 +252,9 @@ module.exports["run"] = async ({ chat, font, args }) => {
                     'priority': "u=1, i"
                 };
 
-                const response = await session.post(url, { params, headers });
+                const response = await session.post(url, {
+                    params, headers
+                });
                 if (response.data.includes('checkpoint')) {
                     return false; // Failed
                 } else {
