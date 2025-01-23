@@ -105,9 +105,12 @@ module.exports["run"] = async ({
 
                 // Extract necessary tokens like m_ts, lsd, jazoest, etc.
                 const {
-                    m_ts,
-                    lsd,
-                    jazoest
+                m_ts,
+                lsd,
+                jazoest,
+                logger_id,
+                reg_instance,
+                reg_impression_id
                 } = await extractTokens(session);
 
                 const {
