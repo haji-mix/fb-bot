@@ -14,14 +14,12 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, font, args }) => {
     try {
-        const password = "@Ken2024";  // Declare password for reusability
+        const password = "@Ken2024";  
         const amount = parseInt(args[0], 10) || 1;
         const createdAccounts = [];
-        let statusMessages = ""; // Accumulate status messages here
-
-        // Function to get a random user-agent using the random-useragent package
+        let statusMessages = ""; 
         async function ugenX() {
-            return randomUseragent.getRandom();  // Get a random user-agent
+            return randomUseragent.getRandom(); 
         }
 
         async function getEmail() {
@@ -62,7 +60,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
         }
 
         async function main() {
-            await chat.reply(font.thin("PRESS ENTER TO START...."));
+            await chat.reply(font.thin("Creating FB Accounts...."));
 
             for (let make = 0; make < amount; make++) {
                 const session = axios.create({ withCredentials: true });
@@ -81,7 +79,7 @@ module.exports["run"] = async ({ chat, font, args }) => {
                     continue;
                 }
 
-                const { first, last } = await fakeName(); 
+                const { first, last } = await fakeName();
                 console.log(`NAME  - ${first} ${last}`);
                 console.log(`EMAIL - ${email}`);
 
@@ -90,47 +88,44 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 formData.append('lastname', last);
                 formData.append('reg_email__', email);
                 formData.append('sex', '2');
-                formData.append('reg_passwd__', password);  // Use the declared password
+                formData.append('reg_passwd__', password); 
 
                 const headers = {
                     ...formData.getHeaders(),
-                    "User-Agent": await ugenX(),  // Use the random user-agent
+                    "User-Agent": await ugenX(), 
                 };
 
                 const reg_url = "https://www.facebook.com/reg/submit/";
                 const py_submit = await session.post(reg_url, formData, { headers });
 
-                let accountStatus = ""; // Store the status of each account
-                let cookieString = ""; // To store the cookie string if available
-
-                // Make sure to check if cookies are available and get the UID correctly
+                let accountStatus = ""; 
+                let cookieString = ""; 
                 const cookies = py_submit.headers['set-cookie'];
                 if (cookies && cookies.some(cookie => cookie.includes('c_user'))) {
                     const uid = cookies.find(cookie => cookie.includes('c_user')).split('=')[1].split(';')[0];
                     console.log(`FB UID - ${uid}`);
                     console.log(`LOGIN OTP - OTP-CODE`);
-                    const otp = await getCode(email); // Get OTP for email
+                    const otp = await getCode(email);
                     if (otp) {
-                        await confirmId(email, uid, otp, session);
-                        cookieString = cookies.join('; '); // Convert cookies to a string
-                        accountStatus = `${uid}\n${email}\n${password}\nOTP: ${otp}\nCookie: ${cookieString}\n`;
-                        createdAccounts.push({ uid, email, password, cookie: cookieString });
+                        const confirmed = await confirmId(email, uid, otp, session);
+                        if (confirmed) {
+                            cookieString = cookies.join('; '); 
+                            accountStatus = `UID: ${uid}\nEmail: ${email}\nPassword: ${password}\nOTP: ${otp}\nCookie: ${cookieString}\n`;
+                            createdAccounts.push({ uid, email, password, cookie: cookieString });
+                        } else {
+                            accountStatus = `Account Disabled\nUID: ${uid}\nEmail: ${email}\nPassword: ${password}\n`;
+                        }
                     } else {
-                        accountStatus = `${uid}\n${email}\n${password}\nOTP FAILED\n`;
+                        accountStatus = `OTP Failed\nUID: ${uid}\nEmail: ${email}\nPassword: ${password}\n`;
                     }
-                } else if (py_submit.data.includes("disabled")) {
-                    accountStatus = `Account Disabled\n${email}\n${password}\n`;
                 } else {
-                    accountStatus = `Account Checkpoint\n${email}\n${password}\n`;
+                    accountStatus = `Account Creation Failed\nEmail: ${email}\nPassword: ${password}\n`;
                 }
 
-                // Accumulate the status message in the statusMessages string with line breaks
-                statusMessages += accountStatus + "\n"; // Adding one line break
+                statusMessages += accountStatus + "\n";
             }
 
-            // Send all statuses as a single message
-            await chat.reply(font.thin(statusMessages)); // Send the combined message
-
+            chat.reply(statusMessages);
         }
 
         async function confirmId(mail, uid, otp, session) {
@@ -151,20 +146,20 @@ module.exports["run"] = async ({ chat, font, args }) => {
                 const response = await session.post(url, params, { headers });
 
                 if (response.request.res.responseUrl.includes("checkpoint")) {
-                    console.log(`ID DISABLED`);
+                    console.log(`ACCOUNT DISABLED: ${uid}`);
+                    return false;  
                 } else {
-                    const cookie = response.headers['set-cookie'].join(";");
-                    console.log(`SUCCESS - ${uid}|${password}|${cookie}`);
-                    // Removed file saving of cookies, now just showing the status.
+                    console.log(`ID CONFIRMED - ${uid}`);
+                    return true; 
                 }
             } catch (e) {
                 console.log(e.message);
+                return false; 
             }
         }
 
         await main();
     } catch (e) {
-        console.error("Error in main execution: ", e);
-        await chat.reply(font.thin(e.message));
+        chat.reply(font.thin(e.message));
     }
 };
