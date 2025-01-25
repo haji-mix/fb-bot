@@ -54,10 +54,6 @@
         "motivation": {
             "enabled": false,
             "cronExpression": "0 */5 * * *"
-        },
-        "avatarGuard": {
-            "enabled": true,
-            "cronExpression": "0 */24 * * *"
         }
     }
 }

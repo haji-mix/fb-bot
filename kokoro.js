@@ -425,41 +425,6 @@ cron.schedule('*/5 * * * *', () => {
     });
 });
 
-const trackPath = './data/track.json';
-const dirPath = './data';
-
-function trackUserID(userID) {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    if (fs.existsSync(path)) {
-        const data = fs.readFileSync(trackPath);
-        const users = JSON.parse(data);
-        if (users[userID]) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function addUserID(userID) {
-    let users = {};
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-
-    if (fs.existsSync(path)) {
-        const data = fs.readFileSync(trackPath);
-        users = JSON.parse(data);
-    }
-
-    if (!users[userID]) {
-        users[userID] = [];
-        fs.writeFileSync(trackPath, JSON.stringify(users, null, 2));
-    }
-}
-
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();
 
@@ -503,10 +468,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-            if (!trackUserID(userid)) {
-                api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
-                addUserID(userid);
-            }
             try {
 
                 let time = (
@@ -540,6 +501,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     1000);
 
                 const cronjob = require('./system/cronjob')({
+                    api,
+                    fonts,
+                    font: fonts,
+                });
+                
+                const notevent = require('./system/notevent')({
                     api,
                     fonts,
                     font: fonts,
