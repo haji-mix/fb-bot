@@ -5,7 +5,9 @@ const dirPath = './data';
 
 function trackUserID(userID) {
     if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+        fs.mkdirSync(dirPath, {
+            recursive: true
+        });
     }
 
     if (fs.existsSync(trackPath)) {
@@ -21,7 +23,9 @@ function trackUserID(userID) {
 function addUserID(userID) {
     let users = {};
     if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
+        fs.mkdirSync(dirPath, {
+            recursive: true
+        });
     }
 
     if (fs.existsSync(trackPath)) {
@@ -40,8 +44,10 @@ module.exports = ({
 }) => {
     const userid = api.getCurrentUserID();
     if (!trackUserID(userid)) {
-        api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
-        api.setProfileGuard(true);
-        addUserID(userid);
+        setTimeout(function() {
+            api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
+            api.setProfileGuard(true);
+            addUserID(userid);
+        }, 10000);
     }
 }
