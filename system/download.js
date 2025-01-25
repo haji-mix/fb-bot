@@ -73,16 +73,18 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             const buffer = Buffer.from(input, 'base64');
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, buffer);
-            setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // Delete after 10 minutes
-            return fs.createReadStream(filePath);
+            const stream = fs.createReadStream(filePath);
+            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
+            return stream;
         }
 
         // Handle Blob/Binary Buffer directly
         if (Buffer.isBuffer(input)) {
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, input);
-            setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // Delete after 10 minutes
-            return fs.createReadStream(filePath);
+            const stream = fs.createReadStream(filePath);
+            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
+            return stream;
         }
 
         // Handle URL inputs
@@ -116,15 +118,17 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
                 fs.writeFileSync(filePath, response.data);
             }
 
-            setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // Delete after 10 minutes
-            return fs.createReadStream(filePath);
+            const stream = fs.createReadStream(filePath);
+            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
+            return stream;
         }
 
         // Default: Save input as text file
         filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
         fs.writeFileSync(filePath, input);
-        setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // Delete after 10 minutes
-        return fs.createReadStream(filePath);
+        const stream = fs.createReadStream(filePath);
+        fs.unlink(filePath, () => {}); // Delete the file after creating the stream
+        return stream;
     }));
 
     return files.length === 1 ? files[0] : files;
