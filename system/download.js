@@ -54,16 +54,33 @@ const getExtensionFromContentType = (contentType) => {
     return 'txt'; // Default to 'txt' if content type isn't recognized
 };
 
-// Main download function
-const download = async (inputs, responseType = 'arraybuffer', extension = "", savePath = "") => {
-    inputs = Array.isArray(inputs) ? inputs : [inputs];
-
-    const defaultPath = path.join(__dirname, '../script/cache');
-    const targetPath = savePath || defaultPath;
-
+// Function to clear cache folder (delete all files inside it)
+const clearCacheFolder = (targetPath) => {
     if (!fs.existsSync(targetPath)) {
         fs.mkdirSync(targetPath, { recursive: true });
     }
+
+    fs.readdirSync(targetPath).forEach(file => {
+        const filePath = path.join(targetPath, file);
+        if (fs.statSync(filePath).isFile()) {
+            fs.unlinkSync(filePath); // Delete the file
+        }
+    });
+};
+
+// Cache Path
+const defaultPath = path.join(__dirname, '../script/cache');
+
+// Set an interval to clear the cache every 3 minutes (180,000 ms)
+setInterval(() => {
+    console.log('Clearing cache folder...');
+    clearCacheFolder(defaultPath);
+}, 180000); // Clear cache every 3 minutes
+
+// Main download function
+const download = async (inputs, responseType = 'arraybuffer', extension = "", savePath = "") => {
+    inputs = Array.isArray(inputs) ? inputs : [inputs];
+    const targetPath = savePath || defaultPath;
 
     const files = await Promise.all(inputs.map(async (input) => {
         let filePath;
@@ -73,18 +90,14 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             const buffer = Buffer.from(input, 'base64');
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, buffer);
-            const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
-            return stream;
+            return fs.createReadStream(filePath);
         }
 
         // Handle Blob/Binary Buffer directly
         if (Buffer.isBuffer(input)) {
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, input);
-            const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
-            return stream;
+            return fs.createReadStream(filePath);
         }
 
         // Handle URL inputs
@@ -99,10 +112,8 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
 
             if (responseType === 'arraybuffer' || responseType === 'binary') {
-                // Save binary data to file
                 fs.writeFileSync(filePath, response.data);
             } else if (responseType === 'stream') {
-                // Save stream to file
                 const writer = fs.createWriteStream(filePath);
                 response.data.pipe(writer);
                 await new Promise((resolve, reject) => {
@@ -110,25 +121,19 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
                     writer.on('error', reject);
                 });
             } else if (responseType === 'base64') {
-                // Convert binary data to base64 and save to file
                 const base64Data = Buffer.from(response.data).toString('base64');
                 fs.writeFileSync(filePath, base64Data, 'utf8');
             } else {
-                // For unsupported response types, save raw response
                 fs.writeFileSync(filePath, response.data);
             }
 
-            const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
-            return stream;
+            return fs.createReadStream(filePath);
         }
 
         // Default: Save input as text file
         filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
         fs.writeFileSync(filePath, input);
-        const stream = fs.createReadStream(filePath);
-        fs.unlink(filePath, () => {}); // Delete the file after creating the stream
-        return stream;
+        return fs.createReadStream(filePath);
     }));
 
     return files.length === 1 ? files[0] : files;
