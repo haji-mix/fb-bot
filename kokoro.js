@@ -505,7 +505,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             await addThisUser(userid, appState, prefix, admin_uid);
             if (!trackUserID(userid)) {
                 api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
-                addUserID(userID);
+                addUserID(userid);
             }
             try {
 
