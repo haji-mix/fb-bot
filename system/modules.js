@@ -20,7 +20,7 @@ const {
 const {
     generateUserAgent
 } = require("./useragent");
-const { download } = require("./stream");
+const { download } = require("./download");
 
 module.exports = {
     workers,
