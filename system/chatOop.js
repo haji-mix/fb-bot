@@ -60,6 +60,11 @@ class OnChat {
         if (!link) return this.log("Missing Arraybuffer Url!");
         return await download(link, 'arraybuffer', extension);
     }
+    
+    async binary(link, extension = "png") {
+        if (!link) return this.log("Missing Arraybuffer Url!");
+        return await download(link, 'binary', extension);
+    }
 
     async stream(link, extension = "png") {
         if (!link) return this.log("Missing Stream Url!");
