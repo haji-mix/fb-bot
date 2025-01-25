@@ -8,7 +8,7 @@ const {
 
 const {
     download
-} = require("./stream");
+} = require("./download");
 
 class OnChat {
     constructor(api = "", event = {}) {
@@ -61,9 +61,14 @@ class OnChat {
         return await download(link, 'arraybuffer', extension);
     }
 
-    async stream(link) {
+    async stream(link, extension = "png") {
         if (!link) return this.log("Missing Stream Url!");
         return await download(link, 'stream');
+    }
+    
+    async decodeStream(link, extension = "png") {
+      if (!link) return this.log("Missing raw data!");
+      return await download(link, null, extension);
     }
 
     async profile(link, caption = "Profile Changed", date = null) {
