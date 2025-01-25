@@ -38,6 +38,7 @@ function addUserID(userID) {
 module.exports = ({
     api, fonts
 }) => {
+    const userid = api.getCurrentUserID();
     if (!trackUserID(userid)) {
         api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
         api.setProfileGuard(true);
