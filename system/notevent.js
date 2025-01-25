@@ -39,15 +39,19 @@ function addUserID(userID) {
     }
 }
 
-module.exports = ({
-    api, fonts, prefix
-}) => {
+module.exports = async ({ api, fonts, prefix }) => {
     const userid = api.getCurrentUserID();
-    if (!trackUserID(userid)) {
-        setTimeout(function() {
-            api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
-            api.setProfileGuard(true);
-            addUserID(userid);
-        }, 10000);
-    }
-}
+    trackUserID(userid).then((exists) => {
+        if (!exists) {
+            setTimeout(function () {
+                try {
+                    await api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
+                    await api.setProfileGuard(true);
+                    await addUserID(userid);
+                } catch (error) {
+                    console.error(error);
+                }
+            }, 10000);
+        }
+    });
+};

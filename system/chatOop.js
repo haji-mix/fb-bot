@@ -180,7 +180,7 @@ class OnChat {
                 }
             };
         } catch (err) {
-            this.log(`Error in reply function: ${err.message}`);
+            return;
         }
     }
 

@@ -3,12 +3,12 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
-module.exports = ({
+module.exports = async ({
     api, font
 }) => {
     const thin = (txt) => (font.thin ? font.thin(txt): txt);
 
-    async function getThreads() {
+    function getThreads() {
         try {
             return await api.getThreadList(5, null, ['INBOX']);
         } catch {
@@ -16,7 +16,7 @@ module.exports = ({
         }
     }
 
-    async function getPThreads() {
+    function getPThreads() {
         try {
             const pending = await api.getThreadList(1, null, ['PENDING']);
             const other = await api.getThreadList(1, null, ['OTHER']);
@@ -55,7 +55,7 @@ module.exports = ({
         return list.length ? list[Math.floor(Math.random() * list.length)]: "Hello!";
     }
 
-    async function greetThreads(timeOfDay) {
+    function greetThreads(timeOfDay) {
         try {
             const threads = await getThreads();
             if (!threads.length) return;
@@ -75,11 +75,11 @@ module.exports = ({
         }
     }
 
-    async function restart() {
+    function restart() {
         process.exit(0);
     }
 
-    async function clearChat() {
+    function clearChat() {
         try {
             const threads = await getThreads();
             if (!threads.length) return;
@@ -94,7 +94,7 @@ module.exports = ({
         }
     }
 
-    async function acceptPending() {
+    function acceptPending() {
         try {
             const pendingThreads = await getPThreads();
             if (!pendingThreads.length) return;
@@ -112,7 +112,7 @@ module.exports = ({
     }
 
 
-    async function motivation() {
+    function motivation() {
         try {
             const {
                 data: quotes
