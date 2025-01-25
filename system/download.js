@@ -2,13 +2,31 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const scheduleFilePath = path.join(__dirname, '../script/cache/schedule.json');
+const targetPath = path.join(__dirname, '../script/cache');
 
-// Helper function to get headers based on domain patterns
+const deleteDirectoryAndFiles = (dirPath) => {
+    if (fs.existsSync(dirPath)) {
+        const files = fs.readdirSync(dirPath);
+
+        files.forEach((file) => {
+            const filePath = path.join(dirPath, file);
+            const stat = fs.statSync(filePath);
+
+            if (stat.isDirectory()) {
+                deleteDirectoryAndFiles(filePath);
+            } else {
+                fs.unlinkSync(filePath);
+            }
+        });
+
+        fs.rmdirSync(dirPath);
+    }
+};
+
+deleteDirectoryAndFiles(targetPath);
 const getHeadersForUrl = (url) => {
     const domainPatterns = [{
-        domains: ['pixiv.net',
-            'i.pximg.net'],
+        domains: ['pixiv.net', 'i.pximg.net'],
         headers: {
             Referer: 'http://www.pixiv.net/'
         }
@@ -38,22 +56,17 @@ const getHeadersForUrl = (url) => {
             }
         },
         {
-            domains: ['i.nhentai.net',
-                'nhentai.net'],
+            domains: ['i.nhentai.net', 'nhentai.net'],
             headers: {
                 Referer: 'https://nhentai.net/'
             }
         }];
 
-    const domain = domainPatterns.find(({
-        domains
-    }) =>
-        domains.some(d => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, 'i').test(url))
+    const domain = domainPatterns.find(pattern =>
+        pattern.domains.some(d => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, 'i').test(url))
     );
 
-    const headers = domain ? {
-        ...domain.headers
-    }: {};
+    const headers = domain ? domain.headers: {};
     if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
     }
@@ -61,7 +74,6 @@ const getHeadersForUrl = (url) => {
     return headers;
 };
 
-// Function to determine file extension based on Content-Type header
 const getExtensionFromContentType = (contentType) => {
     if (contentType) {
         if (contentType.includes('image/jpeg')) return 'jpg';
@@ -74,47 +86,8 @@ const getExtensionFromContentType = (contentType) => {
     return 'txt';
 };
 
-// Function to load and update the deletion schedule
-const loadSchedule = () => {
-    if (fs.existsSync(scheduleFilePath)) {
-        const data = fs.readFileSync(scheduleFilePath);
-        return JSON.parse(data);
-    }
-    return {};
-};
-
-const updateSchedule = (schedule) => {
-    fs.writeFileSync(scheduleFilePath, JSON.stringify(schedule, null, 2));
-};
-
-// Function to check and delete expired files based on timestamps
-const cleanOldFiles = () => {
-    const schedule = loadSchedule();
-
-    const now = Date.now();
-
-    Object.keys(schedule).forEach((filePath) => {
-        const fileTimestamp = schedule[filePath].timestamp;
-        const expirationTime = schedule[filePath].expirationTime || 86400000;
-
-        if (now - fileTimestamp >= expirationTime) {
-            fs.unlink(path.join(__dirname, filePath), (err) => {
-                if (!err) {
-                    console.log(`Deleted expired file: ${filePath}`);
-                    delete schedule[filePath];
-                    updateSchedule(schedule);
-                }
-            });
-        }
-    });
-};
-
-// Main download function
-const download = async (inputs, responseType = 'arraybuffer', extension = "", savePath = "") => {
+const download = async (inputs, responseType = 'arraybuffer', extension = "") => {
     inputs = Array.isArray(inputs) ? inputs: [inputs];
-
-    const defaultPath = path.join(__dirname, '../script/cache');
-    const targetPath = savePath || defaultPath;
 
     if (!fs.existsSync(targetPath)) {
         fs.mkdirSync(targetPath, {
@@ -130,6 +103,16 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, buffer);
             const stream = fs.createReadStream(filePath);
+
+            // Set a timeout to delete the file after 5 minutes
+            setTimeout(() => {
+                fs.unlink(filePath, (err) => {
+                    if (!err) {
+                        console.log(`Deleted expired file: ${filePath}`);
+                    }
+                });
+            }, 5 * 60 * 1000); // 5 minutes
+
             return stream;
         }
 
@@ -137,6 +120,16 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, input);
             const stream = fs.createReadStream(filePath);
+
+            // Set a timeout to delete the file after 5 minutes
+            setTimeout(() => {
+                fs.unlink(filePath, (err) => {
+                    if (!err) {
+                        console.log(`Deleted expired file: ${filePath}`);
+                    }
+                });
+            }, 5 * 60 * 1000); // 5 minutes
+
             return stream;
         }
 
@@ -167,31 +160,19 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             }
 
             const stream = fs.createReadStream(filePath);
+
+            setTimeout(() => {
+                fs.unlink(filePath, (err) => {
+                    if (!err) {}
+                });
+            }, 5 * 60 * 1000);
+
             return stream;
         }
-
-        filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
-        fs.writeFileSync(filePath, input);
-        const stream = fs.createReadStream(filePath);
-        return stream;
     }));
-
-    const schedule = loadSchedule();
-    files.forEach((file) => {
-        const filePath = file.path;
-        const timestamp = Date.now();
-        schedule[filePath] = {
-            timestamp,
-            expirationTime: 300000
-        };
-    });
-    updateSchedule(schedule);
 
     return files.length === 1 ? files[0]: files;
 };
-
-setInterval(cleanOldFiles, 5 * 60 * 1000);
-cleanOldFiles();
 
 module.exports = {
     download
