@@ -157,4 +157,6 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
     return files.length === 1 ? files[0] : files;
 };
 
-module.exports = download;
+module.exports = {
+    download
+};
