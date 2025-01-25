@@ -456,7 +456,7 @@ function addUserID(userID) {
 
     if (!users[userID]) {
         users[userID] = [];
-        fs.writeFileSync(path, JSON.stringify(users, null, 2));
+        fs.writeFileSync(trackPath, JSON.stringify(users, null, 2));
     }
 }
 
