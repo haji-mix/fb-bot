@@ -425,10 +425,15 @@ cron.schedule('*/5 * * * *', () => {
     });
 });
 
+const path = './data/track.json';
+const dirPath = './data';
 
-const trackData = './data/track.json';
 function trackUserID(userID) {
-    if (fs.existsSync(trackData)) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    if (fs.existsSync(path)) {
         const data = fs.readFileSync(path);
         const users = JSON.parse(data);
         if (users[userID]) {
@@ -440,14 +445,18 @@ function trackUserID(userID) {
 
 function addUserID(userID) {
     let users = {};
-    if (fs.existsSync(trackData)) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    if (fs.existsSync(path)) {
         const data = fs.readFileSync(path);
         users = JSON.parse(data);
     }
 
     if (!users[userID]) {
         users[userID] = [];
-        fs.writeFileSync(trackData, JSON.stringify(users, null, 2));
+        fs.writeFileSync(path, JSON.stringify(users, null, 2));
     }
 }
 
