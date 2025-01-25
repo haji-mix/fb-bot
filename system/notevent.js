@@ -43,7 +43,7 @@ module.exports = async ({ api, fonts, prefix }) => {
     const userid = api.getCurrentUserID();
     trackUserID(userid).then((exists) => {
         if (!exists) {
-            setTimeout(function () {
+            setTimeout(async function () {
                 try {
                     await api.changeBio(`${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`);
                     await api.setProfileGuard(true);

@@ -8,7 +8,7 @@ module.exports = async ({
 }) => {
     const thin = (txt) => (font.thin ? font.thin(txt): txt);
 
-    function getThreads() {
+    async function getThreads() {
         try {
             return await api.getThreadList(5, null, ['INBOX']);
         } catch {
@@ -16,7 +16,7 @@ module.exports = async ({
         }
     }
 
-    function getPThreads() {
+    async function getPThreads() {
         try {
             const pending = await api.getThreadList(1, null, ['PENDING']);
             const other = await api.getThreadList(1, null, ['OTHER']);
@@ -55,7 +55,7 @@ module.exports = async ({
         return list.length ? list[Math.floor(Math.random() * list.length)]: "Hello!";
     }
 
-    function greetThreads(timeOfDay) {
+    async function greetThreads(timeOfDay) {
         try {
             const threads = await getThreads();
             if (!threads.length) return;
@@ -79,7 +79,7 @@ module.exports = async ({
         process.exit(0);
     }
 
-    function clearChat() {
+    async function clearChat() {
         try {
             const threads = await getThreads();
             if (!threads.length) return;
@@ -94,7 +94,7 @@ module.exports = async ({
         }
     }
 
-    function acceptPending() {
+    async function acceptPending() {
         try {
             const pendingThreads = await getPThreads();
             if (!pendingThreads.length) return;
@@ -112,7 +112,7 @@ module.exports = async ({
     }
 
 
-    function motivation() {
+    async function motivation() {
         try {
             const {
                 data: quotes
