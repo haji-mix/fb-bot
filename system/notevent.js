@@ -8,7 +8,7 @@ function trackUserID(userID) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    if (fs.existsSync(path)) {
+    if (fs.existsSync(trackPath)) {
         const data = fs.readFileSync(trackPath);
         const users = JSON.parse(data);
         if (users[userID]) {
@@ -24,7 +24,7 @@ function addUserID(userID) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    if (fs.existsSync(path)) {
+    if (fs.existsSync(trackPath)) {
         const data = fs.readFileSync(trackPath);
         users = JSON.parse(data);
     }
