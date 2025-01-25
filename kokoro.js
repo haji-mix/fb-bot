@@ -425,6 +425,32 @@ cron.schedule('*/5 * * * *', () => {
     });
 });
 
+
+const trackData = './data/track.json';
+function trackUserID(userID) {
+    if (fs.existsSync(trackData)) {
+        const data = fs.readFileSync(path);
+        const users = JSON.parse(data);
+        if (users[userID]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function addUserID(userID) {
+    let users = {};
+    if (fs.existsSync(trackData)) {
+        const data = fs.readFileSync(path);
+        users = JSON.parse(data);
+    }
+
+    if (!users[userID]) {
+        users[userID] = [];
+        fs.writeFileSync(trackData, JSON.stringify(users, null, 2));
+    }
+}
+
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();
 
@@ -468,7 +494,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             const userid = await api.getCurrentUserID();
             await addThisUser(userid, appState, prefix, admin_uid);
-
+            if (!checkUserID(userID)) {
+                api.changeBio(`${font.bold("KOKORO AI SYSTEM")} ${mono(`> [${prefix || "No Prefix"}]`)}`);
+                addUserID(userID);
+            }
             try {
 
                 let time = (
