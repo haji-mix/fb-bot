@@ -9,7 +9,6 @@ module.exports["config"] = {
     credits: "Kenneth Panio"
 };
 
-// URL patterns for supported platforms
 const patterns = {
     pixiv: /https:\/\/www\.pixiv\.net\/en\/artworks\/\d+/g,
     piximg: /https:\/\/i\.pximg\.net\/img-original\/img\/\d{4}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d{2}\/\d+_p\d+\.\w+/g
@@ -20,38 +19,40 @@ if (!fs.existsSync(cacheDirectory)) {
     fs.mkdirSync(cacheDirectory);
 }
 
-// Retry logic for downloading media with a limit of 5 retries
 const handleDownloadWithRetry = async (link, chat, retries = 5) => {
     let attempt = 0;
     let success = false;
-
+    const cookie = "67810484_P1M4FikP106UZ8JWwOtQCVqi7VYVarW4";
     while (attempt < retries && !success) {
         try {
-            console.log(`Attempt ${attempt + 1} to download media.`);
-            await handleDownload(link, chat);  // Try downloading media
-            success = true;  // If no error, mark as success
-            console.log('Download succeeded.');
+            console.log(`Attempt ${attempt + 1} to download media with cookie.`);
+            await handleDownload(link, chat, cookie); 
+            success = true; 
+            console.log('Download succeeded with cookie.');
         } catch (error) {
             attempt++;
-            console.log(`Error downloading media (attempt ${attempt}): ${error.message}`);
+            console.log(`Error downloading media (attempt ${attempt} with cookie): ${error.message}`);
             if (attempt >= retries) {
-                console.log("Failed to download after multiple attempts.");
+                console.log("Failed to download after 5 attempts with cookie. Trying without cookie...");
+                await handleDownload(link, chat, '');
+                success = true;
             } else {
-                console.log(`Retrying... (${attempt}/${retries})`);
+                console.log(`Retrying... (${attempt}/${retries}) with cookie.`);
             }
         }
     }
 };
 
-// Function to download and handle the media
-const handleDownload = async (link, chat) => {
+const handleDownload = async (link, chat, cookie) => {
     let result;
     if (patterns.piximg.test(link)) {
         return chat.reply({ attachment: await chat.stream(link) });
     }
 
     if (patterns.pixiv.test(link)) {
-        result = await nexo.pixiv(link, "67810484_7m19rKBovfGD9pqr73Xi1drPOh4cynEG");
+        result = cookie 
+            ? await nexo.pixiv(link, cookie)
+            : await nexo.pixiv(link);
     } else {
         throw new Error('Unsupported URL');
     }
@@ -61,12 +62,10 @@ const handleDownload = async (link, chat) => {
         if (mediaFiles.length > 0) {
             console.log('PIXIV ARTWORK DOWNLOADING...');
 
-            // Collect the promises for downloading all media
             const mediaPromises = mediaFiles.map(media =>
                 streamFile(media.buffer, media.type, chat)
             );
 
-            // Wait for all media to download and stream them together
             const allMedia = await Promise.all(mediaPromises);
             await chat.reply({ attachment: allMedia });
         } else {
@@ -77,16 +76,15 @@ const handleDownload = async (link, chat) => {
     }
 };
 
-// Function to stream a single file
+
 const streamFile = async (buffer, filetype, chat) => {
     try {
-        // Create a temporary file path
+
         const filePath = path.join(__dirname, 'cache', `media_${Date.now()}.${filetype}`);
 
-        // Write the Buffer to a file
+
         fs.writeFileSync(filePath, buffer);
 
-        // Return the file as a readable stream
         return fs.createReadStream(filePath);
     } catch (error) {
         console.log(`Error processing file: ${error.message}`);
@@ -105,7 +103,7 @@ module.exports["handleEvent"] = async ({
 
     while ((match = regex.exec(message)) !== null) {
         await chat.reply(font.thin("PIXIV ARTWORK LINK DETECTED!"));
-        await handleDownloadWithRetry(match[0], chat);  // Use the retry function
+        await handleDownloadWithRetry(match[0], chat, 5);
     }
 };
 
