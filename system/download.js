@@ -7,35 +7,53 @@ const scheduleFilePath = path.join(__dirname, '../script/cache/schedule.json');
 // Helper function to get headers based on domain patterns
 const getHeadersForUrl = (url) => {
     const domainPatterns = [{
-        domains: ['pixiv.net', 'i.pximg.net'],
-        headers: { Referer: 'http://www.pixiv.net/' }
+        domains: ['pixiv.net',
+            'i.pximg.net'],
+        headers: {
+            Referer: 'http://www.pixiv.net/'
+        }
     },
-    {
-        domains: ['deviantart.com'],
-        headers: { Referer: 'https://www.deviantart.com/' }
-    },
-    {
-        domains: ['artstation.com'],
-        headers: { Referer: 'https://www.artstation.com/' }
-    },
-    {
-        domains: ['instagram.com'],
-        headers: { Referer: 'https://www.instagram.com/' }
-    },
-    {
-        domains: ['googleusercontent.com'],
-        headers: { Referer: 'https://images.google.com/' }
-    },
-    {
-        domains: ['i.nhentai.net', 'nhentai.net'],
-        headers: { Referer: 'https://nhentai.net/' }
-    }];
+        {
+            domains: ['deviantart.com'],
+            headers: {
+                Referer: 'https://www.deviantart.com/'
+            }
+        },
+        {
+            domains: ['artstation.com'],
+            headers: {
+                Referer: 'https://www.artstation.com/'
+            }
+        },
+        {
+            domains: ['instagram.com'],
+            headers: {
+                Referer: 'https://www.instagram.com/'
+            }
+        },
+        {
+            domains: ['googleusercontent.com'],
+            headers: {
+                Referer: 'https://images.google.com/'
+            }
+        },
+        {
+            domains: ['i.nhentai.net',
+                'nhentai.net'],
+            headers: {
+                Referer: 'https://nhentai.net/'
+            }
+        }];
 
-    const domain = domainPatterns.find(({ domains }) =>
+    const domain = domainPatterns.find(({
+        domains
+    }) =>
         domains.some(d => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, 'i').test(url))
     );
 
-    const headers = domain ? { ...domain.headers } : {};
+    const headers = domain ? {
+        ...domain.headers
+    }: {};
     if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
     }
@@ -53,7 +71,7 @@ const getExtensionFromContentType = (contentType) => {
         if (contentType.includes('audio/mpeg')) return 'mp3';
         if (contentType.includes('video/mp4')) return 'mp4';
     }
-    return 'txt'; // Default to 'txt' if content type isn't recognized
+    return 'txt';
 };
 
 // Function to load and update the deletion schedule
@@ -73,20 +91,18 @@ const updateSchedule = (schedule) => {
 const cleanOldFiles = () => {
     const schedule = loadSchedule();
 
-    // Get current timestamp
     const now = Date.now();
 
     Object.keys(schedule).forEach((filePath) => {
         const fileTimestamp = schedule[filePath].timestamp;
-        const expirationTime = schedule[filePath].expirationTime || 86400000; // Default to 24 hours if not specified
+        const expirationTime = schedule[filePath].expirationTime || 86400000;
 
-        // Check if the file is expired
         if (now - fileTimestamp >= expirationTime) {
             fs.unlink(path.join(__dirname, filePath), (err) => {
                 if (!err) {
                     console.log(`Deleted expired file: ${filePath}`);
-                    delete schedule[filePath];  // Remove it from the schedule after deletion
-                    updateSchedule(schedule);  // Update schedule
+                    delete schedule[filePath];
+                    updateSchedule(schedule);
                 }
             });
         }
@@ -95,41 +111,38 @@ const cleanOldFiles = () => {
 
 // Main download function
 const download = async (inputs, responseType = 'arraybuffer', extension = "", savePath = "") => {
-    inputs = Array.isArray(inputs) ? inputs : [inputs];
+    inputs = Array.isArray(inputs) ? inputs: [inputs];
 
     const defaultPath = path.join(__dirname, '../script/cache');
     const targetPath = savePath || defaultPath;
 
     if (!fs.existsSync(targetPath)) {
-        fs.mkdirSync(targetPath, { recursive: true });
+        fs.mkdirSync(targetPath, {
+            recursive: true
+        });
     }
 
     const files = await Promise.all(inputs.map(async (input) => {
         let filePath;
 
-        // Handle Base64 strings
         if (typeof input === 'string' && /^[A-Za-z0-9+/=]+$/.test(input)) {
             const buffer = Buffer.from(input, 'base64');
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, buffer);
             const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
             return stream;
         }
 
-        // Handle Blob/Binary Buffer directly
         if (Buffer.isBuffer(input)) {
             filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
             fs.writeFileSync(filePath, input);
             const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
             return stream;
         }
 
-        // Handle URL inputs
         if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(input)) {
             const response = await axios.get(input, {
-                responseType: responseType === 'base64' ? 'arraybuffer' : responseType,
+                responseType: responseType === 'base64' ? 'arraybuffer': responseType,
                 headers: getHeadersForUrl(input),
             });
 
@@ -138,10 +151,8 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
 
             if (responseType === 'arraybuffer' || responseType === 'binary') {
-                // Save binary data to file
                 fs.writeFileSync(filePath, response.data);
             } else if (responseType === 'stream') {
-                // Save stream to file
                 const writer = fs.createWriteStream(filePath);
                 response.data.pipe(writer);
                 await new Promise((resolve, reject) => {
@@ -149,46 +160,37 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
                     writer.on('error', reject);
                 });
             } else if (responseType === 'base64') {
-                // Convert binary data to base64 and save to file
                 const base64Data = Buffer.from(response.data).toString('base64');
                 fs.writeFileSync(filePath, base64Data, 'utf8');
             } else {
-                // For unsupported response types, save raw response
                 fs.writeFileSync(filePath, response.data);
             }
 
             const stream = fs.createReadStream(filePath);
-            fs.unlink(filePath, () => {}); // Delete the file after creating the stream
             return stream;
         }
 
-        // Default: Save input as text file
         filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || 'txt'}`);
         fs.writeFileSync(filePath, input);
         const stream = fs.createReadStream(filePath);
-        fs.unlink(filePath, () => {}); // Delete the file after creating the stream
         return stream;
     }));
 
-    // Update the schedule with the newly downloaded files
     const schedule = loadSchedule();
     files.forEach((file) => {
         const filePath = file.path;
         const timestamp = Date.now();
         schedule[filePath] = {
             timestamp,
-            expirationTime: 300000 // 5 minutes (300,000 milliseconds)
+            expirationTime: 300000
         };
     });
     updateSchedule(schedule);
 
-    return files.length === 1 ? files[0] : files;
+    return files.length === 1 ? files[0]: files;
 };
 
-// Set up a cleanup interval to run every 5 minutes
-setInterval(cleanOldFiles, 5 * 60 * 1000);  // 5 minutes in milliseconds
-
-// Run cleanup immediately after start-up
+setInterval(cleanOldFiles, 5 * 60 * 1000);
 cleanOldFiles();
 
 module.exports = {
