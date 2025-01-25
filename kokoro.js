@@ -6,7 +6,6 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 let PORT = 10000;
 const axios = require("axios");
-const cron = require("node-cron");
 const helmet = require('helmet');
 const cors = require('cors');
 
@@ -96,9 +95,6 @@ const routes = [{
     },
     {
         path: '/commands', method: 'get', handler: getCommands
-    },
-    {
-        path: '/online-users', method: 'get', handler: getOnlineUsers
     },
     {
         path: '/login', method: 'post', handler: postLogin
@@ -311,16 +307,6 @@ function getCommands(req, res) {
     });
 }
 
-function getOnlineUsers(req, res) {
-    const onlineUsersCount = Array.from(Utils.account.values()).reduce(
-        (count, user) => (user.online ? count + 1: count),
-        0
-    );
-    res.json({
-        onlineUsers: onlineUsersCount
-    });
-}
-
 async function getLogin(req, res) {
     const {
         email,
@@ -411,19 +397,6 @@ const startServer = async () => {
 };
 
 startServer();
-
-cron.schedule('*/5 * * * *', () => {
-    axios.get(`http://localhost:${PORT}/online-users`)
-    .then(() => {
-        const time = new Date().toLocaleString("en-US", {
-            timeZone: "Asia/Manila", hour12: true
-        });
-        logger.pastel(`TIME: ${time}\nSERVER PORT: ${PORT}\nSTATUS: ALIVE!`);
-    })
-    .catch((error) => {
-        logger.red('SELF PING FAILED: ', error.message);
-    });
-});
 
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();
