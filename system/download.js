@@ -61,7 +61,8 @@ const getHeadersForUrl = (url) => {
 // Function para i-check kung base64 encoded ba ang string
 const isBase64 = (str) => {
     try {
-        return Buffer.from(str, 'base64').toString('base64') === str;
+        const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+        return base64Pattern.test(str);
     } catch (e) {
         return false;
     }
@@ -126,15 +127,14 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "", sa
             const fileExtension = extension || getExtensionFromContentType(contentType);
 
             // I-handle ang response depende sa responseType
+            const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
             if (responseType === 'arraybuffer') {
-                const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
                 fs.writeFileSync(filePath, response.data);
                 setTimeout(() => fs.existsSync(filePath) && fs.unlinkSync(filePath), 600000); // I-delete after 10 minutes
                 return fs.createReadStream(filePath);
             }
 
             if (responseType === 'stream') {
-                const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
                 const writer = fs.createWriteStream(filePath);
                 response.data.pipe(writer);
                 await new Promise((resolve, reject) => {
