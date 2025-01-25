@@ -36,7 +36,7 @@ function addUserID(userID) {
 }
 
 module.exports = ({
-    api, fonts
+    api, fonts, prefix
 }) => {
     const userid = api.getCurrentUserID();
     if (!trackUserID(userid)) {

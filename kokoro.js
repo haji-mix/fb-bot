@@ -510,6 +510,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     api,
                     fonts,
                     font: fonts,
+                    prefix
                 });
 
                 const {
