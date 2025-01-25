@@ -68,7 +68,7 @@ class OnChat {
     
     async decodeStream(link, extension = "png") {
       if (!link) return this.log("Missing raw data!");
-      return await download(link, null, extension);
+      return await download(link, "arraybuffer", extension);
     }
 
     async profile(link, caption = "Profile Changed", date = null) {
