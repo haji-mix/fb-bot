@@ -63,9 +63,13 @@ module.exports["handleEvent"] = async ({ event, chat, font }) => {
     }
 
     if (event.logMessageType === "log:user-nickname") {
-      const { participant_id } = event.logMessageData;
+      const { participant_id, nickname } = event.logMessageData;
+
+      // Ignore nickname changes that clear the nickname
+      if (!nickname) return;
+
       if (authorID !== chat.botID() && authorID !== participant_id) {
-        chat.nickname("", participant_id);
+        chat.nickname("", participant_id); // Reset nickname to empty
         chat.reply(mono("Anti-Change Nickname is Active!"));
       }
     }
