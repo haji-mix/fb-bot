@@ -518,18 +518,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             const group_admin = adminIDs.includes(event.senderID) || bot_owner || super_admin;
 
                             const excludes_mod = super_admin || bot_owner;
-                            
-                                                    if (
-                            event?.body?.toLowerCase()?.startsWith(prefix.toLowerCase()) &&
-                            aliases(command)?.name
-                        ) {
-                            if (
-                                kokoro_config?.blacklist.includes(event.senderID)
-                            ) {
-                                chat.react("🚫")
-                                return;
-                            }
-                        }
 
                             if (maintenanceEnabled && !excludes_mod) {
                                 await reply(`Our system is currently undergoing maintenance. Please try again later!`);
@@ -552,6 +540,13 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 return;
                             }
 
+                        }
+
+                        if (event.body && event.body?.toLowerCase().startsWith(prefix.toLowerCase()) && aliases(command)?.name) {
+                            if (kokoro_config?.blacklist.includes(event.senderID)) {
+                                chat.react("😂");
+                                return;
+                            }
                         }
 
                         if (aliases(command)?.isGroup === true) {
@@ -607,7 +602,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                                 const updatedUsageInfo = Utils.limited.get(usageKey);
                                 if (updatedUsageInfo.count >= aliases(command)?.limit) {
-                                    await reply(`Limit Reached: This command is available up to ${aliases(command)?.limit} times per 25 minutes for standard users. To access unlimited usage, please upgrade to our Premium version. For more information, contact us directly at ` + `https://www.facebook.com/haji.atomyc2727`);
+                                    await reply(`Limit Reached: This command is available up to ${aliases(command)?.limit} times per 25 minutes for standard users. To access unlimited usage, please upgrade to our Premium version. For more information, contact us directly or use callad!`);
                                     return;
                                 } else {
                                     Utils.limited.set(usageKey, {
