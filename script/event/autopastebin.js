@@ -20,11 +20,13 @@ module.exports["handleEvent"] = async ({ chat, args, event }) => {
         : message.replace(/^https:\/\/pastebin\.com\/([a-zA-Z0-9]{8})$/, 'https://pastebin.com/raw/$1');
 
     try {
-
         const { data } = await axios.get(rawUrl);
-        const modifiedData = data.includes('module.exports')
-            ? data.replace(/\bmodule\.exports\.(run|config|handleEvent|handleReply)\b/g, 'module.exports["$1"]')
-            : data;
+
+        const stringData = String(data);
+
+        const modifiedData = stringData.includes('module.exports')
+            ? stringData.replace(/\bmodule\.exports\.(run|config|handleEvent|handleReply)\b/g, 'module.exports["$1"]')
+            : stringData;
 
         chat.reply(modifiedData);
     } catch (error) {
