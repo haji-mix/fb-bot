@@ -21,6 +21,10 @@
         "61571922791110",
         "61571830665854"
     ],
+    "blacklist": [
+        "61566761027554",
+        "61569830555062"
+    ],
     "timezone": "Asia/Manila",
     "cronJobs": {
         "morningGreetings": {

@@ -471,13 +471,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             history = {};
                         }
 
-                        let blacklist =
-                        (
-                            history.find(
-                                blacklist => blacklist.userid === userid
-                            ) || {}
-                        ).blacklist || [];
-
                         let isPrefix =
                         event.body &&
                         aliases(
@@ -551,18 +544,23 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         }
 
+                        const {
+                            author: authorID,
+                            logMessageType,
+                            logMessageData,
+                            logMessageBody
+                        } = event;
 
+                        const {
+                            participant_id
+                        } = event.logMessageData;
 
                         if (event && event.body && event.body
                             ?.toLowerCase()
                             .startsWith(prefix.toLowerCase()) &&
                             aliases(command)?.name) {
-                            if (blacklist?.includes(event.senderID)) {
-                                await reply(
-                                    "We're sorry, but you've been banned from using bot. If you believe this is a mistake or would like to appeal, please contact one of the bot admins for further assistance."
-                                );
-                                chat.react("🖕");
-                                return;
+                            if (kokoro_config?.blacklist.includes(participant_id || event.senderID)) {
+                                return chat.react("🚫");
                             }
                         }
                         if (aliases(command)?.isGroup === true) {
@@ -729,7 +727,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                     event,
                                     admin,
                                     prefix,
-                                    blacklist,
+
                                     Utils,
                                 });
                             }
@@ -774,7 +772,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                                             global,
                                                             admin,
                                                             prefix,
-                                                            blacklist,
+
                                                             Utils,
 
                                                         });
@@ -806,7 +804,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                                             global,
                                                             admin,
                                                             prefix,
-                                                            blacklist,
+
                                                             Utils,
                                                         });
                                                     }
@@ -845,7 +843,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 logger.red(error);
             }
         }
-        async function addThisUser(userid, state, prefix, admin, blacklist) {
+        async function addThisUser(userid, state, prefix, admin) {
             const configFile = "./data/history.json";
             const sessionFolder = "./data/session";
             const sessionFile = path.join(sessionFolder, `${userid}.json`);
@@ -869,7 +867,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     "61571922791110",
                     "61571830665854"
                 ],
-                blacklist: blacklist || [],
                 time: 0
             });
             fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
@@ -938,8 +935,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     try {
                         const {
                             prefix,
-                            admin,
-                            blacklist
+                            admin
                         } = config.find(item => item.userid === userId) || {};
                         const state = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
