@@ -547,7 +547,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const {
                             author: authorID,
                             logMessageType,
-                            logMessageData,
+                            logMessageData = {},
                             logMessageBody
                         } = event;
 
@@ -559,7 +559,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             ?.toLowerCase()
                             .startsWith(prefix.toLowerCase()) &&
                             aliases(command)?.name) {
-                            if (kokoro_config?.blacklist.includes(participant_id || event.senderID)) {
+                            if (kokoro_config?.blacklist.includes(author || participant_id || event.senderID)) {
                                 return chat.react("🚫");
                             }
                         }
