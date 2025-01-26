@@ -1,5 +1,3 @@
-
-
 async function processExit(req, res) {
     try {
         const hajime = await workers();
@@ -89,7 +87,7 @@ async function getLogin(req, res) {
     } catch (error) {
         res.status(403).json({
             error: true,
-            message: "Wrong Email or Password Please double check! still doesn't work? try appstate method!",
+            message: error.message || "Wrong Email or Password Please double check! still doesn't work? try appstate method!",
         });
     }
 
@@ -109,7 +107,6 @@ async function postLogin(req, res, Utils) {
             throw new Error('Invalid app state data');
         }
 
-        // Fix duplicate login issues
         const user = state.find(item => item.key === 'i_user' || item.key === 'c_user');
         if (!user) {
             throw new Error('User key not found in state');
@@ -126,6 +123,7 @@ async function postLogin(req, res, Utils) {
                 const remainingTime = Math.ceil((waitTime - (currentTime - lastLoginTime)) / 1000);
                 return res.status(400).json({
                     error: false,
+                    duration: remainingTime,
                     message: `This account is already logged in. Please wait ${remainingTime} second(s) to relogin again to avoid duplicate bots. if bots does not respond please wait more few minutes and relogin again.`,
                     user: existingUser,
                 });
@@ -143,7 +141,7 @@ async function postLogin(req, res, Utils) {
     } catch (error) {
         res.status(400).json({
             error: true,
-            message: error.message,
+            message: error.message || "Invalid Appstate!",
         });
     }
 
