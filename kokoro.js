@@ -451,6 +451,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                     reply(`Warning to userID: ${userId} Please stop spamming!`);
                                     Utils.userActivity[userId].warned = true;
                                 }
+                                chat.react("😂");
                                 return;
                             }
 
