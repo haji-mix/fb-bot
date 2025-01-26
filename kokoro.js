@@ -519,6 +519,11 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                             const excludes_mod = super_admin || bot_owner;
 
+                            if (kokoro_config?.blacklist.includes(event.senderID)) {
+                                chat.react("😂");
+                                return;
+                            }
+
                             if (maintenanceEnabled && !excludes_mod) {
                                 await reply(`Our system is currently undergoing maintenance. Please try again later!`);
                                 return;
@@ -540,13 +545,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                                 return;
                             }
 
-                        }
 
-                        if (event.body && event.body?.toLowerCase().startsWith(prefix.toLowerCase()) && aliases(command)?.name) {
-                            if (kokoro_config?.blacklist.includes(event.senderID)) {
-                                chat.react("😂");
-                                return;
-                            }
                         }
 
                         if (aliases(command)?.isGroup === true) {
