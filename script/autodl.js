@@ -1,10 +1,7 @@
 const axios = require('axios');
-const {
-    google
-} = require('googleapis');
+const { google } = require('googleapis');
 const mime = require('mime-types');
 const getFBInfo = require('@xaviabot/fb-downloader');
-const cheerio = require('cheerio');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,9 +12,10 @@ module.exports["config"] = {
     credits: "Hutchin (optimized by Kenneth Panio)"
 };
 
+// User activity tracking to prevent spam
 const userActivity = new Map();
-const timeFrame = 30000; // 30 seconds
-const maxLinks = 3; // Max allowed links per timeframe
+const TIME_FRAME = 30000; // 30 seconds
+const MAX_LINKS = 3; // Max allowed links per timeframe
 
 const checkSpam = (userId) => {
     const now = Date.now();
@@ -26,56 +24,56 @@ const checkSpam = (userId) => {
         return false;
     }
 
-    const timestamps = userActivity.get(userId).filter((ts) => now - ts <= timeFrame);
+    const timestamps = userActivity.get(userId).filter((ts) => now - ts <= TIME_FRAME);
     timestamps.push(now);
     userActivity.set(userId, timestamps);
 
-    return timestamps.length > maxLinks;
+    return timestamps.length > MAX_LINKS;
 };
 
+// Function to stream files to chat
 const streamFile = async (url, chat) => {
     try {
-        const {
-            data
-        } = await axios.get(url, {
-                responseType: 'stream'
-            });
-        chat.reply({
-            attachment: data
-        });
+        const { data } = await axios.get(url, { responseType: 'stream' });
+        chat.reply({ attachment: data });
     } catch (error) {
-        console.error(`Failed to stream file: `, error);
+        console.error(`Failed to stream file:`, error.message);
     }
 };
 
+// TikTok handler
 const handleTikTok = async (link, chat, mono) => {
     try {
-        const {
-            data
-        } = await axios.post('https://www.tikwm.com/api/', {
-                url: link
-            });
+        const { data } = await axios.post('https://www.tikwm.com/api/', { url: link });
         if (!data.data?.play) throw new Error('Invalid response from TikTok API');
-        chat.reply(mono(`TikTok Video Detected!\n\nTitle: ${data.data.title}\n\nViews: ${data.data.play_count}\n\nLikes: ${data.data.digg_count}\n\nComments: ${data.data.comment_count}.`));
+        
+        chat.reply(mono(
+            `TikTok Video Detected!\n\n` +
+            `Title: ${data.data.title}\n` +
+            `Views: ${data.data.play_count}\n` +
+            `Likes: ${data.data.digg_count}\n` +
+            `Comments: ${data.data.comment_count}`
+        ));
+
         await streamFile(data.data.play, chat);
     } catch (error) {
-        console.error(`TikTok error: `, error);
+        console.error(`TikTok error:`, error.message);
     }
 };
 
+// Facebook handler
 const handleFacebook = async (link, chat, mono) => {
     try {
         const result = await getFBInfo(link);
         chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}`));
-        await streamFile(result.sd, chat);
+        await streamFile(result.sd || result.hd, chat);
     } catch (error) {
-        console.error(`Facebook error: `, error);
+        console.error(`Facebook error:`, error.message);
     }
 };
 
-module.exports["handleEvent"] = async ({
-    chat, event, font
-}) => {
+// Event handler
+module.exports["handleEvent"] = async ({ chat, event, font }) => {
     const mono = (txt) => font.monospace(txt);
     const message = event.body;
     const userId = event.senderID;
@@ -84,45 +82,47 @@ module.exports["handleEvent"] = async ({
 
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?vt\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
-        facebook: /https:\/\/www\.facebook\.com\/(?:watch|reel|videos|groups\/\d+\/permalink|share\/r|(?:\d+\/)?posts)\/\S+/g,
-        //   youtube: /https:\/\/(www\.)?(youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)/g
+        facebook: /https:\/\/www\.facebook\.com\/(?:watch|reel|videos|groups\/\d+\/permalink|share\/r|(?:\d+\/)?posts)\/\S+/g
     };
 
     const links = [];
-    for (const [key, regex] of Object.entries(regexPatterns)) {
+    for (const [type, regex] of Object.entries(regexPatterns)) {
         let match;
         while ((match = regex.exec(message)) !== null) {
-            links.push({
-                type: key, link: match[0]
-            });
+            links.push({ type, link: match[0] });
         }
     }
 
     if (links.length === 0) return;
 
     if (checkSpam(userId)) {
-        const warning = await chat.reply(mono("You're sending too many links in a short period. Please slow down."));
+        const warning = await chat.reply(mono(
+            "You're sending too many links in a short period. Please slow down."
+        ));
         warning.unsend(10000);
         return;
     }
 
-    for (const {
-        type, link
-    } of links.slice(0, maxLinks)) {
+    for (const { type, link } of links.slice(0, MAX_LINKS)) {
         try {
             const handlers = {
                 tiktok: handleTikTok,
                 facebook: handleFacebook,
             };
+
+            if (handlers[type]) {
+                await handlers[type](link, chat, mono);
+            }
         } catch (error) {
-            console.error(`Error processing ${type} link: `, error);
+            console.error(`Error processing ${type} link:`, error.message);
         }
     }
 };
 
-module.exports["run"] = async ({
-    chat, font
-}) => {
+module.exports["run"] = async ({ chat, font }) => {
     const mono = (txt) => font.monospace(txt);
-    chat.reply(mono("This is an event process that automatically downloads videos from YouTube, TikTok, Facebook, and Google Drive. Send me a link, and I'll handle the rest!"));
+    chat.reply(mono(
+        "This bot automatically downloads videos from TikTok, Facebook, and other supported platforms. " +
+        "Send me a link, and I'll handle the rest!"
+    ));
 };
