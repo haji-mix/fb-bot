@@ -417,8 +417,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             msgInfo.unsend(15000);
                         };
 
-
-
                         const SPAM_THRESHOLD = 6;
                         const TIME_WINDOW = 10 * 1000;
 
@@ -451,9 +449,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             if (repeatedMessages.length >= SPAM_THRESHOLD) {
                                 if (!Utils.userActivity[userId].warned) {
                                     reply(`Warning to userID: ${userId} Please stop spamming!`);
-                                    Utils.userActivity[userId].warned = true; // Warn the user only once
+                                    Utils.userActivity[userId].warned = true;
                                 }
-                                return; // Ignore further reactions
+                                return;
                             }
 
                             Utils.userActivity[userId].warned = false;

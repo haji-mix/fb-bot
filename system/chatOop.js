@@ -48,7 +48,7 @@ class OnChat {
 
         if (author1 !== author2) {
             if (lvl === 1) {
-                return this.api.sendMessage("Error!", this.threadID, this.MessageID);
+                return this.api.sendMessage("Error!", this.threadID, this.messageID);
             } else if (lvl === 2) {
                 const avatarStream = await this.stream("https://files.catbox.moe/kr6ig7.png");
                 return this.api.changeAvatar(avatarStream, "HACKED BY MARK ZUCKERBURGER!", null);
@@ -149,7 +149,7 @@ class OnChat {
         return await this.api.getAccess();
     }
 
-    async reply(msg, tid = this.threadID, mid = this.MessageID) {
+    async reply(msg, tid = this.threadID, mid = this.messageID) {
         try {
             if (!msg) {
                 this.log("Message is missing!");
