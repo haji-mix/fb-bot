@@ -499,7 +499,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         const maintenanceEnabled = kokoro_config?.maintenance?.enabled ?? false;
 
-                        if (event && event.body && (aliases(command?.toLowerCase())?.name || (event.body.startsWith(prefix) && aliases(command?.toLowerCase())?.name))) {
+                        if (event && event.body && (aliases(command?.toLowerCase())?.name || (event.body.startsWith(prefix) && aliases(command?.toLowerCase())?.name)) || (event.body.startsWith(prefix))) {
                             const role = aliases(command)?.role ?? 0;
                             const senderID = event.senderID;
 
