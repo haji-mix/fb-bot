@@ -1,5 +1,7 @@
 const axios = require('axios');
-const { google } = require('googleapis');
+const {
+    google
+} = require('googleapis');
 const mime = require('mime-types');
 const getFBInfo = require('@xaviabot/fb-downloader');
 const fs = require('fs');
@@ -34,8 +36,14 @@ const checkSpam = (userId) => {
 // Function to stream files to chat
 const streamFile = async (url, chat) => {
     try {
-        const { data } = await axios.get(url, { responseType: 'stream' });
-        chat.reply({ attachment: data });
+        const {
+            data
+        } = await axios.get(url, {
+                responseType: 'stream'
+            });
+        chat.reply({
+            attachment: data
+        });
     } catch (error) {
         console.error(`Failed to stream file:`, error.message);
     }
@@ -44,9 +52,13 @@ const streamFile = async (url, chat) => {
 // TikTok handler
 const handleTikTok = async (link, chat, mono) => {
     try {
-        const { data } = await axios.post('https://www.tikwm.com/api/', { url: link });
+        const {
+            data
+        } = await axios.post('https://www.tikwm.com/api/', {
+                url: link
+            });
         if (!data.data?.play) throw new Error('Invalid response from TikTok API');
-        
+
         chat.reply(mono(
             `TikTok Video Detected!\n\n` +
             `Title: ${data.data.title}\n` +
@@ -73,7 +85,9 @@ const handleFacebook = async (link, chat, mono) => {
 };
 
 // Event handler
-module.exports["handleEvent"] = async ({ chat, event, font }) => {
+module.exports["handleEvent"] = async ({
+    chat, event, font
+}) => {
     const mono = (txt) => font.monospace(txt);
     const message = event.body;
     const userId = event.senderID;
@@ -82,14 +96,17 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
 
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?vt\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
-        facebook: /https:\/\/www\.facebook\.com\/(?:watch|reel|videos|groups\/\d+\/permalink|share\/r|(?:\d+\/)?posts)\/\S+/g
+        facebook: /https:\/\/www\.facebook\.com\/(?:watch|reel|videos|groups\/\d+\/permalink|share\/r|(?:\d+\/)?posts|.+\/videos\/\d+).*/g
     };
+
 
     const links = [];
     for (const [type, regex] of Object.entries(regexPatterns)) {
         let match;
         while ((match = regex.exec(message)) !== null) {
-            links.push({ type, link: match[0] });
+            links.push({
+                type, link: match[0]
+            });
         }
     }
 
@@ -103,7 +120,9 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
         return;
     }
 
-    for (const { type, link } of links.slice(0, MAX_LINKS)) {
+    for (const {
+        type, link
+    } of links.slice(0, MAX_LINKS)) {
         try {
             const handlers = {
                 tiktok: handleTikTok,
@@ -119,7 +138,9 @@ module.exports["handleEvent"] = async ({ chat, event, font }) => {
     }
 };
 
-module.exports["run"] = async ({ chat, font }) => {
+module.exports["run"] = async ({
+    chat, font
+}) => {
     const mono = (txt) => font.monospace(txt);
     chat.reply(mono(
         "This bot automatically downloads videos from TikTok, Facebook, and other supported platforms. " +
