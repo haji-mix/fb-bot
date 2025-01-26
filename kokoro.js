@@ -96,19 +96,19 @@ const routes = [{
         path: '/jseditor', file: 'ide.ejs', method: 'get'
     },
     {
-        path: '/info', method: 'get', handler: getInfo
+        path: '/info', method: 'get', handler: getInfo(req, res, Utils)
     },
     {
-        path: '/commands', method: 'get', handler: getCommands
+        path: '/commands', method: 'get', handler: getCommands(req, res, Utils)
     },
     {
-        path: '/login', method: 'post', handler: postLogin
+        path: '/login', method: 'post', handler: postLogin(req, res, Utils)
     },
     {
-        path: '/restart', method: 'get', handler: processExit
+        path: '/restart', method: 'get', handler: processExit(req, res)
     },
     {
-        path: '/login_cred', method: 'get', handler: getLogin
+        path: '/login_cred', method: 'get', handler: getLogin(req, res)
     }];
 
 // Destructure values from pkg_config
