@@ -544,25 +544,19 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                         }
 
-                        const {
-                            author: authorID,
-                            logMessageType,
-                            logMessageData = {},
-                            logMessageBody
-                        } = event;
-
-                        const {
-                            participant_id
-                        } = event.logMessageData;
-
-                        if (event && event.body && event.body
-                            ?.toLowerCase()
-                            .startsWith(prefix.toLowerCase()) &&
-                            aliases(command)?.name) {
-                            if (kokoro_config?.blacklist.includes(author || participant_id || event.senderID)) {
+                        if (
+                            event?.body?.toLowerCase()?.startsWith(prefix.toLowerCase()) &&
+                            aliases(command)?.name
+                        ) {
+                            if (
+                                kokoro_config?.blacklist.includes(
+                                    event?.author || event?.logMessageData?.participant_id || event.senderID
+                                )
+                            ) {
                                 return chat.react("🚫");
                             }
                         }
+
                         if (aliases(command)?.isGroup === true) {
                             if (!event.isGroup) {
                                 return reply("You can only use this command in group chats.");
