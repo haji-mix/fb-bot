@@ -88,28 +88,57 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Routes array
+
+
 const routes = [{
-    path: '/', file: 'index.ejs', method: 'get'
+    path: '/',
+    file: 'index.ejs',
+    method: 'get'
 },
     {
-        path: '/jseditor', file: 'ide.ejs', method: 'get'
+        path: '/jseditor',
+        file: 'ide.ejs',
+        method: 'get'
     },
     {
-        path: '/info', method: 'get', handler: getInfo(req, res, Utils)
+        path: '/info',
+        method: 'get',
+        handler: (req,
+            res) => getInfo(req,
+            res,
+            Utils)
     },
     {
-        path: '/commands', method: 'get', handler: getCommands(req, res, Utils)
+        path: '/commands',
+        method: 'get',
+        handler: (req,
+            res) => getCommands(req,
+            res,
+            Utils)
     },
     {
-        path: '/login', method: 'post', handler: postLogin(req, res, Utils)
+        path: '/login',
+        method: 'post',
+        handler: (req,
+            res) => postLogin(req,
+            res,
+            Utils)
     },
     {
-        path: '/restart', method: 'get', handler: processExit(req, res)
+        path: '/restart',
+        method: 'get',
+        handler: (req,
+            res) => processExit(req,
+            res)
     },
     {
-        path: '/login_cred', method: 'get', handler: getLogin(req, res)
+        path: '/login_cred',
+        method: 'get',
+        handler: (req,
+            res) => getLogin(req,
+            res)
     }];
+
 
 // Destructure values from pkg_config
 const {
