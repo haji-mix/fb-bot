@@ -51,6 +51,7 @@ async function loadModule(modulePath, Utils, logger, count) {
             isPremium: config.isPremium ?? false,
             isPrivate: config.isPrivate ?? false,
             isGroup: config.isGroup ?? false,
+            type: config.type ?? config.category ?? config.commandCategory ?? "others",
             limit: config.limit ?? "5",
             credits: config.credits ?? config.author ?? "",
             cd: config.cd ?? config.cooldowns ?? config.cooldown ?? "5",
@@ -76,7 +77,7 @@ async function loadModule(modulePath, Utils, logger, count) {
             });
         }
 
-        logger.pastel(`LOADED MODULE [${moduleName}]`);
+        logger.rainbow(`LOADED MODULE [${moduleName}]`);
         count++;
     } catch (error) {
         logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
@@ -102,7 +103,10 @@ async function loadFromDirectory(directory, Utils, logger, count) {
 
 async function loadModules(Utils, logger) {
     let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
-    logger.pastel(`TOTAL MODULES: [${count}]`);
+    logger.rainbow(`TOTAL MODULES: [${count}]`);
+    setTimeout(function() {
+        console.clear();
+    }, 60000);
 }
 
 module.exports = {

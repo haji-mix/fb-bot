@@ -20,7 +20,16 @@ const {
 const {
     generateUserAgent
 } = require("./useragent");
-const { download } = require("./download");
+const {
+    postLogin,
+    getLogin,
+    getCommands,
+    getInfo,
+    processExit
+} = require("./routehandler.js");
+const {
+    download
+} = require("./download");
 
 module.exports = {
     workers,
@@ -31,5 +40,10 @@ module.exports = {
     loadModules,
     encryptSession,
     decryptSession,
-    generateUserAgent
+    generateUserAgent,
+    postLogin,
+    getLogin,
+    getCommands,
+    getInfo,
+    processExit
 }

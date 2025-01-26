@@ -149,7 +149,7 @@ class OnChat {
         return await this.api.getAccess();
     }
 
-    async reply(msg, tid = this.threadID, mid = null) {
+    async reply(msg, tid = this.threadID, mid = this.MessageID) {
         try {
             if (!msg) {
                 this.log("Message is missing!");
