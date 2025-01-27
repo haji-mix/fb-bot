@@ -287,7 +287,7 @@ async function getLogin(req, res) {
 
 }
 
-async function postLogin(req, res, Utils) {
+async function postLogin(req, res) {
     const {
         state,
         prefix,
