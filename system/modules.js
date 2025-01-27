@@ -21,8 +21,6 @@ const {
     generateUserAgent
 } = require("./useragent");
 const {
-    postLogin,
-    getLogin,
     getCommands,
     getInfo,
     processExit
@@ -41,8 +39,6 @@ module.exports = {
     encryptSession,
     decryptSession,
     generateUserAgent,
-    postLogin,
-    getLogin,
     getCommands,
     getInfo,
     processExit
