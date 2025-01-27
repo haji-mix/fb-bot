@@ -96,8 +96,9 @@ module.exports["handleEvent"] = async ({
 
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?vt\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
-        facebook: /https:\/\/www\.facebook\.com\/(?:watch|reel|videos|groups\/\d+\/permalink|share\/r|(?:\d+\/)?posts|.+\/videos\/\d+).*/g
+        facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g
     };
+
 
 
     const links = [];
