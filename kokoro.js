@@ -256,6 +256,17 @@ function getFilesFromDir(directory, fileExtension) {
     return fs.readdirSync(dirPath).filter(file => file.endsWith(fileExtension));
 }
 
+const startServer = async () => {
+    const hajime = await workers();
+    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
+
+    app.listen(PORT, () => {
+        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
+    });
+};
+
+startServer();
+
 async function getLogin(req, res) {
     const {
         email,
@@ -331,20 +342,6 @@ async function postLogin(req, res, Utils) {
         });
     }
 }
-
-
-const startServer = async () => {
-    const hajime = await workers();
-    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
-
-    app.listen(PORT, () => {
-        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
-    });
-};
-
-startServer();
-
-
 
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();
