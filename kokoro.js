@@ -88,12 +88,11 @@ app.use(express.json());
 
 
 
-const routes = [
-    {
-        path: '/',
-        file: 'index.ejs',
-        method: 'get'
-    },
+const routes = [{
+    path: '/',
+    file: 'index.ejs',
+    method: 'get'
+},
     {
         path: '/jseditor',
         file: 'ide.ejs',
@@ -102,12 +101,18 @@ const routes = [
     {
         path: '/info',
         method: 'get',
-        handler: (req, res) => getInfo(req, res, Utils)
+        handler: (req,
+            res) => getInfo(req,
+            res,
+            Utils)
     },
     {
         path: '/commands',
         method: 'get',
-        handler: (req, res) => getCommands(req, res, Utils)
+        handler: (req,
+            res) => getCommands(req,
+            res,
+            Utils)
     },
     {
         path: '/login',
@@ -117,14 +122,15 @@ const routes = [
     {
         path: '/restart',
         method: 'get',
-        handler: (req, res) => processExit(req, res)
+        handler: (req,
+            res) => processExit(req,
+            res)
     },
     {
         path: '/login_cred',
         method: 'get',
         handler: getLogin
-    }
-];
+    }];
 
 
 // Destructure values from pkg_config
@@ -256,17 +262,6 @@ function getFilesFromDir(directory, fileExtension) {
     return fs.readdirSync(dirPath).filter(file => file.endsWith(fileExtension));
 }
 
-const startServer = async () => {
-    const hajime = await workers();
-    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
-
-    app.listen(PORT, () => {
-        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
-    });
-};
-
-startServer();
-
 async function getLogin(req, res) {
     const {
         email,
@@ -342,6 +337,19 @@ async function postLogin(req, res, Utils) {
         });
     }
 }
+
+const startServer = async () => {
+    const hajime = await workers();
+    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
+
+    app.listen(PORT, () => {
+        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
+    });
+};
+
+startServer();
+
+
 
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();

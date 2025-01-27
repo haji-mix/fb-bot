@@ -104,9 +104,6 @@ async function loadFromDirectory(directory, Utils, logger, count) {
 async function loadModules(Utils, logger) {
     let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
     logger.rainbow(`TOTAL MODULES: [${count}]`);
-    setTimeout(function() {
-        console.clear();
-    }, 60000);
 }
 
 module.exports = {
