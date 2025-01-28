@@ -36,7 +36,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
     }
 
     const data = {
-        chat_session_id: "39cb391a-93a7-403d-b448-0e72cb2519c2",
+        chat_session_id: event.senderID || "39cb391a-93a7-403d-b448-0e72cb2519c2",
         parent_message_id: null,
         prompt: query,
         ref_file_ids: [],
@@ -55,7 +55,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
             "content-type": "application/json",
             "accept": "*/*",
             "User-Agent": "Mozilla/5.0 (Linux; Android 12; Infinix X669 Build/SP1A.210812.016; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/133.0.6943.23 Mobile Safari/537.36",
-            "Referer": "https://chat.deepseek.com/a/chat/s/39cb391a-93a7-403d-b448-0e72cb2519c2",
+            "Referer": "https://chat.deepseek.com/",
         },
         responseType: "stream", 
     };
@@ -83,15 +83,15 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
             
           const line = "\n" + '━'.repeat(18) + "\n";
             
-          const message = font.bold("🐋 | DEEPSEEK-R1") + line + combinedResponse.trim() + line + mono(`◉ USE "TOGGLE" TO SWITCH WEBSEARCH\n◉ USE "R1" TO FOR DEEPTHINK.`);
+          const message = font.bold("🐋 | DEEPSEEK-R1") + line + combinedResponse.trim() || "idk : (" + line + mono(`◉ USE "TOGGLE" TO SWITCH WEBSEARCH\n◉ USE "R1" TO FOR DEEPTHINK.`);
 
-            await answering.edit(mono(combinedResponse.trim()));
+             answering.edit(message);
         });
 
         response.data.on("error", (error) => {
             answering.edit(mono(`Error while streaming: ${error.message}`));
         });
     } catch (error) {
-        await answering.edit(mono(`Error fetching response: ${error.message || "Unknown error."}`));
+         answering.edit(mono(`Error fetching response: ${error.message || "Unknown error."}`));
     }
 };
