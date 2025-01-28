@@ -1068,8 +1068,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         main();
 
         process.on("unhandledRejection", (reason, promise) => {
-            console.warn("Unhandled Rejection at:" + promise);
-
             if (reason instanceof Error) {
                 logger.red("Reason:", reason.message);
                 logger.red("Stack Trace:" + reason.stack);
