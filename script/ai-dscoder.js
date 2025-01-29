@@ -50,7 +50,8 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
 
   const getResponse = async () => {
     return axios.post(url + randomModel, {
-      messages: conversationHistories[senderID]
+      messages: conversationHistories[senderID],
+      max_tokens: 32000
     }, {
       headers: {
         'Authorization': 'Bearer ' + atob(key),
@@ -90,7 +91,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     
     answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
     
-    const message = font.bold(" 🤖 | " + name) + line + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+    const message = font.bold(" 🤖 | " + name) + line + answer.trim() + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
     await answering.edit(message);
 

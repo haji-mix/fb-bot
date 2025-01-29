@@ -64,7 +64,8 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
                     { role: "assistant", content: "ow shit! what's up nigga!?, i'm cj also known as carl johnson you can call me carl nigga! so what we gonna do? now homie? want some smoke?" },
                     { role: "assistant", content: "nigga...sup" },
                     ...conversationHistories[senderID]
-                ]
+                ],
+                max_tokens: 32000
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + atob(key),

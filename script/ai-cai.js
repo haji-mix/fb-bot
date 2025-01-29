@@ -107,7 +107,8 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         { role: "system", content: `You're ${character.name}. ${character.backstory}` },
         { role: "assistant", content: character.greeting },
         ...conversationHistories[senderID][characterName]
-      ]
+      ],
+      max_tokens: 32000
     }, {
       headers: {
         'Authorization': `Bearer ${atob(key)}`,

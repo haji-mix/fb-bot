@@ -82,7 +82,8 @@ module.exports["run"] = async ({
         const modelID = randomModel.split('/').pop().toUpperCase();
         try {
             const response = await axios.post(url + randomModel, {
-                messages: conversationHistories[senderID]
+                messages: conversationHistories[senderID],
+                max_tokens: 32000
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + atob(key),
