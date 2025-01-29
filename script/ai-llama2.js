@@ -48,7 +48,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const getResponse = async () => {
     return axios.post(url + meta_models, {
       messages: conversationHistories[senderID],
-      max_tokens: 4096
+      max_tokens: 512
     }, {
       headers: {
         'Authorization': 'Bearer ' + atob(key),
