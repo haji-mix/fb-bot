@@ -71,7 +71,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
           { role: "assistant", content: "Mmmm, not bad, not bad at all. Now, come and worship me, mortal. Lick my pussy and make me cum. *spreads her legs, revealing her divine pussy*" },
           ...conversationHistories[senderID]
         ],
-        max_tokens: 32000
+        max_tokens: 512
       }, {
         headers: {
           'Authorization': 'Bearer ' + atob(key),

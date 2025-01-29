@@ -61,7 +61,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
                     { role: "user", content: query },
                     ...conversationHistories[senderID]
                 ],
-                max_tokens: 32000
+                max_tokens: 512
             }, {
                 headers: {
                     'Authorization': 'Bearer ' + atob(key),

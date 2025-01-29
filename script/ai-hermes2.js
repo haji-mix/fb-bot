@@ -47,7 +47,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const getResponse = async () => {
     return axios.post(url + mistral_model, {
       messages: conversationHistories[senderID],
-      max_tokens: 32000
+      max_tokens: 512
     }, {
       headers: {
         'Authorization': 'Bearer ' + atob(key),
