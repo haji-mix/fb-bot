@@ -18,6 +18,7 @@ module.exports["config"] = {
 };
 
 const conversationHistories = {};
+let includeMind = false;
 
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const { url, key, models } = global.api.workers;
@@ -27,9 +28,15 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   
   const mono = txt => font.monospace(txt);
   const { threadID, senderID } = event;
-  const query = args.join(" ");
+  const query = args.join(" ").toLowerCase();
+  
+  if (query === 'toggle') {
+    includeMind = !includeMind;
+    chat.reply(mono(`Deep Thinking has been ${includeMind ? 'enabled' : 'disabled'}.`));
+    return;
+  }
 
-  if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
+  if (['clear', 'reset', 'forgot', 'forget'].includes(query)) {
     conversationHistories[senderID] = [];
     chat.reply(mono("Conversation history cleared."));
     return;
@@ -80,14 +87,22 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   }
 
   if (success) {
-    conversationHistories[senderID].push({ role: "assistant", content: answer });
+    const mindMatch = answer.match(/([\s\S]*?)<\/think>/);
+    let mindContent = "";
+    if (mindMatch) {
+      mindContent = mindMatch[1] + "\n";
+      conversationHistories[senderID].push({ role: "assistant", content: mindContent });
+      if (!includeMind) {
+        answer = answer.replace(/[\s\S]*?<\/think>/, "").trim();
+      }
+    }
 
     const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
     const line = "\n" + '━'.repeat(18) + "\n";
     
     answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-    
-    const message = font.bold(" 🐋 | " + name) + line + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+
+    let message = font.bold(" 🐋 | " + name) + line + (includeMind ? mindContent : '') + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ USE "TOGGLE" TO TOGGLE DEEPTHINK.`);
 
     await answering.edit(message);
 
