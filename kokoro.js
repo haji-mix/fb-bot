@@ -36,7 +36,9 @@ const Utils = {
     ObjectReply: new Map(),
     limited: new Map(),
     handleReply: [],
-    userActivity: {}
+    userActivity: {
+        reactedMessages: new Set()
+    }
 };
 
 loadModules(Utils, logger);
@@ -716,16 +718,14 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }
                         }
 
-                        const reactedMessages = new Set();
-
                         if (event?.type === 'message_reaction' && event?.userID !== api.getCurrentUserID()) {
-                            if (!reactedMessages.has(event.messageID)) {
-                                reactedMessages.add(event.messageID);
+                            if (!Utils.userActivity.reactedMessages.has(event.messageID)) {
+                                Utils.userActivity.reactedMessages.add(event.messageID);
 
                                 setTimeout(() => {
                                     api.setMessageReaction(event.reaction, event.messageID, (err) => {
                                         if (err) {
-                                            reactedMessages.delete(event.messageID);
+                                            Utils.userActivity.reactedMessages.delete(event.messageID);
                                         }
                                     },
                                         true);
