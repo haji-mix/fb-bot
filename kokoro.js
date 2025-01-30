@@ -716,31 +716,23 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }
                         }
 
+                        const reactedMessages = new Set();
 
-                        let activeThreadID = null;
+                        if (event?.type === 'message_reaction' && event?.userID !== api.getCurrentUserID()) {
+                            if (!reactedMessages.has(event.messageID)) {
+                                reactedMessages.add(event.messageID);
 
-                        if (kokoro_config.typingbot) {
-                            if (event && event.type === "typ") {
-                                if (event.isTyping) {
-                                    if (activeThreadID !== event.threadID) {
-                                        activeThreadID = event.threadID;
-                                        api.sendTypingIndicator(event.threadID, () => {});
-                                    }
-                                } else {
-                                    if (activeThreadID === event.threadID) {
-                                        api.sendTypingIndicator(event.threadID, false);
-                                        activeThreadID = null;
-                                    }
-                                }
+                                setTimeout(() => {
+                                    api.setMessageReaction(event.reaction, event.messageID, (err) => {
+                                        if (err) {
+                                            reactedMessages.delete(event.messageID);
+                                        }
+                                    },
+                                        true);
+                                }, 5000);
                             }
                         }
 
-                        if (event?.type === 'message_reaction' && event?.userID !== api.getCurrentUserID()) {
-
-                            setTimeout(function() {
-                                return api.setMessageReaction(event.reaction, event.messageID, (err) => {}, true);
-                            }, 5000);
-                        }
 
 
                         if (event && event.type === "message_reaction") {
