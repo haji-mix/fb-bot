@@ -718,7 +718,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                             }
                         }
 
-                        if (event?.type === 'message_reaction' && event?.userID !== api.getCurrentUserID()) {
+                        if (event && event.type === 'message_reaction' && event.senderID !== userid)  {
                             if (!Utils.userActivity.reactedMessages.has(event.messageID)) {
                                 Utils.userActivity.reactedMessages.add(event.messageID);
 
