@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports["config"] = {
-  name: "openai4o",
+  name: "ai",
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio",
