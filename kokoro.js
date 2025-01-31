@@ -461,10 +461,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     api.listenMqtt(async (error, event) => {
                         if (error) {
                             if (error.error === "Not logged in") {
-
-                                Utils.account.delete(userid);
-                                deleteThisUser(userid);
-
+                                process.exit(0);
                                 return;
                             }
                             return process.exit(0);
