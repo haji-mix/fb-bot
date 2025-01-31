@@ -7,7 +7,7 @@ module.exports["config"] = {
     name: "gpt4o",
     isPrefix: false,
     aliases: ["gpt",
-        "gpt4"],
+        "gpt4", "ai"],
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
