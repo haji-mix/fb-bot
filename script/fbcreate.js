@@ -27,7 +27,7 @@ module.exports = {
 
       api.sendMessage(`Creating ${amount} Facebook account(s)... Please wait.`, threadID);
 
-const userAgents = [
+/* const userAgents = [
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Nexus 7;FBSV/4.1.1;FBBK/0;]',
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/iPhone 12;FBSV/14.2;FBBK/0;]',
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Samsung Galaxy S22;FBSV/11;FBBK/0;]',
@@ -49,7 +49,9 @@ const userAgents = [
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Xiaomi Mi 11 Ultra;FBSV/11;FBBK/0;]',
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Oppo Find X3 Pro;FBSV/11;FBBK/0;]',
         '[FBAN/FB4A;FBAV/35.0.0.48.273;FBDM/{density=1.33125,width=800,height=1205};FBLC/en_US;FBCR/;FBPN/com.facebook.katana;FBDV/Vivo X60 Pro;FBSV/11;FBBK/0;]'
-      ];
+      ];*/
+      
+      const userAgents = ["facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"];
 
       let userAgentIndex = 0;
       function getUserAgent() {
