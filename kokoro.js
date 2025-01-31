@@ -1035,7 +1035,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         function createConfig() {
             const config = [{
                 fcaOption: {
-                    userAgent: generateUserAgent(),
+                    userAgent: "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
                     forceLogin: false,
                     listenEvents: true,
                     logLevel: "silent",
