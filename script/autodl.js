@@ -33,7 +33,75 @@ const checkSpam = (userId) => {
     return timestamps.length > MAX_LINKS;
 };
 
-// Function to stream files to chat
+const getKey = async () => {
+    try {
+        const response = await axios.get('https://api.mp3youtube.cc/v2/sanity/key', {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
+                'sec-ch-ua-platform': '"Android"',
+                'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
+                'dnt': '1',
+                'content-type': 'application/json',
+                'sec-ch-ua-mobile': '?1',
+                'origin': 'https://iframe.y2meta-uk.com',
+                'sec-fetch-site': 'cross-site',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty',
+                'referer': 'https://iframe.y2meta-uk.com/',
+                'accept-language': 'en-US,en;q=0.9,vi;q=0.8,pt;q=0.7,fr;q=0.6',
+                'if-none-match': 'W/"7e-4rfGhS2GaZKwxKqjHvE0scqf4Qc-gzip"',
+                'priority': 'u=1, i'
+            }
+        });
+        return response.data.key;
+    } catch (error) {
+        console.error("Error fetching key:", error.response ? error.response.data: error.message);
+        return null;
+    }
+};
+
+const convertVideo = async (url, chat, mono) => {
+    const key = await getKey();
+    if (!key) return;
+
+    const data = qs.stringify({
+        "link": url,
+        "format": 'mp4',
+        "audioBitrate": '128',
+        "videoQuality": '360',
+        "vCodec": 'h264'
+    });
+
+    try {
+        const response = await axios.post('https://api.mp3youtube.cc/v2/converter', data, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'sec-ch-ua-platform': '"Android"',
+                'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
+                'sec-ch-ua-mobile': '?1',
+                'key': getKey(),
+                'dnt': '1',
+                'origin': 'https://iframe.y2meta-uk.com',
+                'sec-fetch-site': 'cross-site',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty',
+                'referer': 'https://iframe.y2meta-uk.com/',
+                'accept-language': 'en-US,en;q=0.9,vi;q=0.8,pt;q=0.7,fr;q=0.6',
+                'priority': 'u=1, i'
+            }
+        });
+
+        chat.reply(mono(`Youtube Video link Detected\n\nContent:${response.data.filename}`
+        ));
+
+        await streamFile(response.data.url, chat);
+    } catch (error) {
+        console.error("Error converting video:", error.response ? error.response.data: error.message);
+    }
+};
+
+
 const streamFile = async (url, chat) => {
     try {
         const {
@@ -96,7 +164,8 @@ module.exports["handleEvent"] = async ({
 
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?vt\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
-        facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g
+        facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g,
+        youtube: /https:\/\/(?:www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/g
     };
 
 
@@ -128,6 +197,7 @@ module.exports["handleEvent"] = async ({
             const handlers = {
                 tiktok: handleTikTok,
                 facebook: handleFacebook,
+                youtube: convertVideo,
             };
 
             if (handlers[type]) {
