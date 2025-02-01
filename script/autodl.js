@@ -4,6 +4,7 @@ const {
 } = require('googleapis');
 const mime = require('mime-types');
 const getFBInfo = require('@xaviabot/fb-downloader');
+const qs = require('qs');
 const fs = require('fs');
 const path = require('path');
 
