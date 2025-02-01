@@ -106,7 +106,7 @@ const convertVideo = async (url, chat, mono) => {
 const streamFile = async (url, chat) => {
     try {
         chat.reply({
-            attachment: await chat.arraybuffer(url)
+            attachment: await chat.arraybuffer(url, "mp4")
         });
     } catch (error) {
         console.error(`Failed to stream file:`, error.message);
