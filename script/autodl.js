@@ -105,13 +105,8 @@ const convertVideo = async (url, chat, mono) => {
 
 const streamFile = async (url, chat) => {
     try {
-        const {
-            data
-        } = await axios.get(url, {
-                responseType: 'stream'
-            });
         chat.reply({
-            attachment: data
+            attachment: await chat.arraybuffer(url)
         });
     } catch (error) {
         console.error(`Failed to stream file:`, error.message);
