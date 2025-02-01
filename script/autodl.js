@@ -81,7 +81,7 @@ const convertVideo = async (url, chat, mono) => {
                 'sec-ch-ua-platform': '"Android"',
                 'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
                 'sec-ch-ua-mobile': '?1',
-                'key': getKey(),
+                'key': key,
                 'dnt': '1',
                 'origin': 'https://iframe.y2meta-uk.com',
                 'sec-fetch-site': 'cross-site',
