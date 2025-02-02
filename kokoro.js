@@ -717,23 +717,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         }
                     }
 
-                    if (event && event.type === 'message_reaction') {
-                        if (!Utils.userActivity.reactedMessages.has(event.messageID)) {
-                            Utils.userActivity.reactedMessages.add(event.messageID);
-
-                            setTimeout(() => {
-                                api.setMessageReaction(event.reaction, event.messageID, (err) => {
-                                    if (err) {
-                                        Utils.userActivity.reactedMessages.delete(event.messageID);
-                                    }
-                                },
-                                    true);
-                            }, 5000);
-                        }
-                    }
-
-
-
                     if (event && event.type === "message_reaction") {
                         if (event.senderID === userid && ["🗑️", "🚮", "👎"].includes(event.reaction)) {
                             return api.unsendMessage(event.messageID);
