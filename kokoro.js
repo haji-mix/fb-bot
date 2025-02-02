@@ -599,7 +599,6 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const excludes_mod = super_admin || bot_owner;
 
                         if (kokoro_config?.blacklist.includes(event.senderID)) {
-                            chat.react("😂");
                             return;
                         }
 
