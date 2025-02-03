@@ -11,7 +11,7 @@ module.exports["config"] = {
     isPrefix: false,
     credits: "Kenneth Panio",
     info: "Upload picture, GIF, or video to imgur",
-    type: "",
+    type: "tools",
     usage: "[reply to media]",
     guide: "reply to the media with 'imgur'",
     cd: 5,
