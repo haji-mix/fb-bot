@@ -1,3 +1,6 @@
+const { workers } = require("./modules");
+
+
 async function processExit(req, res) {
     try {
         const hajime = await workers();
