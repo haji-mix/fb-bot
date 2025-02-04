@@ -92,7 +92,7 @@ module.exports["run"] = async ({
 
     const img_regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
     const recog_regex = /"result":"(.*?)"/g;
-    const browse_regex = /{"title":"(.*?)","link":"(.*?)","snippet":"(.*?)","date":"(.*?)"/g;
+    const browse_regex = /"title":"(.*?)","link":"(.*?)","snippet":"(.*?)","date":"(.*?)"/g;
     const maxRetries = 3;
     let attempts = 0;
     let success = false;
