@@ -135,9 +135,6 @@ module.exports["run"] = async ({
 
         answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
-
-        await answering.edit(message);
         if (img_url.length > 0) {
             chat.reply({
                 body: info
@@ -145,7 +142,13 @@ module.exports["run"] = async ({
                 .join('\n'),
                 attachment: await chat.stream(img_url)
             });
+            return;
         }
+
+        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+
+
+        answering.edit(message);
 
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
