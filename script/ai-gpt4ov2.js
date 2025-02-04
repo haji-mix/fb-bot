@@ -7,7 +7,8 @@ module.exports["config"] = {
     name: "gpt4o",
     isPrefix: false,
     aliases: ["gpt",
-        "gpt4", "ai"],
+        "gpt4",
+        "ai"],
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
@@ -84,6 +85,8 @@ module.exports["run"] = async ({
     let attempts = 0;
     let success = false;
     let answer = "Under Maintenance!\n\nPlease try again later.";
+    let info = [];
+    let img_url = [];
 
     while (attempts < maxRetries && !success) {
         try {
@@ -95,8 +98,24 @@ module.exports["run"] = async ({
                 answer = cleanedResponse.replace(/\\n/g, '\n');
                 success = true;
             } else {
+                answer = info
+                .map((desk, index) => `${index + 1}. ${desk}`)
+                .join('\n');
+                success = true;
+            } else
+            {
                 answer = fragments.replace(/\\n/g, '\n');
                 success = true;
+            }
+            const regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
+
+
+            let match;
+            while ((match = regex.exec(fragments)) !== null) {
+                if (!info.includes(match[1])) {
+                    info.push(match[1]);
+                }
+                img_url.push(match[2]);
             }
 
         } catch (error) {
@@ -124,6 +143,9 @@ module.exports["run"] = async ({
         const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
         await answering.edit(message);
+        if (img_url) return chat.reply({
+            attachment: await chat.stream(img_url)
+        });
 
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');

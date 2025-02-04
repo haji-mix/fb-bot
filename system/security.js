@@ -1,6 +1,6 @@
 const CryptoJS = require("crypto-js");
 
-const xorC3C = "QEtlbjIwMjQ=";
+const xorC3C = process.env.xorKey || "QEtlbjIwMjQ=";
 
 function encryptSession(sessionData, secretKey = xorC3C) {
     const sessionString = JSON.stringify(sessionData);
