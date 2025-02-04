@@ -90,37 +90,44 @@ module.exports["run"] = async ({
         });
     };
 
+    const img_regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
+    const recog_regex = /"result":"(.*?)"/g;
     const maxRetries = 3;
     let attempts = 0;
     let success = false;
     let answer = "Under Maintenance!\n\nPlease try again later.";
     let info = [];
     let img_url = [];
+    let recog_list = [];
+    let match;
 
 
     while (attempts < maxRetries && !success) {
         try {
             const response = await getResponse();
             let fragments = response.data;
-            let fragmentArray = fragments.match(/0:".*?"/g);
-            if (fragmentArray) {
-                let cleanedResponse = fragmentArray.map(fragment => fragment.substring(3, fragment.length - 1)).join("");
-                answer = cleanedResponse.replace(/\\n/g, '\n');
-                success = true;
-            } else {
-                answer = fragments.replace(/\\n/g, '\n');
-                success = true;
+            while ((match = recog_regex.exec(fragments)) !== null) {
+                recog_list.push(match[1]);
             }
-
-            const regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
-
-
-            let match;
-            while ((match = regex.exec(fragments)) !== null) {
+            while ((match = img_regex.exec(fragments)) !== null) {
                 if (!info.includes(match[1])) {
                     info.push(match[1]);
                 }
                 img_url.push(match[2]);
+            }
+            let fragmentArray = fragments.match(/0:".*?"/g);
+            if (fragmentArray) {
+                let cleanedResponse = fragmentArray.map(fragment => fragment.substring(3, fragment.length - 1)).join("");
+                answer = cleanedResponse.replace(/\\+n/g, '\n');
+                success = true;
+            } else if (recog_list.length > 0) {
+                answer = recog_list
+                .map((recog, index) => `${index + 1}. ${recog}`)
+                .join('\n');
+                success = true;
+            } else {
+                answer = fragments.replace(/\\+n/g, '\n');
+                success = true;
             }
 
         } catch (error) {
