@@ -98,15 +98,10 @@ module.exports["run"] = async ({
                 answer = cleanedResponse.replace(/\\n/g, '\n');
                 success = true;
             } else {
-                answer = info
-                .map((desk, index) => `${index + 1}. ${desk}`)
-                .join('\n');
-                success = true;
-            } else
-            {
                 answer = fragments.replace(/\\n/g, '\n');
                 success = true;
             }
+
             const regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
 
 
@@ -143,9 +138,14 @@ module.exports["run"] = async ({
         const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
         await answering.edit(message);
-        if (img_url) return chat.reply({
-            attachment: await chat.stream(img_url)
-        });
+        if (img_url.length > 0) {
+            chat.reply({
+                body: info
+                .map((desk, index) => `${index + 1}. ${desk}`)
+                .join('\n'),
+                attachment: await chat.stream(img_url)
+            });
+        }
 
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
