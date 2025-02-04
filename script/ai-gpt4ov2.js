@@ -120,6 +120,11 @@ module.exports["run"] = async ({
                 let cleanedResponse = fragmentArray.map(fragment => fragment.substring(3, fragment.length - 1)).join("");
                 answer = cleanedResponse.replace(/\\+n/g, '\n');
                 success = true;
+            } else if (info.length > 0) {
+                answer = info
+                .map((desk, index) => `${index + 1}. ${desk}`)
+                .join('\n');
+                success = true;
             } else if (recog_list.length > 0) {
                 answer = recog_list
                 .map((recog, index) => `${index + 1}. ${recog}`)
@@ -152,21 +157,15 @@ module.exports["run"] = async ({
 
         answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        if (img_url.length > 0) {
-            chat.reply({
-                body: info
-                .map((desk, index) => `${index + 1}. ${desk}`)
-                .join('\n'),
-                attachment: await chat.stream(img_url)
-            });
-            answering.unsend();
-            return;
-        }
-
-        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ REPLY TO "PICTURE" FOR IMAGE RECOGNITION.\n◉ DESCRIBE FOR IMAGE GENERATION.`);
-
+        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer.replace(/\\(.+?)\\/g, '"$1"') + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ REPLY TO "PICTURE" FOR IMAGE RECOGNITION.\n◉ DESCRIBE FOR IMAGE GENERATION.`);
 
         answering.edit(message);
+
+        if (img_url.length > 0) {
+            chat.reply({
+                attachment: await chat.stream(img_url)
+            });
+        }
 
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');

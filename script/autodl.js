@@ -12,7 +12,7 @@ module.exports["config"] = {
     name: "autodl",
     version: "69",
     info: "Automatically downloads video URLs or file URLs and sends them as attachments",
-    credits: "Hutchin (optimized by Kenneth Panio)"
+    credits: "Kenneth Panio"
 };
 
 // User activity tracking to prevent spam
