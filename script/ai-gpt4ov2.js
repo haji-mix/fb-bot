@@ -159,6 +159,7 @@ module.exports["run"] = async ({
                 .join('\n'),
                 attachment: await chat.stream(img_url)
             });
+            answering.unsend();
             return;
         }
 
