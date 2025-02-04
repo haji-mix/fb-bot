@@ -92,6 +92,7 @@ module.exports["run"] = async ({
 
     const img_regex = /!\[Generated Image for (.*?)\]\((https?:\/\/[^\s()]+)\)/g;
     const recog_regex = /"result":"(.*?)"/g;
+    const browse_regex = /{"title":"(.*?)","link":"(.*?)","snippet":"(.*?)","date":"(.*?)"/g;
     const maxRetries = 3;
     let attempts = 0;
     let success = false;
@@ -99,6 +100,7 @@ module.exports["run"] = async ({
     let info = [];
     let img_url = [];
     let recog_list = [];
+    let browse_info = [];
     let match;
 
 
@@ -108,6 +110,9 @@ module.exports["run"] = async ({
             let fragments = response.data;
             while ((match = recog_regex.exec(fragments)) !== null) {
                 recog_list.push(match[1]);
+            }
+            while ((match = browse_regex.exec(fragments)) !== null) {
+                browse_info.push(`Title: ${match[1]}\nLink: ${match[2]}\nSnippet: ${match[3]}\nDate: ${match[4]}\n`);
             }
             while ((match = img_regex.exec(fragments)) !== null) {
                 if (!info.includes(match[1])) {
@@ -124,6 +129,9 @@ module.exports["run"] = async ({
                 answer = info
                 .map((desk, index) => `${index + 1}. ${desk}`)
                 .join('\n');
+                success = true;
+            } else if (browse_info.length > 0) {
+                answer = browse_info.join("\n");
                 success = true;
             } else if (recog_list.length > 0) {
                 answer = recog_list
