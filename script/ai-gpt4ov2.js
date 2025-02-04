@@ -44,11 +44,20 @@ module.exports["run"] = async ({
         return;
     }
 
+    let recog_url = [];
+
+    if (event.messageReply && event.messageReply.attachments) {
+        const attachments = event.messageReply.attachments;
+        for (let i = 0; i < attachments.length; i++) {
+            recog_url.push(attachments[i].url);
+        }
+    }
+
     const answering = await chat.reply(font.monospace("🕐 | Generating response..."));
 
     conversationHistories[senderID] = conversationHistories[senderID] || [];
     conversationHistories[senderID].push({
-        role: "user", content: query
+        role: "user", content: query + (recog_url.length > 0 ? "\n\n" + recog_url.join("\n"): "")
     });
 
     const getResponse = async () => {
@@ -87,6 +96,7 @@ module.exports["run"] = async ({
     let answer = "Under Maintenance!\n\nPlease try again later.";
     let info = [];
     let img_url = [];
+
 
     while (attempts < maxRetries && !success) {
         try {
@@ -145,7 +155,7 @@ module.exports["run"] = async ({
             return;
         }
 
-        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+        const message = font.bold(" 🤖 | GPT-4o PLUS") + line + answer + line + font.monospace(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ REPLY TO "PICTURE" FOR IMAGE RECOGNITION.\n◉ DESCRIBE FOR IMAGE GENERATION.`);
 
 
         answering.edit(message);
