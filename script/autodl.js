@@ -120,7 +120,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
 
             if (downloadLink) {
                 await convertVideo(videoUrl, chat, mono)
-                await streamFile(downloadLink, chat);
+                await streamFile(decodeURI(downloadLink), chat);
             } else {
                 console.error("Download link not found in the response.");
             }
