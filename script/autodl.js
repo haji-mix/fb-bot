@@ -134,7 +134,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             const downloadLink = responseJson.download;
 
             if (downloadLink) {
-                await convertVideo(videoUrl, chat, mono, downloadlink);
+                await convertVideo(videoUrl, chat, mono, downloadLink);
             } else {
                 console.error("Download link not found in the response.");
             }
