@@ -119,8 +119,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         "Sec-Fetch-Mode": "cors",
         "Sec-Fetch-Site": "same-origin",
         "User-Agent": randomUseragent.getRandom(),
-        "X-CSRF-TOKEN": csrfToken,
-        "Cookie": cookies.join("; ")
+        "X-CSRF-TOKEN": csrfToken
     };
 
     try {
@@ -131,12 +130,11 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
-
+            
             if (downloadLink) {
                 await convertVideo(videoUrl, chat, mono)
-                chat.reply({
-                    attachment: await chat.arraybuffer(downloadLink, "mp4")
-                })
+                await streamFile(downloadLink, chat);
+                });
             } else {
                 console.error("Download link not found in the response.");
             }
