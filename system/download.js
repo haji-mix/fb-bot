@@ -55,17 +55,25 @@ const getHeadersForUrl = (url) => {
             }},
         {
             domains: ['redirector.googlevideo.com'], headers: {
-                Referer: url,
-                "Accept-Encoding": "identity;q=1, *;q=0",
+                "Referer": url,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "en-US,en;q=0.9",
-                "Range": "bytes=0-",
-                "sec-ch-ua": `"Not)A;Brand";v="24", "Chromium";v="116"`,
+                "sec-ch-ua": "\"Not)A;Brand\";v=\"24\", \"Chromium\";v=\"116\"",
+                "sec-ch-ua-arch": "\"\"",
+                "sec-ch-ua-bitness": "\"\"",
+                "sec-ch-ua-full-version-list": "\"Not)A;Brand\";v=\"24.0.0.0\", \"Chromium\";v=\"116.0.5845.72\"",
                 "sec-ch-ua-mobile": "?1",
-                "sec-ch-ua-platform": `"Android"`,
-                "Sec-Fetch-Dest": "video",
-                "Sec-Fetch-Mode": "no-cors",
-                "Sec-Fetch-Site": "same-origin",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
+                "sec-ch-ua-model": "\"Infinix X669\"",
+                "sec-ch-ua-platform": "\"Android\"",
+                "sec-ch-ua-platform-version": "\"12.0.0\"",
+                "sec-ch-ua-wow64": "?0",
+                "Sec-Fetch-Dest": "document",
+                "Sec-Fetch-Mode": "navigate",
+                "Sec-Fetch-Site": "none",
+                "Upgrade-Insecure-Requests": "1",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+                "X-Client-Data": "CNKUywEIrsPNAQ=="
             }}];
 
     const domain = domainPatterns.find(pattern =>
@@ -74,7 +82,7 @@ const getHeadersForUrl = (url) => {
 
     const headers = domain ? domain.headers: {};
     if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
+        headers['Accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
     }
 
     return headers;
