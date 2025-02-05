@@ -161,8 +161,9 @@ module.exports["handleEvent"] = async ({
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?[a-z]{2}\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
         facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g,
-        youtube: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]{11,})/g
+        youtube: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g
     };
+
 
     const links = [];
     for (const [type, regex] of Object.entries(regexPatterns)) {
