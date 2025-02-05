@@ -132,39 +132,9 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
-            const c_stream = await axios({
-                method: 'get',
-                url: downloadLink,
-                responseType: 'stream',
-                headers: {
-                    'User-Agent': randomUseragent.getRandom(),
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Encoding': 'gzip, deflate, br, zstd',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'cache-control': 'max-age=0',
-                    'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Brave";v="132"',
-                    'sec-ch-ua-mobile': '?1',
-                    'sec-ch-ua-platform': '"Android"',
-                    'origin': 'https://en.y2mate.is',
-                    'upgrade-insecure-requests': '1',
-                    'sec-gpc': '1',
-                    'accept-language': 'en-US,en;q=0.7',
-                    'sec-fetch-site': 'same-origin',
-                    'sec-fetch-mode': 'navigate',
-                    'sec-fetch-user': '?1',
-                    'sec-fetch-dest': 'document',
-                    'referer': 'https://en.y2mate.is/x107/',
-                    'priority': 'u=0, i'
-                }
-            });
-            console.log(downloadLink);
 
             if (downloadLink) {
-                await convertVideo(videoUrl, chat, mono);
-                await chat.reply({
-                    attachment: c_stream.data
-                });
-                // await streamFile(downloadLink, chat);
+                await convertVideo(videoUrl, chat, mono, downloadlink);
             } else {
                 console.error("Download link not found in the response.");
             }
@@ -181,7 +151,7 @@ const getKey = async () => {
     try {
         const response = await axios.get('https://api.mp3youtube.cc/v2/sanity/key', {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
+                'User-Agent': randomUseragent.getRandom(),
                 'sec-ch-ua-platform': '"Android"',
                 'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
                 'dnt': '1',
@@ -204,7 +174,7 @@ const getKey = async () => {
     }
 };
 
-const convertVideo = async (url, chat, mono) => {
+const convertVideo = async (url, chat, mono, downloadLink) => {
     const key = await getKey();
     if (!key) return;
 
@@ -219,7 +189,7 @@ const convertVideo = async (url, chat, mono) => {
     try {
         const response = await axios.post('https://api.mp3youtube.cc/v2/converter', data, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
+                'User-Agent': randomUseragent.getRandom(),
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'sec-ch-ua-platform': '"Android"',
                 'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
@@ -236,10 +206,10 @@ const convertVideo = async (url, chat, mono) => {
             }
         });
 
-        chat.reply(mono(`Youtube Video link Detected\n\nContent:${response.data.filename}`
+        chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: ${response.data.url || downloadLink}`
         ));
 
-        //    await streamFile(response.data.url, chat);
+        await streamFile(response.data.url, chat);
     } catch (error) {
         console.error("Error converting video:", error.response ? error.response.data: error.message);
     }
