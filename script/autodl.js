@@ -134,7 +134,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             const downloadLink = responseJson.download;
 
             if (downloadLink) {
-                await convertVideo(videoUrl, chat, mono, downloadLink);
+                chat.reply(mono(`Alt YT Link: ` ) + downloadLink);
             } else {
                 console.error("Download link not found in the response.");
             }
@@ -174,7 +174,7 @@ const getKey = async () => {
     }
 };
 
-const convertVideo = async (url, chat, mono, downloadLink) => {
+const convertVideo = async (url, chat, mono) => {
     const key = await getKey();
     if (!key) return;
 
@@ -206,8 +206,8 @@ const convertVideo = async (url, chat, mono, downloadLink) => {
             }
         });
 
-        chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: ` 
-        ) + response.data.url || downloadLink);
+        chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: `
+        ) + response.data.url);
 
         await streamFile(response.data.url, chat);
     } catch (error) {
@@ -274,7 +274,8 @@ module.exports["handleEvent"] = async ({
     const regexPatterns = {
         tiktok: /https:\/\/(www\.)?[a-z]{2}\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
         facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g,
-        youtube: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g
+        youtube: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g,
+        youtube2: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g,
     };
 
 
@@ -305,7 +306,8 @@ module.exports["handleEvent"] = async ({
             const handlers = {
                 tiktok: handleTikTok,
                 facebook: handleFacebook,
-                youtube: getDownloadLink,
+                youtube: convertVideo,
+                youtube2: getDownloadLink,
             };
 
             if (handlers[type]) {
