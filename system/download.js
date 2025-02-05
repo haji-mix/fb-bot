@@ -55,7 +55,17 @@ const getHeadersForUrl = (url) => {
             }},
         {
             domains: ['redirector.googlevideo.com'], headers: {
-                Referer: 'https://en.y2mate.is/x107/'
+                Referer: url,
+                "Accept-Encoding": "identity;q=1, *;q=0",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Range": "bytes=0-",
+                "sec-ch-ua": `"Not)A;Brand";v="24", "Chromium";v="116"`,
+                "sec-ch-ua-mobile": "?1",
+                "sec-ch-ua-platform": `"Android"`,
+                "Sec-Fetch-Dest": "video",
+                "Sec-Fetch-Mode": "no-cors",
+                "Sec-Fetch-Site": "same-origin",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
             }}];
 
     const domain = domainPatterns.find(pattern =>
