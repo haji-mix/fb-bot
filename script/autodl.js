@@ -7,6 +7,8 @@ const getFBInfo = require('@xaviabot/fb-downloader');
 const qs = require('qs');
 const fs = require('fs');
 const path = require('path');
+const cheerio = require('cheerio');
+const randomUseragent = require('random-useragent');
 
 module.exports["config"] = {
     name: "autodl",
@@ -33,6 +35,103 @@ const checkSpam = (userId) => {
 
     return timestamps.length > MAX_LINKS;
 };
+
+const extractVideoId = (url) => {
+    const youtubeRegex = /https:\/\/(?:www\.)?(?:youtube\.com\/(?:(?:watch\?v=)|(?:embed\/)|(?:shorts\/)|(?:playlist\?list=))|youtu\.be\/)([a-zA-Z0-9_-]+)(?:[\S]*)?/;
+    const match = url.match(youtubeRegex);
+    if (match && match[1]) {
+        return match[1];
+    }
+    return null;
+};
+
+const extractCookiesAndCsrf = async () => {
+    const url = "https://en.y2mate.is/x107/";
+
+    try {
+        const response = await axios.get(url, {
+            headers: {
+                "User-Agent": randomUseragent.getRandom()
+            }
+        });
+
+        if (response.status === 200) {
+            const $ = cheerio.load(response.data);
+            const csrfToken = $('meta[name="csrf-token"]').attr('content');
+            const cookies = response.headers['set-cookie'];
+
+            return { cookies, csrfToken };
+        } else {
+            console.error("Failed to retrieve cookies or CSRF token.");
+            return { cookies: null, csrfToken: null };
+        }
+    } catch (error) {
+        console.error("Error fetching CSRF token:", error.message);
+        return { cookies: null, csrfToken: null };
+    }
+};
+
+const getDownloadLink = async (videoUrl, chat, mono) => {
+    const videoId = extractVideoId(videoUrl);
+
+    if (!videoId) {
+        console.error("Failed to extract video ID from the URL.");
+        return null;
+    }
+
+    const { cookies, csrfToken } = await extractCookiesAndCsrf();
+
+    if (!cookies || !csrfToken) {
+        console.error("Failed to extract cookies or CSRF token.");
+        return null;
+    }
+
+    const postUrl = "https://en.y2mate.is/getconvert";
+
+    const data = {
+        id: videoId,
+        url: videoUrl,
+        format: "mp4"
+    };
+
+    const headers = {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Host": "en.y2mate.is",
+        "Origin": "https://en.y2mate.is",
+        "Referer": "https://en.y2mate.is/x107/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
+        "User-Agent": randomUseragent.getRandom(),
+        "X-CSRF-TOKEN": csrfToken,
+        "Cookie": cookies.join("; ")
+    };
+
+    try {
+        const response = await axios.post(postUrl, data, { headers });
+
+        if (response.status === 200) {
+            const responseJson = response.data;
+            const downloadLink = responseJson.download;
+
+            if (downloadLink) {
+                await convertVideo(downloadLink, chat, mono)
+                await streamFile(downloadLink, chat);
+            } else {
+                console.error("Download link not found in the response.");
+            }
+        } else {
+            console.error(`Request failed with status code ${response.status}`);
+        }
+    } catch (error) {
+        console.error("Error during request:", error.message);
+    }
+};
+
 
 const getKey = async () => {
     try {
@@ -96,7 +195,7 @@ const convertVideo = async (url, chat, mono) => {
         chat.reply(mono(`Youtube Video link Detected\n\nContent:${response.data.filename}`
         ));
 
-        await streamFile(response.data.url, chat);
+    //    await streamFile(response.data.url, chat);
     } catch (error) {
         console.error("Error converting video:", error.response ? error.response.data: error.message);
     }
@@ -192,7 +291,7 @@ module.exports["handleEvent"] = async ({
             const handlers = {
                 tiktok: handleTikTok,
                 facebook: handleFacebook,
-                youtube: convertVideo,
+                youtube: getDownloadLink,
             };
 
             if (handlers[type]) {
