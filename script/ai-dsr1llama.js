@@ -3,16 +3,15 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports["config"] = {
-    name: "dsr1",
-    aliases: ["ds", "deepseek"],
+    name: "dsl",
     isPrefix: false,
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
     type: "artificial-intelligence",
-    info: "Interact with DeepSeek-R1 AI.",
+    info: "Interact with DeepSeek-R1-Distill-Llama-70B AI.",
     usage: "[prompt]",
-    guide: "dsr1 hello!",
+    guide: "dsl hello!",
     cd: 6
 };
 
@@ -23,7 +22,7 @@ module.exports["run"] = async ({
     chat, args, event, font, global
 }) => {
     const deepinfraUrl = "https://api.deepinfra.com/v1/openai/chat/completions";
-    const model = "deepseek-ai/DeepSeek-R1";
+    const model = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B";
     const name = model.split('/').pop().toUpperCase();
 
     const mono = txt => font.monospace(txt);
