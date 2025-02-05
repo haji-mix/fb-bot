@@ -60,14 +60,23 @@ const extractCookiesAndCsrf = async () => {
             const csrfToken = $('meta[name="csrf-token"]').attr('content');
             const cookies = response.headers['set-cookie'];
 
-            return { cookies, csrfToken };
+            return {
+                cookies,
+                csrfToken
+            };
         } else {
             console.error("Failed to retrieve cookies or CSRF token.");
-            return { cookies: null, csrfToken: null };
+            return {
+                cookies: null,
+                csrfToken: null
+            };
         }
     } catch (error) {
         console.error("Error fetching CSRF token:", error.message);
-        return { cookies: null, csrfToken: null };
+        return {
+            cookies: null,
+            csrfToken: null
+        };
     }
 };
 
@@ -79,7 +88,10 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         return null;
     }
 
-    const { cookies, csrfToken } = await extractCookiesAndCsrf();
+    const {
+        cookies,
+        csrfToken
+    } = await extractCookiesAndCsrf();
 
     if (!cookies || !csrfToken) {
         console.error("Failed to extract cookies or CSRF token.");
@@ -112,7 +124,9 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
     };
 
     try {
-        const response = await axios.post(postUrl, data, { headers });
+        const response = await axios.post(postUrl, data, {
+            headers
+        });
 
         if (response.status === 200) {
             const responseJson = response.data;
@@ -120,7 +134,9 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
 
             if (downloadLink) {
                 await convertVideo(videoUrl, chat, mono)
-                await streamFile(decodeURI(downloadLink), chat);
+                chat.reply({
+                    attachment: await chat.arraybuffer(downloadLink, "mp4")
+                })
             } else {
                 console.error("Download link not found in the response.");
             }
@@ -195,7 +211,7 @@ const convertVideo = async (url, chat, mono) => {
         chat.reply(mono(`Youtube Video link Detected\n\nContent:${response.data.filename}`
         ));
 
-    //    await streamFile(response.data.url, chat);
+        //    await streamFile(response.data.url, chat);
     } catch (error) {
         console.error("Error converting video:", error.response ? error.response.data: error.message);
     }
