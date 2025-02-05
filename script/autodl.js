@@ -88,53 +88,48 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         return null;
     }
 
-    const {
-        cookies,
-        csrfToken
-    } = await extractCookiesAndCsrf();
-
-    if (!cookies || !csrfToken) {
-        console.error("Failed to extract cookies or CSRF token.");
-        return null;
-    }
-
-    const postUrl = "https://en.y2mate.is/getconvert";
-
-    const data = {
-        id: videoId,
-        url: videoUrl,
-        format: "mp4"
-    };
-
-    const headers = {
-        "Accept": "*/*",
-        "Accept-Encoding": "gzip, deflate, br, zstd",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Connection": "keep-alive",
-        "Content-Type": "application/json",
-        "Host": "en.y2mate.is",
-        "Origin": "https://en.y2mate.is",
-        "Referer": "https://en.y2mate.is/x107/",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-origin",
-        "User-Agent": randomUseragent.getRandom(),
-        "X-CSRF-TOKEN": csrfToken
-    };
-
     try {
-        const response = await axios.post(postUrl, data, {
-            headers
-        });
+        // Extract cookies and CSRF token
+        const { cookies, csrfToken } = await extractCookiesAndCsrf();
+
+        if (!cookies || !csrfToken) {
+            console.error("Failed to extract cookies or CSRF token.");
+            return null;
+        }
+
+        const postUrl = "https://en.y2mate.is/getconvert";
+
+        const data = {
+            id: videoId,
+            url: videoUrl,
+            format: "mp4"
+        };
+
+        const headers = {
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.5",
+            "Connection": "keep-alive",
+            "Content-Type": "application/json",
+            "Host": "en.y2mate.is",
+            "Origin": "https://en.y2mate.is",
+            "Referer": "https://en.y2mate.is/x107/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-origin",
+            "User-Agent": randomUseragent.getRandom(),
+            "X-CSRF-TOKEN": csrfToken
+        };
+
+        const response = await axios.post(postUrl, data, { headers });
 
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
-            
+
             if (downloadLink) {
-                await convertVideo(videoUrl, chat, mono)
-                await streamFile(downloadLink, chat)
-                };
+                await convertVideo(videoUrl, chat, mono);
+                await streamFile(downloadLink, chat);
             } else {
                 console.error("Download link not found in the response.");
             }
