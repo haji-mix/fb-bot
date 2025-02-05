@@ -123,7 +123,7 @@ module.exports["run"] = async ({
 
         answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        let message = font.bold(" 🤖 | " + name) + line + (includeMind ? mindContent: '') + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ USE "TOGGLE" TO SWITCH DEEPTHINK.`);
+        let message = font.bold(" 🐋 | " + name) + line + (includeMind ? mindContent: '') + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ USE "TOGGLE" TO SWITCH DEEPTHINK.`);
 
         await answering.edit(message);
 

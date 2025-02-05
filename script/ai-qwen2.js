@@ -3,40 +3,28 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports["config"] = {
-    name: "dsl",
+    name: "qwen2",
     isPrefix: false,
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
     type: "artificial-intelligence",
-    info: "Interact with DeepSeek-R1-Distill-Llama-70B AI.",
+    info: "Interact with Qwen-2 AI.",
     usage: "[prompt]",
-    guide: "dsl hello!",
+    guide: "qwen2 hello!",
     cd: 6
 };
 
 const conversationHistories = {};
-let includeMind = false;
 
-module.exports["run"] = async ({
-    chat, args, event, font, global
-}) => {
+module.exports["run"] = async ({ chat, args, event, font, global }) => {
     const deepinfraUrl = "https://api.deepinfra.com/v1/openai/chat/completions";
-    const model = "deepseek-ai/DeepSeek-R1-Distill-Llama-70B";
+    const model = "Qwen/Qwen2.5-72B-Instruct";
     const name = model.split('/').pop().toUpperCase();
 
     const mono = txt => font.monospace(txt);
-    const {
-        threadID,
-        senderID
-    } = event;
+    const { threadID, senderID } = event;
     const query = args.join(" ").toLowerCase();
-
-    if (query === 'toggle') {
-        includeMind = !includeMind;
-        chat.reply(mono(`Deep Thinking has been ${includeMind ? 'enabled': 'disabled'}.`));
-        return;
-    }
 
     if (['clear', 'reset', 'forgot', 'forget'].includes(query)) {
         conversationHistories[senderID] = [];
@@ -52,9 +40,7 @@ module.exports["run"] = async ({
     const answering = await chat.reply(mono("🕐 | Generating response..."));
 
     conversationHistories[senderID] = conversationHistories[senderID] || [];
-    conversationHistories[senderID].push({
-        role: "user", content: query
-    });
+    conversationHistories[senderID].push({ role: "user", content: query });
 
     const getResponse = async () => {
         return axios.post(deepinfraUrl, {
@@ -105,26 +91,13 @@ module.exports["run"] = async ({
     }
 
     if (success) {
-        const mindMatch = answer.match(/([\s\S]*?)<\/think>/);
-        let mindContent = "";
-        if (mindMatch) {
-            mindContent = mindMatch[1] + "\n";
-            conversationHistories[senderID].push({
-                role: "assistant", content: mindContent
-            });
-            if (!includeMind) {
-                answer = answer.replace(/[\s\S]*?<\/think>/, "").trim();
-            }
-        }
-
-        const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
-        const line = "\n" + '━'.repeat(18) + "\n";
-
         answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        let message = font.bold(" 🐋 | " + name) + line + (includeMind ? mindContent: '') + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ USE "TOGGLE" TO SWITCH DEEPTHINK.`);
+        let message = font.bold(" 🤖 | " + name) + "\n" + '━'.repeat(18) + "\n" + answer + "\n" + '━'.repeat(18) + "\n" + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
         await answering.edit(message);
+
+        const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
 
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
@@ -140,9 +113,7 @@ module.exports["run"] = async ({
             fs.writeFileSync(filePath, allCode, 'utf8');
 
             const fileStream = fs.createReadStream(filePath);
-            await chat.reply({
-                attachment: fileStream
-            });
+            await chat.reply({ attachment: fileStream });
 
             fs.unlinkSync(filePath);
         }
