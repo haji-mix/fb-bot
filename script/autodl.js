@@ -206,8 +206,8 @@ const convertVideo = async (url, chat, mono, downloadLink) => {
             }
         });
 
-        chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: ${response.data.url || downloadLink}`
-        ));
+        chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: ` 
+        ) + response.data.url || downloadLink);
 
         await streamFile(response.data.url, chat);
     } catch (error) {
