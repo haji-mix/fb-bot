@@ -127,6 +127,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
+            console.log(downloadLink);
 
             if (downloadLink) {
                 await convertVideo(videoUrl, chat, mono);
