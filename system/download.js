@@ -29,20 +29,40 @@ deleteDirectoryAndFiles(targetPath);
 
 // Function to get headers based on the URL
 const getHeadersForUrl = (url) => {
-    const domainPatterns = [
-        { domains: ['pixiv.net', 'i.pximg.net'], headers: { Referer: 'http://www.pixiv.net/' }},
-        { domains: ['deviantart.com'], headers: { Referer: 'https://www.deviantart.com/' }},
-        { domains: ['artstation.com'], headers: { Referer: 'https://www.artstation.com/' }},
-        { domains: ['instagram.com'], headers: { Referer: 'https://www.instagram.com/' }},
-        { domains: ['googleusercontent.com'], headers: { Referer: 'https://images.google.com/' }},
-        { domains: ['i.nhentai.net', 'nhentai.net'], headers: { Referer: 'https://nhentai.net/' }},
-    ];
+    const domainPatterns = [{
+        domains: ['pixiv.net', 'i.pximg.net'], headers: {
+            Referer: 'http://www.pixiv.net/'
+        }},
+        {
+            domains: ['deviantart.com'], headers: {
+                Referer: 'https://www.deviantart.com/'
+            }},
+        {
+            domains: ['artstation.com'], headers: {
+                Referer: 'https://www.artstation.com/'
+            }},
+        {
+            domains: ['instagram.com'], headers: {
+                Referer: 'https://www.instagram.com/'
+            }},
+        {
+            domains: ['googleusercontent.com'], headers: {
+                Referer: 'https://images.google.com/'
+            }},
+        {
+            domains: ['i.nhentai.net', 'nhentai.net'], headers: {
+                Referer: 'https://nhentai.net/'
+            }},
+        {
+            domains: ['redirector.googlevideo.com'], headers: {
+                Referer: 'https://en.y2mate.is/x107/'
+            }}];
 
     const domain = domainPatterns.find(pattern =>
         pattern.domains.some(d => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, 'i').test(url))
     );
 
-    const headers = domain ? domain.headers : {};
+    const headers = domain ? domain.headers: {};
     if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
         headers['Accept'] = 'image/webp,image/apng,image/*,*/*;q=0.8';
     }
@@ -65,11 +85,13 @@ const getExtensionFromContentType = (contentType) => {
 
 // Main download function
 const download = async (inputs, responseType = 'arraybuffer', extension = "") => {
-    inputs = Array.isArray(inputs) ? inputs : [inputs];
+    inputs = Array.isArray(inputs) ? inputs: [inputs];
 
     // Ensure the target path exists
     if (!fs.existsSync(targetPath)) {
-        fs.mkdirSync(targetPath, { recursive: true });
+        fs.mkdirSync(targetPath, {
+            recursive: true
+        });
     }
 
     const files = await Promise.all(inputs.map(async (input) => {
@@ -114,7 +136,7 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "") =>
 
         if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(input)) {
             const response = await axios.get(input, {
-                responseType: responseType === 'base64' ? 'arraybuffer' : responseType,
+                responseType: responseType === 'base64' ? 'arraybuffer': responseType,
                 headers: getHeadersForUrl(input),
             });
 
@@ -146,7 +168,7 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "") =>
         }
     }));
 
-    return files.length === 1 ? files[0] : files;
+    return files.length === 1 ? files[0]: files;
 };
 
 module.exports = {
