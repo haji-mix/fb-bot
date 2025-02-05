@@ -90,7 +90,10 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
 
     try {
         // Extract cookies and CSRF token
-        const { cookies, csrfToken } = await extractCookiesAndCsrf();
+        const {
+            cookies,
+            csrfToken
+        } = await extractCookiesAndCsrf();
 
         if (!cookies || !csrfToken) {
             console.error("Failed to extract cookies or CSRF token.");
@@ -122,16 +125,24 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             "Cookie": cookies.join("; ")
         };
 
-        const response = await axios.post(postUrl, data, { headers });
+        const response = await axios.post(postUrl, data, {
+            headers
+        });
 
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
+            const c_stream = await axios({
+                method: 'get',
+                url: downloadLink,
+                responseType: 'stream',
+            });
             console.log(downloadLink);
 
             if (downloadLink) {
                 await convertVideo(videoUrl, chat, mono);
-                await streamFile(downloadLink, chat);
+                await chat.reply({ attachment: c_stream.data });
+                // await streamFile(downloadLink, chat);
             } else {
                 console.error("Download link not found in the response.");
             }
