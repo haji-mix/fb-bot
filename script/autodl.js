@@ -119,7 +119,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             "Sec-Fetch-Site": "same-origin",
             "User-Agent": randomUseragent.getRandom(),
             "X-CSRF-TOKEN": csrfToken,
-            "Cookie": cookies.join("; ");
+            "Cookie": cookies.join("; ")
         };
 
         const response = await axios.post(postUrl, data, { headers });
