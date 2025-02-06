@@ -376,7 +376,10 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 return;
             }
 
-            let appState = state;
+            const refresh_c3c = await api.getAppState();
+
+
+            let appState = refresh_c3c || state;
 
             if (!state && email && password) {
                 appState = api.getAppState();
