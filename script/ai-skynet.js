@@ -77,7 +77,6 @@ module.exports["run"] = async ({
                 'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
                 'Accept': 'text/event-stream',
                 'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'Content-Type': 'application/json',
                 'sec-ch-ua-platform': '"Android"',
                 'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
                 'sec-ch-ua-mobile': '?1',
