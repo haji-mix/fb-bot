@@ -1,15 +1,16 @@
 const axios = require('axios');
 
 module.exports["config"] = {
-    name: "skynet",
+    name: "o3m",
+    aliases: ["o3"],
     isPrefix: false,
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
     type: "artificial-intelligence",
-    info: "Interact with skynet ai a biggest threat to humanities.",
+    info: "Interact with o3-mini, an OpenAI Fastest AI model.",
     usage: "[prompt]",
-    guide: "skynet how to end this world?",
+    guide: "o3m Explain quantum computing in simple terms.",
     cd: 6
 };
 
@@ -30,10 +31,10 @@ module.exports["run"] = async ({
     const statusUrl = url[0];
     const chatUrl = url[1];
     const query = args.join(" ");
-    const model = models[0];
+    const model = models[4];
 
     if (!query) {
-        chat.reply(font.monospace("🤖 | Please provide a message would you like to ask!"));
+        chat.reply(font.thin("Please provide a question!"));
         return;
     }
 
@@ -42,7 +43,7 @@ module.exports["run"] = async ({
         role: "user", content: query
     });
 
-    const answering = await chat.reply(font.monospace("🤖 | Skynet - Generating Response..."));
+    const answering = await chat.reply(font.monospace("🕐 | O3-mini is Typing..."));
 
     let newVqd = '';
 
@@ -58,7 +59,7 @@ module.exports["run"] = async ({
             throw new Error('Failed to initialize chat. No VQD token found.');
         }
     } catch (error) {
-        answering.edit(font.monospace("Initialization error: " + error.message));
+        answering.edit(font.thin("Initialization error: " + error.message));
         return;
     }
 
@@ -141,16 +142,16 @@ module.exports["run"] = async ({
                 });
 
                 const cleanup = finalMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-                const message = font.bold(" 🛰️ | SKYNET-T-4800") + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
+                const message = font.bold(" 🤖 | " + model.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
                 answering.edit(message);
             });
 
         fetchResponse.data.on('error',
             (err) => {
-                answering.edit(font.monospace("Error during streaming response: " + err.message));
+                answering.edit(font.thin("Error during streaming response: " + err.message));
             });
 
     } catch (error) {
-        answering.edit(font.monospace("Failed to retrieve response from Skynet: " + error.message));
+        answering.edit(font.thin("Failed to retrieve response from o3-mini : " + error.message));
     }
 };
