@@ -446,7 +446,7 @@ function buildAPI(globalOptions, html, jar) {
             fb_dtsg
         };
 
-    const api = {
+const api = {
   setOptions: setOptions.bind(null, globalOptions),
   getAppState: function getAppState() {
     const appState = utils.getAppState(jar);
@@ -459,9 +459,33 @@ function buildAPI(globalOptions, html, jar) {
       return self.findIndex((t) => t.key === item.key) === index;
     });
 
-    return uniqueAppState.length > 0 ? uniqueAppState : appState;
+    const fallbackState = uniqueAppState.length > 0 ? uniqueAppState : appState;
+
+    // Find the primary and secondary profiles
+    const primaryProfile = fallbackState.find(function (val) {
+      return val.cookieString().split("=")[0] === "c_user";
+    });
+
+    const secondaryProfile = fallbackState.find(function (val) {
+      return val.cookieString().split("=")[0] === "i_user";
+    });
+
+    if (secondaryProfile) {
+      return fallbackState.filter(function (val) {
+        return val.cookieString().split("=")[0] !== "c_user";
+      });
+    } else {
+      return fallbackState.filter(function (val) {
+        return val.cookieString().split("=")[0] !== "i_user";
+      });
+    }
+
+    return fallbackState;
   }
 };
+
+
+
 
     
     if (region && mqttEndpoint) {
