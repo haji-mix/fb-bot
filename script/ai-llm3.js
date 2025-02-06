@@ -76,8 +76,7 @@ module.exports["run"] = async ({
                 'sec-fetch-dest': 'empty',
                 'referer': 'https://duckduckgo.com/',
                 'accept-language': 'en-US,en;q=0.9,vi;q=0.8,pt;q=0.7,fr;q=0.6',
-                'priority': 'u=1, i',
-                'Cookie': 'dcm=5; dcs=1'
+                'priority': 'u=1, i'
             },
             responseType: 'stream',
         });
