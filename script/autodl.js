@@ -89,11 +89,7 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
     }
 
     try {
-        // Extract cookies and CSRF token
-        const {
-            cookies,
-            csrfToken
-        } = await extractCookiesAndCsrf();
+        const { cookies, csrfToken } = await extractCookiesAndCsrf();
 
         if (!cookies || !csrfToken) {
             console.error("Failed to extract cookies or CSRF token.");
@@ -101,7 +97,6 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
         }
 
         const postUrl = "https://en.y2mate.is/getconvert";
-
         const data = {
             id: videoId,
             url: videoUrl,
@@ -125,26 +120,49 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             "Cookie": cookies.join("; ")
         };
 
-        const response = await axios.post(postUrl, data, {
-            headers
-        });
+        const response = await axios.post(postUrl, data, { headers });
 
         if (response.status === 200) {
             const responseJson = response.data;
             const downloadLink = responseJson.download;
 
-            if (downloadLink) {
-                chat.reply(mono(`Alt YT Link: ` ) + downloadLink);
-            } else {
-                console.error("Download link not found in the response.");
+            const cacheDir = path.join(__dirname, 'cache');
+            if (!fs.existsSync(cacheDir)) {
+                fs.mkdirSync(cacheDir);
             }
-        } else {
-            console.error(`Request failed with status code ${response.status}`);
+
+            const fileName = 'downloaded_video.mp4';
+            const filePath = path.join(cacheDir, fileName);
+
+            const downloadResponse = await axios.get(downloadLink, {
+                responseType: 'arraybuffer'
+            });
+
+            if (downloadResponse.status === 200) {
+                fs.writeFileSync(filePath, downloadResponse.data);
+                console.log(`Video saved successfully as ${filePath}`);
+                const fileStream = fs.createReadStream(filePath);
+                chat.reply({ attachment: fileStream })
+                    .then(() => {
+                        fs.unlink(filePath, (err) => {
+                            if (err) {
+                                console.error("Error deleting the file:", err.message);
+                            } else {
+                                console.log(`File deleted successfully: ${filePath}`);
+                            }
+                        });
+                    })
+                    .catch((error) => {
+                        console.error("Error sending the file:", error.message);
+                    });
+            }
         }
+
     } catch (error) {
         console.error("Error during request:", error.message);
     }
 };
+
 
 
 const getKey = async () => {
