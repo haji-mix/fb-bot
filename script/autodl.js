@@ -37,12 +37,9 @@ const checkSpam = (userId) => {
 };
 
 const extractVideoId = (url) => {
-    const youtubeRegex = /https:\/\/(?:www\.)?(?:youtube\.com\/(?:(?:watch\?v=)|(?:embed\/)|(?:shorts\/)|(?:playlist\?list=))|youtu\.be\/)([a-zA-Z0-9_-]+)(?:[\S]*)?/;
+    const youtubeRegex = /https:\/\/(?:www\.)?(?:youtube\.[a-z.]+\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:[^\s]*)?/;
     const match = url.match(youtubeRegex);
-    if (match && match[1]) {
-        return match[1];
-    }
-    return null;
+    return match ? match[1]: null;
 };
 
 const extractCookiesAndCsrf = async () => {
@@ -89,7 +86,10 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
     }
 
     try {
-        const { cookies, csrfToken } = await extractCookiesAndCsrf();
+        const {
+            cookies,
+            csrfToken
+        } = await extractCookiesAndCsrf();
 
         if (!cookies || !csrfToken) {
             console.error("Failed to extract cookies or CSRF token.");
@@ -120,7 +120,9 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
             "Cookie": cookies.join("; ")
         };
 
-        const response = await axios.post(postUrl, data, { headers });
+        const response = await axios.post(postUrl, data, {
+            headers
+        });
 
         if (response.status === 200) {
             const responseJson = response.data;
@@ -142,19 +144,22 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
                 fs.writeFileSync(filePath, downloadResponse.data);
                 console.log(`Video saved successfully as ${filePath}`);
                 const fileStream = fs.createReadStream(filePath);
-                chat.reply({ attachment: fileStream })
-                    .then(() => {
-                        fs.unlink(filePath, (err) => {
-                            if (err) {
-                                console.error("Error deleting the file:", err.message);
-                            } else {
-                                console.log(`File deleted successfully: ${filePath}`);
-                            }
-                        });
-                    })
-                    .catch((error) => {
-                        console.error("Error sending the file:", error.message);
+                chat.reply({
+                    attachment: fileStream
+                })
+                .then(() => {
+                    fs.unlink(filePath, (err) => {
+                        if (err) {
+                            console.error("Error deleting the file:", err.message);
+                        } else {
+                            console.log(`File deleted successfully: ${filePath}`);
+                        }
                     });
+                })
+                .catch((error) => {
+                    console.error("Error sending the file:",
+                        error.message);
+                });
             }
         }
 
@@ -290,10 +295,9 @@ module.exports["handleEvent"] = async ({
     if (!message) return;
 
     const regexPatterns = {
-        tiktok: /https:\/\/(www\.)?[a-z]{2}\.tiktok\.com\/[a-zA-Z0-9-_]+\/?/g,
-        facebook: /https:\/\/www\.facebook\.com\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g,
-        youtube: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g,
-        youtube2: /https:\/\/(?:www\.)?(youtube\.com\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[\S]*)?/g,
+        tiktok: /https:\/\/(www\.)?[a-z]{2}\.tiktok\.[a-z.]+\/[a-zA-Z0-9-_]+\/?/g,
+        facebook: /https:\/\/www\.facebook\.[a-z.]+\/(?:[a-zA-Z0-9-_\/]+\/[a-zA-Z0-9-_]+\/?|watch|reel|videos|groups\/\d+\/permalink|posts|.+\/videos\/\d+).*/g,
+        youtube: /https:\/\/(?:www\.)?(youtube\.[a-z.]+\/(?:watch\?v=|embed\/|shorts\/|playlist\?list=)|youtu\.be\/)([a-zA-Z0-9_-]+)(?:\?[^\s]*)?/g
     };
 
 
@@ -324,9 +328,12 @@ module.exports["handleEvent"] = async ({
             const handlers = {
                 tiktok: handleTikTok,
                 facebook: handleFacebook,
-                youtube: convertVideo,
-                youtube2: getDownloadLink,
+                youtube: async () => {
+                    await convertVideo(link, chat, mono);
+                    await getDownloadLink(link, chat, mono);
+                }
             };
+
 
             if (handlers[type]) {
                 await handlers[type](link, chat, mono);
