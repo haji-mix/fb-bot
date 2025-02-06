@@ -74,21 +74,7 @@ module.exports["run"] = async ({
             model, messages
         }, {
             headers: {
-                'x-vqd-4': newVqd, 'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36',
-                'Accept': 'text/event-stream',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'sec-ch-ua-platform': '"Android"',
-                'sec-ch-ua': '"Not A(Brand";v="8", "Chromium";v="132", "Google Chrome";v="132"',
-                'sec-ch-ua-mobile': '?1',
-                'dnt': '1',
-                'origin': 'https://duckduckgo.com',
-                'sec-fetch-site': 'same-origin',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-dest': 'empty',
-                'referer': 'https://duckduckgo.com/',
-                'accept-language': 'en-US,en;q=0.9,vi;q=0.8,pt;q=0.7,fr;q=0.6',
-                'priority': 'u=1, i'
+                'x-vqd-4': newVqd, 'Content-Type': 'application/json'
             },
             responseType: 'stream',
         });
