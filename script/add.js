@@ -22,7 +22,10 @@ module.exports["run"] = async ({ api, event, args, chat, font }) => {
 
     try {
         const { participantIDs, approvalMode, adminIDs } = await api.getThreadInfo(threadID);
-        const parsedParticipantIDs = participantIDs.map(e => parseInt(e));
+        
+        const fallback_pid = participantIDs || event.participantIDs;
+        
+        const parsedParticipantIDs = fallback_pid.map(e => parseInt(e));
         const facebookLinkRegex = /(?:https?:\/\/)?(?:www\.)?facebook\.com\/(?:profile\.php\?id=)?(\d+)|@(\d+)|facebook\.com\/([a-zA-Z0-9.]+)/i;
         const input = args[0];
         const isFacebookLink = facebookLinkRegex.test(input);
