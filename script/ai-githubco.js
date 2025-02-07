@@ -108,7 +108,7 @@ module.exports["run"] = async ({
             completeMessage = completeMessage.replace(/\*\*(.*?)\*\*/g,
                 (_, text) => font.bold(text));
 
-            const message = font.bold(" 🤖 | GitHub Copilot") + line + completeMessage + line + font.monospace("◉ USE 'CLEAR' TO RESET CONVERSATION.");
+            const message = font.bold(" 🤖 | GitHub Copilot") + line + completeMessage + line;
             await answering.edit(message);
 
             // Handle Code Snippets
