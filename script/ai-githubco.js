@@ -56,7 +56,7 @@ module.exports["run"] = async ({
         if (!token) throw new Error("Failed to retrieve GitHub Copilot token.");
 
         // Sending Chat Request
-        const chatResponse = await axios.post("https://api.individual.githubcopilot.com/github/chat/threads/new/messages?", {
+        const chatResponse = await axios.post("https://api.individual.githubcopilot.com/github/chat/threads/4e5b591e-3c89-43d6-b053-c57289778b68/messages?", {
             content: query,
             intent: "conversation",
             references: [],
