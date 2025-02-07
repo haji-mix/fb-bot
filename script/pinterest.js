@@ -9,7 +9,7 @@ const config = {
     usage: '[query] - [1 to 8]',
     role: 0,
     isPremium: true,
-    limit: 3,
+    limit: 35,
     aliases: ['pin', 'picture', 'photo', 'pinte'],
 };
 
