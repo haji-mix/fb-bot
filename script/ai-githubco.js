@@ -77,7 +77,6 @@ module.exports["run"] = async ({
         };
 
         const payload = {
-            responseMessageID: "2e9923af-103e-487f-98c7-aab61d93e950",
             content: query,
             intent: "conversation",
             references: [],
