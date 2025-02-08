@@ -37,10 +37,10 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
         const options = {
             method: isPost ? "POST" : "GET",
             url: url,
-            responseType: "text",
+            responseType: "arraybuffer", // Allows handling different response types (JSON, images, text)
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "application/json",
+                "Accept": "*/*", // Accept any content type
             },
         };
 
@@ -63,27 +63,40 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
 
         if (contentType.includes("application/json")) {
             try {
-                data = JSON.parse(response.data);
+                data = JSON.parse(response.data.toString());
             } catch (error) {
                 return chat.reply(font.thin("⚠️ The API response is not valid JSON."));
             }
-        }
 
-        let formattedData = typeof data === "object" ? JSON.stringify(data, null, 2) : String(data);
+            let formattedData = JSON.stringify(data, null, 2);
+            if (formattedData.length > 4000) {
+                const tempDir = path.join(__dirname, "cache");
+                if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-        if (formattedData.length > 4000) {
+                const tempFile = path.join(tempDir, `apitest_${Date.now()}.txt`);
+                fs.writeFileSync(tempFile, formattedData, "utf8");
+
+                chat.reply(
+                    { body: font.thin("RAW response is too big!"), attachment: fs.createReadStream(tempFile) },
+                    () => fs.unlinkSync(tempFile)
+                );
+            } else {
+                chat.reply(formattedData);
+            }
+        } else if (contentType.startsWith("image/")) {
+            const imageExt = contentType.split("/")[1];
             const tempDir = path.join(__dirname, "cache");
             if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-            const tempFile = path.join(tempDir, `apitest_${Date.now()}.txt`);
-            fs.writeFileSync(tempFile, formattedData, "utf8");
+            const imagePath = path.join(tempDir, `image_${Date.now()}.${imageExt}`);
+            fs.writeFileSync(imagePath, response.data);
 
-            chat.reply(
-                { body: font.thin("RAW response is too big!"), attachment: fs.createReadStream(tempFile) },
-                () => fs.unlinkSync(tempFile)
-            );
+            chat.reply({ body: font.thin("📷 API returned an image:"), attachment: fs.createReadStream(imagePath) }, () => {
+                fs.unlinkSync(imagePath);
+            });
         } else {
-            chat.reply(formattedData);
+            let textData = response.data.toString();
+            chat.reply(font.thin(`📄 API returned non-JSON content:\n\n${textData.substring(0, 4000)}`));
         }
     } catch (error) {
         console.error("API Request Failed:", error);
