@@ -21,6 +21,27 @@ const urlRegex = /^https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=]*)?$/i;
 const tempDir = path.join(__dirname, "cache");
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
+// Function to get file extension from Content-Type
+const getExtensionFromContentType = (contentType) => {
+    if (!contentType) return "txt"; // Default to .txt if unknown
+    const typeMap = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "application/pdf": "pdf",
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/ogg": "mp3",
+        "audio/wav": "mp3",
+        "audio/aac": "mp3",
+        "audio/flac": "mp3",
+        "video/mp4": "mp4",
+        "video/webm": "webm",
+        "video/ogg": "mp4"
+    };
+    return typeMap[contentType.split(";")[0]] || "txt"; // Default to .txt if unknown
+};
+
 module.exports["run"] = async ({ chat, args, font }) => {
     if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
 
@@ -28,7 +49,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
     if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
 
     const isPost = args.length >= 2;
-    let postData = isPost ? args.slice(1).join(" ") : null; // Ensure all extra args are used
+    let postData = isPost ? args.slice(1).join(" ") : null;
 
     try {
         const options = {
@@ -54,6 +75,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
 
         const { data, headers } = await axios(options);
         const contentType = headers["content-type"] || "";
+        const fileExt = getExtensionFromContentType(contentType);
 
         if (contentType.includes("json")) {
             const jsonData = JSON.parse(data.toString());
@@ -64,11 +86,9 @@ module.exports["run"] = async ({ chat, args, font }) => {
         }
 
         if (/image|video|audio|gif/.test(contentType)) {
-            const ext = contentType.includes("gif") ? "gif" : contentType.split("/")[1] || "txt";
-            return sendFile(chat, ext, data, `📽️ API returned a ${ext.toUpperCase()}:`);
+            return sendFile(chat, fileExt, data, `📽️ API returned a ${fileExt.toUpperCase()}:`);
         }
 
-        // Send non-JSON response as a .txt file
         return sendFile(chat, "txt", data.toString(), "📄 Non-JSON response attached.");
     } catch (error) {
         let errMsg = `❌ Error: ${error.message}`;
