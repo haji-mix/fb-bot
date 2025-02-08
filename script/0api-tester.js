@@ -9,28 +9,25 @@ module.exports["config"] = {
     info: "Test any API endpoint with GET or POST",
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
-    "GET Request: `apitest <url>`\n" +
-    "POST Request: `apitest <url> <post_data>`\n" +
-    "\nExample:\n" +
+    "GET: `apitest <url>`\n" +
+    "POST: `apitest <url> <post_data>`\n" +
+    "Example:\n" +
     "apitest https://example.com/api/chat?q=hello&uid=1\n" +
     "apitest https://example.com/api/chat q=hello&uid=1",
     cd: 8
 };
 
 const urlRegex = /^https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=]*)?$/i;
+const tempDir = path.join(__dirname, "cache");
+if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
 module.exports["run"] = async ({
-    chat, event, args, font
+    chat, args, font
 }) => {
-    if (args.length === 0) {
-        return chat.reply(font.thin(module.exports.config.guide));
-    }
+    if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
 
     let url = args[0].replace(/\(\.\)/g, ".");
-
-    if (!urlRegex.test(url)) {
-        return chat.reply(font.thin("❌ Invalid URL. Please provide a proper API URL."));
-    }
+    if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
 
     const isPost = args.length === 2;
     let postData = isPost ? args[1]: null;
@@ -38,11 +35,11 @@ module.exports["run"] = async ({
     try {
         const options = {
             method: isPost ? "POST": "GET",
-            url: url,
+            url,
             responseType: "arraybuffer",
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "*/*",
+                "Accept": "*/*"
             },
         };
 
@@ -51,66 +48,45 @@ module.exports["run"] = async ({
                 postData = JSON.parse(postData);
                 options.data = postData;
                 options.headers["Content-Type"] = "application/json";
-            } catch (err) {
+            } catch {
                 options.data = new URLSearchParams(postData);
                 options.headers["Content-Type"] = "application/x-www-form-urlencoded";
             }
         }
 
-        console.log("🔍 Requesting:", options);
+        const {
+            data,
+            headers
+        } = await axios(options);
+        const contentType = headers["content-type"] || "";
 
-        const response = await axios(options);
-        const contentType = response.headers["content-type"] || "";
-        let data = response.data;
-
-        if (contentType.includes("application/json")) {
-            try {
-                data = JSON.parse(response.data.toString());
-            } catch (error) {
-                return chat.reply(font.thin("⚠️ The API response is not valid JSON."));
-            }
-
-            let formattedData = JSON.stringify(data, null, 2);
-            if (formattedData.length > 4000) {
-                const tempDir = path.join(__dirname, "cache");
-                if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-
-                const tempFile = path.join(tempDir, `apitest_${Date.now()}.txt`);
-                fs.writeFileSync(tempFile, formattedData, "utf8");
-
-                await chat.reply(
-                    {
-                        body: font.thin("RAW response is too big!"), attachment: fs.createReadStream(tempFile)
-                    });
-                fs.unlinkSync(imagePath);
-            } else {
-                chat.reply(formattedData);
-            }
-        } else if (contentType.startsWith("image/")) {
-            const imageExt = contentType.split("/")[1];
-            const tempDir = path.join(__dirname, "cache");
-            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
-
-            const imagePath = path.join(tempDir, `image_${Date.now()}.${imageExt}`);
-            fs.writeFileSync(imagePath, response.data);
-
-            await chat.reply({
-                body: font.thin("📷 API returned an image:"), attachment: fs.createReadStream(imagePath)
-            });
-            fs.unlinkSync(imagePath);
-        } else {
-            let textData = response.data.toString();
-            chat.reply(font.thin(`📄 API returned non-JSON content:\n\n${textData.substring(0, 4000)}`));
+        if (contentType.includes("json")) {
+            const jsonData = JSON.parse(data.toString());
+            const formatted = JSON.stringify(jsonData, null, 2);
+            return formatted.length > 4000
+            ? sendFile(chat, "txt", formatted, "📄 Large JSON response attached."): chat.reply(formatted);
         }
+
+        if (/image|video|audio|gif/.test(contentType)) {
+            const ext = contentType.includes("gif") ? "gif": contentType.split("/")[1];
+            return sendFile(chat, ext, data, `📽️ API returned a ${ext.toUpperCase()}:`);
+        }
+
+        chat.reply(font.thin(`📄 Non-JSON response:\n\n${data.toString().slice(0, 4000)}`));
     } catch (error) {
-        console.error("API Request Failed:", error);
-
-        let errorMsg = `❌ Error: ${error.message}`;
-        if (error.response) {
-            errorMsg += `\nStatus: ${error.response.status}`;
-            errorMsg += `\nResponse: ${JSON.stringify(error.response.data, null, 2)}`;
-        }
-
-        chat.reply(font.thin(errorMsg));
+        const errMsg = `❌ Error: ${error.message}${error.response ? `\nStatus: ${error.response.status}`: ""}`;
+        chat.reply(font.thin(errMsg));
     }
 };
+
+async function sendFile(chat, ext, data, caption) {
+    const filePath = path.join(tempDir, `file_${Date.now()}.${ext}`);
+    fs.writeFileSync(filePath, data);
+    const message = await chat.reply({
+        body: caption,
+        attachment: fs.createReadStream(filePath),
+    });
+
+    fs.unlinkSync(filePath);
+    message.unsend(10000);
+}
