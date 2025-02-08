@@ -10,9 +10,9 @@ module.exports["config"] = {
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
         "📌 GET Request: `apitest <url>`\n" +
-        "📌 POST Request: `apitest <url> <post_data>` (Only works if exactly one extra argument is given)\n" +
+        "📌 POST Request: `apitest <url> <post_data>` (Only works if exactly one space extra argument is given)\n" +
         "\nExample:\n" +
-        "✅ `apitest https://example(.)com/chat/api?q`\n" +
+        "✅ `apitest https://example(.)com/chat/api?q=hello&uid=1`\n" +
         "✅ `apitest https://example(.)com/chat/api q=hello&uid=1`",
     cd: 8
 };
