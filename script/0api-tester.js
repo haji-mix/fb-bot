@@ -64,7 +64,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
         }
 
         if (/image|video|audio|gif/.test(contentType)) {
-            const ext = contentType.includes("gif") ? "gif" : contentType.split("/")[1] || "bin";
+            const ext = contentType.includes("gif") ? "gif" : contentType.split("/")[1] || "txt";
             return sendFile(chat, ext, data, `📽️ API returned a ${ext.toUpperCase()}:`);
         }
 
