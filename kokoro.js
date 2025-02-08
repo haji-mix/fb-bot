@@ -519,6 +519,18 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         const recentMessages = Utils.userActivity[userId].messages.map((msg) => msg.message);
                         const repeatedMessages = recentMessages.filter((msg) => msg === message);
 
+                        const configPath = path.join(__dirname, '../kokoro.json');
+                        if (!kokoro_config.blacklist) kokoro_config.blacklist = [];
+
+                        if (kokoro_config.blacklist.includes(event.senderID)) return;
+
+                        if (repeatedMessages.length === 10) {
+                            kokoro_config.blacklist.push(event.senderID);
+                            fs.writeFileSync(configPath, JSON.stringify(kokoro_config, null, 2), 'utf-8');
+                            reply(`UserID: ${userId}, You have been Banned for Spamming.`);
+                            return;
+                        }
+
                         if (repeatedMessages.length >= SPAM_THRESHOLD) {
                             if (!Utils.userActivity[userId].warned) {
                                 reply(`Warning to userID: ${userId} Please stop spamming!`);
