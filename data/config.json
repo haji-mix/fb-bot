@@ -1,0 +1,15 @@
+[
+  {
+    "fcaOption": {
+      "userAgent": "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+      "forceLogin": false,
+      "listenEvents": true,
+      "logLevel": "silent",
+      "updatePresence": true,
+      "selfListen": false,
+      "online": true,
+      "autoMarkDelivery": false,
+      "autoMarkRead": false
+    }
+  }
+]
