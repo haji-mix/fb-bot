@@ -66,7 +66,7 @@ class OnChat {
         return await download(link, 'binary', extension);
     }
 
-    async stream(link, extension = "png") {
+    async stream(link) {
         if (!link) return this.log("Missing Stream Url!");
         return await download(link, 'stream');
     }

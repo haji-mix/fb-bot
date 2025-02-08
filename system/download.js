@@ -38,13 +38,7 @@ const getHeadersForUrl = (url) => {
         pattern.domains.some((d) => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, "i").test(url))
     );
 
-    const headers = domain ? domain.headers : {};
-    if (url.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        headers["Accept"] =
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7";
-    }
-
-    return headers;
+    return domain ? domain.headers : {};
 };
 
 // Function to get the file extension from a URL
@@ -53,7 +47,7 @@ const getExtensionFromUrl = (url) => {
     return match ? match[1].toLowerCase() : null;
 };
 
-// Function to get the file extension from the content type
+// Function to get the file extension from the Content-Type header
 const getExtensionFromContentType = (contentType) => {
     if (!contentType) return null;
     if (contentType.includes("image/jpeg")) return "jpg";
@@ -100,18 +94,18 @@ const download = async (inputs, responseType = "arraybuffer", extension = "") =>
 
             // Handling URL inputs
             if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(input)) {
-                // Extract extension from URL
-                let fileExtension = getExtensionFromUrl(input) || extension;
+                let fileExtension = getExtensionFromUrl(input); // Get extension from URL
 
                 const response = await axios.get(input, {
                     responseType: responseType === "base64" ? "arraybuffer" : responseType,
                     headers: getHeadersForUrl(input),
                 });
 
-                // If no valid extension from URL, get it from Content-Type
                 if (!fileExtension) {
-                    fileExtension = getExtensionFromContentType(response.headers["content-type"]) || FALLBACK_EXTENSION;
+                    fileExtension = getExtensionFromContentType(response.headers["content-type"]); // Get extension from headers
                 }
+
+                fileExtension = fileExtension || extension || FALLBACK_EXTENSION; // Ensure fallback
 
                 filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
 
