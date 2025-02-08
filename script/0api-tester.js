@@ -9,17 +9,19 @@ module.exports["config"] = {
     info: "Test any API endpoint with GET or POST",
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
-        "GET Request: `apitest <url>`\n" +
-        "POST Request: `apitest <url> <post_data>`\n" +
-        "\nExample:\n" +
-        "apitest https://example.com/api/chat?q=hello&uid=1\n" +
-        "apitest https://example.com/api/chat q=hello&uid=1",
+    "GET Request: `apitest <url>`\n" +
+    "POST Request: `apitest <url> <post_data>`\n" +
+    "\nExample:\n" +
+    "apitest https://example.com/api/chat?q=hello&uid=1\n" +
+    "apitest https://example.com/api/chat q=hello&uid=1",
     cd: 8
 };
 
 const urlRegex = /^https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=]*)?$/i;
 
-module.exports["run"] = async ({ chat, event, args, font }) => {
+module.exports["run"] = async ({
+    chat, event, args, font
+}) => {
     if (args.length === 0) {
         return chat.reply(font.thin(module.exports.config.guide));
     }
@@ -31,16 +33,16 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
     }
 
     const isPost = args.length === 2;
-    let postData = isPost ? args[1] : null;
+    let postData = isPost ? args[1]: null;
 
     try {
         const options = {
-            method: isPost ? "POST" : "GET",
+            method: isPost ? "POST": "GET",
             url: url,
-            responseType: "arraybuffer", // Allows handling different response types (JSON, images, text)
+            responseType: "arraybuffer",
             headers: {
                 "User-Agent": "Mozilla/5.0",
-                "Accept": "*/*", // Accept any content type
+                "Accept": "*/*",
             },
         };
 
@@ -76,10 +78,11 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
                 const tempFile = path.join(tempDir, `apitest_${Date.now()}.txt`);
                 fs.writeFileSync(tempFile, formattedData, "utf8");
 
-                chat.reply(
-                    { body: font.thin("RAW response is too big!"), attachment: fs.createReadStream(tempFile) },
-                    () => fs.unlinkSync(tempFile)
-                );
+                await chat.reply(
+                    {
+                        body: font.thin("RAW response is too big!"), attachment: fs.createReadStream(tempFile)
+                    });
+                fs.unlinkSync(imagePath);
             } else {
                 chat.reply(formattedData);
             }
@@ -91,9 +94,10 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
             const imagePath = path.join(tempDir, `image_${Date.now()}.${imageExt}`);
             fs.writeFileSync(imagePath, response.data);
 
-            chat.reply({ body: font.thin("📷 API returned an image:"), attachment: fs.createReadStream(imagePath) }, () => {
-                fs.unlinkSync(imagePath);
+            await chat.reply({
+                body: font.thin("📷 API returned an image:"), attachment: fs.createReadStream(imagePath)
             });
+            fs.unlinkSync(imagePath);
         } else {
             let textData = response.data.toString();
             chat.reply(font.thin(`📄 API returned non-JSON content:\n\n${textData.substring(0, 4000)}`));
