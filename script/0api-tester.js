@@ -17,7 +17,7 @@ module.exports["config"] = {
     cd: 8
 };
 
-const urlRegex = /https?:\/\/[\w.-]+\.[a-z]{2,}[\w-./?%&=]*/gi;
+const urlRegex = /https?:\/\/[\w.-]+\.[a-z]{2,}(:\d+)?[\w-./?%&=]*/gi;
 
 module.exports["run"] = async ({
     chat, event, args, font
