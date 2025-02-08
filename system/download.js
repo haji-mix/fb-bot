@@ -60,20 +60,8 @@ const getHeadersForUrl = (url) => {
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "en-US,en;q=0.9",
                 "sec-ch-ua": "\"Not)A;Brand\";v=\"24\", \"Chromium\";v=\"116\"",
-                "sec-ch-ua-arch": "\"\"",
-                "sec-ch-ua-bitness": "\"\"",
-                "sec-ch-ua-full-version-list": "\"Not)A;Brand\";v=\"24.0.0.0\", \"Chromium\";v=\"116.0.5845.72\"",
-                "sec-ch-ua-mobile": "?1",
-                "sec-ch-ua-model": "\"Infinix X669\"",
                 "sec-ch-ua-platform": "\"Android\"",
-                "sec-ch-ua-platform-version": "\"12.0.0\"",
-                "sec-ch-ua-wow64": "?0",
-                "Sec-Fetch-Dest": "document",
-                "Sec-Fetch-Mode": "navigate",
-                "Sec-Fetch-Site": "none",
-                "Upgrade-Insecure-Requests": "1",
                 "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
-                "X-Client-Data": "CNKUywEIrsPNAQ=="
             }}];
 
     const domain = domainPatterns.find(pattern =>
@@ -107,9 +95,7 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "") =>
 
     // Ensure the target path exists
     if (!fs.existsSync(targetPath)) {
-        fs.mkdirSync(targetPath, {
-            recursive: true
-        });
+        fs.mkdirSync(targetPath, { recursive: true });
     }
 
     const files = await Promise.all(inputs.map(async (input) => {
@@ -152,23 +138,31 @@ const download = async (inputs, responseType = 'arraybuffer', extension = "") =>
             return stream;
         }
 
+        // Handling URLs
         if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(input)) {
-            const response = await axios.get(input, {
-                responseType: responseType === 'base64' ? 'arraybuffer': responseType,
-                headers: getHeadersForUrl(input),
-            });
+            const urlObj = new URL(input);
+            let fileExtension = path.extname(urlObj.pathname).slice(1); // Extract file extension from URL
 
-            const contentType = response.headers['content-type'];
-            const fileExtension = extension || getExtensionFromContentType(contentType);
-            filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
-            if (responseType === 'arraybuffer' || responseType === 'binary') {
+            if (!fileExtension) {
+                const response = await axios.get(input, {
+                    responseType: responseType === 'base64' ? 'arraybuffer' : responseType,
+                    headers: getHeadersForUrl(input),
+                });
+
+                const contentType = response.headers['content-type'];
+                fileExtension = extension || getExtensionFromContentType(contentType);
+
+                if (!fileExtension) fileExtension = 'txt'; // Fallback extension
+
+                filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
                 fs.writeFileSync(filePath, response.data);
-            } else if (responseType === 'stream') {
-                return response.data;
-            } else if (responseType === 'base64') {
-                const base64Data = Buffer.from(response.data).toString('base64');
-                fs.writeFileSync(filePath, base64Data, 'utf8');
             } else {
+                const response = await axios.get(input, {
+                    responseType: responseType === 'base64' ? 'arraybuffer' : responseType,
+                    headers: getHeadersForUrl(input),
+                });
+
+                filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
                 fs.writeFileSync(filePath, response.data);
             }
 
