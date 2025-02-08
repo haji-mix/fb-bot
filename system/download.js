@@ -50,15 +50,23 @@ const getExtensionFromUrl = (url) => {
 // Function to get the file extension from the Content-Type header
 const getExtensionFromContentType = (contentType) => {
     if (!contentType) return null;
-    if (contentType.includes("image/jpeg")) return "jpg";
-    if (contentType.includes("image/png")) return "png";
-    if (contentType.includes("image/gif")) return "gif";
-    if (contentType.includes("application/pdf")) return "pdf";
-    if (contentType.includes("audio/mpeg")) return "mp3";
-    if (contentType.includes("video/mp4")) return "mp4";
-    return null;
+    const typeMap = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "application/pdf": "pdf",
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/ogg": "mp3",
+        "audio/wav": "mp3",
+        "audio/aac": "mp3",
+        "audio/flac": "mp3",
+        "video/mp4": "mp4",
+        "video/webm": "webm",
+        "video/ogg": "mp4"
+    };
+    return typeMap[contentType.split(";")[0]] || null;
 };
-
 // Default fallback extension
 const FALLBACK_EXTENSION = "txt";
 

@@ -21,20 +21,18 @@ const urlRegex = /^https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=]*)?$/i;
 const tempDir = path.join(__dirname, "cache");
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-module.exports["run"] = async ({
-    chat, args, font
-}) => {
+module.exports["run"] = async ({ chat, args, font }) => {
     if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
 
-    let url = args[0].replace(/\(\.\)/g, ".");
+    let url = args[0]?.replace(/\(\.\)/g, ".") || "";
     if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
 
-    const isPost = args.length === 2;
-    let postData = isPost ? args[1]: null;
+    const isPost = args.length >= 2;
+    let postData = isPost ? args.slice(1).join(" ") : null; // Ensure all extra args are used
 
     try {
         const options = {
-            method: isPost ? "POST": "GET",
+            method: isPost ? "POST" : "GET",
             url,
             responseType: "arraybuffer",
             headers: {
@@ -43,7 +41,7 @@ module.exports["run"] = async ({
             },
         };
 
-        if (isPost) {
+        if (isPost && postData) {
             try {
                 postData = JSON.parse(postData);
                 options.data = postData;
@@ -54,27 +52,32 @@ module.exports["run"] = async ({
             }
         }
 
-        const {
-            data,
-            headers
-        } = await axios(options);
+        const { data, headers } = await axios(options);
         const contentType = headers["content-type"] || "";
 
         if (contentType.includes("json")) {
             const jsonData = JSON.parse(data.toString());
             const formatted = JSON.stringify(jsonData, null, 2);
             return formatted.length > 4000
-            ? sendFile(chat, "txt", formatted, "📄 Large JSON response attached."): chat.reply(formatted);
+                ? sendFile(chat, "txt", formatted, "📄 Large JSON response attached.")
+                : chat.reply(formatted);
         }
 
         if (/image|video|audio|gif/.test(contentType)) {
-            const ext = contentType.includes("gif") ? "gif": contentType.split("/")[1];
+            const ext = contentType.includes("gif") ? "gif" : contentType.split("/")[1] || "bin";
             return sendFile(chat, ext, data, `📽️ API returned a ${ext.toUpperCase()}:`);
         }
 
-        chat.reply(font.thin(`📄 Non-JSON response:\n\n${data.toString().slice(0, 4000)}`));
+        // Send non-JSON response as a .txt file
+        return sendFile(chat, "txt", data.toString(), "📄 Non-JSON response attached.");
     } catch (error) {
-        const errMsg = `❌ Error: ${error.message}${error.response ? `\nStatus: ${error.response.status}`: ""}`;
+        let errMsg = `❌ Error: ${error.message}`;
+        if (error.response) {
+            errMsg += `\nStatus: ${error.response.status}`;
+            if (error.response.data) {
+                errMsg += `\nResponse: ${error.response.data.toString().slice(0, 400)}`;
+            }
+        }
         chat.reply(font.thin(errMsg));
     }
 };
