@@ -1,4 +1,5 @@
 const { workers } = require("./modules");
+require('dotenv').config();
 
 
 async function processExit(req, res) {

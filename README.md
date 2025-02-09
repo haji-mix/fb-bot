@@ -1,112 +1,181 @@
 
-# FB-BOT
+---
 
-Kokoro-Project is a **forked and modified version** of the original facebook autobot, designed to enhance the **automation of Facebook Messenger bots**. With an improved feature set, better performance, and extended customization options, Kokoro makes chatbot deployment easier and more efficient.
+# **FB-BOT (Kokoro-Project)**  
+
+Kokoro-Project is a **forked and enhanced** version of the original **Facebook Autobot**, designed to **automate Facebook Messenger bots** efficiently. With a focus on **performance, customization, and ease of use**, Kokoro provides a seamless way to deploy and manage chatbots.  
 
 ---
 
-## 🚀 Key Features
+## **🚀 Features**  
 
-✅ **Enhanced AI Capabilities** – Leverages multiple AI models for smarter automation.  
-✅ **Seamless Facebook Messenger Integration** – Automate messages, replies, and posts.  
-✅ **User-Friendly Interface** – Easily configure and deploy bots.  
-✅ **Customizable Actions** – Define specific bot behaviors.  
+✅ **AI-Powered Automation** – Intelligent responses using multiple AI models.  
+✅ **Facebook Messenger Integration** – Automate messages, replies, and posts.  
+✅ **User-Friendly Configuration** – Simple `.env` and JSON-based setup.  
+✅ **Customizable Actions** – Define bot behaviors with ease.  
 ✅ **Plugin Support** – Expand functionalities with modular plugins.  
-✅ **Improved Performance** – Optimized for stability and speed.  
+✅ **Optimized Performance** – Lightweight, fast, and scalable.  
 
 ---
 
-![Chatbot Interaction Example](https://i.imgur.com/ciw2pfH.jpeg)
+## **📸 Screenshots**  
 
-![Chatbot Interaction Example](https://i.imgur.com/nNXMoSd.jpeg)
-
-![Chatbot Interaction Example](https://i.imgur.com/4fCYUJr.jpeg)
+![Chatbot Interaction](https://i.imgur.com/ciw2pfH.jpeg)  
+![Bot Commands](https://i.imgur.com/nNXMoSd.jpeg)  
+![Admin Panel](https://i.imgur.com/4fCYUJr.jpeg)  
 
 ---
 
-## 🛠 Getting Started
+## **🛠 Setup & Installation**  
 
-### 1️⃣ Clone the Repository  
-Fork and clone this repository to your local machine:
+### **1️⃣ Clone the Repository**  
 ```bash
 git clone https://github.com/haji-mix/kokoro
-```
-
-```
 cd kokoro
 ```
 
-### 2️⃣ Install Dependencies  
-Navigate to the project directory and install required packages:
+### **2️⃣ Install Dependencies**  
 ```bash
 npm install
 ```
 
-### 3️⃣ Configure Environment Variables  
-1. Create a `.env` file in the project root.  
-2. Add the following optional variables:
-   ```
-   export APPSTATE='YOUR C3C COOKIE JSON'
-   export PREFIX='YOUR BOT PREFIX e.g: #'
-   export KEY='YOUR SERVER KEY it is used to restart the server'
-   export PORT='Your Port e.g 25645'
-   ```
+### **3️⃣ Configure Environment**  
 
-### 4️⃣ Run the Application  
-Start the bot using:
+#### **📌 .env Configuration**  
+```bash
+# Optional login methods
+APPSTATE='YOUR C3C COOKIE JSON'  
+EMAIL='YOUR FACEBOOK EMAIL'  
+PASSWORD='YOUR FACEBOOK PASSWORD'  
+
+# Bot settings  
+PREFIX='YOUR BOT PREFIX e.g: #'  
+sitekey='YOUR RECAPTCHA SITEKEY Skip this if you already configured the kokoro.json'
+pass='YOUR SERVER PASSWORD'  
+PORT='YOUR PORT e.g. 25645'  
+```
+
+---
+
+## **🔑 CAPTCHA Configuration**  
+
+To prevent abuse and ensure security, Kokoro requires **Google reCAPTCHA**. You **must replace** the existing site key with your own.
+
+### **📌 Get Your reCAPTCHA Key**
+1. Visit [Google reCAPTCHA](https://www.google.com/recaptcha/admin/create).  
+2. **Register your website** and select **reCAPTCHA v2 ("I'm not a robot")**.  
+3. Copy the **Site Key** and **Secret Key**.  
+
+### **📌 Update `kokoro.json`**
+Replace `"sitekey"` with your own:  
+```json
+{
+  "author": "Kenneth Panio",
+  "sitekey": "YOUR_GOOGLE_RECAPTCHA_SITE_KEY",
+  "weblink": "https://yourwebsite.com or https:///127.0.0.1",
+  "port": "Add if you hosted server on Direct-IP Website or Localhost e.g 8080",
+  "timezone": "Asia/Manila"
+}
+```
+
+🔗 **More Info**: [Google reCAPTCHA Documentation](https://developers.google.com/recaptcha/intro).  
+
+---
+
+### **4️⃣ Run the Bot**  
 ```bash
 node index.js
 ```
 
-### 5️⃣ Access the Web Interface  
-Open your browser and go to localhost or your current host.domain:
+### **5️⃣ Access the Web Interface**  
+Visit:  
 ```
 http://localhost:${process.env.PORT}
 ```
 
-### 6️⃣ Configure Login  
-- Log in to your **dummy Facebook account** via the **Cookie** interface.  
-- Copy the session cookie and paste it into the `appstate` container.  
-- *(Optional)* Configure the chatbot prefix and admin ID.  
+---
 
-### 7️⃣ Explore Features  
-Use the `"help"` command in Messenger to discover available chatbot commands and functionalities.
+## **🛠 Bot Configuration: Admins & Blacklist**  
+
+| Setting   | Description |
+|-----------|------------|
+| **Admins** | List of authorized users who can control the bot. They can manage commands, settings, and restart the bot. |
+| **Blacklist** | Users who are **banned** from interacting with the bot. Messages from these users will be ignored. |
+
+✅ **Example Admins**  
+```json
+"admins": ["61571269923364", "61564046133266"]
+```
+
+🚫 **Example Blacklist**  
+```json
+"blacklist": ["61566761027554"]
+```
 
 ---
 
-## 🤝 Contributing
+## **⏳ Scheduled Tasks (Cron Jobs)**  
 
-We welcome contributions! If you’d like to improve **Kokoro-Project**, follow these steps:
+Kokoro supports **automated scheduled tasks** using cron jobs. You can customize bot behaviors based on time-based schedules.  
 
-1. **Fork this repository.**  
-2. **Create a feature branch** (`feature/your-feature-name`).  
-3. **Make your modifications** and commit your changes.  
-4. **Push to your fork** and submit a **pull request (PR)** for review.
+| Task Name            | Enabled | Schedule |
+|----------------------|---------|------------------------|
+| **Restart Bot**      | ✅ Yes  | Every 24 hours (`0 */24 * * *`) |
+| **Clear Chat**       | ❌ No   | Every day at midnight (`0 0 * * *`) |
+| **Morning Greetings** | ❌ No   | 5 AM, 6 AM, 7 AM |
+| **Motivational Messages** | ❌ No   | Every 5 hours (`0 */5 * * *`) |
 
-Make sure to check the [Contribution Guidelines](CONTRIBUTING.md) before submitting PRs.
-
----
-
-## 📜 License
-
-Kokoro-Project is licensed under the **MIT License**. For more details, see the [LICENSE](LICENSE) file.
+📌 **Modify these schedules in `kokoro.json`.**  
 
 ---
 
-## 🔗 Original Source
+## **🔑 Website Login Guide**  
 
-This project is based on the facebook autobot, an open-source AI chatbot automation tool. You can check out the [original fb autobot repository](https://github.com/aizintel/AUTO) to explore its foundation and contributions.
-
----
-
-## 📞 Contact & Support
-
-Need help or have suggestions? Reach out to us:
-
-📧 **Email**: [lkpanio25@gmail.com](mailto:lkpanio25@gmail.com)
-
-💬 **Chatbot Community Discussions**: [Join!](https://facebook.com/groups/coders.dev/)
+1. **Download [Webvium](https://mrepol742.github.io/webviumdev/) and Install**.  
+2. Open Webvium and log in to **Facebook** with a dummy account.  
+3. Navigate to **DevTools > Cookie Manager**.  
+4. Copy the Facebook **cookie JSON** and go to your site and paste it into `APPSTATE` container.  
+5. *(Optional)* Configure bot prefix and admin settings.  
+6. **Click Submit** and start using your chatbot!  
 
 ---
 
-✨ **Happy Chatbot Building!** 🚀
+## **📖 Commands & Usage**  
+Type `"help"` in Messenger to view available chatbot commands.  
+
+---
+
+## **🤝 Contributing**  
+
+We welcome contributions! Follow these steps:  
+
+1. **Fork the repository**  
+2. **Create a new branch** (`feature/your-feature`)  
+3. **Commit your changes**  
+4. **Push to your fork & submit a PR**  
+
+Read the [Contribution Guidelines](CONTRIBUTING.md) before submitting.  
+
+---
+
+## **📜 License**  
+
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.  
+
+---
+
+## **🔗 Original Source & Credits**  
+
+This project is based on the open-source [Facebook Autobot](https://github.com/aizintel/AUTO).  
+
+---
+
+## **📞 Contact & Support**  
+
+📧 **Email**: [lkpanio25@gmail.com](mailto:lkpanio25@gmail.com)  
+💬 **Community**: [Join the discussion](https://facebook.com/groups/coders.dev/)  
+
+✨ **Happy Chatbot Building! 🚀**  
+
+---
+

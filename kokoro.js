@@ -193,11 +193,13 @@ function minifyHtml(renderedHtml, mconfig = minifyConfig) {
         mconfig);
 }
 
+const sitekey = process.env.sitekey || kokoro_config.sitekey;
+
 routes.forEach(route => {
     if (route.file) {
         app[route.method](route.path, (req, res) => {
             res.render(route.file, {
-                cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles, author
+                cssFiles, scriptFiles, jsFiles, description, keywords, name, styleFiles, author, sitekey
             }, (err, renderedHtml) => {
                 if (err) {
                     res.status(500).send('Error rendering template');
