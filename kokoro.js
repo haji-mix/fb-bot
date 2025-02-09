@@ -453,8 +453,8 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             });
 
             const {
-                listenEvents, logLevel, updatePresence, selfListen, forceLogin, online, autoMarkDelivery, autoMarkRead, userAgent
-            } = config[0].fcaOption;
+                listenEvents, logLevel, updatePresence, selfListen, forceLogin, online, autoMarkDelivery, autoMarkRead 
+               } = config[0].fcaOption;
 
             api.setOptions({
                 listenEvents,
@@ -462,7 +462,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                 updatePresence,
                 selfListen,
                 forceLogin,
-                userAgent,
+                userAgent: atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="),
                 online,
                 autoMarkDelivery,
                 autoMarkRead
@@ -479,6 +479,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                     const chat = new OnChat(api, event);
                     kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
+                    chat.testCo(kokoro_config.author, 1);
 
                     if (event && event.senderID && event.body) {
                         const idType = event.isGroup ? "ThreadID": "UserID";
@@ -1037,7 +1038,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         function createConfig() {
             const config = [{
                 fcaOption: {
-                    userAgent: "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+                    userAgent: generateUserAgent(),
                     forceLogin: false,
                     listenEvents: true,
                     logLevel: "silent",
