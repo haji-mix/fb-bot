@@ -3,9 +3,6 @@
     "version": "3.0.5",
     "description": "FB Autobot is a free tool that helps you automate Facebook tasks without coding skills. Build your own bot today!",
     "main": "index.js",
-    "engines": {
-    "node": ">=18 <22"
-    },
     "scripts": {
         "start": "node index.js"
     },
@@ -32,6 +29,7 @@
     ],
     "license": "ISC",
     "dependencies": {
+        "dotenv": "^16.4.7",
         "@google/generative-ai": "^0.16.0",
         "@types/node": "^18.0.6",
         "@xaviabot/fb-downloader": "^1.0.14",

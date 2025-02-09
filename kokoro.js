@@ -9,6 +9,8 @@ const axios = require("axios");
 const helmet = require('helmet');
 const cors = require('cors');
 
+require('dotenv').config();
+
 const {
     workers,
     logger,
