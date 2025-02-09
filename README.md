@@ -1,7 +1,7 @@
 
-# (FB-AUTOBOT)
+# FB-BOT
 
-Kokoro-Project is a **forked and modified version** of the original **FB-AUTOBOT**, designed to enhance the **automation of Facebook Messenger bots**. With an improved feature set, better performance, and extended customization options, Kokoro makes chatbot deployment easier and more efficient.
+Kokoro-Project is a **forked and modified version** of the original facebook autobot, designed to enhance the **automation of Facebook Messenger bots**. With an improved feature set, better performance, and extended customization options, Kokoro makes chatbot deployment easier and more efficient.
 
 ---
 
@@ -95,7 +95,7 @@ Kokoro-Project is licensed under the **MIT License**. For more details, see the 
 
 ## 🔗 Original Source
 
-This project is based on the **FB-AUTOBOT**, an open-source AI chatbot automation tool. You can check out the [original FB-AUTOBOT repository](https://github.com/aizintel/AUTO) to explore its foundation and contributions.
+This project is based on the facebook autobot, an open-source AI chatbot automation tool. You can check out the [original fb autobot repository](https://github.com/aizintel/AUTO) to explore its foundation and contributions.
 
 ---
 
