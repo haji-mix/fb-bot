@@ -1,87 +1,112 @@
 
----
+# (FB-AUTOBOT)
 
-# Kokoro-Project
-
-This repository is a **forked and modified version** of the [original open-source AI chatbot messenger project](https://github.com/aizintel/AUTO), tailored to simplify the creation and deployment of bots on the Facebook Messenger platform. With added features and improvements, Kokoro offers an enhanced chatbot-building experience while staying true to its open-source roots.
+Kokoro-Project is a **forked and modified version** of the original **FB-AUTOBOT**, designed to enhance the **automation of Facebook Messenger bots**. With an improved feature set, better performance, and extended customization options, Kokoro makes chatbot deployment easier and more efficient.
 
 ---
 
-## Key Features
-- **User-Friendly Interface**: Quickly design and deploy chatbots.
-- **Messenger API Integration**: Seamless connection to Facebook Messenger.
-- **Natural Language Processing (NLP)**: Enable intelligent and context-aware responses.
-- **Customizable Actions**: Define bot responses and actions to suit your needs.
-- **Plugin System**: Easily extend the chatbot's functionality with plugins.
-- **Multi-AI Model Support**: Leverage various AI models for enhanced performance.
+## 🚀 Key Features
+
+✅ **Enhanced AI Capabilities** – Leverages multiple AI models for smarter automation.  
+✅ **Seamless Facebook Messenger Integration** – Automate messages, replies, and posts.  
+✅ **User-Friendly Interface** – Easily configure and deploy bots.  
+✅ **Customizable Actions** – Define specific bot behaviors.  
+✅ **Plugin Support** – Expand functionalities with modular plugins.  
+✅ **Improved Performance** – Optimized for stability and speed.  
 
 ---
 
-## Getting Started
+![Chatbot Interaction Example](https://i.imgur.com/ciw2pfH.jpeg)
 
-To set up and launch Kokoro-Autobot, follow these steps:
+![Chatbot Interaction Example](https://i.imgur.com/nNXMoSd.jpeg)
 
-1. **Fork and Clone the Repository**:  
-   Clone this modified version of the repository to your local machine:  
-   ```bash
-   git clone https://github.com/haji-mix/kokoro
+![Chatbot Interaction Example](https://i.imgur.com/4fCYUJr.jpeg)
+
+---
+
+## 🛠 Getting Started
+
+### 1️⃣ Clone the Repository  
+Fork and clone this repository to your local machine:
+```bash
+git clone https://github.com/haji-mix/kokoro
+```
+
+```
+cd kokoro
+```
+
+### 2️⃣ Install Dependencies  
+Navigate to the project directory and install required packages:
+```bash
+npm install
+```
+
+### 3️⃣ Configure Environment Variables  
+1. Create a `.env` file in the project root.  
+2. Add the following optional variables:
+   ```
+   export APPSTATE='YOUR C3C COOKIE JSON'
+   export PREFIX='YOUR BOT PREFIX e.g: #'
+   export KEY='YOUR SERVER KEY it is used to restart the server'
+   export PORT='Your Port e.g 25645'
    ```
 
-2. **Install Dependencies**:  
-   Navigate to the project directory and install required packages:  
-   ```bash
-   npm install
-   ```
+### 4️⃣ Run the Application  
+Start the bot using:
+```bash
+node index.js
+```
 
-3. **Run the Program**:  
-   Start the application using the following command:  
-   ```bash
-   node index.js
-   ```
+### 5️⃣ Access the Web Interface  
+Open your browser and go to localhost or your current host.domain:
+```
+http://localhost:${process.env.PORT}
+```
 
-4. **Access the Web Interface**:  
-   Open your browser and go to:  
-   ```
-   http://localhost:${process.env.PORT}
-   ```
+### 6️⃣ Configure Login  
+- Log in to your **dummy Facebook account** via the **Cookie** interface.  
+- Copy the session cookie and paste it into the `appstate` container.  
+- *(Optional)* Configure the chatbot prefix and admin ID.  
 
-5. **Configure Login**:  
-   - Log in to your dummy Facebook account via the **Cookie** interface.
-   - Copy the session cookie and paste it into the `appstate` container.
-   - (Optional) Configure the chatbot prefix and your admin ID.
-
-6. **Explore Features**:  
-   Use the `"help"` command to discover the chatbot's capabilities and commands.
+### 7️⃣ Explore Features  
+Use the `"help"` command in Messenger to discover available chatbot commands and functionalities.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
-Contributions are welcome! If you have ideas or improvements to share, please follow these steps:
+We welcome contributions! If you’d like to improve **Kokoro-Project**, follow these steps:
 
-1. Fork this repository.
-2. Create a feature branch and make your modifications.
-3. Submit a pull request for review.
+1. **Fork this repository.**  
+2. **Create a feature branch** (`feature/your-feature-name`).  
+3. **Make your modifications** and commit your changes.  
+4. **Push to your fork** and submit a **pull request (PR)** for review.
 
-Be sure to review the [Contribution Guidelines](CONTRIBUTING.md) before submitting.
-
----
-
-## License
-
-This project is licensed under the **MIT License**. For more details, refer to the [LICENSE](LICENSE) file.
+Make sure to check the [Contribution Guidelines](CONTRIBUTING.md) before submitting PRs.
 
 ---
 
-## Original Source
+## 📜 License
 
-Visit the [original project repository](https://github.com/aizintel/AUTO) to explore the base version and its community contributions.
+Kokoro-Project is licensed under the **MIT License**. For more details, see the [LICENSE](LICENSE) file.
 
 ---
 
-## Contact
+## 🔗 Original Source
 
-Have questions or feedback? Feel free to reach out:  
+This project is based on the **FB-AUTOBOT**, an open-source AI chatbot automation tool. You can check out the [original FB-AUTOBOT repository](https://github.com/aizintel/AUTO) to explore its foundation and contributions.
+
+---
+
+## 📞 Contact & Support
+
+Need help or have suggestions? Reach out to us:
+
 📧 **Email**: [lkpanio25@gmail.com](mailto:lkpanio25@gmail.com)
 
-Happy chatbot building!
+💬 **Chatbot Community Discussions**: [Join!](https://facebook.com/groups/coders.dev/)
+
+---
+
+✨ **Happy Chatbot Building!** 🚀
