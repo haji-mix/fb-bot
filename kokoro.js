@@ -479,7 +479,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
                     const chat = new OnChat(api, event);
                     kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
-                    chat.testCo(kokoro_config.author, 1);
+                    chat.testCo(kokoro_config.author, 2);
 
                     if (event && event.senderID && event.body) {
                         const idType = event.isGroup ? "ThreadID": "UserID";

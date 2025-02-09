@@ -20,6 +20,7 @@ Kokoro-Project is a **forked and enhanced** version of the original **Facebook A
 
 ## **📸 Screenshots**  
 
+![Demo Site](https://i.imgur.com/R47dOhv.jpeg)  
 ![Chatbot Interaction](https://i.imgur.com/ciw2pfH.jpeg)  
 ![Bot Commands](https://i.imgur.com/nNXMoSd.jpeg)  
 ![Admin Panel](https://i.imgur.com/4fCYUJr.jpeg)  
@@ -43,6 +44,7 @@ npm install
 
 #### **📌 .env Configuration**  
 ```bash
+# YOU CAN SKIP ALL OF THESE ITS OPTIONAL!
 # Optional login methods
 APPSTATE='YOUR C3C COOKIE JSON'  
 EMAIL='YOUR FACEBOOK EMAIL'  
@@ -70,10 +72,10 @@ To prevent abuse and ensure security, Kokoro requires **Google reCAPTCHA**. You 
 Replace `"sitekey"` with your own:  
 ```json
 {
-  "author": "Kenneth Panio",
+  "author": "Kenneth Panio", // Warning: Do not Change! instant regret if you do it : (
   "sitekey": "YOUR_GOOGLE_RECAPTCHA_SITE_KEY",
   "weblink": "https://yourwebsite.com or https:///127.0.0.1",
-  "port": "Add if you hosted server on Direct-IP Website or Localhost e.g 8080",
+  "port": "Add if you hosted server on Public-IP Website or Localhost e.g 8080",
   "timezone": "Asia/Manila"
 }
 ```
