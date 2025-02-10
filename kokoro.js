@@ -722,33 +722,33 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                         }
                     }
 
-                    if (event && event.body && aliases(command)?.name) {
-                        const now = Date.now();
-                        const name = aliases(command)?.name;
-                        const sender = Utils.cooldowns.get(
-                            `${event.senderID + userid}`
-                        );
-                        const delay = aliases(command)?.cd ?? 0;
+if (event && event.body && aliases(command)?.name) {
+    const now = Date.now();
+    const name = aliases(command)?.name;
+    const cooldownKey = `${event.senderID}_${name}`;
+    const sender = Utils.cooldowns.get(cooldownKey);
+    const delay = aliases(command)?.cd ?? 0;
 
-                        if (!sender || now - sender.timestamp >= delay * 1000) {
-                            Utils.cooldowns.set(
-                                `${event.senderID + userid}`,
-                                {
-                                    timestamp: now,
-                                    command: name
-                                }
-                            );
-                        } else {
-                            const active = Math.ceil(
-                                (sender.timestamp + delay * 1000 - now) /
-                                1000
-                            );
-                            await reply(
-                                `Please wait ${active} second(s) before using the "${name}" command again.`
-                            );
-                            return;
-                        }
-                    }
+    if (!sender || now - sender.timestamp >= delay * 1000) {
+
+        Utils.cooldowns.set(cooldownKey, {
+            timestamp: now,
+            command: name,
+            warned: false
+        });
+    } else {
+        const active = Math.ceil((sender.timestamp + delay * 1000 - now) / 1000);
+
+        if (!sender.warned) {
+            await reply(`Please wait ${active} second(s) before using the "${name}" command again.`);
+            sender.warned = true;
+            Utils.cooldowns.set(cooldownKey, sender);
+        }
+
+        return;
+    }
+}
+
 
                     if (event && event.type === "message_reaction") {
                         if (event.senderID === userid && ["🗑️", "🚮", "👎"].includes(event.reaction)) {
