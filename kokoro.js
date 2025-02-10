@@ -725,7 +725,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 if (event && event.body && aliases(command)?.name) {
     const now = Date.now();
     const name = aliases(command)?.name;
-    const cooldownKey = `${event.senderID}_${name}`;
+    const cooldownKey = `${event.senderID}_${name}_${userid}`;
     const sender = Utils.cooldowns.get(cooldownKey);
     const delay = aliases(command)?.cd ?? 0;
 
