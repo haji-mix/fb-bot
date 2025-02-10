@@ -1,49 +1,40 @@
 const path = require("path");
 const fs = require("fs");
+
 const scriptDir = path.join(__dirname, "../script");
 const allowedExtensions = [".js", ".ts"];
 const loadedModuleNames = new Set();
-let autoDelete = true; // Set to `false` to disable auto-delete
+let autoDelete = false; // Set to `false` to disable auto-delete
 
-async function loadModule(modulePath, Utils, logger, count) {
+async function loadModule(modulePath, Utils, logger) {
     try {
         const module = require(modulePath);
-        const config = module.config || module.meta;
+        const config = module.config || module.meta || module.manifest;
 
-        if (!config) {
-            logger.red(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
-            return count;
+        if (!config?.name) {
+            logger.red(`Module at ${modulePath} is missing required properties. Skipping...`);
+            return 0;
         }
 
         const moduleName = config.name;
-        if (!moduleName) {
-            logger.red(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
-            return count;
-        }
-
         if (loadedModuleNames.has(moduleName)) {
-            logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded.`);
-
+            logger.instagram(`Module [${moduleName}] already loaded.`);
             if (autoDelete) {
                 try {
                     fs.unlinkSync(modulePath);
-                    logger.yellow(`Deleted already loaded module file: ${modulePath}`);
-                } catch (deleteError) {
-                    logger.red(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
+                    logger.yellow(`Deleted duplicate module file: ${modulePath}`);
+                } catch (err) {
+                    logger.red(`Failed to delete ${modulePath}: ${err.message}`);
                 }
-            } else {
-                logger.yellow(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
             }
-
-            return count;
+            return 0;
         }
 
         loadedModuleNames.add(moduleName);
 
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
-            aliases: [...config.aliases || [],
-                moduleName],
+            aliases: [...(config.aliases || []), moduleName],
             name: moduleName,
             role: config.role ?? "0",
             version: config.version ?? "1.0.0",
@@ -57,58 +48,57 @@ async function loadModule(modulePath, Utils, logger, count) {
             cd: config.cd ?? config.cooldowns ?? config.cooldown ?? "5",
             usage: config.usage ?? config.usages ?? "",
             guide: config.guide ?? "",
-            info: config.info ?? config.description ?? ""
+            info: config.info ?? config.description ?? "",
         };
 
+        const handlers = {
+            handleEvent: module.handleEvent,
+            handleReply: module.handleReply || module.onReply,
+            run: module.run || module.deploy || module.execute || module.exec || module.onStart,
+        };
 
-        if (module.handleEvent) {
-            Utils.handleEvent.set(moduleInfo.aliases, {
-                ...moduleInfo, handleEvent: module.handleEvent
-            });
-        }
-        if (module.handleReply) {
-            Utils.ObjectReply.set(moduleInfo.aliases, {
-                ...moduleInfo, handleReply: module.handleReply
-            });
-        }
-        if (module.run) {
-            Utils.commands.set(moduleInfo.aliases, {
-                ...moduleInfo, run: module.run
-            });
+        for (const [key, func] of Object.entries(handlers)) {
+            if (func) {
+                moduleInfo.aliases.forEach(alias => {
+                    Utils[key === "handleReply" ? "ObjectReply" : key === "handleEvent" ? "handleEvent" : "commands"]
+                        .set(alias, { ...moduleInfo, [key]: func });
+                });
+            }
         }
 
         logger.rainbow(`LOADED MODULE [${moduleName}]`);
-        count++;
+        return 1;
     } catch (error) {
         logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
+        return 0;
     }
-    return count;
 }
 
-async function loadFromDirectory(directory, Utils, logger, count) {
+async function loadFromDirectory(directory, Utils, logger) {
     const files = fs.readdirSync(directory);
-    for (const file of files) {
+    
+    const promises = files.map(async (file) => {
         const filePath = path.join(directory, file);
         const stats = fs.statSync(filePath);
 
         if (stats.isDirectory()) {
-            count = await loadFromDirectory(filePath, Utils, logger, count);
+            return loadFromDirectory(filePath, Utils, logger);
         } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
-            count = await loadModule(filePath, Utils, logger, count);
+            return loadModule(filePath, Utils, logger);
         }
-    }
+        return 0;
+    });
 
-    return count;
+    const results = await Promise.all(promises);
+    return results.reduce((total, count) => total + count, 0);
 }
 
 async function loadModules(Utils, logger) {
-    let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
+    const count = await loadFromDirectory(scriptDir, Utils, logger);
     logger.rainbow(`TOTAL MODULES: [${count}]`);
 }
 
 module.exports = {
     loadModules,
-    setAutoDelete: (value) => {
-        autoDelete = value;
-    }
+    setAutoDelete: value => (autoDelete = value),
 };

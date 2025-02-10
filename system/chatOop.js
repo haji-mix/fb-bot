@@ -74,7 +74,7 @@ class OnChat {
         return await download(link, 'stream');
     }
     
-    async decodeStream(link, extension = "png", responseType = "base64") {
+    async decodeStream(base64, extension = "png", responseType = "base64") {
       if (!link) return this.log("Missing raw data!");
       return await download(link, responseType, extension);
     }
@@ -150,6 +150,10 @@ class OnChat {
 
     async token() {
         return await this.api.getAccess();
+    }
+    
+    send(msg, tid, mid) {
+        this.reply(msg, tid, mid)
     }
 
     async reply(msg, tid = this.threadID, mid = this.messageID) {

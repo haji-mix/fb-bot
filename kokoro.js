@@ -4,7 +4,6 @@ const login = require("chatbox-fca-remake");
 const express = require("express");
 const rateLimit = require('express-rate-limit');
 const app = express();
-let PORT = 10000;
 const axios = require("axios");
 const helmet = require('helmet');
 const cors = require('cors');
@@ -345,12 +344,25 @@ async function postLogin(req, res) {
 }
 
 const startServer = async () => {
-    const hajime = await workers();
-    PORT = process.env.PORT || kokoro_config.port || hajime.host.port || PORT;
+    try {
+        const hajime = await workers();
+        
+        let PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
 
-    app.listen(PORT, () => {
-        logger.summer(`AUTOBOT IS RUNNING ON PORT: ${PORT}`);
-    });
+        const server = 
+            (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
+            kokoro_config.weblink ||
+            (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
+            hajime?.host?.server?.[0] ||
+            `http://localhost:${PORT}`;
+
+        app.listen(PORT, () => {
+            logger.summer(`Web Link: ${server}`);
+        });
+
+    } catch (error) {
+        console.error("Error starting server:", error);
+    }
 };
 
 startServer();
