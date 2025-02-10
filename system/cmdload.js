@@ -6,33 +6,49 @@ const allowedExtensions = [".js", ".ts"];
 const loadedModuleNames = new Set();
 let autoDelete = true; // Set to `false` to disable auto-delete
 
+// Utility function to clear module cache
+function clearModuleCache(modulePath) {
+    delete require.cache[require.resolve(modulePath)];
+}
+
 async function loadModule(modulePath, Utils, logger, count) {
     try {
+        // Prevent caching issues
+        clearModuleCache(modulePath);
         const module = require(modulePath);
         const config = module.config || module.meta || module.manifest;
 
-        if (!config?.name) {
-            logger.red(`Module at ${modulePath} is missing required properties. Skipping...`);
+        if (!config) {
+            logger.red(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
             return count;
         }
 
         const moduleName = config.name;
+        if (!moduleName) {
+            logger.red(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
+            return count;
+        }
 
         if (loadedModuleNames.has(moduleName)) {
-            logger.instagram(`Module [${moduleName}] already loaded.`);
+            logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded.`);
+
             if (autoDelete) {
                 try {
                     fs.unlinkSync(modulePath);
-                    logger.yellow(`Deleted duplicate module file: ${modulePath}`);
-                } catch (err) {
-                    logger.red(`Failed to delete ${modulePath}: ${err.message}`);
+                    logger.yellow(`Deleted already loaded module file: ${modulePath}`);
+                } catch (deleteError) {
+                    logger.red(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
                 }
+            } else {
+                logger.yellow(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
             }
+
             return count;
         }
 
         loadedModuleNames.add(moduleName);
 
+        // Normalize module configuration
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
             aliases: [...(config.aliases || []), moduleName],
@@ -49,23 +65,22 @@ async function loadModule(modulePath, Utils, logger, count) {
             cd: config.cd ?? config.cooldowns ?? config.cooldown ?? "5",
             usage: config.usage ?? config.usages ?? "",
             guide: config.guide ?? "",
-            info: config.info ?? config.description ?? "",
+            info: config.info ?? config.description ?? ""
         };
 
-        // Handle different function types
-        const handlers = {
-            handleEvent: module.handleEvent,
-            handleReply: module.handleReply || module.onReply,
-            run: module.run || module.deploy || module.execute || module.exec || module.onStart,
-        };
+        // Store different handlers efficiently
+        if (module.handleEvent) {
+            Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent: module.handleEvent });
+        }
 
-        for (const [key, func] of Object.entries(handlers)) {
-            if (func) {
-                moduleInfo.aliases.forEach(alias => {
-                    Utils[key === "handleReply" ? "ObjectReply" : key === "handleEvent" ? "handleEvent" : "commands"]
-                        .set(alias, { ...moduleInfo, [key]: func });
-                });
-            }
+        const replyFunction = module.handleReply || module.onReply;
+        if (replyFunction) {
+            Utils.ObjectReply.set(moduleInfo.aliases, { ...moduleInfo, handleReply: replyFunction });
+        }
+
+        const executeFunction = module.run || module.deploy || module.execute || module.exec || module.onStart;
+        if (executeFunction) {
+            Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run: executeFunction });
         }
 
         logger.rainbow(`LOADED MODULE [${moduleName}]`);
@@ -77,25 +92,35 @@ async function loadModule(modulePath, Utils, logger, count) {
 }
 
 async function loadFromDirectory(directory, Utils, logger, count) {
-    for (const file of fs.readdirSync(directory)) {
-        const filePath = path.join(directory, file);
-        const stats = fs.statSync(filePath);
+    try {
+        const files = fs.readdirSync(directory);
+        const modulePromises = files.map(async (file) => {
+            const filePath = path.join(directory, file);
+            const stats = fs.statSync(filePath);
 
-        count = stats.isDirectory()
-            ? await loadFromDirectory(filePath, Utils, logger, count)
-            : allowedExtensions.includes(path.extname(filePath).toLowerCase())
-            ? await loadModule(filePath, Utils, logger, count)
-            : count;
+            if (stats.isDirectory()) {
+                return loadFromDirectory(filePath, Utils, logger, count);
+            } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
+                return loadModule(filePath, Utils, logger, count);
+            }
+        });
+
+        const results = await Promise.all(modulePromises);
+        return results.reduce((sum, value) => sum + (value || 0), count);
+    } catch (error) {
+        logger.red(`Error reading directory: ${directory}. Error: ${error.message}`);
+        return count;
     }
-    return count;
 }
 
 async function loadModules(Utils, logger) {
-    const count = await loadFromDirectory(scriptDir, Utils, logger, 0);
-    logger.rainbow(`TOTAL MODULES: [${count}]`);
+    let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
+    logger.rainbow(`TOTAL MODULES LOADED: [${count}]`);
 }
 
 module.exports = {
     loadModules,
-    setAutoDelete: value => (autoDelete = value),
+    setAutoDelete: (value) => {
+        autoDelete = value;
+    }
 };
