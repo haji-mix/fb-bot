@@ -4,19 +4,20 @@ const fs = require("fs");
 const scriptDir = path.join(__dirname, "../script");
 const allowedExtensions = [".js", ".ts"];
 const loadedModuleNames = new Set();
-let autoDelete = false; // Set to `false` to disable auto-delete
+let autoDelete = true; // Set to `false` to disable auto-delete
 
-async function loadModule(modulePath, Utils, logger) {
+async function loadModule(modulePath, Utils, logger, count) {
     try {
         const module = require(modulePath);
         const config = module.config || module.meta || module.manifest;
 
         if (!config?.name) {
             logger.red(`Module at ${modulePath} is missing required properties. Skipping...`);
-            return 0;
+            return count;
         }
 
         const moduleName = config.name;
+
         if (loadedModuleNames.has(moduleName)) {
             logger.instagram(`Module [${moduleName}] already loaded.`);
             if (autoDelete) {
@@ -27,7 +28,7 @@ async function loadModule(modulePath, Utils, logger) {
                     logger.red(`Failed to delete ${modulePath}: ${err.message}`);
                 }
             }
-            return 0;
+            return count;
         }
 
         loadedModuleNames.add(moduleName);
@@ -51,6 +52,7 @@ async function loadModule(modulePath, Utils, logger) {
             info: config.info ?? config.description ?? "",
         };
 
+        // Handle different function types
         const handlers = {
             handleEvent: module.handleEvent,
             handleReply: module.handleReply || module.onReply,
@@ -67,34 +69,29 @@ async function loadModule(modulePath, Utils, logger) {
         }
 
         logger.rainbow(`LOADED MODULE [${moduleName}]`);
-        return 1;
+        return count + 1;
     } catch (error) {
         logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
-        return 0;
+        return count;
     }
 }
 
-async function loadFromDirectory(directory, Utils, logger) {
-    const files = fs.readdirSync(directory);
-    
-    const promises = files.map(async (file) => {
+async function loadFromDirectory(directory, Utils, logger, count) {
+    for (const file of fs.readdirSync(directory)) {
         const filePath = path.join(directory, file);
         const stats = fs.statSync(filePath);
 
-        if (stats.isDirectory()) {
-            return loadFromDirectory(filePath, Utils, logger);
-        } else if (allowedExtensions.includes(path.extname(filePath).toLowerCase())) {
-            return loadModule(filePath, Utils, logger);
-        }
-        return 0;
-    });
-
-    const results = await Promise.all(promises);
-    return results.reduce((total, count) => total + count, 0);
+        count = stats.isDirectory()
+            ? await loadFromDirectory(filePath, Utils, logger, count)
+            : allowedExtensions.includes(path.extname(filePath).toLowerCase())
+            ? await loadModule(filePath, Utils, logger, count)
+            : count;
+    }
+    return count;
 }
 
 async function loadModules(Utils, logger) {
-    const count = await loadFromDirectory(scriptDir, Utils, logger);
+    const count = await loadFromDirectory(scriptDir, Utils, logger, 0);
     logger.rainbow(`TOTAL MODULES: [${count}]`);
 }
 
