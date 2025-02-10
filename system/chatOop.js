@@ -152,7 +152,7 @@ class OnChat {
         return await this.api.getAccess();
     }
     
-    send(msg, tid, mid) {
+    send(msg, tid, mid = null) {
         this.reply(msg, tid, mid)
     }
 
