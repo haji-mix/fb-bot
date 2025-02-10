@@ -131,8 +131,10 @@ module.exports["run"] = async ({
             const versionMessage = version ? `VERSION: ${version}\n`: '';
             const roleMessage = role !== undefined ? (role === 0 ? 'ROLE: User': (role === 1 ? 'ROLE: Bot-admin owner': (role === 2 ? 'ROLE: Group admins': (role === 3 ? 'ROLE: Super admins/moderators': '')))): '';
             const aliasesMessage = aliases.length ? `\nALIASES: ${aliases.join(', ')}\n`: '';
-            const prefixMessage = isPrefix
-            ? `PREFIX: Required to use ${prefix || ''}\n`: 'PREFIX: Not Required\n';
+            const prefixMessage = isPrefix && prefix 
+    ? `PREFIX: Required to use ${prefix}\n` 
+    : 'PREFIX: Not Required\n';
+
             const descriptionMessage = info ? `INFO: ${info}\n`: '';
             const usageMessage = usage ? `USAGE: ${usage}\n`: '';
             const guideMessage = guide ? `GUIDE: ${guide}\n`: '';
