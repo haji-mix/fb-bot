@@ -780,106 +780,31 @@ if (event && event.body && aliases(command)?.name) {
                         return;
                     }
 
-                    for (const {
-                        handleEvent,
-                        name
-                    } of Utils.handleEvent.values()) {
-                        if (handleEvent && name) {
-                            handleEvent({
-                                api,
-                                chat,
-                                message: chat,
-                                box: chat,
-                                fonts,
-                                font: fonts,
-                                global,
-                                event,
-                                admin,
-                                prefix,
+const sharedParams = { api, chat, box: chat, message: chat, fonts, font: fonts, global, event, admin, prefix, Utils };
 
-                                Utils,
-                            });
-                        }
-                    }
+for (const { handleEvent } of Utils.handleEvent.values()) {
+    handleEvent?.(sharedParams);
+}
 
-                    switch (event.type) {
-                        case "message":
-                            case "message_unsend":
-                                case "message_reaction":
-                                    case "message_reply":
-                                        case "message_reply":
-                                            if (aliases(command?.toLowerCase())?.name) {
-                                                Utils.handleReply.findIndex(
-                                                    reply => reply.author === event.senderID
-                                                ) !== -1
-                                                ? (api.unsendMessage(
-                                                    Utils.handleReply.find(
-                                                        reply =>
-                                                        reply.author ===
-                                                        event.senderID
-                                                    ).messageID
-                                                ),
-                                                    Utils.handleReply.splice(
-                                                        Utils.handleReply.findIndex(
-                                                            reply =>
-                                                            reply.author ===
-                                                            event.senderID
-                                                        ),
-                                                        1
-                                                    )): null;
-                                                await (
-                                                    aliases(command?.toLowerCase())?.run ||
-                                                    (() => {})
-                                                )({
-                                                        api,
-                                                        event,
-                                                        args,
-                                                        chat, box: chat,
-                                                        message: chat,
-                                                        fonts,
-                                                        font: fonts,
-                                                        global,
-                                                        admin,
-                                                        prefix,
+if (["message", "message_unsend", "message_reaction", "message_reply"].includes(event.type)) {
+    const commandAlias = aliases(command?.toLowerCase());
+    if (commandAlias?.name) {
+        const replyIndex = Utils.handleReply.findIndex(r => r.author === event.senderID);
+        if (replyIndex !== -1) {
+            api.unsendMessage(Utils.handleReply[replyIndex].messageID);
+            Utils.handleReply.splice(replyIndex, 1);
+        }
+        await (commandAlias.run || (() => {}))(sharedParams);
+    }
 
-                                                        Utils,
+    for (const { handleReply } of Utils.ObjectReply.values()) {
+        if (Array.isArray(Utils.handleReply) && Utils.handleReply.length && event.messageReply) {
+            if (Utils.handleReply.some(r => r.author === event.messageReply.senderID)) return;
+            await handleReply(sharedParams);
+        }
+    }
+}
 
-                                                    });
-                                            }
-                                            for (const {
-                                                handleReply
-                                            } of Utils.ObjectReply.values()) {
-                                                if (
-                                                    Array.isArray(Utils.handleReply) &&
-                                                    Utils.handleReply.length > 0
-                                                ) {
-                                                    if (!event.messageReply) return;
-                                                    const indexOfHandle =
-                                                    Utils.handleReply.findIndex(
-                                                        reply =>
-                                                        reply.author ===
-                                                        event.messageReply.senderID
-                                                    );
-                                                    if (indexOfHandle !== -1) return;
-                                                    await handleReply({
-                                                        api,
-                                                        event,
-                                                        args,
-                                                        chat,
-                                                        box: chat,
-                                                        message: chat,
-                                                        fonts,
-                                                        font: fonts,
-                                                        global,
-                                                        admin,
-                                                        prefix,
-
-                                                        Utils,
-                                                    });
-                                                }
-                                            }
-                                            break;
-                                }
                         });
                 } catch (error) {
                     logger.red(error);
