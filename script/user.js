@@ -7,7 +7,6 @@ module.exports["config"] = {
   version: "1.1.0",
   isPrefix: true,
   role: 1,
-  aliases: ['ban', 'unban'],
   info: "Ban or unban a user by their UID.",
   usage: "[ban/unban] [uid or Facebook link]",
   credits: "Kenneth Panio",
@@ -25,11 +24,11 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
   if (!config.blacklist) config.blacklist = [];
 
   const action = args[0];
-  const input = args[1];
+const input = args[1] ?? (event.messageReply ? event.messageReply.senderID : null);
 
-  if (!action || !input) {
-    return chat.reply(font.thin("❓ Incorrect syntax. Use: user [ban/unban] [uid or Facebook profile link]"), threadID);
-  }
+if (!action || !input) {
+    return chat.reply(font.thin("❓ incorrect syntax. use: user [ban/unban] [uid or facebook profile link]"), threadid);
+}
 
   try {
     let uid = input;

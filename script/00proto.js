@@ -1,9 +1,7 @@
 module.exports = {
-    manifest: {
-        name: "proto",
+        name: "bruh",
         description: "testing purpose",
-    },
-    async deploy({ chat, args, fonts }) {
+    async onStart({ chat, args, fonts }) {
         chat.send(fonts.bold("bruh"));
     }
 };

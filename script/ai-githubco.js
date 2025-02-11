@@ -7,7 +7,7 @@ module.exports["config"] = {
     name: "copilot",
     isPrefix: false,
     aliases: ["copilot-chat",
-        "github-copilot",
+        "github-copilot", "ghc",
         "gcop",
         "cop"],
     version: "1.0.0",

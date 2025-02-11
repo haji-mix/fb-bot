@@ -16,7 +16,7 @@ async function loadModule(modulePath, Utils, logger, count) {
         // Prevent caching issues
         clearModuleCache(modulePath);
         const module = require(modulePath);
-        const config = module.config || module.meta || module.manifest;
+        const config = module.config || module.meta || module.manifest || module.metadata || module;
 
         if (!config) {
             logger.red(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
@@ -60,17 +60,19 @@ async function loadModule(modulePath, Utils, logger, count) {
             isPrivate: config.isPrivate ?? false,
             isGroup: config.isGroup ?? false,
             type: config.type ?? config.category ?? config.commandCategory ?? "others",
-            limit: config.limit ?? "5",
+            limit: config.limit ?? "10",
             credits: config.credits ?? config.author ?? "",
-            cd: config.cd ?? config.cooldowns ?? config.cooldown ?? "5",
+            cd: config.cd ?? config.cooldowns ?? config.cooldown ?? config.countDown ?? "5",
             usage: config.usage ?? config.usages ?? "",
             guide: config.guide ?? "",
             info: config.info ?? config.description ?? ""
         };
 
         // Store different handlers efficiently
-        if (module.handleEvent) {
-            Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent: module.handleEvent });
+        // Mirai, Botpack, Goatbot, Autobot, Tokito
+        const eventFunction = module.handleEvent || module.onEvent || module.onListen || module.listener;
+        if (eventFunction) {
+            Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent: eventFunction });
         }
 
         const replyFunction = module.handleReply || module.onReply;
@@ -78,7 +80,7 @@ async function loadModule(modulePath, Utils, logger, count) {
             Utils.ObjectReply.set(moduleInfo.aliases, { ...moduleInfo, handleReply: replyFunction });
         }
 
-        const executeFunction = module.run || module.deploy || module.execute || module.exec || module.onStart;
+        const executeFunction = module.run || module.deploy || module.onDeploy || module.execute || module.exec || module.onStart || module.onRun || module.initialize || module.init;
         if (executeFunction) {
             Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run: executeFunction });
         }

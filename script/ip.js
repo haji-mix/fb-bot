@@ -7,7 +7,7 @@ module.exports["config"] = {
   credits: "Markdevs69",
   aliases: [],
   infk: "Check IP information",
-  usage: "ip [ip_address]",
+  usage: "[ip_address]",
   cd: 5,
 };
 

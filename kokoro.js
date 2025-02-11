@@ -357,7 +357,7 @@ const startServer = async () => {
             `http://localhost:${PORT}`;
 
         app.listen(PORT, () => {
-            logger.summer(`Web Link: ${server}`);
+            logger.summer(`Public Web: ${server}\nLocal Web: http://127.0.0.1:${PORT}`);
         });
 
     } catch (error) {
