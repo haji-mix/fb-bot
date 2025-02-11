@@ -779,8 +779,13 @@ if (event && event.body && aliases(command)?.name) {
                         );
                         return;
                     }
-                    
-                    const shareParams = {
+
+                    for (const {
+                        handleEvent,
+                        name
+                    } of Utils.handleEvent.values()) {
+                        if (handleEvent && name) {
+                            handleEvent({
                                 api,
                                 chat,
                                 message: chat,
@@ -791,15 +796,9 @@ if (event && event.body && aliases(command)?.name) {
                                 event,
                                 admin,
                                 prefix,
-                                Utils,
-                            };
 
-                    for (const {
-                        handleEvent,
-                        name
-                    } of Utils.handleEvent.values()) {
-                        if (handleEvent && name) {
-                            handleEvent(shareParams);
+                                Utils,
+                            });
                         }
                     }
 
@@ -831,7 +830,21 @@ if (event && event.body && aliases(command)?.name) {
                                                 await (
                                                     aliases(command?.toLowerCase())?.run ||
                                                     (() => {})
-                                                )(shareParams);
+                                                )({
+                                                        api,
+                                                        event,
+                                                        args,
+                                                        chat, box: chat,
+                                                        message: chat,
+                                                        fonts,
+                                                        font: fonts,
+                                                        global,
+                                                        admin,
+                                                        prefix,
+
+                                                        Utils,
+
+                                                    });
                                             }
                                             for (const {
                                                 handleReply
@@ -848,7 +861,21 @@ if (event && event.body && aliases(command)?.name) {
                                                         event.messageReply.senderID
                                                     );
                                                     if (indexOfHandle !== -1) return;
-                                                    await handleReply(shareParams);
+                                                    await handleReply({
+                                                        api,
+                                                        event,
+                                                        args,
+                                                        chat,
+                                                        box: chat,
+                                                        message: chat,
+                                                        fonts,
+                                                        font: fonts,
+                                                        global,
+                                                        admin,
+                                                        prefix,
+
+                                                        Utils,
+                                                    });
                                                 }
                                             }
                                             break;
