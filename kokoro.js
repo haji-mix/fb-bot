@@ -494,12 +494,12 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
                     chat.testCo(kokoro_config.author, 2);
 
-if (event && event.senderID && event.body) {
+if (event && event.senderID && event?.body) {
     const isGroup = event.isGroup || event.threadID !== event.senderID;
     const idType = isGroup ? "GroupID" : "Private Chat";
     const idValue = isGroup ? event.threadID : event.senderID;
 
-    let logMessage = `${idType}: ${idValue}\nSenderID: ${event.senderID}\nMessage: ${(event.body || "").trim()}`;
+    let logMessage = `${idType}: ${idValue}\nSenderID: ${event.senderID}\nMessage: ${(event?.body || "").trim()}`;
 
     logger.instagram(fonts.origin(logMessage));
 }
@@ -512,9 +512,9 @@ if (event && event.senderID && event.body) {
                     const SPAM_THRESHOLD = 6;
                     const TIME_WINDOW = 10 * 1000;
 
-                    if (event && event.body && event.senderID) {
+                    if (event && event?.body && event.senderID) {
                         const userId = event.senderID;
-                        const message = (event.body || "").trim();
+                        const message = (event?.body || "").trim();
                         const currentTime = Date.now();
 
                         if (!Utils.userActivity[userId]) {
@@ -761,7 +761,7 @@ if (event && event?.body && aliases(command)?.name) {
 
                     if (event && event?.body &&
                         !command &&
-                        event.body
+                        event?.body
                         ?.toLowerCase()
                         .startsWith(prefix.toLowerCase())) {
                         await reply(
@@ -773,7 +773,7 @@ if (event && event?.body && aliases(command)?.name) {
                     if (event && event?.body &&
                         command &&
                         prefix &&
-                        event.body
+                        event?.body
                         ?.toLowerCase()
                         .startsWith(prefix.toLowerCase()) &&
                         !aliases(command)?.name) {
