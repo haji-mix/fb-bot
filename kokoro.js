@@ -968,28 +968,34 @@ if (event && event.body && aliases(command)?.name) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-            const checkHistory = async () => {
-                const history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
-                for (let i = 0; i < history.length; i++) {
-                    const user = history[i];
-                    if (!user || typeof user !== "object") process.exit(0);
+const checkHistory = async () => {
+    try {
+        let history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
-                    if (user.time === undefined || user.time === null || isNaN(user.time)) {
-                        process.exit(0);
-                    }
+        history = history.filter(user => {
+            if (!user || typeof user !== "object") return false; // Remove non-objects
+            if (user.time === undefined || user.time === null || isNaN(user.time)) return false; 
+            return true;
+        });
 
-                    const update = Utils.account.get(user.userid);
-                    if (update) {
-                        user.time = update.time;
-                    }
-                }
+        for (let user of history) {
+            const update = Utils.account.get(user.userid);
+            if (update) {
+                user.time = update.time;
+            }
+        }
 
-                await empty.emptyDir(cacheFile);
-                fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
-            };
+        await empty.emptyDir(cacheFile);
 
-            setInterval(checkHistory, 15 * 60 * 1000);
+        fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
+    } catch (error) {
+        console.error("Error checking history:", error);
+    }
+};
+
+setInterval(checkHistory, 15 * 60 * 1000);
+
             try {
                 const files = fs.readdirSync(sessionFolder);
 
