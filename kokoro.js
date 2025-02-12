@@ -760,7 +760,7 @@ if (event && event.body && aliases(command)?.name) {
                         !command &&
                         event.body
                         ?.toLowerCase()
-                        .startsWith(prefix.toLowerCase())) {
+                        .startsWith(prefix)) {
                         await reply(
                             `Invalid command please use help to see the list of available commands.`
                         );
