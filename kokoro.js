@@ -482,6 +482,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
 
             try {
                 var listenEmitter = api.listenMqtt(async (error, event) => {
+                    if (event) return;
                     if (error) {
                         if (error === 'Connection closed.') {
                             logger.red(`Error during API listen: ${error}`, userid);
@@ -573,8 +574,9 @@ if (event && event.senderID && event.body) {
                     } else {
                         history = {};
                     }
-
-                    let isPrefix =
+                    
+                    
+                   let isPrefix =
                     event.body &&
                     aliases(
                         (event.body || "").trim().toLowerCase()
@@ -587,7 +589,8 @@ if (event && event.senderID && event.body) {
                         ...args] = (event.body || "")
                     .trim()
                     .toLowerCase()
-                    .startsWith(isPrefix?.toLowerCase())
+                    .startsWith(isPrefix
+                        toLowerCase())
                     ? (event.body || "")
                     .trim()
                     .substring(isPrefix?.length)
@@ -610,7 +613,7 @@ if (event && event.senderID && event.body) {
                         (
                             (command && command.toLowerCase && aliases(command.toLowerCase())?.name) ||
                             (event.body.startsWith(prefix) && aliases(command?.toLowerCase())?.name) ||
-                            event.body.startsWith(prefix)
+                            event.body.startsWith(prefix.toLowerCase())
                         )
                     ) {
                         const role = aliases(command)?.role ?? 0;
@@ -761,7 +764,7 @@ if (event && event.body && aliases(command)?.name) {
                         !command &&
                         event.body
                         ?.toLowerCase()
-                        .startsWith(prefix)) {
+                        .startsWith(prefix.toLowerCase())) {
                         await reply(
                             `Invalid command please use help to see the list of available commands.`
                         );
@@ -773,7 +776,7 @@ if (event && event.body && aliases(command)?.name) {
                         prefix &&
                         event.body
                         ?.toLowerCase()
-                        .startsWith(prefix) &&
+                        .startsWith(prefix.toLowerCase()) &&
                         !aliases(command)?.name) {
                         await reply(
                             `Invalid command '${command}' please use ${prefix}help to see the list of available commands.`
