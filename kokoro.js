@@ -589,8 +589,7 @@ if (event && event.senderID && event.body) {
                         ...args] = (event.body || "")
                     .trim()
                     .toLowerCase()
-                    .startsWith(isPrefix
-                        toLowerCase())
+                    .startsWith(isPrefix.toLowerCase())
                     ? (event.body || "")
                     .trim()
                     .substring(isPrefix?.length)
