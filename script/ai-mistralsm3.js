@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports["config"] = {
     name: "ms3",
-    aliases: ["msm3", "mistralsm3"],
+    aliases: ["msm3", "mistralsm3", "sm3"],
     isPrefix: false,
     version: "1.0.0",
     credits: "Kenneth Panio",

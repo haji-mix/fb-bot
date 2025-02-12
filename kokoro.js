@@ -763,7 +763,7 @@ if (event && event?.body && aliases(command)?.name) {
                         !command &&
                         event?.body
                         ?.toLowerCase()
-                        .startsWith(prefix.toLowerCase())) {
+                        .startsWith(prefix?.toLowerCase())) {
                         await reply(
                             `Invalid command please use help to see the list of available commands.`
                         );
@@ -775,7 +775,7 @@ if (event && event?.body && aliases(command)?.name) {
                         prefix &&
                         event?.body
                         ?.toLowerCase()
-                        .startsWith(prefix.toLowerCase()) &&
+                        .startsWith(prefix?.toLowerCase()) &&
                         !aliases(command)?.name) {
                         await reply(
                             `Invalid command '${command}' please use ${prefix}help to see the list of available commands.`
