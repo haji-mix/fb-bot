@@ -577,20 +577,20 @@ if (event && event.senderID && event.body) {
                     
                     
                    let isPrefix =
-                    event.body &&
+                    event?.body &&
                     aliases(
-                        (event.body || "").trim().toLowerCase()
+                        (event?.body || "").trim().toLowerCase()
                         .split(/ +/)
                         .shift()
                     )?.isPrefix == false
                     ? "": prefix;
 
                     let [command,
-                        ...args] = (event.body || "")
+                        ...args] = (event?.body || "")
                     .trim()
                     .toLowerCase()
-                    .startsWith(isPrefix.toLowerCase())
-                    ? (event.body || "")
+                    .startsWith(isPrefix?.toLowerCase())
+                    ? (event?.body || "")
                     .trim()
                     .substring(isPrefix?.length)
                     .trim()
