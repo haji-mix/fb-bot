@@ -608,11 +608,11 @@ if (event && event.senderID && event.body) {
 
                     if (
                         event &&
-                        event.body &&
+                        event?.body &&
                         (
                             (command && command.toLowerCase && aliases(command.toLowerCase())?.name) ||
-                            (event.body.startsWith(prefix) && aliases(command?.toLowerCase())?.name) ||
-                            event.body.startsWith(prefix.toLowerCase())
+                            (event?.body.startsWith(prefix) && aliases(command?.toLowerCase())?.name) ||
+                            event?.body.startsWith(prefix?.toLowerCase())
                         )
                     ) {
                         const role = aliases(command)?.role ?? 0;
@@ -725,7 +725,7 @@ if (event && event.senderID && event.body) {
                         }
                     }
 
-if (event && event.body && aliases(command)?.name) {
+if (event && event?.body && aliases(command)?.name) {
     const now = Date.now();
     const name = aliases(command)?.name;
     const cooldownKey = `${event.senderID}_${name}_${userid}`;
@@ -759,7 +759,7 @@ if (event && event.body && aliases(command)?.name) {
                         }
                     }
 
-                    if (event && event.body &&
+                    if (event && event?.body &&
                         !command &&
                         event.body
                         ?.toLowerCase()
@@ -770,7 +770,7 @@ if (event && event.body && aliases(command)?.name) {
                         return;
                     }
 
-                    if (event && event.body &&
+                    if (event && event?.body &&
                         command &&
                         prefix &&
                         event.body
