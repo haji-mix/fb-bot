@@ -39,7 +39,38 @@ module.exports["run"] = async ({ api, chat, event, args, font, global }) => {
     return;
   }
 
-  if (input === "create") {
+  if (input === "online") {
+    try {
+      const checking = await chat.reply(tin("⏳ Checking active session, please wait..."));
+      const url = `${server}/info`;
+      const response = await axios.get(url);
+      const aiList = response.data;
+
+      if (Array.isArray(aiList)) {
+        const totalPages = Math.ceil(aiList.length / pageSize);
+        const currentPage = Math.min(Math.max(page, 1), totalPages);
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedList = aiList.slice(startIndex, endIndex);
+
+        let message = paginatedList.map((result, index) => {
+          const { profileUrl, time } = result;
+          const days = Math.floor(time / (3600 * 24));
+          const hours = Math.floor((time % (3600 * 24)) / 3600);
+          const minutes = Math.floor((time % 3600) / 60);
+          const seconds = Math.floor(time % 60);
+          return `[ ${startIndex + index + 1} ]\nPROFILE URL: ${profileUrl}\nUPTIME: ${days} days ${hours} hours ${minutes} minutes ${seconds} seconds\n\n`;
+        }).join('');
+
+        message += `Page ${currentPage} of ${totalPages}\nUse "Autobot online [page_number]" to view other pages.`;
+        chat.reply(font.bold(`List of Active Bots.\n\n`) + message, event.threadID, event.messageID);
+      } else {
+        chat.reply(tin("Handle error: aiList is not an array"), event.threadID, event.messageID);
+      }
+    } catch (err) {
+      chat.reply(tin(err.message), event.threadID, event.messageID);
+    }
+  } else if (input === "create") {
     if (event.type === "message_reply" && event.messageReply.body) {
       inputState = event.messageReply.body;
     }
