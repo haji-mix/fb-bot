@@ -15,13 +15,14 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ api, chat, event, args, font, global }) => {
-    const tin = txt => font.thin(txt);
+  const tin = txt => font.thin(txt);
+  
   if (!fs.existsSync(configPath)) {
     return chat.reply(tin('Configuration file not found!'), event.threadID, event.messageID);
   }
 
   const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  
+
   const server = 
     (config.weblink && config.port ? `${config.weblink}:${config.port}` : null) ||
     config.weblink ||
@@ -54,12 +55,21 @@ module.exports["run"] = async ({ api, chat, event, args, font, global }) => {
         const paginatedList = aiList.slice(startIndex, endIndex);
 
         let message = paginatedList.map((result, index) => {
-          const { profileUrl, time } = result;
+          const { profile_url, time } = result;
+
           const days = Math.floor(time / (3600 * 24));
           const hours = Math.floor((time % (3600 * 24)) / 3600);
           const minutes = Math.floor((time % 3600) / 60);
           const seconds = Math.floor(time % 60);
-          return `[ ${startIndex + index + 1} ]\nPROFILE URL: ${profileUrl}\nUPTIME: ${days} days ${hours} hours ${minutes} minutes ${seconds} seconds\n\n`;
+
+          // Construct uptime message dynamically
+          let uptimeMessage = `[ ${startIndex + index + 1} ]\nPROFILE URL: ${profile_url}\nUPTIME: `;
+          if (days > 0) uptimeMessage += `${days} days `;
+          if (hours > 0) uptimeMessage += `${hours} hours `;
+          if (minutes > 0) uptimeMessage += `${minutes} minutes `;
+          uptimeMessage += `${seconds} seconds\n\n`;
+
+          return uptimeMessage;
         }).join('');
 
         message += `Page ${currentPage} of ${totalPages}\nUse "Autobot online [page_number]" to view other pages.`;
