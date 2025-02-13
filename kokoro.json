@@ -28,19 +28,19 @@
     "timezone": "Asia/Manila",
     "cronJobs": {
         "morningGreetings": {
-            "enabled": false,
+            "enabled": true,
             "hours": [5, 6, 7]
         },
         "afternoonGreetings": {
-            "enabled": false,
+            "enabled": true,
             "hours": [12, 13]
         },
         "eveningGreetings": {
-            "enabled": false,
+            "enabled": true,
             "hours": [18, 19, 20, 21]
         },
         "nightGreetings": {
-            "enabled": false,
+            "enabled": true,
             "hours": [22, 23]
         },
         "restart": {
@@ -56,7 +56,7 @@
             "cronExpression": "*/60 * * * *"
         },
         "motivation": {
-            "enabled": false,
+            "enabled": true,
             "cronExpression": "0 */5 * * *"
         }
     }
