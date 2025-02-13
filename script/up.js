@@ -55,16 +55,8 @@ module.exports["run"] = async ({ api, event, fonts, chat }) => {
         const ping = Date.now() - pingStart;
 
         const response = `
-        ⚙️ System Information
-        ─────────────────────────
-        🔹 Uptime: ${getUptime()}
-        🔹 Bot Uptime: ${hours}h ${minutes}m ${seconds}s
-        🔹 CPU Usage: ${usage.cpu.toFixed(1)}%
-        🔹 RAM Usage: ${usedMem} / ${totalMem} (Free: ${freeMem})
-        🔹 Cores: ${cores}
-        🔹 OS: ${osInfo.platform} (${osInfo.architecture})
-        🔹 OS Version: ${osInfo.release}
-        🔹 Ping: ${ping}ms
+        ⚙️ System Information\n─────────────────────────\n🔹 Uptime: ${getUptime()}
+        🔹 Bot Uptime: ${hours}h ${minutes}m ${seconds}s\n🔹 CPU Usage: ${usage.cpu.toFixed(1)}%\n🔹 RAM Usage: ${usedMem} / ${totalMem} (Free: ${freeMem})\n🔹 Cores: ${cores}\n🔹 OS: ${osInfo.platform} (${osInfo.architecture})\n🔹 OS Version: ${osInfo.release}\n🔹 Ping: ${ping}ms
         `;
 
         return chat.reply(fonts.thin(response.trim()));
