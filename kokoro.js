@@ -59,6 +59,7 @@ const isBlocked = (ip) => {
     const unblockTime = blockedIPs.get(ip);
     if (Date.now() > unblockTime) {
         blockedIPs.delete(ip); // Unblock after timeout
+
         server.close(() => {
             startServer(); // Restart server after closing
         });
@@ -390,7 +391,7 @@ const startServer = async (stealth_port = null) => {
             hajime?.host?.server?.[0] ||
             `http://localhost:${PORT}`;
 
-        app.listen(PORT, () => {
+        server = app.listen(PORT, () => {
             logger.summer(`Public Web: ${server}\nLocal Web: http://127.0.0.1:${PORT}`);
         });
 
