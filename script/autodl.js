@@ -277,7 +277,7 @@ const handleTikTok = async (link, chat, mono) => {
 const handleFacebook = async (link, chat, mono) => {
     try {
         const result = await getFBInfo(link);
-        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\n\nLink: `) + await chat.shorturl(result.sd || result.hd));
+        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\n\nLink: `) + await chat.shorturl(result.hd || result.sd));
         await streamFile(result.sd || result.hd, chat);
     } catch (error) {
         console.error(`Facebook error:`, error.message);
