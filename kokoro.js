@@ -50,6 +50,7 @@ app.set('views', path.join(__dirname, 'public', 'views'));
 const blockedIPs = new Map(); // Stores blocked IPs with unblock timestamps
 const BLOCK_DURATION = 60 * 60 * 1000; // 60 minutes
 const TRUSTED_IPS = ['127.0.0.1']; // Add your own trusted IPs here
+let server;
 
 // Function to check if an IP should be unblocked
 const isBlocked = (ip) => {
@@ -57,14 +58,17 @@ const isBlocked = (ip) => {
 
     const unblockTime = blockedIPs.get(ip);
     if (Date.now() > unblockTime) {
-        server.close(() => {
-        startServer();
-        }
         blockedIPs.delete(ip); // Unblock after timeout
+
+        server.close(() => {
+            startServer(); // Restart server after closing
+        });
+
         return false;
     }
     return true;
 };
+
 
 // Middleware to silently block requests from attackers
 app.use((req, res, next) => {
