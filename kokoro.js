@@ -44,31 +44,15 @@ const Utils = {
 
 loadModules(Utils, logger);
 
-const blockedIPs = new Set();
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 1000,
-    handler: (req, res) => {
-        if (!trustedIPs.includes(req.ip)) {
-            blockedIPs.add(req.ip);
-            return res.render('403');
-        }
-        res.status(429).send('Too Many Requests');
-    },
-});
-
-app.use((req, res, next) => {
-    if (blockedIPs.has(req.ip)) {
-        return res.render('403');
-    }
-    next();
-});
-
-const trustedIPs = ['::1', '127.0.0.1'];
+let server;
+let isUnderAttack = false;
+const requestCounts = {}; // Store request counts per IP
+const ATTACK_THRESHOLD = 1000; // Requests per IP in 10 seconds
+const BLOCK_DURATION = 60000; // 60 seconds
+let PORT; // Define PORT globally
 
 app.use(cors({
     origin: "*"
@@ -78,17 +62,51 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-
-app.use(limiter);
-
 app.use((req, res, next) => {
     res.setHeader('x-powered-by', 'Kokoro AI');
     next();
 });
 
+// Function to restart server after cooldown
+function restartServer() {
+    console.log("DDoS detected! Server shutting down...");
+    server.close(() => {
+        console.log("Server temporarily closed due to DDoS attack.");
+        setTimeout(() => {
+            isUnderAttack = false;
+            server = app.listen(PORT, () => console.log(`Server restarted on port ${PORT}`));
+            console.log("Server back online after cooldown.");
+        }, BLOCK_DURATION);
+    });
+}
+
+// DDoS Protection Middleware
+app.use((req, res, next) => {
+    const ip = req.ip || req.connection.remoteAddress;
+
+    // Count requests per IP
+    requestCounts[ip] = (requestCounts[ip] || 0) + 1;
+
+    // If IP exceeds threshold, mark as under attack
+    if (requestCounts[ip] > ATTACK_THRESHOLD && !isUnderAttack) {
+        isUnderAttack = true;
+        restartServer(); // Call the function to restart the server
+    }
+
+    if (isUnderAttack) {
+        return res.status(418).send("Hina ng DDOS MO PAR! BAGOK MO NALANG ULO MO");
+    }
+
+    next();
+});
+
+// Reset request counts every 10 seconds
+setInterval(() => {
+    Object.keys(requestCounts).forEach(ip => requestCounts[ip] = 0);
+}, 10000);
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
-
 
 
 const routes = [{
@@ -347,17 +365,17 @@ const startServer = async () => {
     try {
         const hajime = await workers();
         
-        let PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+         PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
 
-        const server = 
+        const public_server = 
             (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
             kokoro_config.weblink ||
             (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
             hajime?.host?.server?.[0] ||
             `http://localhost:${PORT}`;
 
-        app.listen(PORT, () => {
-            logger.summer(`Public Web: ${server}\nLocal Web: http://127.0.0.1:${PORT}`);
+        server = app.listen(PORT, () => {
+            logger.summer(`Public Web: ${public_server}\nLocal Web: http://127.0.0.1:${PORT}`);
         });
 
     } catch (error) {
