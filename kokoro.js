@@ -367,15 +367,15 @@ async function postLogin(req, res) {
 function changePort() {
     server.close(() => {
         const stealth_port = Math.floor(Math.random() * (60000 - 4000) + 4000); // Random port
-        startServer(port);
+        startServer(stealth_port);
     });
 }
 
-const startServer = async (port = null) => {
+const startServer = async (stealth_port = null) => {
     try {
         const hajime = await workers();
         
-        let PORT = port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+        let PORT = stealth_port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
 
         const server = 
             (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
