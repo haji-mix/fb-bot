@@ -264,7 +264,7 @@ const handleTikTok = async (link, chat, mono) => {
             `Title: ${data.data.title}\n` +
             `Views: ${data.data.play_count}\n` +
             `Likes: ${data.data.digg_count}\n` +
-            `Comments: ${data.data.comment_count}` +
+            `Comments: ${data.data.comment_count}\n` +
             `Link: `) + await chat.shorturl(data.data.play));
 
         await streamFile(data.data.play, chat);
@@ -277,7 +277,7 @@ const handleTikTok = async (link, chat, mono) => {
 const handleFacebook = async (link, chat, mono) => {
     try {
         const result = await getFBInfo(link);
-        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\n\nLink: `) + await chat.shorturl(result.hd || result.sd));
+        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\nLink: `) + await chat.shorturl(result.hd || result.sd));
         await streamFile(result.sd || result.hd, chat);
     } catch (error) {
         console.error(`Facebook error:`, error.message);
