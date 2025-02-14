@@ -178,7 +178,7 @@ async tinyurl(url) {
         this.reply(msg, tid, mid)
     }
 
-    async reply(msg, tid = this.threadID, mid = this.messageID) {
+    async reply(msg, tid = this.threadID, mid = this.messageID || null) {
         try {
             if (!msg) {
                 this.log("Message is missing!");
