@@ -68,6 +68,7 @@ app.use((req, res, next) => {
     if (isBlocked(req.ip)) {
         console.log(`Dropping request from ${req.ip} (Blocked)`);
         res.socket.destroy(); // Drop connection to make server "invisible"
+        changePort();
         return;
     }
     next();
@@ -82,9 +83,11 @@ const limiter = rateLimit({
             blockedIPs.set(req.ip, Date.now() + BLOCK_DURATION); // Block for 15 min
             console.log(`Blocking IP: ${req.ip} for 15 minutes`);
             res.socket.destroy(); // Drop connection immediately
+            changePort();
             return;
         }
         res.socket.destroy();
+        changePort();
     },
 });
 
@@ -361,11 +364,18 @@ async function postLogin(req, res) {
     }
 }
 
-const startServer = async () => {
+function changePort() {
+    server.close(() => {
+        const stealth_port = Math.floor(Math.random() * (60000 - 4000) + 4000); // Random port
+        startServer(port);
+    });
+}
+
+const startServer = async (port = null) => {
     try {
         const hajime = await workers();
         
-        let PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+        let PORT = port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
 
         const server = 
             (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
