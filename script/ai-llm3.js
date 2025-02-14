@@ -30,7 +30,7 @@ module.exports["run"] = async ({
     const statusUrl = url[0];
     const chatUrl = url[1];
     const query = args.join(" ");
-    const model = models[0];
+    const model = "meta-llama/Llama-3.3-70B-Instruct-Turbo";
 
     if (!query) {
         chat.reply(font.monospace("Please provide a question!"));
@@ -42,12 +42,15 @@ module.exports["run"] = async ({
         role: "user", content: query
     });
 
-    const answering = await chat.reply(font.monospace("🕐 | Llama 3.1 70B Instruct-Turbo is Typing..."));
+    const answering = await chat.reply(font.monospace("🕐 | Llama 3.3 70B Instruct-Turbo is Typing..."));
+    
+    let newVqd = '';
 
     try {
         // Fetch VQD token
         const response = await axios.get(statusUrl, {
             headers: {
+                'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
                 'x-vqd-accept': '1'
             }
         });
@@ -61,6 +64,7 @@ module.exports["run"] = async ({
         };
         const chatResponse = await axios.post(chatUrl, payload, {
             headers: {
+                'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
                 'x-vqd-4': newVqd, 'Content-Type': 'application/json'
             },
             responseType: 'stream',
