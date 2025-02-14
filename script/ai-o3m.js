@@ -56,8 +56,8 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         });
         
         const rawData = fetchResponse.data.match(/"message":"(.*?)"/g)
-            ?.map(m => m.replace(/"message":"|"/g, ''))
-            .join('');
+    ?.map(m => m.match(/"message":"(.*?)"/)[1])
+    .join('');
             
         const wrap_linebreaks = rawData.replace(/\\+n/g, '\n');
         
