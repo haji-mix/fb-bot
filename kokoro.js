@@ -44,15 +44,51 @@ const Utils = {
 
 loadModules(Utils, logger);
 
+const blockedIPs = new Set();
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 
-let server;
-let isUnderAttack = false;
-const requestCounts = {}; // Store request counts per IP
-const ATTACK_THRESHOLD = 1000; // Requests per IP in 10 seconds
-const BLOCK_DURATION = 60000; // 60 seconds
-let PORT; // Define PORT globally
+const blockedIPs = new Map(); // Stores blocked IPs with unblock timestamps
+const BLOCK_DURATION = 60 * 60 * 1000; // 15 minutes
+const TRUSTED_IPS = ['127.0.0.1']; // Add your own trusted IPs here
+
+// Function to check if an IP should be unblocked
+const isBlocked = (ip) => {
+    if (!blockedIPs.has(ip)) return false;
+
+    const unblockTime = blockedIPs.get(ip);
+    if (Date.now() > unblockTime) {
+        blockedIPs.delete(ip); // Unblock after timeout
+        return false;
+    }
+    return true;
+};
+
+// Middleware to silently block requests from attackers
+app.use((req, res, next) => {
+    if (isBlocked(req.ip)) {
+        console.log(`Dropping request from ${req.ip} (Blocked)`);
+        res.socket.destroy(); // Drop connection to make server "invisible"
+        return;
+    }
+    next();
+});
+
+// Rate Limiter to detect attacks
+const limiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutes window
+    max: 500, // Allow 500 requests per IP per window
+    handler: (req, res) => {
+        if (!TRUSTED_IPS.includes(req.ip)) {
+            blockedIPs.set(req.ip, Date.now() + BLOCK_DURATION); // Block for 15 min
+            console.log(`Blocking IP: ${req.ip} for 15 minutes`);
+            res.socket.destroy(); // Drop connection immediately
+            return;
+        }
+        res.socket.destroy();
+    },
+});
 
 app.use(cors({
     origin: "*"
@@ -67,46 +103,12 @@ app.use((req, res, next) => {
     next();
 });
 
-// Function to restart server after cooldown
-function restartServer() {
-    console.log("DDoS detected! Server shutting down...");
-    server.close(() => {
-        console.log("Server temporarily closed due to DDoS attack.");
-        setTimeout(() => {
-            isUnderAttack = false;
-            server = app.listen(PORT, () => console.log(`Server restarted on port ${PORT}`));
-            console.log("Server back online after cooldown.");
-        }, BLOCK_DURATION);
-    });
-}
 
-// DDoS Protection Middleware
-app.use((req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress;
-
-    // Count requests per IP
-    requestCounts[ip] = (requestCounts[ip] || 0) + 1;
-
-    // If IP exceeds threshold, mark as under attack
-    if (requestCounts[ip] > ATTACK_THRESHOLD && !isUnderAttack) {
-        isUnderAttack = true;
-        restartServer(); // Call the function to restart the server
-    }
-
-    if (isUnderAttack) {
-        return res.status(418).send("Hina ng DDOS MO PAR! BAGOK MO NALANG ULO MO");
-    }
-
-    next();
-});
-
-// Reset request counts every 10 seconds
-setInterval(() => {
-    Object.keys(requestCounts).forEach(ip => requestCounts[ip] = 0);
-}, 10000);
+app.use(limiter); // Apply rate limiting globally
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
+
 
 
 const routes = [{
@@ -365,17 +367,17 @@ const startServer = async () => {
     try {
         const hajime = await workers();
         
-         PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+        let PORT = process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
 
-        const public_server = 
+        const server = 
             (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
             kokoro_config.weblink ||
             (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
             hajime?.host?.server?.[0] ||
             `http://localhost:${PORT}`;
 
-        server = app.listen(PORT, () => {
-            logger.summer(`Public Web: ${public_server}\nLocal Web: http://127.0.0.1:${PORT}`);
+        app.listen(PORT, () => {
+            logger.summer(`Public Web: ${server}\nLocal Web: http://127.0.0.1:${PORT}`);
         });
 
     } catch (error) {
