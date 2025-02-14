@@ -77,8 +77,7 @@ module.exports["run"] = async ({
             headers: {
                 'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
                 'x-vqd-4': newVqd, 'Content-Type': 'application/json'
-            },
-            responseType: 'stream',
+            }
         });
 
         let buffer = '';
