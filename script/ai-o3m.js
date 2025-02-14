@@ -60,8 +60,10 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
             .join('');
             
         const wrap_linebreaks = rawData.replace(/\\+n/g, '\n');
+        
+        const fix_quote = wrap_linebreaks.replace(/\\(.+?)\\/g, '"$1"');
 
-        const cleanup = wrap_linebreaks.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+        const cleanup = fix_quote.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         const message = font.bold(" 🤖 | " + model.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
         
         answering.edit(message);
