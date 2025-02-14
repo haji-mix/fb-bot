@@ -230,7 +230,7 @@ const convertVideo = async (url, chat, mono) => {
         });
 
         chat.reply(mono(`Youtube Video link Detected\n\nContent: ${response.data.filename}\nLink: `
-        ) + response.data.url);
+        ) + await chat.shorturl(response.data.url));
 
         await streamFile(response.data.url, chat);
     } catch (error) {
@@ -264,8 +264,8 @@ const handleTikTok = async (link, chat, mono) => {
             `Title: ${data.data.title}\n` +
             `Views: ${data.data.play_count}\n` +
             `Likes: ${data.data.digg_count}\n` +
-            `Comments: ${data.data.comment_count}`
-        ));
+            `Comments: ${data.data.comment_count}` +
+            `Link: `) + await chat.shorturl(data.data.play));
 
         await streamFile(data.data.play, chat);
     } catch (error) {
@@ -277,7 +277,7 @@ const handleTikTok = async (link, chat, mono) => {
 const handleFacebook = async (link, chat, mono) => {
     try {
         const result = await getFBInfo(link);
-        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}`));
+        chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\n\nLink: `) + await chat.shorturl(result.sd || result.hd));
         await streamFile(result.sd || result.hd, chat);
     } catch (error) {
         console.error(`Facebook error:`, error.message);

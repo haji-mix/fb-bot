@@ -20,6 +20,28 @@ class OnChat {
             senderID: event.senderID
         });
     }
+    
+async shorturl(url) {
+    return this.tinyurl(url);
+}
+
+async tinyurl(url) {
+    const axios = require("axios");
+    const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
+    
+    if (!Array.isArray(url)) url = [url];
+    
+    return Promise.all(url.map(async (u) => {
+        if (!urlRegex.test(u)) return u;
+        try {
+            const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
+            return response.data;
+        } catch {
+            return u;
+        }
+    }));
+}
+
 
     async testCo(pogiko, lvl = 1) {
         const hajime = await workers();

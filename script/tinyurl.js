@@ -9,9 +9,8 @@ const { get } = require("axios");
         };
         
         module.exports["run"] = async ({ chat, args }) => {
-                const url = args[0];
-        
-                // Regular expression for basic URL validation
+                const url = args.join(" ");
+
                 const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
         
                 if (!url) {
@@ -23,7 +22,7 @@ const { get } = require("axios");
                 }
         
                 try {
-                        const response = await get(`https://tinyurl.com/api-create.php?url=${url}`);
+                        const response = await get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(url)}`);
                         chat.reply(response.data);
                 } catch (error) {
                         chat.reply("An error occurred while shortening the URL.");
