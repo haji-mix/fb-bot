@@ -47,10 +47,12 @@ loadModules(Utils, logger);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 
-const blockedIPs = new Map(); // Stores blocked IPs with unblock timestamps
-const BLOCK_DURATION = 60 * 60 * 1000; // 60 minutes
-const TRUSTED_IPS = ['127.0.0.1']; // Add your own trusted IPs here
+const blockedIPs = new Map();
+const TRUSTED_IPS = ['127.0.0.1', `::1`];
 let server;
+let underAttack = false;
+
+const isBlocked = (ip) => blockedIPs.has(ip);
 
 const startServer = async (stealth_port) => {
     try {
@@ -65,7 +67,6 @@ const startServer = async (stealth_port) => {
             hajime?.host?.server?.[0] ||
             `http://localhost:${PORT}`;
 
-        // Assign the server instance to the global variable
         server = app.listen(PORT, () => {
             logger.summer(`Public Web: ${serverUrl}\nLocal Web: http://127.0.0.1:${PORT}`);
         });
@@ -75,54 +76,43 @@ const startServer = async (stealth_port) => {
     }
 };
 
-// Function to check if an IP should be unblocked and restart the server
-const isBlocked = (ip) => {
-    if (!blockedIPs.has(ip)) return false;
+function switchPort() {
+    if (underAttack) return;
+    underAttack = true;
 
-    const unblockTime = blockedIPs.get(ip);
-    if (Date.now() > unblockTime) {
-        blockedIPs.delete(ip); // Unblock after timeout
-        
-        if (server) {
-            server.close(() => { // Properly close the server before restarting
-                console.log("Server closed. Restarting...");
-                startServer();
-            });
-        } else {
-            console.log("Server was not running, starting new instance...");
-            startServer();
-        }
+    const newPort = Math.floor(Math.random() * (9000 - 4000) + 4000);
+    console.log(`Switching to port ${newPort}`);
 
-        return false;
+    if (server) {
+        server.close(() => {
+            console.log(`Closed old port`);
+            startServer(newPort);
+            underAttack = false;
+        });
     }
-    return true;
-};
+}
 
-// Middleware to silently block requests from attackers
 app.use((req, res, next) => {
-    if (isBlocked(req.ip)) {
-        console.log(`Dropping request from ${req.ip} (Blocked)`);
-        res.socket.destroy(); // Drop connection to make server "invisible"
-        changePort();
-        return;
+    const clientIP = req.headers["cf-connecting-ip"] || req.ip;
+    if (isBlocked(clientIP)) {
+        switchPort();
+        return res.redirect("https://chatgpt.com/");
     }
     next();
 });
 
-// Rate Limiter to detect attacks
 const limiter = rateLimit({
-    windowMs: 5 * 60 * 1000, // 5 minutes window
-    max: 500, // Allow 500 requests per IP per window
+    windowMs: 5 * 60 * 1000,
+    max: 500,
     handler: (req, res) => {
-        if (!TRUSTED_IPS.includes(req.ip)) {
-            blockedIPs.set(req.ip, Date.now() + BLOCK_DURATION); // Block for 60 min
-            console.log(`Blocking IP: ${req.ip} for 60 minutes`);
-            res.socket.destroy(); // Drop connection immediately
-            changePort();
-            return;
+        const clientIP = req.headers["cf-connecting-ip"] || req.ip;
+        
+        if (!TRUSTED_IPS.includes(clientIP)) {
+            console.log(`DDoS detected from ${clientIP}! Blocking IP and switching ports...`);
+            blockedIPs.set(clientIP, Date.now());
+            switchPort();
+            return res.redirect("https://chatgpt.com/");
         }
-        res.socket.destroy();
-        changePort();
     },
 });
 
