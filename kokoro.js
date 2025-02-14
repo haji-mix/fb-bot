@@ -52,23 +52,51 @@ const BLOCK_DURATION = 60 * 60 * 1000; // 60 minutes
 const TRUSTED_IPS = ['127.0.0.1']; // Add your own trusted IPs here
 let server;
 
-// Function to check if an IP should be unblocked
+const startServer = async (stealth_port) => {
+    try {
+        const hajime = await workers();
+        
+        let PORT = stealth_port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+
+        const serverUrl =
+            (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
+            kokoro_config.weblink ||
+            (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
+            hajime?.host?.server?.[0] ||
+            `http://localhost:${PORT}`;
+
+        // Assign the server instance to the global variable
+        server = app.listen(PORT, () => {
+            logger.summer(`Public Web: ${serverUrl}\nLocal Web: http://127.0.0.1:${PORT}`);
+        });
+
+    } catch (error) {
+        console.error("Error starting server:", error);
+    }
+};
+
+// Function to check if an IP should be unblocked and restart the server
 const isBlocked = (ip) => {
     if (!blockedIPs.has(ip)) return false;
 
     const unblockTime = blockedIPs.get(ip);
     if (Date.now() > unblockTime) {
         blockedIPs.delete(ip); // Unblock after timeout
-
-        server.close(() => {
-            startServer(); // Restart server after closing
-        });
+        
+        if (server) {
+            server.close(() => { // Properly close the server before restarting
+                console.log("Server closed. Restarting...");
+                startServer();
+            });
+        } else {
+            console.log("Server was not running, starting new instance...");
+            startServer();
+        }
 
         return false;
     }
     return true;
 };
-
 
 // Middleware to silently block requests from attackers
 app.use((req, res, next) => {
@@ -378,31 +406,7 @@ function changePort() {
     });
 }
 
-const startServer = async (stealth_port = null) => {
-    try {
-        const hajime = await workers();
-        
-        let PORT = stealth_port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
-
-        const server = 
-            (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
-            kokoro_config.weblink ||
-            (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
-            hajime?.host?.server?.[0] ||
-            `http://localhost:${PORT}`;
-
-        server = app.listen(PORT, () => {
-            logger.summer(`Public Web: ${server}\nLocal Web: http://127.0.0.1:${PORT}`);
-        });
-
-    } catch (error) {
-        console.error("Error starting server:", error);
-    }
-};
-
 startServer();
-
-
 
 async function accountLogin(state, prefix, admin = [], email, password) {
     const global = await workers();
