@@ -55,11 +55,13 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
             }
         });
         
-        const finalMessage = fetchResponse.data.match(/"message":"(.*?)"/g)
+        const rawData = fetchResponse.data.match(/"message":"(.*?)"/g)
             ?.map(m => m.replace(/"message":"|"/g, ''))
             .join('');
+            
+        const wrap_linebreaks = rawData.replace(/\\+n/g, '\n');
 
-        const cleanup = finalMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+        const cleanup = wrap_linebreaks.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         const message = font.bold(" 🤖 | " + model.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
         
         answering.edit(message);
