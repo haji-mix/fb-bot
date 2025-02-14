@@ -14,19 +14,14 @@ module.exports["config"] = {
     cd: 6
 };
 
-const conversationHistories = {};
+module.exports["run"] = async ({ chat, args, event, font, global }) => {
+    const { url, models } = global.api.workers.duckgo;
+    const { threadID, senderID } = event;
 
-module.exports["run"] = async ({
-    chat, args, event, font, global
-}) => {
-    const {
-        url,
-        models
-    } = global.api.workers.duckgo;
-    const {
-        threadID,
-        senderID
-    } = event;
+    if (!url || url.length < 2 || !models || models.length < 5) {
+        chat.reply(font.thin("API configuration is incorrect or missing."));
+        return;
+    }
 
     const statusUrl = url[0];
     const chatUrl = url[1];
@@ -38,16 +33,8 @@ module.exports["run"] = async ({
         return;
     }
 
-    conversationHistories[senderID] = conversationHistories[senderID] || [];
-    conversationHistories[senderID].push({
-        role: "user", content: query
-    });
-
     const answering = await chat.reply(font.monospace("🕐 | O3-mini is Typing..."));
 
-    let newVqd = '';
-
-    // Initialize the VQD token
     try {
         const response = await axios.get(statusUrl, {
             headers: {
@@ -55,88 +42,28 @@ module.exports["run"] = async ({
                 'x-vqd-accept': '1'
             }
         });
-        newVqd = response.headers['x-vqd-4'];
-        if (!newVqd) {
-            throw new Error('Failed to initialize chat. No VQD token found.');
-        }
-    } catch (error) {
-        answering.edit(font.thin("Initialization error: " + error.message));
-        return;
-    }
+        
+        const newVqd = response.headers['x-vqd-4'];
+        if (!newVqd) throw new Error('Failed to initialize chat. No VQD token found.');
 
-    // Send the request and process the response
-    const messages = [{
-        role: 'user',
-        content: query
-    }];
-
-    try {
-        const fetchResponse = await axios.post(chatUrl, {
-            model, messages
-        }, {
+        const messages = [{ role: 'user', content: query }];
+        const fetchResponse = await axios.post(chatUrl, { model, messages }, {
             headers: {
                 'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
-                'x-vqd-4': newVqd, 'Content-Type': 'application/json'
+                'x-vqd-4': newVqd,
+                'Content-Type': 'application/json'
             }
         });
+        
+        const finalMessage = fetchResponse.data.match(/"message":"(.*?)"/g)
+            ?.map(m => m.replace(/"message":"|"/g, ''))
+            .join('');
 
-        let buffer = '';
-        let finalMessage = '';
-        fetchResponse.data.on('data', (chunk) => {
-            buffer += chunk.toString();
-
-            let endIndex;
-            while ((endIndex = buffer.indexOf('\n')) !== -1) {
-                const line = buffer.slice(0, endIndex).trim();
-                buffer = buffer.slice(endIndex + 1);
-
-                if (line === '[DONE]') break;
-
-                if (line.startsWith('data: ')) {
-                    const jsonString = line.slice(6).trim();
-
-                    if (jsonString && jsonString !== '[DONE]') {
-                        try {
-                            const data = JSON.parse(jsonString);
-                            if (data.message) {
-                                finalMessage += data.message;
-                            }
-                        } catch (err) {
-                            console.error('Error parsing chunk:', err);
-                        }
-                    }
-                }
-            }
-        });
-
-        fetchResponse.data.on('end',
-            () => {
-                if (buffer.trim() !== '') {
-                    try {
-                        const data = JSON.parse(buffer);
-                        if (data.message) {
-                            finalMessage += data.message;
-                        }
-                    } catch (err) {
-                        console.error('Error parsing remaining buffer:', err);
-                    }
-                }
-
-                conversationHistories[senderID].push({
-                    role: "assistant", content: finalMessage
-                });
-
-                const cleanup = finalMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-                const message = font.bold(" 🤖 | " + model.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
-                answering.edit(message);
-            });
-
-        fetchResponse.data.on('error',
-            (err) => {
-                answering.edit(font.thin("Error during streaming response: " + err.message));
-            });
-
+        const cleanup = finalMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+        const message = font.bold(" 🤖 | " + model.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
+        
+        answering.edit(message);
     } catch (error) {
-        answering.edit(font.thin("Failed to retrieve response from o3-mini : " + error.message));
+        answering.edit(font.thin("Error: " + error.message));
     }
 };
