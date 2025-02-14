@@ -57,9 +57,10 @@ const isBlocked = (ip) => {
 
     const unblockTime = blockedIPs.get(ip);
     if (Date.now() > unblockTime) {
-        blockedIPs.delete(ip); // Unblock after timeout
         server.close(() => {
         startServer();
+        }
+        blockedIPs.delete(ip); // Unblock after timeout
         return false;
     }
     return true;
