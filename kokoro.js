@@ -48,7 +48,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 
 const blockedIPs = new Map(); // Stores blocked IPs with unblock timestamps
-const BLOCK_DURATION = 60 * 60 * 1000; // 15 minutes
+const BLOCK_DURATION = 60 * 60 * 1000; // 60 minutes
 const TRUSTED_IPS = ['127.0.0.1']; // Add your own trusted IPs here
 
 // Function to check if an IP should be unblocked
@@ -58,6 +58,8 @@ const isBlocked = (ip) => {
     const unblockTime = blockedIPs.get(ip);
     if (Date.now() > unblockTime) {
         blockedIPs.delete(ip); // Unblock after timeout
+        server.close(() => {
+        startServer();
         return false;
     }
     return true;
@@ -80,8 +82,8 @@ const limiter = rateLimit({
     max: 500, // Allow 500 requests per IP per window
     handler: (req, res) => {
         if (!TRUSTED_IPS.includes(req.ip)) {
-            blockedIPs.set(req.ip, Date.now() + BLOCK_DURATION); // Block for 15 min
-            console.log(`Blocking IP: ${req.ip} for 15 minutes`);
+            blockedIPs.set(req.ip, Date.now() + BLOCK_DURATION); // Block for 60 min
+            console.log(`Blocking IP: ${req.ip} for 60 minutes`);
             res.socket.destroy(); // Drop connection immediately
             changePort();
             return;
