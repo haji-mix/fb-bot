@@ -80,7 +80,7 @@ const startServer = async (stealth_port) => {
             `http://localhost:${PORT}`;
 
         server = app.listen(PORT, () => {
-            console.log(`Server running at ${serverUrl}`);
+            logger.instagram(`Server running at ${serverUrl}`);
         });
 
     } catch (error) {
