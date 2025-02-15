@@ -48,7 +48,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     const selectedModel = models[selectedModelIndex];
 
     if (args.length === 0) {
-        const modelList = models.map((model, index) => `${index + 1}. ${model.split('/').pop().toUpperCase()}`).join('\n');
+        const modelList = models.map((model, index) => `${index + 1}. ${model.split('/').pop()}`).join('\n');
         chat.reply(
             font.bold("🤖 | Available Models:\n") +
             font.thin(modelList +
