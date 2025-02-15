@@ -57,8 +57,20 @@ const isBlocked = (ip) => blockedIPs.has(ip);
 const startServer = async (stealth_port) => {
     try {
         const hajime = await workers();
-        
+
+        // Reload environment variables
+        require('dotenv').config();
+
         let PORT = stealth_port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+        const lastTimestamp = process.env.PORT_TIMESTAMP ? parseInt(process.env.PORT_TIMESTAMP) : 0;
+        const currentTime = Date.now();
+
+        // Check if more than 1 hour has passed
+        if (lastTimestamp && currentTime - lastTimestamp > 60 * 60 * 1000) {
+            console.log("More than 1 hour passed, removing stored port.");
+            removeEnvPort();
+            PORT = kokoro_config.port || hajime?.host?.port || 10000; // Fallback to default
+        }
 
         const serverUrl =
             (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
@@ -68,13 +80,45 @@ const startServer = async (stealth_port) => {
             `http://localhost:${PORT}`;
 
         server = app.listen(PORT, () => {
-            logger.summer(`Public Web: ${serverUrl}\nLocal Web: http://127.0.0.1:${PORT}`);
+            console.log(`Server running at ${serverUrl}`);
         });
 
     } catch (error) {
         console.error("Error starting server:", error);
     }
 };
+
+
+function updateEnvPort(newPort) {
+    const envPath = ".env";
+    let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+
+    const timestamp = Date.now(); // Store current timestamp
+
+    // Replace or add PORT and TIMESTAMP
+    envContent = envContent.replace(/^PORT=\d+/m, `PORT=${newPort}`);
+    envContent = envContent.replace(/^PORT_TIMESTAMP=\d+/m, `PORT_TIMESTAMP=${timestamp}`);
+
+    if (!/^PORT=\d+/m.test(envContent)) envContent += `\nPORT=${newPort}`;
+    if (!/^PORT_TIMESTAMP=\d+/m.test(envContent)) envContent += `\nPORT_TIMESTAMP=${timestamp}`;
+
+    fs.writeFileSync(envPath, envContent, "utf8");
+    console.log(`Updated .env with PORT=${newPort}, TIMESTAMP=${timestamp}`);
+}
+
+function removeEnvPort() {
+    const envPath = ".env";
+    if (!fs.existsSync(envPath)) return;
+
+    let envContent = fs.readFileSync(envPath, "utf8");
+
+    // Remove PORT and PORT_TIMESTAMP
+    envContent = envContent.replace(/^PORT=\d+\n?/m, "");
+    envContent = envContent.replace(/^PORT_TIMESTAMP=\d+\n?/m, "");
+
+    fs.writeFileSync(envPath, envContent, "utf8");
+    console.log("Removed stored PORT and TIMESTAMP from .env");
+}
 
 function switchPort() {
     if (underAttack) return;
@@ -86,11 +130,13 @@ function switchPort() {
     if (server) {
         server.close(() => {
             console.log(`Closed old port`);
+            updateEnvPort(newPort);
             startServer(newPort);
             underAttack = false;
         });
     }
 }
+
 
 app.use((req, res, next) => {
     const clientIP = req.headers["cf-connecting-ip"] || req.ip;
