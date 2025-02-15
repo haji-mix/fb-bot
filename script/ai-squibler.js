@@ -2,7 +2,7 @@ const axios = require('axios');
 
 module.exports["config"] = {
         name: "squibler",
-        aliases: ["aiwriter", "storygen", "genstory"],
+        aliases: ["aiwriter", "storygen", "genstory", "storymaker", "storyteller"],
         isPrefix: false,
         version: "1.0.0",
         credits: "Kenneth Panio",

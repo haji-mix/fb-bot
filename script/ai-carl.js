@@ -4,7 +4,7 @@ const devs = require(__dirname.replace("/script", "") + '/system/api');
 //https://markdevs-last-api-s7d0.onrender.com/genuines-ai?name=Aristotle&question=hi
 
 module.exports["config"] = {
-  name: "carlo",
+  name: "carl",
   version: "4.8",
   role: 0,
   credits: "Markdevs69",

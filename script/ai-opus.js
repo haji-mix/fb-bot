@@ -3,47 +3,100 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports["config"] = {
-    name: "opus",
+    name: "voids",
+    aliases: ["void", "vd"], // Updated command name and aliases
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
     isPrefix: false,
     type: "artificial-intelligence",
-    info: "Interact with Claude Opus AI",
-    usage: "[prompt]",
-    guide: "opus How does quantum computing work?",
-    isPremium: true,
-    limit: 10,
+    info: "Interact with AI models via VOID API. Switch between models dynamically.",
+    usage: "[model] [number]/[prompt]",
+    guide: "voids [model] [number]/[prompt]\nExample: voids model 2\nExample: voids What is quantum computing?",
     cd: 6,
 };
 
+// Store user-specific model selections
+const userModelMap = new Map();
+
+// Store conversation histories for each user
 const conversationHistories = {};
 
-module.exports["run"] = async ({
-    chat, args, event, font, global
-}) => {
+module.exports["run"] = async ({ chat, args, event, font, global }) => {
     const mono = txt => font.monospace(txt);
-    const {
-        senderID
-    } = event;
+    const { senderID } = event;
     let query = args.join(" ");
 
-    if (!query) {
-        return chat.reply(font.thin("Please provide a text to ask. e.g: opus explain the theory of relativity"));
+    // Available models
+    const availableModels = [
+        "gpt-4o-mini-free",
+        "gpt-4o-mini",
+        "gpt-4o-free",
+        "gpt-4-turbo-2024-04-09",
+        "gpt-4o-2024-08-06",
+        "grok-2",
+        "grok-2-mini",
+        "claude-3-opus-20240229",
+        "claude-3-opus-20240229-gcp",
+        "claude-3-sonnet-20240229",
+        "claude-3-5-sonnet-20240620",
+        "claude-3-haiku-20240307",
+        "claude-2.1",
+        "gemini-1.5-flash-exp-0827",
+        "gemini-1.5-pro-exp-0827"
+    ];
+
+    // Check if the user is switching models
+    const isSwitchingModel = args[0]?.toLowerCase() === "model" && !isNaN(args[1]);
+
+    if (isSwitchingModel) {
+        const modelNumber = parseInt(args[1]) - 1; // Convert to zero-based index
+        if (modelNumber < 0 || modelNumber >= availableModels.length) {
+            chat.reply(font.thin(`Invalid model number. Please choose a number between 1 and ${availableModels.length}.`));
+            return;
+        }
+
+        // Save the selected model for the user
+        userModelMap.set(senderID, modelNumber);
+        const modelName = availableModels[modelNumber];
+        chat.reply(font.bold(`✅ | Switched to model: ${modelName}`));
+        return;
     }
 
+    // Get the selected model for the user (or default if not set)
+    const selectedModelIndex = userModelMap.get(senderID) ?? 7; // Default to Claude-3-Opus
+    const selectedModel = availableModels[selectedModelIndex];
+    const modelName = selectedModel.toUpperCase();
+
+    // Handle 'clear', 'reset', etc., to clear history
     if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
         conversationHistories[senderID] = [];
         chat.reply(mono("Conversation history cleared."));
         return;
     }
 
-    const answering = await chat.reply(mono("🕐 | Generating Response..."));
-    conversationHistories[senderID] = conversationHistories[senderID] || [];
-    conversationHistories[senderID].push({
-        role: "user", content: query
-    });
+    // Handle empty prompt
+    if (args.length === 0) {
+        const modelList = availableModels.map((model, index) => `${index + 1}. ${model}`).join('\n');
+        chat.reply(
+            font.bold("🤖 | Available Models:\n") +
+            font.thin(modelList +
+            "\n\nTo switch models, use: voids model [number]\nExample: voids model 2\nTo chat use: voids [prompt]"
+        ));
+        return;
+    }
 
+    // Join the remaining arguments as the user's query
+    query = args.join(" ");
+
+    // Notify the user that the bot is typing
+    const answering = await chat.reply(mono(`🕐 | ${modelName} is Typing...`));
+
+    // Initialize conversation history if it doesn't exist
+    conversationHistories[senderID] = conversationHistories[senderID] || [];
+    conversationHistories[senderID].push({ role: "user", content: query });
+
+    // API configuration
     const apiUrl = 'https://api.voids.top/v1/chat/completions';
     const headers = {
         'accept': 'application/json, text/event-stream',
@@ -64,48 +117,11 @@ module.exports["run"] = async ({
 
     const data = {
         messages: conversationHistories[senderID],
-        model: 'claude-3-opus-20240229'
+        model: selectedModel
     };
 
     const getResponse = async () => {
-        return axios.post(apiUrl, data, {
-            headers
-        });
-    };
-
-    const shortenUrl = async (url) => {
-        try {
-            const response = await axios.get(global.api.kokoro[0] + `/tinyurl?url=${encodeURIComponent(url)}`);
-            return response.data.short;
-        } catch (error) {
-            return url;
-        }
-    };
-
-    const processShortUrls = async (text) => {
-        const urlRegex = /(https?:\/\/[^\s)]+)/g;
-        const urls = [...text.matchAll(urlRegex)].map(match => match[0]);
-        const shortenedUrls = await Promise.all(
-            urls.map(async (url) => ({
-                original: url, short: await shortenUrl(url)
-            }))
-        );
-        let processedText = text;
-        shortenedUrls.forEach(({
-            original, short
-        }) => {
-            processedText = processedText.replace(new RegExp(original, 'g'), short);
-        });
-        return processedText;
-    };
-
-    const isImageUrl = async (url) => {
-        try {
-            const response = await axios.head(url);
-            return response.headers['content-type'].startsWith('image');
-        } catch (error) {
-            return false;
-        }
+        return axios.post(apiUrl, data, { headers });
     };
 
     const maxRetries = 3;
@@ -131,17 +147,16 @@ module.exports["run"] = async ({
     }
 
     if (success) {
-        conversationHistories[senderID].push({
-            role: "assistant", content: answer
-        });
-        const processedAnswer = await processShortUrls(answer);
-        const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
-        const imageUrlRegex = /!\[.*?\]\((https?:\/\/[^\s)]+)\)/g;
+        conversationHistories[senderID].push({ role: "assistant", content: answer });
+
+        // Format the response
         const line = "\n" + '━'.repeat(18) + "\n";
-        const formattedAnswer = processedAnswer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-        const message = font.bold(`🌐 | ${data.model.toUpperCase()}`) + line + formattedAnswer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+        const formattedAnswer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+        const message = font.bold(`🌐 | ${modelName}`) + line + formattedAnswer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
         await answering.edit(message);
 
+        // Handle code blocks in the response
+        const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
         if (codeBlocks.length > 0) {
             const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
             const cacheFolderPath = path.join(__dirname, "cache");
@@ -152,42 +167,8 @@ module.exports["run"] = async ({
             const filePath = path.join(cacheFolderPath, uniqueFileName);
             fs.writeFileSync(filePath, allCode, 'utf8');
             const fileStream = fs.createReadStream(filePath);
-            await chat.reply({
-                attachment: fileStream
-            });
+            await chat.reply({ attachment: fileStream });
             fs.unlinkSync(filePath);
-        }
-
-        const imageUrls = [];
-        let imageMatch;
-        while ((imageMatch = imageUrlRegex.exec(answer)) !== null) {
-            const [_,
-                imageUrl] = imageMatch;
-            if (await isImageUrl(imageUrl)) {
-                imageUrls.push(imageUrl);
-            }
-        }
-
-        if (imageUrls.length > 0) {
-            await chat.reply({
-                attachment: await Promise.all(imageUrls.map(url => chat.stream(url)))
-            });
         }
     }
 };
-
-/* Available models: gpt-4o-mini-free
-gpt-4o-mini
-gpt-4o-free
-gpt-4-turbo-2024-04-09
-gpt-4o-2024-08-06
-grok-2
-grok-2-mini
-claude-3-opus-20240229
-claude-3-opus-20240229-gcp
-claude-3-sonnet-20240229
-claude-3-5-sonnet-20240620
-claude-3-haiku-20240307
-claude-2.1
-gemini-1.5-flash-exp-0827
-gemini-1.5-pro-exp-0827*/

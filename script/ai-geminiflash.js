@@ -1,114 +1,113 @@
-const {
-    GoogleGenerativeAI
-} = require("@google/generative-ai");
-const {
-    GoogleAIFileManager
-} = require("@google/generative-ai/server");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleAIFileManager } = require("@google/generative-ai/server");
 const { HarmBlockThreshold, HarmCategory } = require("@google/generative-ai");
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const conversationHistories = {}; // Use an object to manage conversation histories
+// Store user-specific model selections
+const userModelMap = new Map();
 
-async function waitForFilesActive(files, fileManager) {
-    console.log("Waiting for file processing...");
-    for (const file of files) {
-        let fileStatus = await fileManager.getFile(file.name);
-        while (fileStatus.state === "PROCESSING") {
-            process.stdout.write(".");
-            await new Promise((resolve) => setTimeout(resolve, 10_000));
-            fileStatus = await fileManager.getFile(file.name);
-        }
-        if (fileStatus.state !== "ACTIVE") {
-            throw Error(`File ${file.name} failed to process`);
-        }
-    }
-    console.log("...all files ready\n");
-}
+// Store conversation histories for each user
+const conversationHistories = {};
 
 module.exports = {
     config: {
         name: "gemini",
-        aliases: ["gmflash", "gmf", "geminiflash"],
+        aliases: ["gm"],
         isPrefix: false,
         version: "1.0.0",
         credits: "Kenneth Panio",
         role: 0,
         type: "artificial-intelligence",
-        info: "Interact with Gemini AI.",
-        usage: "[prompt or reply to a photo, audio, or video]",
-        guide: "gemini How does nuclear fusion work?",
-        isPremium: true,
-        limit: 5,
+        info: "Interact with Gemini AI. Switch between models dynamically.",
+        usage: "[model] [number]/[prompt]",
+        guide: "gemini [model] [number]/[prompt]\nExample: gemini model 2\nExample: gemini What is AI?",
         cd: 6
     },
 
-    run: async ({
-        chat, args, event, font, global
-    }) => {
-        const safetySettings = [{
-            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-        },
-        {
-            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold: HarmBlockThreshold.BLOCK_NONE,
-        }];
-        const {
-            key,
-            models
-        } = global.api.workers.google;
+    run: async ({ chat, args, event, font, global }) => {
+        const { key, models } = global.api.workers.google;
         const genAI = new GoogleGenerativeAI(atob(key));
         const fileManager = new GoogleAIFileManager(atob(key));
-        const model = genAI.getGenerativeModel({
-            model: models.gemini[12], /*systemInstruction: "You are a cat. Your name is Neko.",*/ safetySettings
-        });
-        const cacheFolderPath = path.join(__dirname, "cache");
-        const mono = txt => font.monospace(txt);
 
-        const senderID = event.senderID;
-        let query = args.join(" ").trim();
-        let fileData = null;
-        let mimeType = null;
-        let content = null;
+        // Fetch available Gemini models
+        const geminiModels = models.gemini;
 
-        // Initialize conversation history for the sender
-        if (!conversationHistories[senderID]) {
-            conversationHistories[senderID] = [];
-        }
-
-        const history = conversationHistories[senderID];
-
-        // Handle 'clear', 'reset', etc., to clear history
-        if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
-            conversationHistories[senderID] = [];
-            chat.reply(mono("Conversation history cleared."));
+        if (!geminiModels || geminiModels.length < 1) {
+            chat.reply(font.thin("No models available. Please check the configuration."));
             return;
         }
 
+        const defaultModelIndex = 0; // Default to the first model
+        const defaultModel = geminiModels[defaultModelIndex];
+
+        // Check if the user is switching models
+        const isSwitchingModel = args[0]?.toLowerCase() === "model" && !isNaN(args[1]);
+
+        if (isSwitchingModel) {
+            const modelNumber = parseInt(args[1]) - 1; // Convert to zero-based index
+            if (modelNumber < 0 || modelNumber >= geminiModels.length) {
+                chat.reply(font.thin(`Invalid model number. Please choose a number between 1 and ${geminiModels.length}.`));
+                return;
+            }
+
+            // Save the selected model for the user
+            userModelMap.set(event.senderID, modelNumber);
+            const modelName = geminiModels[modelNumber].split('/').pop();
+            chat.reply(font.bold(`✅ | Switched to model: ${modelName}`));
+            return;
+        }
+
+        // Get the selected model for the user (or default if not set)
+        const selectedModelIndex = userModelMap.get(event.senderID) ?? defaultModelIndex;
+        const selectedModel = geminiModels[selectedModelIndex];
+        const modelName = selectedModel.split('/').pop().toUpperCase();
+
+        // Initialize conversation history for the sender
+        if (!conversationHistories[event.senderID]) {
+            conversationHistories[event.senderID] = [];
+        }
+
+        const history = conversationHistories[event.senderID];
+
+        // Handle 'clear', 'reset', etc., to clear history
+        if (['clear', 'reset', 'forgot', 'forget'].includes(args[0]?.toLowerCase())) {
+            conversationHistories[event.senderID] = [];
+            chat.reply(font.thin("Conversation history cleared."));
+            return;
+        }
+
+        // Handle empty prompt
+        if (args.length === 0) {
+            const modelList = geminiModels.map((model, index) => `${index + 1}. ${model.split('/').pop()}`).join('\n');
+            chat.reply(
+                font.bold("🤖 | Available Models:\n") +
+                font.thin(modelList +
+                "\n\nTo switch models, use: gemini model [number]\nExample: gemini model 2\nTo chat use: gemini [prompt]"
+            ));
+            return;
+        }
+
+        // Join the remaining arguments as the user's query
+        const query = args.join(" ").trim();
+
         // Handle file attachments or reply to a message
-        if (event.type === "message_reply" && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
+        let fileData = null;
+        let mimeType = null;
+
+        if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
             const attachment = event.messageReply.attachments[0];
-            content = attachment.url;
+            const content = attachment.url;
 
             try {
+                const cacheFolderPath = path.join(__dirname, "cache");
                 if (!fs.existsSync(cacheFolderPath)) {
                     fs.mkdirSync(cacheFolderPath);
                 }
 
                 // Download the attachment
-                const response = await axios.get(content, {
-                    responseType: 'arraybuffer'
-                });
+                const response = await axios.get(content, { responseType: 'arraybuffer' });
                 mimeType = response.headers['content-type'];
                 const fileExtension = mimeType.split('/')[1];
                 const uniqueFileName = `file_${Date.now()}_${Math.floor(Math.random() * 1e6)}.${fileExtension}`;
@@ -129,145 +128,67 @@ module.exports = {
                     mimeType,
                     fileUri: uploadResponse.file.uri
                 };
-
-                // Set default query based on mime type
-                if (mimeType.startsWith('image/')) {
-                    query = args.join(" ") || "What is this image?";
-                } else if (mimeType.startsWith('audio/')) {
-                    query = args.join(" ") || "What is this audio?";
-                } else if (mimeType.startsWith('video/')) {
-                    query = args.join(" ") || "What is this video?";
-                } else if (mimeType === 'application/pdf') {
-                    query = args.join(" ") || "Can you summarize this document?";
-                } else {
-                    chat.reply(mono("Unsupported attachment type!"));
-                    return;
-                }
             } catch (error) {
-                chat.reply(mono("Failed to process the file: " + error.message));
+                chat.reply(font.thin("Failed to process the file: " + error.message));
                 return;
             }
         }
-
-        // Handle regex for direct link detection
-        const linkRegex = /https?:\/\/[^\s]+(\.pdf|\.jpg|\.jpeg|\.png|\.mp3|\.mp4)/i;
-        const linkMatch = query.match(linkRegex);
-
-        if (linkMatch) {
-            content = linkMatch[0];
-
-            try {
-                if (!fs.existsSync(cacheFolderPath)) {
-                    fs.mkdirSync(cacheFolderPath);
-                }
-
-                // Download the file from the link
-                const response = await axios.get(content, {
-                    responseType: 'arraybuffer'
-                });
-                mimeType = response.headers['content-type'];
-                const fileExtension = mimeType.split('/')[1];
-                const uniqueFileName = `file_${Date.now()}_${Math.floor(Math.random() * 1e6)}.${fileExtension}`;
-                const filePath = path.join(cacheFolderPath, uniqueFileName);
-
-                fs.writeFileSync(filePath, response.data);
-
-                // Upload the file
-                const uploadResponse = await fileManager.uploadFile(filePath, {
-                    mimeType,
-                    displayName: `Downloaded File ${Date.now()}`
-                });
-
-                // Wait for the file to be processed and active
-                await waitForFilesActive([uploadResponse.file], fileManager);
-
-                fileData = {
-                    mimeType,
-                    fileUri: uploadResponse.file.uri
-                };
-                
-                query = args.join(" ");
-
-            } catch (error) {
-                chat.reply(mono("Failed to process the file from the link: " + error.message));
-                return;
-            }
-        }
-
-        // Ensure there is a query
-        if (!query) {
-            chat.reply(mono("Please provide a question or reply to an attachment!"));
-            return;
-        }
-
-        // Add the user query to history
-        history.push({
-            role: "user",
-            parts: [{
-                text: query
-            }]
-        });
 
         // Prepare to answer
-        const answering = await chat.reply(mono("🕐 | Answering..."));
+        const answering = await chat.reply(font.thin(`🕐 | ${modelName} is Typing...`));
 
         try {
-            // Create and manage chat session
-            const chatSession = model.startChat({
-                history: [
-                    ...history,
-                    fileData ? {
-                        role: "user",
-                        parts: [{
-                            fileData: {
-                                mimeType: fileData.mimeType, fileUri: fileData.fileUri
-                            }
-                        }]
-                    } : null,
-                    {
-                        role: "user",
-                        parts: [{
-                            text: query
-                        }]
-                    }
-                ].filter(Boolean)
+            const model = genAI.getGenerativeModel({
+                model: selectedModel,
+                safetySettings: [
+                    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE }
+                ]
             });
+
+            // Add the user query to history
+            history.push({
+                role: "user",
+                parts: [{ text: query }]
+            });
+
+            // Create and manage chat session
+            const chatSession = model.startChat({ history });
 
             // Send the user query message
             const result = await chatSession.sendMessage(query);
-
             const answer = result.response.text();
 
             // Append the AI response to history
             history.push({
                 role: "model",
-                parts: [{
-                    text: answer
-                }]
+                parts: [{ text: answer }]
             });
 
-            const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
+            // Format the response
             const line = "\n" + '━'.repeat(18) + "\n";
-
             const formattedAnswer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-            const message = font.bold(" 📸 | " + models.gemini[12].toUpperCase()) + line + formattedAnswer + line + mono("◉ USE 'CLEAR' TO RESET CONVERSATION.\n◉ REPLY THE PHOTO/AUDIO/VIDEO/PDF TO SCAN.");
+            const message = font.bold(`🤖 | ${modelName}`) + line + formattedAnswer + line + font.thin("◉ USE 'CLEAR' TO RESET CONVERSATION.");
 
             await answering.edit(message);
-
-            if (codeBlocks.length > 0) {
-                const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
-            const uniqueFileName = `code_snippet_${Date.now()}_${Math.floor(Math.random() * 1e6)}.txt`;
-            const filePath = path.join(cacheFolderPath, uniqueFileName);
-
-            fs.writeFileSync(filePath, allCode, 'utf8');
-
-            const fileStream = fs.createReadStream(filePath);
-            await chat.reply({ attachment: fileStream });
-
-            fs.unlinkSync(filePath);
+        } catch (error) {
+            await answering.edit(font.thin("⚠️ | An error occurred: " + error.message));
         }
-        } catch (err) {
-             answering.edit(mono("⚠️ | An error occurred while processing your request. " + err.message));
-        }
-    },
+    }
 };
+
+async function waitForFilesActive(files, fileManager) {
+    for (const file of files) {
+        let fileStatus = await fileManager.getFile(file.name);
+        while (fileStatus.state === "PROCESSING") {
+            process.stdout.write(".");
+            await new Promise((resolve) => setTimeout(resolve, 10_000));
+            fileStatus = await fileManager.getFile(file.name);
+        }
+        if (fileStatus.state !== "ACTIVE") {
+            throw Error(`File ${file.name} failed to process`);
+        }
+    }
+}

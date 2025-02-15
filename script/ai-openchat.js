@@ -5,47 +5,98 @@ const path = require('path');
 
 module.exports["config"] = {
   name: "openchat",
+  aliases: ["oc","ochat"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with Clone chatgpt an Openchat AI.",
-  usage: "[prompt]",
-  guide: "openchat How does nuclear fusion work?",
+  info: "Interact with OpenChat AI. Switch between models dynamically.",
+  usage: "[model] [number]/[prompt]",
+  guide: "openchat [model] [number]/[prompt]\nExample: openchat model 2\nExample: openchat What is AI?",
   cd: 6
 };
 
+// Store user-specific model selections
+const userModelMap = new Map();
+
+// Store conversation histories for each user
 const conversationHistories = {};
 
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
-  var { url, key, models } = global.api.workers;
-  var openchat_model = models.openchat[0];
-  var name = openchat_model.split('/').pop().toUpperCase();
-  
-  var mono = txt => font.monospace(txt);
-  const { threadID, senderID } = event;
+  const { url, key, models } = global.api.workers;
+
+  // Fetch available OpenChat models
+  const openchatModels = models.openchat;
+
+  if (!openchatModels || openchatModels.length < 1) {
+    chat.reply(font.thin("No models available. Please check the configuration."));
+    return;
+  }
+
+  const defaultModelIndex = 0; // Default to the first model
+  const defaultModel = openchatModels[defaultModelIndex];
+
+  // Check if the user is switching models
+  const isSwitchingModel = args[0]?.toLowerCase() === "model" && !isNaN(args[1]);
+
+  if (isSwitchingModel) {
+    const modelNumber = parseInt(args[1]) - 1; // Convert to zero-based index
+    if (modelNumber < 0 || modelNumber >= openchatModels.length) {
+      chat.reply(font.thin(`Invalid model number. Please choose a number between 1 and ${openchatModels.length}.`));
+      return;
+    }
+
+    // Save the selected model for the user
+    userModelMap.set(event.senderID, modelNumber);
+    const modelName = openchatModels[modelNumber].split('/').pop();
+    chat.reply(font.bold(`✅ | Switched to model: ${modelName}`));
+    return;
+  }
+
+  // Get the selected model for the user (or default if not set)
+  const selectedModelIndex = userModelMap.get(event.senderID) ?? defaultModelIndex;
+  const selectedModel = openchatModels[selectedModelIndex];
+  const modelName = selectedModel.split('/').pop().toUpperCase();
+
+  // Initialize conversation history for the sender
+  if (!conversationHistories[event.senderID]) {
+    conversationHistories[event.senderID] = [];
+  }
+
+  const history = conversationHistories[event.senderID];
+
+  // Handle 'clear', 'reset', etc., to clear history
+  if (['clear', 'reset', 'forgot', 'forget'].includes(args[0]?.toLowerCase())) {
+    conversationHistories[event.senderID] = [];
+    chat.reply(font.thin("Conversation history cleared."));
+    return;
+  }
+
+  // Handle empty prompt
+  if (args.length === 0) {
+    const modelList = openchatModels.map((model, index) => `${index + 1}. ${model.split('/').pop()}`).join('\n');
+    chat.reply(
+      font.bold("🤖 | Available Models:\n") +
+      font.thin(modelList +
+      "\n\nTo switch models, use: openchat model [number]\nExample: openchat model 2\nTo chat use: openchat [prompt]"
+    ));
+    return;
+  }
+
+  // Join the remaining arguments as the user's query
   const query = args.join(" ");
 
-  if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
-    conversationHistories[senderID] = [];
-    chat.reply(mono("Conversation history cleared."));
-    return;
-  }
+  // Notify the user that the bot is typing
+  const answering = await chat.reply(font.thin(`🕐 | ${modelName} is Typing...`));
 
-  if (!query) {
-    chat.reply(mono("Please provide a question!"));
-    return;
-  }
+  // Add the user query to history
+  history.push({ role: "user", content: query });
 
-  const answering = await chat.reply(mono("🕐 | Answering..."));
-
-  conversationHistories[senderID] = conversationHistories[senderID] || [];
-  conversationHistories[senderID].push({ role: "user", content: query });
-
+  // Function to get a response from the API
   const getResponse = async () => {
-    return axios.post(url + openchat_model, {
-      messages: conversationHistories[senderID],
+    return axios.post(url + selectedModel, {
+      messages: history,
       max_tokens: 32000
     }, {
       headers: {
@@ -56,10 +107,11 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     });
   };
 
+  // Retry mechanism for API requests
   const maxRetries = 3;
   let attempts = 0;
   let success = false;
-  let answer = "Under Maintenance!\n\nPlease use other models get started with 'help'";
+  let answer = "Under Maintenance!\n\nPlease use other models. Type 'help' to get started.";
 
   while (attempts < maxRetries && !success) {
     try {
@@ -69,27 +121,29 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     } catch (error) {
       attempts++;
       if (attempts < maxRetries) {
-        await answering.edit(mono(`No response from Openchat AI. Retrying... (${attempts} of ${maxRetries} attempts)`));
+        await answering.edit(font.thin(`No response from ${modelName}. Retrying... (${attempts} of ${maxRetries} attempts)`));
         await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       } else {
-         answering.edit(mono("No response from Openchat AI. Please try again later: " + error.message));
+        await answering.edit(font.thin(`No response from ${modelName}. Please try again later: ${error.message}`));
         return;
       }
     }
   }
 
+  // If successful, update conversation history and send the response
   if (success) {
-    conversationHistories[senderID].push({ role: "assistant", content: answer });
+    history.push({ role: "assistant", content: answer });
 
-    const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
+    // Format the response
     const line = "\n" + '━'.repeat(18) + "\n";
-    
-    answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-    
-    const message = font.bold(" 🤖 | " + name) + line + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
+    const formattedAnswer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+
+    const message = font.bold(`🤖 | ${modelName}`) + line + formattedAnswer + line + font.thin(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
     await answering.edit(message);
 
+    // Handle code blocks in the response
+    const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
     if (codeBlocks.length > 0) {
       const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
       const cacheFolderPath = path.join(__dirname, "cache");
