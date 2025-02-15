@@ -1,14 +1,15 @@
+require("dotenv").config();
+
 const { spawn } = require("child_process");
 const path = require("path");
 const { execSync } = require("child_process");
+const fs = require("fs");
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 const npmPackages = ["canvas@latest"];
-
 const restartEnabled = process.env.PID !== "0";
-
 let mainProcess;
 
 function isPackageUpToDate(pkg) {
@@ -66,13 +67,22 @@ function installPackages(callback) {
     });
 }
 
+function getStoredPort() {
+    require("dotenv").config(); // Reload .env before checking the port
+    return process.env.PORT || null;
+}
+
 function start() {
-    console.log("Starting main process...");
+    require("dotenv").config(); // Ensure env variables are loaded
+    
+    const port = getStoredPort();
+    console.log(`Starting main process on PORT=${port || "default"}`);
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
+        env: { ...process.env, PORT: port || "" }, // Ensure correct port is passed
     });
 
     mainProcess.on("error", (err) => {
@@ -82,8 +92,8 @@ function start() {
     mainProcess.on("close", (exitCode) => {
         console.log(`Process exited with code [${exitCode}]`);
         if (restartEnabled) {
-            console.log("Restarting process...");
-            restartProcess();
+            console.log("Restarting process in 5 seconds...");
+            setTimeout(restartProcess, 5000); // Delay restart to prevent crash loops
         } else {
             console.log("Shutdown initiated...");
             process.exit(exitCode);
