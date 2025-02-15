@@ -35,7 +35,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     return;
   }
 
-  const defaultModelIndex = 16; // Default to the first model
+  const defaultModelIndex = 15; // Default to the first model
   const defaultModel = llamaModels[defaultModelIndex];
 
   // Check if the user is switching models
