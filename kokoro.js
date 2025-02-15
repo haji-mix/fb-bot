@@ -48,7 +48,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'public', 'views'));
 
 const blockedIPs = new Map();
-const TRUSTED_IPS = ['127.0.0.1', `::1`];
+const TRUSTED_IPS = ['127.0.0.1'];
 let server;
 let underAttack = false;
 
@@ -80,7 +80,7 @@ const startServer = async (stealth_port) => {
             `http://localhost:${PORT}`;
 
         server = app.listen(PORT, () => {
-            logger.instagram(`Server running at ${serverUrl}`);
+            logger.instagram(`PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`);
         });
 
     } catch (error) {
