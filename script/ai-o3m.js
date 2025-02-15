@@ -26,7 +26,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         return;
     }
 
-    const defaultModelIndex = 0;
+    const defaultModelIndex = 4;
     const defaultModel = models[defaultModelIndex];
 
     const isSwitchingModel = args[0]?.toLowerCase() === "model" && !isNaN(args[1]);
@@ -51,15 +51,15 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         const modelList = models.map((model, index) => `${index + 1}. ${model.split('/').pop().toUpperCase()}`).join('\n');
         chat.reply(
             font.bold("🤖 | Available Models:\n") +
-            modelList +
-            "\n\nTo switch models, use: duckchat model [number]\nExample: duckchat model 2\n\nTo chat use: duckchat hello"
-        );
+            font.thin(modelList +
+            "\n\nTo switch models, use: duckchat model [number]\nExample: duckchat model 2\nTo chat use: duckchat hello"
+        ));
         return;
     }
 
     const query = args.join(" ");
 
-    const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.split('/').pop().toUpperCase()} is Typing...`));
+    const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop().toUpperCase()} is Typing...`));
 
     try {
         const statusUrl = url[0];
