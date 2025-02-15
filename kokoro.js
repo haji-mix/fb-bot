@@ -155,6 +155,8 @@ app.use((req, res, next) => {
 const limiter = rateLimit({
     windowMs: 5 * 60 * 1000,
     max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
     handler: (req, res) => {
         const clientIP = req.headers["cf-connecting-ip"] || req.ip;
         
