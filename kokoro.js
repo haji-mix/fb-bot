@@ -91,7 +91,11 @@ const startServer = async (stealth_port) => {
 
 function updateEnvPort(newPort) {
     const envPath = ".env";
-    let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, "utf8") : "";
+    if (!fs.existsSync(envPath)) {
+        fs.writeFileSync(envPath, "", "utf8");
+    }
+
+    let envContent = fs.readFileSync(envPath, "utf8");
 
     const timestamp = Date.now(); // Store current timestamp
 
@@ -105,6 +109,7 @@ function updateEnvPort(newPort) {
     fs.writeFileSync(envPath, envContent, "utf8");
     console.log(`Updated .env with PORT=${newPort}, TIMESTAMP=${timestamp}`);
 }
+
 
 function removeEnvPort() {
     const envPath = ".env";
