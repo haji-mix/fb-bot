@@ -162,7 +162,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const line = "\n" + "━".repeat(18) + "\n";
             completeMessage = completeMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-            const message = font.bold(" 🤖 | GitHub Copilot") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
+            const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
             await answering.edit(message);
 
             // Handle Code Snippets
