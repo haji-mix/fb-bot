@@ -3,3 +3,4 @@ data/**
 cache/**
 chatbox-fca-remake
 package-lock.json
+.env
