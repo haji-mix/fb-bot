@@ -92,7 +92,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         const fix_quote = wrap_linebreaks.replace(/\\(.+?)\\/g, '"$1"');
         const cleanup = fix_quote.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-        const message = font.bold(" 🤖 | " + selectedModel.split('/').pop().toUpperCase()) + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18);
+        const message = font.bold("🛡️ | " + "DUCKGO AI") + "\n" + '━'.repeat(18) + "\n" + cleanup + "\n" + '━'.repeat(18) + font.thin("\nModel: " + selectedModel.split('/').pop());
 
         answering.edit(message);
     } catch (error) {
