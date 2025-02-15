@@ -102,9 +102,9 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const modelList = models.map((model, index) => `${index + 1}. ${model.name}`).join('\n');
             chat.reply(
                 font.bold("🤖 | Available Models:\n") +
-                modelList +
+                font.thin(modelList +
                 "\n\nTo switch models, use: copilot model [number]\nExample: copilot model 2\nTo chat use: copilot hello"
-            );
+            ));
             return;
         }
 
