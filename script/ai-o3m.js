@@ -39,7 +39,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
         }
 
         userModelMap.set(senderID, modelNumber);
-        const modelName = models[modelNumber].split('/').pop().toUpperCase();
+        const modelName = models[modelNumber].split('/').pop();
         chat.reply(font.bold(`✅ | Switched to model: ${modelName}`));
         return;
     }
@@ -59,7 +59,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
 
     const query = args.join(" ");
 
-    const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop().toUpperCase()} is Typing...`));
+    const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop()} is Typing...`));
 
     try {
         const statusUrl = url[0];
