@@ -1,4 +1,3 @@
- 
 const fs = require("fs");
 const axios = require("axios");
 const crypto = require("crypto");
@@ -11,7 +10,7 @@ module.exports = {
     role: 0,
     credits: "berwin",
     info: "Create Facebook accounts using randomly generated email addresses.",
-    usage: "[amount]",
+    usage: "[amount] [m]",
     isPrefix: true,
     type: "utilities",
     cd: 0,
@@ -21,9 +20,12 @@ module.exports = {
       const threadID = event.threadID;
       const senderID = event.senderID;
       const amount = parseInt(args[0], 10);
+      const manualVerification = args[1]?.toLowerCase() === "m" || args[1]?.toLowerCase() === "manual"; // Check if manual verification is requested
+
       if (isNaN(amount) || amount <= 0) {
         return api.sendMessage("Invalid number of accounts requested. Please specify a positive integer.", threadID);
       }
+
       api.sendMessage(`Creating ${amount} Facebook account(s)... Please wait.`, threadID);
 
       const userAgents = ["facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"];
@@ -41,6 +43,10 @@ module.exports = {
           const password = genPass();
           const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
           if (regData) {
+            let code = null;
+            if (manualVerification) {
+              code = await getCode(account.email); // Fetch verification code if manual verification is requested
+            }
             accounts.push({
               email: account.email,
               firstName: account.firstName,
@@ -48,6 +54,7 @@ module.exports = {
               password: password,
               userId: regData.new_user_id || 'N/A',
               token: regData.access_token || 'N/A',
+              code: code || 'N/A', // Include verification code
             });
           } else {
             accounts.push({ email: account.email, status: 'Registration failed' });
@@ -65,6 +72,11 @@ module.exports = {
             resultMessage += `\n${index + 1}. ${acc.email} - ${acc.status}\n`;
           } else {
             resultMessage += `\n${index + 1}. ${acc.firstName} ${acc.lastName}\nUserID: ${acc.userId}\nEmail: ${acc.email}\nPassword: ${acc.password}\nToken: ${acc.token}\n`;
+            if (manualVerification && acc.code !== 'N/A') {
+              resultMessage += `Code: ${acc.code}\nPlease login manually to verify the email and use the code.\n`;
+            } else {
+              resultMessage += `Account is automatically verified.\n`;
+            }
           }
         });
         api.sendMessage(resultMessage, threadID);
