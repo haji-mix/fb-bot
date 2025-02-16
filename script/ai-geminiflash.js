@@ -132,8 +132,16 @@ module.exports = {
                 role: "user",
                 parts: fileData ? [{ text: query }, fileData] : [{ text: query }]
             });
+            
+   /*         const generationConfig = {
+  temperature: 1,
+  topP: 0.95,
+  topK: 64,
+  maxOutputTokens: 8192,
+  responseMimeType: "text/plain",
+};*/
 
-            const chatSession = model.startChat({ history });
+            const chatSession = model.startChat({/* generationConfig, */history });
 
             const result = await chatSession.sendMessage(query);
             const answer = result.response.text();
