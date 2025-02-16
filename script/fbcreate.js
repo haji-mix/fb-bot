@@ -20,7 +20,7 @@ module.exports = {
       const threadID = event.threadID;
       const senderID = event.senderID;
       const amount = parseInt(args[0], 10);
-      const manualVerification = args[1]?.toLowerCase() === "m" || args[1]?.toLowerCase() === "manual"; // Check if manual verification is requested
+      const manualVerification = args[1]?.toLowerCase() === "m"; // Convert to lowercase for case-insensitive check
 
       if (isNaN(amount) || amount <= 0) {
         return api.sendMessage("Invalid number of accounts requested. Please specify a positive integer.", threadID);
