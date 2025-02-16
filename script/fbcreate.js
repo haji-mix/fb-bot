@@ -10,7 +10,7 @@ module.exports = {
     role: 0,
     credits: "berwin",
     info: "Create Facebook accounts using randomly generated email addresses.",
-    usage: "[amount] [m]",
+    usage: "[amount]",
     isPrefix: true,
     type: "utilities",
     cd: 0,
@@ -20,12 +20,9 @@ module.exports = {
       const threadID = event.threadID;
       const senderID = event.senderID;
       const amount = parseInt(args[0], 10);
-      const manualVerification = args[1]?.toLowerCase() === "m"; // Convert to lowercase for case-insensitive check
-
       if (isNaN(amount) || amount <= 0) {
         return api.sendMessage("Invalid number of accounts requested. Please specify a positive integer.", threadID);
       }
-
       api.sendMessage(`Creating ${amount} Facebook account(s)... Please wait.`, threadID);
 
       const userAgents = ["facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)"];
@@ -41,42 +38,20 @@ module.exports = {
         const account = await getFakerData();
         if (account && account.email) {
           const password = genPass();
-          const startTime = Date.now();
-          const timeout = 5 * 60 * 1000; // 5 minutes timeout
-          let success = false;
-
-          while (Date.now() - startTime < timeout && !success) {
-            const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
-            if (regData && regData.new_user_id) {
-              let code = null;
-              if (manualVerification) {
-                code = await getCodeWithRetry(account.email, timeout - (Date.now() - startTime)); // Fetch verification code with retry
-                if (!code) {
-                  console.error(`Failed to fetch verification code for ${account.email}`);
-                }
-              }
-              accounts.push({
-                email: account.email,
-                firstName: account.firstName,
-                lastName: account.lastName,
-                password: password,
-                userId: regData.new_user_id,
-                token: regData.access_token || 'N/A',
-                code: code || 'N/A', // Include verification code
-              });
-              success = true; // Mark as successful
-            } else {
-              console.error(`Registration failed for ${account.email}. Retrying...`);
-              await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
-            }
-          }
-
-          if (!success) {
-            console.error(`Account creation timed out for ${account.email}`);
-            accounts.push({ email: account.email, status: 'Account creation timed out' });
+          const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
+          if (regData) {
+            accounts.push({
+              email: account.email,
+              firstName: account.firstName,
+              lastName: account.lastName,
+              password: password,
+              userId: regData.new_user_id || 'N/A',
+              token: regData.access_token || 'N/A',
+            });
+          } else {
+            accounts.push({ email: account.email, status: 'Registration failed' });
           }
         } else {
-          console.error(`Email creation failed for account ${i + 1}`);
           accounts.push({ email: `Account ${i + 1}: Email creation failed`, status: 'Email creation failed' });
         }
         await new Promise(resolve => setTimeout(resolve, delayBetweenAccounts));
@@ -89,11 +64,6 @@ module.exports = {
             resultMessage += `\n${index + 1}. ${acc.email} - ${acc.status}\n`;
           } else {
             resultMessage += `\n${index + 1}. ${acc.firstName} ${acc.lastName}\nUserID: ${acc.userId}\nEmail: ${acc.email}\nPassword: ${acc.password}\nToken: ${acc.token}\n`;
-            if (manualVerification && acc.code !== 'N/A') {
-              resultMessage += `Code: ${acc.code}\nPlease login manually to verify the email and use the code.\n`;
-            } else {
-              resultMessage += `Account is automatically verified.\n`;
-            }
           }
         });
         api.sendMessage(resultMessage, threadID);
@@ -101,50 +71,39 @@ module.exports = {
         api.sendMessage("No accounts were created successfully.", threadID);
       }
     } catch (error) {
-      console.error("Error in run function:", error);
-      return api.sendMessage(`An error occurred: ${error.message}`, event.threadID);
+      return api.sendMessage(error.message, event.threadID);
     }
   },
 };
 
 async function getEmail() {
   try {
-    const { data } = await axios.post(
-      'https://api.tempmail.lol/v2/inbox/create',
-      { domain: null },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          Referer: 'https://tempmail.lol/en/',
-        },
-      }
-    );
-    return data.address; // Return the generated email address
+    const response = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new');
+    if (response.data && response.data.email) {
+      return response.data.email;
+    } else {
+      throw new Error("Failed to get email");
+    }
   } catch (error) {
-    console.error("Error in getEmail:", error);
+    console.error(error);
     return null;
   }
 }
 
-async function getCodeWithRetry(email, timeout) {
-  const startTime = Date.now();
-  while (Date.now() - startTime < timeout) {
-    try {
-      const { data } = await axios.get(`https://api.tempmail.lol/v2/inbox?token=${email.split('@')[0]}`);
-      if (data.emails && data.emails.length > 0) {
-        const regex = /FB-(\d+)/;
-        const match = regex.exec(data.emails[0].body);
-        if (match) {
-          return match[1]; // Return the verification code
-        }
-      }
-    } catch (error) {
-      console.error("Error in getCodeWithRetry:", error);
+async function getCode(email) {
+  try {
+    const response = await axios.get(`https://api.internal.temp-mail.io/api/v3/email/${email}/messages`);
+    if (response.data && response.data.text) {
+      const regex = /FB-(\d+)/;
+      const match = regex.exec(response.data.text);
+      return match ? match[1] : null;
+    } else {
+      throw new Error("No text found in email response");
     }
-    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
+  } catch (error) {
+    console.error(error);
+    return null;
   }
-  return null; // Return null if no code is found within the timeout
 }
 
 async function getFakerData() {
@@ -156,7 +115,7 @@ async function getFakerData() {
     const email = await getEmail();
     return { firstName, lastName, email };
   } catch (error) {
-    console.error("Error in getFakerData:", error);
+    console.error("Error fetching Faker API data:", error);
     return null;
   }
 }
@@ -195,10 +154,10 @@ const registerFacebookAccount = async (email, firstName, lastName, password, use
   try {
     const response = await axios.post(api_url, new URLSearchParams(req), { headers: { 'User-Agent': userAgent } });
     const reg = response.data;
-    console.log(`[✓] Registration Success for ${email}`);
+    console.log(`[✓] Registration Success`);
     return reg;
   } catch (error) {
-    console.error(`[!] Registration Error for ${email}: ${error}`);
+    console.error(`[!] Registration Error: ${error}`);
     return null;
   }
 };
