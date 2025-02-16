@@ -41,27 +41,39 @@ module.exports = {
         const account = await getFakerData();
         if (account && account.email) {
           const password = genPass();
-          const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
-          if (regData && regData.new_user_id) {
-            let code = null;
-            if (manualVerification) {
-              code = await getCode(account.email); // Fetch verification code if manual verification is requested
-              if (!code) {
-                console.error(`Failed to fetch verification code for ${account.email}`);
+          const startTime = Date.now();
+          const timeout = 5 * 60 * 1000; // 5 minutes timeout
+          let success = false;
+
+          while (Date.now() - startTime < timeout && !success) {
+            const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
+            if (regData && regData.new_user_id) {
+              let code = null;
+              if (manualVerification) {
+                code = await getCodeWithRetry(account.email, timeout - (Date.now() - startTime)); // Fetch verification code with retry
+                if (!code) {
+                  console.error(`Failed to fetch verification code for ${account.email}`);
+                }
               }
+              accounts.push({
+                email: account.email,
+                firstName: account.firstName,
+                lastName: account.lastName,
+                password: password,
+                userId: regData.new_user_id,
+                token: regData.access_token || 'N/A',
+                code: code || 'N/A', // Include verification code
+              });
+              success = true; // Mark as successful
+            } else {
+              console.error(`Registration failed for ${account.email}. Retrying...`);
+              await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
             }
-            accounts.push({
-              email: account.email,
-              firstName: account.firstName,
-              lastName: account.lastName,
-              password: password,
-              userId: regData.new_user_id,
-              token: regData.access_token || 'N/A',
-              code: code || 'N/A', // Include verification code
-            });
-          } else {
-            console.error(`Registration failed for ${account.email}`);
-            accounts.push({ email: account.email, status: 'Registration failed' });
+          }
+
+          if (!success) {
+            console.error(`Account creation timed out for ${account.email}`);
+            accounts.push({ email: account.email, status: 'Account creation timed out' });
           }
         } else {
           console.error(`Email creation failed for account ${i + 1}`);
@@ -115,20 +127,24 @@ async function getEmail() {
   }
 }
 
-async function getCode(email) {
-  try {
-    const { data } = await axios.get(`https://api.tempmail.lol/v2/inbox?token=${email.split('@')[0]}`);
-    if (data.emails && data.emails.length > 0) {
-      const regex = /FB-(\d+)/;
-      const match = regex.exec(data.emails[0].body);
-      return match ? match[1] : null;
-    } else {
-      throw new Error("No emails found in inbox.");
+async function getCodeWithRetry(email, timeout) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    try {
+      const { data } = await axios.get(`https://api.tempmail.lol/v2/inbox?token=${email.split('@')[0]}`);
+      if (data.emails && data.emails.length > 0) {
+        const regex = /FB-(\d+)/;
+        const match = regex.exec(data.emails[0].body);
+        if (match) {
+          return match[1]; // Return the verification code
+        }
+      }
+    } catch (error) {
+      console.error("Error in getCodeWithRetry:", error);
     }
-  } catch (error) {
-    console.error("Error in getCode:", error);
-    return null;
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
   }
+  return null; // Return null if no code is found within the timeout
 }
 
 async function getFakerData() {
