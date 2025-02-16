@@ -137,7 +137,7 @@ const secondHeaders = {
     
     const line = "\n" + '━'.repeat(18) + "\n";
 
-     answering.edit(font.bold(`🤖 | ${selectedModel.split('/').pop().toUpperCase()}) + line + content + line);
+     answering.edit(font.bold(`🤖 | ${selectedModel.split('/').pop().toUpperCase()}`) + line + content + line);
   } catch (error) {
      answering.edit(font.thin(error.message));
   }
