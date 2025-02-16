@@ -152,7 +152,6 @@ const download = async (inputs, responseType = "arraybuffer", extension = "") =>
                         return fs.createReadStream(filePath);
                     }
                 } catch (error) {
-                    console.error("Error processing input:", input, error);
                     return null;
                 }
             })
