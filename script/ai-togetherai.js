@@ -45,10 +45,10 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
   }
 
   if (args.length === 0) {
-    const modelList = availableModels.map((m, i) => `${i + 1}. ${m}`).join("\n");
+    const modelList = availableModels.map((m, i) => `${i + 1}. ${m.split('/').pop()}`).join("\n");
     chat.reply(
       font.bold("🤖 | Available Models & Quality Levels\n") +
-      font.thin(`${modelList.split('/').pop()}\nQualities: ${availableQualities.join(", ")}\n\nTo switch models, use: lc model [number]\nExample: lc model 2\nTo adjust quality use: lc low or high\nTo To chat use: lc [prompt]`)
+      font.thin(`${modelList}\nQualities: ${availableQualities.join(", ")}\n\nTo switch models, use: lc model [number]\nExample: lc model 2\nTo adjust quality use: lc low or high\nTo To chat use: lc [prompt]`)
     );
     return;
   }
