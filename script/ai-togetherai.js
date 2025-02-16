@@ -1,5 +1,4 @@
 const axios = require('axios');
-const randomUseragent = require('random-useragent');
 
 const userModelMap = new Map();
 const userQualityMap = new Map();
@@ -61,23 +60,25 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
   const answering = await chat.reply(font.thin(`🕐 | ${selectedModel} is Typing...`));
 
   try {
-    const headers = {
-      'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-      'sec-ch-ua-platform': '"Android"',
-      'sec-ch-ua-mobile': '?1',
-      'user-agent': randomUseragent.getRandom(),
-      'content-type': 'text/plain;charset=UTF-8',
-      'accept': '*/*',
-      'origin': 'https://llamacoder.together.ai',
-      'sec-fetch-site': 'same-origin',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-dest': 'empty',
-      'referer': 'https://llamacoder.together.ai/',
-      'accept-language': 'en-US,en;q=0.9'
-    };
+    const firstHeaders = {
+  'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+  'next-router-state-tree': '%5B%22%22%2C%7B%22children%22%3A%5B%22(main)%22%2C%7B%22children%22%3A%5B%22__PAGE__%22%2C%7B%7D%2C%22%2F%22%2C%22refresh%22%5D%7D%5D%7D%2Cnull%2Cnull%2Ctrue%5D',
+  'sec-ch-ua-mobile': '?1',
+  'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
+  'content-type': 'text/plain;charset=UTF-8',
+  'accept': 'text/x-component',
+  'next-action': '78feb8d885f31503bb4032395dfc2f3df9d3135e11',
+  'sec-ch-ua-platform': '"Android"',
+  'origin': 'https://llamacoder.together.ai',
+  'sec-fetch-site': 'same-origin',
+  'sec-fetch-mode': 'cors',
+  'sec-fetch-dest': 'empty',
+  'referer': 'https://llamacoder.together.ai/',
+  'accept-language': 'en-US,en;q=0.9'
+};
 
     const firstData = JSON.stringify([query, selectedModel, selectedQuality, "$undefined"]);
-    const firstResponse = await axios.post('https://llamacoder.together.ai/', firstData, { headers });
+    const firstResponse = await axios.post('https://llamacoder.together.ai/', firstData, { firstHeaders });
 
     const lastMessageIdMatch = firstResponse.data.match(/"lastMessageId":"([^"]+)"/);
     if (!lastMessageIdMatch) {
@@ -85,10 +86,20 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
     }
     const lastMessageId = lastMessageIdMatch[1];
 
-    const secondHeaders = {
-      ...headers,
-      'accept': 'text/event-stream'
-    };
+const secondHeaders = {
+        'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
+        'sec-ch-ua-platform': '"Android"',
+        'sec-ch-ua-mobile': '?1',
+        'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
+        'content-type': 'text/plain;charset=UTF-8',
+        'accept': '*/*',
+        'origin': 'https://llamacoder.together.ai',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-dest': 'empty',
+        'referer': 'https://llamacoder.together.ai/',
+        'accept-language': 'en-US,en;q=0.9'
+      };
 
     const secondData = { messageId: lastMessageId, model: selectedModel };
     const secondResponse = await axios.post(
