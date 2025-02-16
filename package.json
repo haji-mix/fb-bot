@@ -29,7 +29,6 @@
     ],
     "license": "ISC",
     "dependencies": {
-        "dotenv": "^16.4.7",
         "@google/generative-ai": "^0.16.0",
         "@types/node": "^18.0.6",
         "@xaviabot/fb-downloader": "^1.0.14",
@@ -48,6 +47,7 @@
         "crypto-js": "^4.2.0",
         "culture-client": "^1.0.3",
         "debug": "^4.4.0",
+        "dotenv": "^16.4.7",
         "ejs": "^3.1.10",
         "eventsource": "^2.0.2",
         "express": "^4.18.2",
@@ -72,6 +72,7 @@
         "image-downloader": "^4.3.0",
         "javascript-obfuscator": "^4.1.0",
         "jimp": "^0.22.12",
+        "kleur": "^4.1.5",
         "linkvertise.js": "^1.0.0",
         "luxon": "^3.4.4",
         "mathjs": "^13.0.0",

@@ -336,7 +336,6 @@ routes.forEach(route => {
           }
         }
     });
-    }
 
 
 app.get('/script/*', (req, res) => {
