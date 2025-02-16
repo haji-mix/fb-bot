@@ -12,7 +12,7 @@ module.exports["config"] = {
   role: 0,
   type: "artificial-intelligence",
   info: "Interact with LlamaCoder Together.AI with model and quality selection.",
-  usage: "[model/quality] [value] / [prompt]",
+  usage: "[model] [value/quality]/[prompt]",
   guide: "lc model [number]\nlc quality [low/high]\nllamacoder [prompt]",
   cd: 6
 };
@@ -49,7 +49,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
     const modelList = availableModels.map((m, i) => `${i + 1}. ${m}`).join("\n");
     chat.reply(
       font.bold("🤖 | Available Models & Quality Levels\n") +
-      font.thin(`${modelList}\nQualities: ${availableQualities.join(", ")}`)
+      font.thin(`${modelList}\nQualities: ${availableQualities.join(", ")}\n\nTo switch models, use: lc model [number]\nExample: lc model 2\nTo adjust quality use: lc low or high\nTo To chat use: lc [prompt]`)
     );
     return;
   }
@@ -123,8 +123,10 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
       secondResponse.data.on('end', resolve);
       secondResponse.data.on('error', reject);
     });
+    
+    const line = "\n" + '━'.repeat(18) + "\n";
 
-     answering.edit(font.bold(`🤖 | ${selectedModel}\n`) + font.thin(content));
+     answering.edit(font.bold(`🤖 | ${selectedModel}\n`) + line + content + line);
   } catch (error) {
      answering.edit(font.thin(error.message));
   }

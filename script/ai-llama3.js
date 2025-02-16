@@ -73,7 +73,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     chat.reply(
       font.bold("🤖 | Available Models:\n") +
       font.thin(modelList +
-      "\n\nTo switch models, use: llama3 model [number]\nExample: llama model 2\nTo chat use: llama [prompt]"
+      "\n\nTo switch models, use: llama model [number]\nExample: llama model 2\nTo chat use: llama [prompt]"
     ));
     return;
   }
