@@ -313,40 +313,65 @@ routes.forEach(route => {
 });
 
 async function restapi() {
-const hajime = await workers();
-const scriptsPath = path.resolve(__dirname, './script/restapi');
+  try {
+    const hajime = await workers();
+    const scriptsPath = path.join(__dirname, 'script', 'restapi');
 
-fs.readdirSync(scriptsPath).forEach(file => {
-  const script = require(path.join(scriptsPath, file));
-  if (script.config && script.config.name) {
-    app.get(`/api/v2/${script.config.name}`, (req, res) => {
-      script.initialize({ req, res });
-    });
-    if (script.config.aliases && script.config.aliases.length > 0) {
-      script.config.aliases.forEach(alias => {
-        app.get(`/api/v2/${alias}`, (req, res) => {
-          script.initialize({ req, res, hajime });
-        });
-      });
+    if (!fs.existsSync(scriptsPath)) {
+      console.error(`Directory not found: ${scriptsPath}`);
+      return;
     }
+
+    fs.readdirSync(scriptsPath).forEach(file => {
+      try {
+        const script = require(path.join(scriptsPath, file));
+
+        if (script.config && script.config.name) {
+          app.get(`/api/v2/${script.config.name}`, (req, res) => {
+            try {
+              script.initialize({ req, res });
+            } catch (err) {
+              console.error(`Error initializing script: ${script.config.name}`, err);
+              res.status(500).json({ error: 'Internal Server Error' });
+            }
+          });
+
+          if (script.config.aliases && script.config.aliases.length > 0) {
+            script.config.aliases.forEach(alias => {
+              app.get(`/api/v2/${alias}`, (req, res) => {
+                try {
+                  script.initialize({ req, res, hajime });
+                } catch (err) {
+                  console.error(`Error initializing script alias: ${alias}`, err);
+                  res.status(500).json({ error: 'Internal Server Error' });
+                }
+              });
+            });
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading script: ${file}`, err);
+      }
+    });
+  } catch (err) {
+    console.error('Error in restapi function:', err);
   }
-});
 }
+
 
 restapi();
 
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0] || '');
     const normalizedPath = path.normalize(filePath);
+
     if (!normalizedPath.startsWith(path.join(__dirname, 'script'))) {
-        return res.render('403', {
-            cssFiles, jsFiles
-        });
+        return res.status(403).render('403', { cssFiles, jsFiles });
     }
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.render('404', {
+            return res.status(404).render('404', {
                 cssFiles, jsFiles
             });
         }
@@ -364,7 +389,7 @@ app.get('/script/*', (req, res) => {
 
 
 app.use((req, res) => {
-    res.render('404',
+    res.status(404).render('404',
         {
             cssFiles,
             jsFiles
