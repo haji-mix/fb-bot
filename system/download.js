@@ -160,7 +160,6 @@ const download = async (inputs, responseType = "arraybuffer", extension = "") =>
 
         return files.length === 1 ? files[0] : files;
     } catch (error) {
-        console.error("Error in download function:", error);
         return null;
     }
 };
