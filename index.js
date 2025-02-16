@@ -8,7 +8,7 @@ const fs = require("fs");
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-const npmPackages = ["canvas@latest"];
+const npmPackages = ["canvas@latest", "kleur"];
 const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 

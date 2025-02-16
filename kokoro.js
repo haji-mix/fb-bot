@@ -312,9 +312,6 @@ routes.forEach(route => {
     }
 });
 
-async function restapi() {
-  try {
-    const hajime = await workers();
     const scriptsPath = path.join(__dirname, 'script', 'restapi');
 
     if (!fs.existsSync(scriptsPath)) {
@@ -323,43 +320,24 @@ async function restapi() {
     }
 
     fs.readdirSync(scriptsPath).forEach(file => {
-      try {
         const script = require(path.join(scriptsPath, file));
 
         if (script.config && script.config.name) {
           app.get(`/api/v2/${script.config.name}`, (req, res) => {
-            try {
               script.initialize({ req, res });
-            } catch (err) {
-              console.error(`Error initializing script: ${script.config.name}`, err);
-              res.status(500).json({ error: 'Internal Server Error' });
-            }
           });
 
           if (script.config.aliases && script.config.aliases.length > 0) {
             script.config.aliases.forEach(alias => {
               app.get(`/api/v2/${alias}`, (req, res) => {
-                try {
                   script.initialize({ req, res, hajime });
-                } catch (err) {
-                  console.error(`Error initializing script alias: ${alias}`, err);
-                  res.status(500).json({ error: 'Internal Server Error' });
-                }
               });
             });
           }
         }
-      } catch (err) {
-        console.error(`Error loading script: ${file}`, err);
-      }
     });
-  } catch (err) {
-    console.error('Error in restapi function:', err);
-  }
-}
+    }
 
-
-restapi();
 
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0] || '');
@@ -371,9 +349,20 @@ app.get('/script/*', (req, res) => {
 
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
-            return res.status(404).render('404', {
-                cssFiles, jsFiles
-            });
+            return res.status(404).render('404',
+        {
+            cssFiles,
+            jsFiles
+        },
+        (err,
+            renderedHtml) => {
+            if (err) {
+                res.status(500).send('Error rendering template');
+                return;
+            }
+
+            res.send(minifyHtml(renderedHtml));
+        });
         }
 
         if (req.query.raw === 'true') {
