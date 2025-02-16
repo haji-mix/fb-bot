@@ -78,7 +78,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
 };
 
     const firstData = JSON.stringify([query, selectedModel, selectedQuality, "$undefined"]);
-    const firstResponse = await axios.post('https://llamacoder.together.ai/', firstData, { firstHeaders });
+    const firstResponse = await axios.post('https://llamacoder.together.ai/', firstData, { headers: firstHeaders });
 
     const lastMessageIdMatch = firstResponse.data.match(/"lastMessageId":"([^"]+)"/);
     if (!lastMessageIdMatch) {
