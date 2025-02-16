@@ -339,7 +339,28 @@ app.get('/script/*', (req, res) => {
     });
 });
 
+async function restapi() {
+const hajime = await workers();
+const scriptsPath = path.resolve(__dirname, './script/restapi');
 
+fs.readdirSync(scriptsPath).forEach(file => {
+  const script = require(path.join(scriptsPath, file));
+  if (script.config && script.config.name) {
+    app.get(`/api/v2/${script.config.name}`, (req, res) => {
+      script.initialize({ req, res });
+    });
+    if (script.config.aliases && script.config.aliases.length > 0) {
+      script.config.aliases.forEach(alias => {
+        app.get(`/api/v2/${alias}`, (req, res) => {
+          script.initialize({ req, res, hajime });
+        });
+      });
+    }
+  }
+});
+}
+
+restapi()
 
 app.use((req, res) => {
     res.render('404',
