@@ -48,7 +48,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
     const modelList = availableModels.map((m, i) => `${i + 1}. ${m}`).join("\n");
     chat.reply(
       font.bold("🤖 | Available Models & Quality Levels\n") +
-      font.thin(`${modelList}\nQualities: ${availableQualities.join(", ")}\n\nTo switch models, use: lc model [number]\nExample: lc model 2\nTo adjust quality use: lc low or high\nTo To chat use: lc [prompt]`)
+      font.thin(`${modelList.split('/').pop()}\nQualities: ${availableQualities.join(", ")}\n\nTo switch models, use: lc model [number]\nExample: lc model 2\nTo adjust quality use: lc low or high\nTo To chat use: lc [prompt]`)
     );
     return;
   }
@@ -57,7 +57,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
   const selectedQuality = userQualityMap.get(senderID) ?? "low";
   const query = args.join(" ");
 
-  const answering = await chat.reply(font.thin(`🕐 | ${selectedModel} is Typing...`));
+  const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop()} is Typing...`));
 
   try {
     const firstHeaders = {
@@ -137,7 +137,7 @@ const secondHeaders = {
     
     const line = "\n" + '━'.repeat(18) + "\n";
 
-     answering.edit(font.bold(`🤖 | ${selectedModel}\n`) + line + content + line);
+     answering.edit(font.bold(`🤖 | ${selectedModel.split('/').pop().toUpperCase()}\n`) + line + content + line);
   } catch (error) {
      answering.edit(font.thin(error.message));
   }
