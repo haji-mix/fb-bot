@@ -42,24 +42,29 @@ module.exports = {
         if (account && account.email) {
           const password = genPass();
           const regData = await registerFacebookAccount(account.email, account.firstName, account.lastName, password, userAgent);
-          if (regData) {
+          if (regData && regData.new_user_id) {
             let code = null;
             if (manualVerification) {
               code = await getCode(account.email); // Fetch verification code if manual verification is requested
+              if (!code) {
+                console.error(`Failed to fetch verification code for ${account.email}`);
+              }
             }
             accounts.push({
               email: account.email,
               firstName: account.firstName,
               lastName: account.lastName,
               password: password,
-              userId: regData.new_user_id || 'N/A',
+              userId: regData.new_user_id,
               token: regData.access_token || 'N/A',
               code: code || 'N/A', // Include verification code
             });
           } else {
+            console.error(`Registration failed for ${account.email}`);
             accounts.push({ email: account.email, status: 'Registration failed' });
           }
         } else {
+          console.error(`Email creation failed for account ${i + 1}`);
           accounts.push({ email: `Account ${i + 1}: Email creation failed`, status: 'Email creation failed' });
         }
         await new Promise(resolve => setTimeout(resolve, delayBetweenAccounts));
@@ -84,37 +89,44 @@ module.exports = {
         api.sendMessage("No accounts were created successfully.", threadID);
       }
     } catch (error) {
-      return api.sendMessage(error.message, event.threadID);
+      console.error("Error in run function:", error);
+      return api.sendMessage(`An error occurred: ${error.message}`, event.threadID);
     }
   },
 };
 
 async function getEmail() {
   try {
-    const response = await axios.post('https://api.internal.temp-mail.io/api/v3/email/new');
-    if (response.data && response.data.email) {
-      return response.data.email;
-    } else {
-      throw new Error("Failed to get email");
-    }
+    const { data } = await axios.post(
+      'https://api.tempmail.lol/v2/inbox/create',
+      { domain: null },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          Referer: 'https://tempmail.lol/en/',
+        },
+      }
+    );
+    return data.address; // Return the generated email address
   } catch (error) {
-    console.error(error);
+    console.error("Error in getEmail:", error);
     return null;
   }
 }
 
 async function getCode(email) {
   try {
-    const response = await axios.get(`https://api.internal.temp-mail.io/api/v3/email/${email}/messages`);
-    if (response.data && response.data.text) {
+    const { data } = await axios.get(`https://api.tempmail.lol/v2/inbox?token=${email.split('@')[0]}`);
+    if (data.emails && data.emails.length > 0) {
       const regex = /FB-(\d+)/;
-      const match = regex.exec(response.data.text);
+      const match = regex.exec(data.emails[0].body);
       return match ? match[1] : null;
     } else {
-      throw new Error("No text found in email response");
+      throw new Error("No emails found in inbox.");
     }
   } catch (error) {
-    console.error(error);
+    console.error("Error in getCode:", error);
     return null;
   }
 }
@@ -128,7 +140,7 @@ async function getFakerData() {
     const email = await getEmail();
     return { firstName, lastName, email };
   } catch (error) {
-    console.error("Error fetching Faker API data:", error);
+    console.error("Error in getFakerData:", error);
     return null;
   }
 }
@@ -167,10 +179,10 @@ const registerFacebookAccount = async (email, firstName, lastName, password, use
   try {
     const response = await axios.post(api_url, new URLSearchParams(req), { headers: { 'User-Agent': userAgent } });
     const reg = response.data;
-    console.log(`[✓] Registration Success`);
+    console.log(`[✓] Registration Success for ${email}`);
     return reg;
   } catch (error) {
-    console.error(`[!] Registration Error: ${error}`);
+    console.error(`[!] Registration Error for ${email}: ${error}`);
     return null;
   }
 };
