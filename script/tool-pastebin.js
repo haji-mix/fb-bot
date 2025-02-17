@@ -6,7 +6,7 @@ module.exports["config"] = {
   guide: "adc [command name] it will upload your command to pastebin or reply to specific pastebin link with adc with command name to install",
   usage: "[command name] or reply with [command name] to pastebin link for install",
   type: "Tools",
-  version: "1.0.0",
+  version: "1.1.0",
   prefix: 0,
   role: 3,
 };
@@ -28,14 +28,16 @@ module.exports["run"] = async function ({ chat, event, args, font }) {
 
   const filePath = [
     path.join(__dirname, `${args[0]}.js`),
-    path.join(__dirname, 'event', `${args[0]}.js`)
+    path.join(__dirname, `${args[0]}.ts`),
+    path.join(__dirname, 'event', `${args[0]}.js`),
+    path.join(__dirname, 'event', `${args[0]}.ts`)
   ].find(file => fs.existsSync(file));
 
   if (!text && name) {
     if (!filePath) return chat.reply(font.monospace(`Command ${args[0]} does not exist!`));
 
     fs.readFile(filePath, "utf-8", async (err, data) => {
-      if (err) return chat.reply(font.monospace(`Error reading the file ${args[0]}.js`));
+      if (err) return chat.reply(font.monospace(`Error reading the file ${args[0]}`));
       
       const { PasteClient } = require('pastebin-api');
       const client = new PasteClient("R02n6-lNPJqKQCd5VtL4bKPjuK6ARhHb");

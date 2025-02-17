@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
+const tsNode = require('ts-node');  // Import ts-node to execute TypeScript dynamically
 
 module.exports["config"] = {
     name: "evaljs",
     isPrefix: false,
-    aliases: ["evaluate", "run", "exec", "execute", "evaljavascript", "eval"],
+    aliases: ["evaluate", "run", "exec", "execute", "evaljavascript", "eval", "evalts", "evaltypescript"],
     usage: "[code] or reply to a message with code",
-    info: "Evaluate and execute JavaScript code.",
-    guide: "Use eval [code] to execute JavaScript code or reply to a message with code.",
+    info: "Evaluate and execute JavaScript or TypeScript code.",
+    guide: "Use eval [code] to execute JavaScript or TypeScript code or reply to a message with code.",
     type: "Programming",
     credits: "Kenneth Panio",
     version: "2.3.6",
@@ -24,7 +25,7 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
     }
 
     if (!code) {
-        return chat.reply(font.monospace('Please provide the JavaScript code to evaluate.'));
+        return chat.reply(font.monospace('Please provide the JavaScript or TypeScript code to evaluate.'));
     }
 
     const logMessages = [];
@@ -36,19 +37,29 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
     console.error = (...args) => errorMessages.push(args.join(' '));
 
     const evalPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
-    (async () => {
-        try {
-            const result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.message || JSON.stringify(error)); } })()`);
-            clearTimeout(timeout);
-            resolve(result);
-        } catch (error) {
-            clearTimeout(timeout);
-            reject(error);
-        }
-    })();
-});
+        const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
+        (async () => {
+            try {
+                // Detect if the code looks like TypeScript
+                const isTypeScript = code.includes("import") || code.includes("interface") || code.includes("type");
 
+                // Use ts-node for TypeScript, eval for JavaScript
+                let result;
+                if (isTypeScript) {
+                    result = await tsNode.register().compile(code); // Compile TypeScript dynamically
+                    result = await eval(result);  // Execute the transpiled JavaScript
+                } else {
+                    result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.message || JSON.stringify(error)); } })()`);
+                }
+
+                clearTimeout(timeout);
+                resolve(result);
+            } catch (error) {
+                clearTimeout(timeout);
+                reject(error);
+            }
+        })();
+    });
 
     try {
         const result = await evalPromise;
