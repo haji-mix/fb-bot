@@ -9,7 +9,7 @@ const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 // Define your npm packages. If no version is specified, it will default to 'latest'.
 const npmPackages = [
-    { name: "canvas", version: "latest" },
+  //  { name: "canvas", version: "latest" },
     { name: "kleur", version: "latest" },
     { name: "typescript", version: "latest" },
     { name: "ts-node", version: "latest" }
