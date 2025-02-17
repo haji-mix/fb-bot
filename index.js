@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config(); // Load environment variables FIRST
 
 const { spawn, execSync } = require("child_process");
 const path = require("path");
@@ -7,15 +7,16 @@ const fs = require("fs");
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const npmPackages = ["canvas", "kleur", "typescript", "ts-node"];
-const restartEnabled = process.env.PID !== "0";
+const restartEnabled = process.env.RESTART_ENABLED === "true"; // Explicit boolean check
 let mainProcess;
 
 function getOutdatedPackages() {
     try {
         const outdatedData = JSON.parse(execSync("npm outdated -g --json", { encoding: "utf8" }));
-        return npmPackages.filter(pkg => outdatedData[pkg]); // Only return outdated ones
-    } catch {
-        return npmPackages; // Assume all need updating if there's an error
+        return npmPackages.filter(pkg => outdatedData[pkg]);
+    } catch (error) {
+        console.error("Error checking for outdated packages:", error); // Log the error
+        return npmPackages; // Assume all need updating on error
     }
 }
 
@@ -25,11 +26,14 @@ function installPackages(callback) {
     const outdatedPackages = getOutdatedPackages();
     if (outdatedPackages.length === 0) return callback();
 
-    console.log(`Installing outdated packages: ${outdatedPackages.join(", ")}`);
+    console.log(`Installing/Updating packages: ${outdatedPackages.join(", ")}`); // More accurate message
     const installProcess = spawn("npm", ["install", "-g", ...outdatedPackages], { stdio: "inherit", shell: true });
 
     installProcess.on("close", (code) => {
-        if (code !== 0) console.error("Failed to install some packages.");
+        if (code !== 0) {
+            console.error("Failed to install/update some packages.");
+            process.exit(1); // Exit if installation fails - crucial!
+        }
         callback();
     });
 }
@@ -37,26 +41,36 @@ function installPackages(callback) {
 function setupTypeScript() {
     if (!fs.existsSync("tsconfig.json")) {
         console.log("Setting up TypeScript...");
-        execSync("tsc --init", { stdio: "inherit" });
+        try {
+            execSync("tsc --init", { stdio: "inherit" });
+        } catch (error) {
+            console.error("Error setting up TypeScript:", error);
+            process.exit(1); // Exit if TypeScript setup fails
+        }
     } else {
         console.log("TypeScript already set up.");
     }
 }
 
 function start() {
-    require("dotenv").config();
-    const port = process.env.PORT || "default";
+    const port = process.env.PORT || "default"; // Access env AFTER dotenv.config()
     console.log(`Starting main process on PORT=${port}`);
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
-        env: { ...process.env, PORT: port },
+        env: { ...process.env, PORT: port }, // Pass PORT as env variable
+    });
+
+    mainProcess.on("error", (error) => {
+        console.error("Failed to start main process:", error);
+        process.exit(1);  // Handle start errors
     });
 
     mainProcess.on("close", (exitCode) => {
-        console.log(`Process exited with code [${exitCode}]`);
+        console.log(`Main process exited with code [${exitCode}]`);
+
         if (restartEnabled) {
             console.log("Restarting in 5 seconds...");
             setTimeout(restartProcess, 5000);
@@ -69,12 +83,13 @@ function start() {
 
 function restartProcess() {
     if (mainProcess && mainProcess.pid) {
-        mainProcess.kill("SIGKILL");
-        console.log("Process killed. Restarting...");
+        mainProcess.kill("SIGKILL"); // Force kill if necessary
+        console.log("Main process killed. Restarting...");
     }
     start();
 }
 
+// Ensure dotenv is called before any attempt to use process.env
 installPackages(() => {
     setupTypeScript();
     start();
