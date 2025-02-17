@@ -1,28 +1,7 @@
 
-interface Config {
-  name: string;
-  aliases: string[];
-  info: string;
-  usage: string;
-  credits: string;
-  version: string;
-  isPrefix: boolean;
-  cd: number;
-}
 
-interface RunParams {
-  chat: {
-    reply: (message: string) => Promise<void>;
-    unsend: () => void;
-  };
-  args: string[];
-  font: {
-    monospace: (text: string) => string;
-    bold: (text: string) => string;
-  };
-}
 
-export const config: Config = {
+export const config = {
   name: 'nega',
   info: 'nega',
   usage: '[prompt]',
@@ -32,6 +11,6 @@ export const config: Config = {
   cd: 5,
 };
 
-export const run = async ({ chat, args, font }: RunParams) => {
+export const run = async ({ chat, args, font }) => {
   chat.reply("fuck you negga")
 };
