@@ -81,20 +81,20 @@ function isTypeScriptSupported() {
 }
 
 function start() {
-    const port = process.env.PORT || ""; // Access env AFTER dotenv.config()
-    
-    if (!port) {
-        console.error("PORT environment variable is not set. Exiting...");
-        process.exit(1);  // Exit the process if the port is empty
-    }
+    const port = process.env.PORT; // Access env AFTER dotenv.config()
 
-    console.log(`Starting main process on PORT=${port}`);
+    // Log the current port or default message if no port is set
+    if (port) {
+        console.log(`Starting main process on PORT=${port}`);
+    } else {
+        console.log("No PORT set, starting main process without a specific port.");
+    }
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
-        env: { ...process.env, PORT: port }, // Pass PORT as env variable
+        env: { ...process.env, PORT: port }, // Pass PORT as env variable, even if it's empty or undefined
     });
 
     mainProcess.on("error", (error) => {
