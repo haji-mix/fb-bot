@@ -1,4 +1,4 @@
-const nexo = require('nexo-aio-downloader');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -51,8 +51,10 @@ const handleDownloadWithRetry = async (link, chat, retries = 5) => {
 };
 
 const handleDownload = async (link, chat, cookie) => {
+    
     let result;
     try {
+     const nexo = require('nexo-aio-downloader');
         if (patterns.piximg.test(link)) {
             return chat.reply({ attachment: await chat.stream(link) });
         }
