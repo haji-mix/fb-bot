@@ -34,8 +34,15 @@ const handleDownloadWithRetry = async (link, chat, retries = 5) => {
             console.log(`Error downloading media (attempt ${attempt} with cookie): ${error.message}`);
             if (attempt >= retries) {
                 console.log("Failed to download after 5 attempts with cookie. Trying without cookie...");
-                await handleDownload(link, chat, '');
-                success = true;
+                try {
+                    await handleDownload(link, chat, '');
+                    success = true;
+                } catch (err) {
+                    console.log(`Error without cookie: ${err.message}`);
+                    if (attempt === retries) {
+                       console.log("Failed to download after several attempts.");
+                    }
+                }
             } else {
                 console.log(`Retrying... (${attempt}/${retries}) with cookie.`);
             }
@@ -45,49 +52,49 @@ const handleDownloadWithRetry = async (link, chat, retries = 5) => {
 
 const handleDownload = async (link, chat, cookie) => {
     let result;
-    if (patterns.piximg.test(link)) {
-        return chat.reply({ attachment: await chat.stream(link) });
-    }
-
-    if (patterns.pixiv.test(link)) {
-        result = cookie 
-            ? await nexo.pixiv(link, cookie)
-            : await nexo.pixiv(link);
-    } else {
-        throw new Error('Unsupported URL');
-    }
-
-    if (result && result.data && result.data.result) {
-        const mediaFiles = result.data.result;
-        if (mediaFiles.length > 0) {
-            console.log('PIXIV ARTWORK DOWNLOADING...');
-
-            const mediaPromises = mediaFiles.map(media =>
-                streamFile(media.buffer, media.type, chat)
-            );
-
-            const allMedia = await Promise.all(mediaPromises);
-            await chat.reply({ attachment: allMedia });
-        } else {
-            throw new Error('No media found.');
+    try {
+        if (patterns.piximg.test(link)) {
+            return chat.reply({ attachment: await chat.stream(link) });
         }
-    } else {
-        throw new Error('Failed to retrieve media.');
+
+        if (patterns.pixiv.test(link)) {
+            result = cookie 
+                ? await nexo.pixiv(link, cookie)
+                : await nexo.pixiv(link);
+        } else {
+            throw new Error('Unsupported URL');
+        }
+
+        if (result && result.data && result.data.result) {
+            const mediaFiles = result.data.result;
+            if (mediaFiles.length > 0) {
+                console.log('PIXIV ARTWORK DOWNLOADING...');
+
+                const mediaPromises = mediaFiles.map(media =>
+                    streamFile(media.buffer, media.type, chat)
+                );
+
+                const allMedia = await Promise.all(mediaPromises);
+                 chat.reply({ attachment: allMedia });
+            } else {
+                throw new Error('No media found.');
+            }
+        } else {
+            throw new Error('Failed to retrieve media.');
+        }
+    } catch (error) {
+        console.error(`Error during download handling: ${error.message}`);
     }
 };
 
-
 const streamFile = async (buffer, filetype, chat) => {
     try {
-
         const filePath = path.join(__dirname, 'cache', `media_${Date.now()}.${filetype}`);
 
-
         fs.writeFileSync(filePath, buffer);
-
         return fs.createReadStream(filePath);
     } catch (error) {
-        console.log(`Error processing file: ${error.message}`);
+        console.error(`Error processing file: ${error.message}`);
     }
 };
 
@@ -101,14 +108,18 @@ module.exports["handleEvent"] = async ({
     const regex = new RegExp(urlRegex, 'g');
     let match;
 
-    while ((match = regex.exec(message)) !== null) {
-        await chat.reply(font.thin("PIXIV ARTWORK LINK DETECTED!"));
-        await handleDownloadWithRetry(match[0], chat, 5);
+    try {
+        while ((match = regex.exec(message)) !== null) {
+            await chat.reply(font.thin("PIXIV ARTWORK LINK DETECTED!"));
+            await handleDownloadWithRetry(match[0], chat, 5);
+        }
+    } catch (error) {
+        console.error(`Error during event handling: ${error.message}`);
     }
 };
 
 module.exports["run"] = async ({
     chat, font
 }) => {
-    chat.reply(font.thin("This is an event process that automatically downloads Artworks from Pixiv. Just send me the link, and I will download it directly."));
+        chat.reply(font.thin("This is an event process that automatically downloads Artworks from Pixiv. Just send me the link, and I will download it directly."));
 };
