@@ -6,14 +6,22 @@ const fs = require("fs");
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
-const npmPackages = ["canvas", "kleur", "typescript", "ts-node"];
+
+// Define your npm packages. If no version is specified, it will default to 'latest'.
+const npmPackages = [
+    { name: "canvas", version: "latest" },
+    { name: "kleur", version: "latest" },
+    { name: "typescript", version: "latest" },
+    { name: "ts-node", version: "latest" }
+];
+
 const restartEnabled = process.env.RESTART_ENABLED === "true"; // Explicit boolean check
 let mainProcess;
 
 function getOutdatedPackages() {
     try {
         const outdatedData = JSON.parse(execSync("npm outdated -g --json", { encoding: "utf8" }));
-        return npmPackages.filter(pkg => outdatedData[pkg]);
+        return npmPackages.filter(pkg => outdatedData[pkg.name]); // Look for outdated packages
     } catch (error) {
         console.error("Error checking for outdated packages:", error); // Log the error
         return npmPackages; // Assume all need updating on error
@@ -26,16 +34,20 @@ function installPackages(callback) {
     const outdatedPackages = getOutdatedPackages();
     if (outdatedPackages.length === 0) return callback();
 
-    console.log(`Installing/Updating packages: ${outdatedPackages.join(", ")}`); // More accurate message
-    const installProcess = spawn("npm", ["install", "-g", ...outdatedPackages], { stdio: "inherit", shell: true });
+    console.log(`Installing/Updating packages:`);
+    outdatedPackages.forEach(pkg => {
+        const version = pkg.version ? `@${pkg.version}` : ''; // Default to latest if no version
+        console.log(`- Installing ${pkg.name}${version}`);
+        const installProcess = spawn("npm", ["install", "-g", `${pkg.name}${version}`], { stdio: "inherit", shell: true });
 
-    installProcess.on("close", (code) => {
-        if (code !== 0) {
-            console.error("Failed to install/update some packages.");
-            process.exit(1); // Exit if installation fails - crucial!
-        }
-        callback();
+        installProcess.on("close", (code) => {
+            if (code !== 0) {
+                console.error(`Failed to install/update ${pkg.name}. Skipping...`);
+            }
+        });
     });
+
+    callback();
 }
 
 function setupTypeScript() {
