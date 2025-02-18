@@ -37,7 +37,7 @@ async tinyurl(url) {
             const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
             return response.data;
         } catch {
-            return u;
+            return "N/A";
         }
     }));
 }
