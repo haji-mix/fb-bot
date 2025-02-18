@@ -30,7 +30,6 @@
     ],
     "license": "ISC",
     "dependencies": {
-        "pm2": "^5.4.3",
         "@google/generative-ai": "^0.16.0",
         "@types/node": "^18.0.6",
         "@xaviabot/fb-downloader": "^1.0.14",
