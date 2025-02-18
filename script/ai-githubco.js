@@ -165,24 +165,19 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
             await answering.edit(message);
 
-            // Handle Code Snippets
-            if (codeBlocks.length > 0) {
-                const allCode = codeBlocks.map(block => block.replace(/```/g, "").trim()).join("\n\n\n");
-                const cacheFolderPath = path.join(__dirname, "cache");
+ if (codeBlocks.length > 0) {
+    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
 
-                if (!fs.existsSync(cacheFolderPath)) fs.mkdirSync(cacheFolderPath);
+    if (isHtml) {
+        const allCode = codeBlocks
+            .map(block => block.replace(/^```[a-zA-Z]+\n/, '').replace(/```$/, '').trim()) 
+            .join("\n\n\n");
+            
 
-                const uniqueFileName = `code_snippet_${Math.floor(Math.random() * 1e6)}.txt`;
-                const filePath = path.join(cacheFolderPath, uniqueFileName);
-
-                fs.writeFileSync(filePath, allCode, "utf8");
-
-                const fileStream = fs.createReadStream(filePath);
-                await chat.reply({
-                    attachment: fileStream
-                });
-
-                fs.unlinkSync(filePath);
+  chat.reply({ body: await chat.shorturl(`https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allcode)}`) ,attachment: await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allcode)}`) });
+            
+           }
+           
             }
         } else {
             await answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
