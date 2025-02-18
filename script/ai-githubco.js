@@ -168,15 +168,18 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                 const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
 
                 if (isHtml) {
-                    const allCode = codeBlocks
-                        .map(block => block.replace(/^```[a-zA-Z]+\n/, '').replace(/```$/, '').trim())
-                        .join("\n\n\n");
+        const allCode = codeBlocks
+            .map(block => {
+                // Remove metadata like ```html name=index.html
+                return block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim();
+            })
+            .join("\n\n\n");
 
                     const url = `https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allCode)}`;
                     const shortUrl = await chat.shorturl(url);
                     const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${url}`);
 
-                    chat.reply({ body: shortUrl, attachment: screenshot });
+                    chat.reply({ attachment: screenshot });
                 }
             }
         } else {
