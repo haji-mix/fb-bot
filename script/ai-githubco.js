@@ -185,7 +185,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const shortUrl = await chat.shorturl(uitocode + result.url);
             const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
 
-            chat.reply({ body: shortUrl, attachment: shortUrl });
+            chat.reply({ body: shortUrl, attachment: screenshot });
         } catch (error) {
             console.error("Error submitting HTML:", error);
         }
