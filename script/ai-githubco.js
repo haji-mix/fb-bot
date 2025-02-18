@@ -179,7 +179,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                     const shortUrl = await chat.shorturl(url);
                     const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${url}`);
 
-                    chat.reply({ attachment: screenshot });
+                    chat.reply({ body: shortUrl, attachment: screenshot });
                 }
             }
         } else {
