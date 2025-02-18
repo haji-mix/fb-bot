@@ -89,7 +89,6 @@ function isTypeScriptSupported() {
 
 function start() {
     if (!process.env.PM2) {
-        console.log("Not running under PM2. Restarting using PM2...");
         try {
             execSync(`pm2 start ${__filename} --name ${PM2_PROCESS_NAME}`, { stdio: "inherit" });
             console.log(`Process started with PM2 as '${PM2_PROCESS_NAME}'.`);
@@ -100,8 +99,8 @@ function start() {
         }
     }
 
-    const port = process.env.PORT || 3000;
-    console.log(`Starting main process on PORT=${port}`);
+    const port = process.env.PORT || "";
+    console.log(`Starting main process on PORT=${port || "Default"}`);
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
