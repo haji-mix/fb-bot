@@ -1,6 +1,5 @@
 const axios = require("axios");
 const fs = require("fs");
-const path = require("path");
 
 // Store user-specific model selections
 const userModelMap = new Map();
@@ -163,26 +162,27 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             completeMessage = completeMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
             const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
-            await answering.edit(message);
+             answering.edit(message);
 
- if (codeBlocks.length > 0) {
-    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
+            if (codeBlocks.length > 0) {
+                const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
 
-    if (isHtml) {
-        const allCode = codeBlocks
-            .map(block => block.replace(/^```[a-zA-Z]+\n/, '').replace(/```$/, '').trim()) 
-            .join("\n\n\n");
-            
+                if (isHtml) {
+                    const allCode = codeBlocks
+                        .map(block => block.replace(/^```[a-zA-Z]+\n/, '').replace(/```$/, '').trim())
+                        .join("\n\n\n");
 
-  chat.reply({ body: await chat.shorturl(`https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allcode)}`) ,attachment: await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allcode)}`) });
-            
-           }
-           
+                    const url = `https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allCode)}`;
+                    const shortUrl = await chat.shorturl(url);
+                    const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${url}`);
+
+                    chat.reply({ body: shortUrl, attachment: screenshot });
+                }
             }
         } else {
-            await answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
+             answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
         }
     } catch (error) {
-        await answering.edit(font.monospace(`Error: ${error.message}`));
+         answering.edit(font.monospace(`Error: ${error.message}`));
     }
 };
