@@ -12,7 +12,8 @@ const PM2_PROCESS_NAME = "autobot"; // PM2 process name
 // Define your npm packages, defaulting to 'latest' versions
 let npmPackages = [
     { name: "canvas", version: "latest" },
-    { name: "kleur", version: "latest" }
+    { name: "kleur", version: "latest" },
+    { name: "pm2", version: "latest" }
 ];
 
 // Add TypeScript-related packages only if TypeScript is supported
