@@ -6,6 +6,8 @@ const fs = require("fs");
 
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
+const HEARTBEAT_FILE = path.join(__dirname, "heartbeat.txt");
+const PM2_PROCESS_NAME = "autobot"; // PM2 process name
 
 // Define your npm packages, defaulting to 'latest' versions
 let npmPackages = [
@@ -23,6 +25,13 @@ if (isTypeScriptSupported()) {
 
 const restartEnabled = process.env.RESTART_ENABLED === "true"; // Explicit boolean check
 let mainProcess;
+
+function updateHeartbeat() {
+    fs.writeFileSync(HEARTBEAT_FILE, Date.now().toString());
+}
+
+// Update heartbeat every 5 seconds
+setInterval(updateHeartbeat, 5000);
 
 function getOutdatedPackages() {
     try {
@@ -57,7 +66,6 @@ function installPackages(callback) {
 }
 
 function setupTypeScript() {
-    // Attempt to run TypeScript setup and handle errors if TypeScript isn't supported
     try {
         if (!fs.existsSync("tsconfig.json")) {
             console.log("Setting up TypeScript...");
@@ -66,8 +74,7 @@ function setupTypeScript() {
             console.log("TypeScript already set up.");
         }
     } catch (error) {
-        // If an error occurs, assume TypeScript isn't supported
-        console.error("TypeScript setup failed (likely due to environment limitations). Skipping TypeScript setup...");
+        console.error("TypeScript setup failed. Skipping...");
     }
 }
 
@@ -76,56 +83,45 @@ function isTypeScriptSupported() {
         execSync("tsc --version", { stdio: "ignore" }); // Try running `tsc` to check if it's installed
         return true;
     } catch (error) {
-        return false; // If `tsc` command fails, TypeScript is not supported
+        return false;
     }
 }
 
 function start() {
-    const port = process.env.PORT; // Access env AFTER dotenv.config()
-
-    // Log the current port or default message if no port is set
-    if (port) {
-        console.log(`Starting main process on PORT=${port}`);
-    } else {
-        console.log("No PORT set, starting main process without a specific port.");
+    if (!process.env.PM2) {
+        console.log("Not running under PM2. Restarting using PM2...");
+        try {
+            execSync(`pm2 start ${__filename} --name ${PM2_PROCESS_NAME}`, { stdio: "inherit" });
+            console.log(`Process started with PM2 as '${PM2_PROCESS_NAME}'.`);
+            process.exit(0);
+        } catch (error) {
+            console.error("Failed to start with PM2:", error);
+            process.exit(1);
+        }
     }
+
+    const port = process.env.PORT || 3000;
+    console.log(`Starting main process on PORT=${port}`);
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
-        env: { ...process.env, PORT: port }, // Pass PORT as env variable, even if it's empty or undefined
+        env: { ...process.env, PORT: port },
     });
 
     mainProcess.on("error", (error) => {
         console.error("Failed to start main process:", error);
-        process.exit(1);  // Handle start errors
+        process.exit(1);
     });
 
     mainProcess.on("close", (exitCode) => {
-        console.log(`Main process exited with code [${exitCode}]`);
-
-        if (restartEnabled) {
-            console.log("Restarting in 5 seconds...");
-            setTimeout(restartProcess, 5000);
-        } else {
-            console.log("Shutdown complete.");
-            process.exit(exitCode);
-        }
+        console.log(`Main process exited with code [${exitCode}]. PM2 will handle restart.`);
     });
-}
-
-function restartProcess() {
-    if (mainProcess && mainProcess.pid) {
-        mainProcess.kill("SIGKILL"); // Force kill if necessary
-        console.log("Main process killed. Restarting...");
-    }
-    start();
 }
 
 // Ensure dotenv is called before any attempt to use process.env
 installPackages(() => {
-    // Only set up TypeScript if it's supported
     if (isTypeScriptSupported()) {
         setupTypeScript();
     }
