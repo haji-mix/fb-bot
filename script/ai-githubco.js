@@ -20,6 +20,7 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, args, font, event }) => {
     const query = args.join(" ");
+    let answering = null;
 
     try {
         const tokenResponse = await axios.post("https://github.com/github-copilot/chat/token", {}, {
@@ -107,7 +108,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             return;
         }
 
-        const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
+         answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
         // Sending Chat Request with the fresh token
         const chatResponse = await axios.post("https://api.individual.githubcopilot.com/github/chat/threads/4e5b591e-3c89-43d6-b053-c57289778b68/messages?", {
