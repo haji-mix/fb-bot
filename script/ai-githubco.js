@@ -164,24 +164,35 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
              answering.edit(message);
 
-            if (codeBlocks.length > 0) {
-                const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
+           if (codeBlocks.length > 0) {
+    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
 
-                if (isHtml) {
+    if (isHtml) {
         const allCode = codeBlocks
-            .map(block => {
-                // Remove metadata like ```html name=index.html
-                return block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim();
-            })
+            .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
             .join("\n\n\n");
+            
+            const uitocode = "https://codetoui.onrender.com";
 
-                    const url = `https://codetoui.onrender.com/submit-html?htmlContent=${encodeURIComponent(allCode)}`;
-                    const shortUrl = await chat.shorturl(url);
-                    const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${url}`);
+        try {
+            const response = await axios.post(uitocode + "/submit-html", {
+                htmlContent: allCode
+            }, {
+                headers: { "Content-Type": "application/json" }
+            });
 
-                    chat.reply({ body: shortUrl, attachment: screenshot });
-                }
-            }
+            const result = response.data;
+            const shortUrl = await chat.shorturl(uitocode + result.url);
+            const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
+
+            chat.reply({ body: shortUrl, attachment: shortUrl });
+        } catch (error) {
+            console.error("Error submitting HTML:", error);
+        }
+    }
+}
+
+
         } else {
              answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
         }
