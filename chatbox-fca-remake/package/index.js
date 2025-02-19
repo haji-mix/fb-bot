@@ -448,41 +448,72 @@ function buildAPI(globalOptions, html, jar) {
 
 const api = {
   setOptions: setOptions.bind(null, globalOptions),
+
   getAppState: function getAppState() {
     const appState = utils.getAppState(jar);
-    console.log(appState);
 
     if (!Array.isArray(appState)) {
       return [];
     }
 
-    const uniqueAppState = appState.filter((item, index, self) => {
-      return self.findIndex((t) => t.key === item.key) === index;
-    });
+    const uniqueAppState = appState.filter((item, index, self) =>
+      self.findIndex((t) => t.key === item.key) === index
+    );
 
     const fallbackState = uniqueAppState.length > 0 ? uniqueAppState : appState;
 
-    const primaryProfile = fallbackState.find(function (val) {
-      return val.cookieString().split("=")[0] === "c_user";
-    });
+    const primaryProfile = fallbackState.find((val) => val.cookieString().split("=")[0] === "c_user");
+    const secondaryProfile = fallbackState.find((val) => val.cookieString().split("=")[0] === "i_user");
 
-    const secondaryProfile = fallbackState.find(function (val) {
-      return val.cookieString().split("=")[0] === "i_user";
+    return fallbackState.filter((val) => {
+      const key = val.cookieString().split("=")[0];
+      return secondaryProfile ? key !== "c_user" : key !== "i_user";
     });
+  },
 
-    if (secondaryProfile) {
-      return fallbackState.filter(function (val) {
-        return val.cookieString().split("=")[0] !== "c_user";
-      });
-    } else {
-      return fallbackState.filter(function (val) {
-        return val.cookieString().split("=")[0] !== "i_user";
-      });
+  getCookie: function getCookie() {
+    const appState = utils.getAppState(jar);
+
+    if (!Array.isArray(appState)) {
+      return "";
     }
 
-    return fallbackState;
+    const importantKeys = new Set([
+      "datr",
+      "sb",
+      "ps_l",
+      "ps_n",
+      "m_pixel_ratio",
+      "c_user",
+      "fr",
+      "xs",
+      "i_user",
+      "locale",
+      "fbl_st",
+      "vpd",
+      "wl_cbv"
+    ]);
+
+    let cookies = appState
+      .map((val) => val.cookieString()) 
+      .map((cookie) => cookie.split(";")[0]) 
+      .filter(Boolean)
+      .filter((cookie) => importantKeys.has(cookie.split("=")[0]));
+
+ /*   const hasIUser = cookies.some((cookie) => cookie.startsWith("i_user="));
+    const hasCUser = cookies.some((cookie) => cookie.startsWith("c_user="));
+
+    if (hasIUser) {
+      cookies = cookies.filter((cookie) => !cookie.startsWith("c_user="));
+    } else if (hasCUser) {
+      cookies = cookies.filter((cookie) => !cookie.startsWith("i_user="));
+    } */
+
+    return cookies.join("; ");
   }
 };
+
+
 
 
 
@@ -841,4 +872,7 @@ return;
 }
 
 
-module.exports = login;
+module.exports = {
+    login,
+    utils
+};

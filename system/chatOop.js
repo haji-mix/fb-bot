@@ -171,7 +171,7 @@ async tinyurl(url) {
     }
 
     async token() {
-        return await this.api.getAccess();
+        return await this.api.getAccess(await this.api.getCookie());
     }
     
     send(msg, tid, mid = null) {

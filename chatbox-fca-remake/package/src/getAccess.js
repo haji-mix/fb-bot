@@ -4,6 +4,7 @@ const axios = require('axios');
 const log = require('npmlog');
 
 //credits Kenneth Panio
+// if original credits changed or remove this fca will no longer have a future updates//credits Kenneth Panio
 // if original credits changed or remove this fca will no longer have a future updates
 /**
  * Fetches the Facebook access token using a provided cookie.
@@ -40,7 +41,6 @@ module.exports = function (defaultFuncs, api, ctx) {
       if (typeof callback === 'function') {
         return callback(error);
       }
-      throw error;
     }
   };
 };

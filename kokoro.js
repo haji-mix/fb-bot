@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const login = require("./chatbox-fca-remake/package/index");
+const { login, utils } = require("./chatbox-fca-remake/package/index");
 const express = require("express");
 const rateLimit = require('express-rate-limit');
 const app = express();
