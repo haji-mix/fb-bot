@@ -49,7 +49,9 @@ module.exports["run"] = async ({
     const getResponse = async () => {
         return axios.post(apiUrl, {
             model: "open-codestral-mamba",
-            messages: conversationHistories[senderID]
+            messages: [{ role: "system", content: `You're an open-codestral-mamba Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.", "You're Also Allowed to Assist General Question or create code in different programming languages besides web development` },
+            ...conversationHistories[senderID]
+            ]
         }, {
             headers: {
                 'Authorization': 'Bearer qedBW8C6dZbnPvD7LeL0boDzKK5gZDJu',
