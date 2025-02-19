@@ -55,7 +55,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
 
   const selectedModel = availableModels[userModelMap.get(senderID) ?? 0];
   const selectedQuality = userQualityMap.get(senderID) ?? "low";
-  const query = `You're an Together.ai Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.", "You're Also Allowed to Assist General Question or create code in different programming languages besides web development and here's my ask: '` + args.join(" ");
+  const query = args.join(" ");
 
   const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop()} is Typing...`));
 
@@ -77,7 +77,7 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
   'accept-language': 'en-US,en;q=0.9'
 };
 
-    const firstData = JSON.stringify([query, selectedModel, selectedQuality, "$undefined"]);
+    const firstData = JSON.stringify([`You're an Together.ai Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design. here's my ask: '` + query, selectedModel, selectedQuality, "$undefined"]);
     const firstResponse = await axios.post('https://llamacoder.together.ai/', firstData, { headers: firstHeaders });
 
     const lastMessageIdMatch = firstResponse.data.match(/"lastMessageId":"([^"]+)"/);
