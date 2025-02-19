@@ -450,6 +450,7 @@ const api = {
   setOptions: setOptions.bind(null, globalOptions),
   getAppState: function getAppState() {
     const appState = utils.getAppState(jar);
+    console.log(appState);
 
     if (!Array.isArray(appState)) {
       return [];
@@ -461,7 +462,6 @@ const api = {
 
     const fallbackState = uniqueAppState.length > 0 ? uniqueAppState : appState;
 
-    // Find the primary and secondary profiles
     const primaryProfile = fallbackState.find(function (val) {
       return val.cookieString().split("=")[0] === "c_user";
     });
@@ -481,31 +481,7 @@ const api = {
     }
 
     return fallbackState;
-  },
-  getCookie: function getCookie(keys) {
-    const appState = utils.getAppState(jar);
-    if (!Array.isArray(appState)) {
-        return "";
-    }
-
-    const uniqueAppState = appState.filter((item, index, self) =>
-        self.findIndex((t) => t.key === item.key) === index
-    );
-
-    const secondaryProfile = uniqueAppState.find(item => item.key === "i_user");
-    const primaryProfile = uniqueAppState.find(item => item.key === "c_user");
-
-    let filteredState;
-    if (secondaryProfile) {
-        filteredState = uniqueAppState.filter(item => item.key !== "c_user");
-    } else {
-        filteredState = uniqueAppState.filter(item => item.key !== "i_user");
-    }
-    return filteredState
-        .filter(item => keys.includes(item.key))
-        .map(item => `${item.key}=${item.value}`)
-        .join("; ");
-}
+  }
 };
 
 
