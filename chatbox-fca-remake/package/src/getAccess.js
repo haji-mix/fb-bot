@@ -14,7 +14,7 @@ const log = require('npmlog');
  * @returns {Promise<string>|void} - Returns a promise resolving to the access token or calls the callback.
  */
 module.exports = function (defaultFuncs, api, ctx) {
-  return async function getAccess(cookie, callback) {
+  return async function getAccess(cookie = api.getCookie, callback) {
     try {
       if (!cookie) throw new Error('Cookie is required');
       
