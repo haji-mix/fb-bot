@@ -119,7 +119,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             currentURL: "https://github.com/copilot",
             streaming: true,
             confirmations: [],
-            customInstructions: ["You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make code responsive and more features."],
+            customInstructions: ["You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.", "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"],
             model: selectedModel.id, // Use the selected model
             mode: "immersive",
             customCopilotID: null,
