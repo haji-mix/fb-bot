@@ -15,6 +15,8 @@ const log = require('npmlog');
  */
 module.exports = function (defaultFuncs, api, ctx) {
   return async function getAccess(cookie = api.getCookie, callback) {
+      
+      console.log(await api.getCookie);
     try {
       if (!cookie) throw new Error('Cookie is required');
       
