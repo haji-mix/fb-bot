@@ -873,6 +873,5 @@ return;
 
 
 module.exports = {
-    login,
-    utils
+    login
 };
