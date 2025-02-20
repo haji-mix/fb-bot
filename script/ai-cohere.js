@@ -13,7 +13,11 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, args, font }) => {
     var mono = txt => font.monospace(txt);
-    const prompt = args.join(" ");
+    let prompt = args.join(" ");
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
     if (!prompt) {
         return chat.reply(mono("Please kindly provide your message!"));

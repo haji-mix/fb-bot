@@ -26,13 +26,17 @@ module.exports["run"] = async ({
         threadID,
         senderID
     } = event;
-    const query = args.join(" ");
+    let query = args.join(" ");
 
     if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
         conversationHistories[senderID] = [];
         chat.reply(font.monospace("Conversation history cleared."));
         return;
     }
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
     if (!query) {
         chat.reply(font.monospace("Please provide a question!"));

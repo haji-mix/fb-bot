@@ -16,6 +16,10 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ chat, args, font }) => {
         let query = args.join(" ");
+        
+        if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
         if (!query) {
                 chat.react("⁉️");

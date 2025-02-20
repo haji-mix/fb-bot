@@ -80,7 +80,11 @@ module.exports = {
             return;
         }
 
-        const query = args.join(" ").trim();
+        let query = args.join(" ").trim();
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
         let fileData = null;
         let mimeType = null;

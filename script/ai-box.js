@@ -23,7 +23,11 @@ let codeModelMode = false;
 module.exports["run"] = async ({ chat, args, event, font, global }) => {
     var mono = txt => font.monospace(txt);
     const { threadID, senderID } = event;
-    const query = args.join(" ");
+    let query = args.join(" ");
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
     
     if (!query) return chat.reply(font.thin("Please provide a text to ask. e.g: box generate a python program rest api example?"));
 

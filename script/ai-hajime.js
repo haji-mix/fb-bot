@@ -36,19 +36,24 @@ module.exports["run"] = async ({
         threadID,
         senderID
     } = event;
-    const query = args.join(" ").toLowerCase();
+    let query = args.join(" ");
 
-    if (query === 'toggle') {
+    if (query.toLowerCase() === 'toggle') {
         conversationHistoryEnabled[senderID] = !conversationHistoryEnabled[senderID];
         chat.reply(mono(`Conversation history ${conversationHistoryEnabled[senderID] ? 'enabled': 'disabled'}.`));
         return;
     }
 
-    if (['clear', 'reset', 'forgot', 'forget'].includes(query)) {
+    if (['clear', 'reset', 'forgot', 'forget'].includes(query.toLowerCase())) {
         conversationHistories[senderID] = [];
         chat.reply(mono("Conversation history cleared."));
         return;
     }
+    
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
     if (!query) {
         chat.reply(mono("Please provide a question!"));

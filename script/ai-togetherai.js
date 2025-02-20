@@ -55,7 +55,11 @@ module.exports["run"] = async ({ chat, args, event, font }) => {
 
   const selectedModel = availableModels[userModelMap.get(senderID) ?? 0];
   const selectedQuality = userQualityMap.get(senderID) ?? "low";
-  const query = args.join(" ");
+  let query = args.join(" ");
+  
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
   const answering = await chat.reply(font.thin(`🕐 | ${selectedModel.split('/').pop()} is Typing...`));
 

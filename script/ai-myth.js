@@ -24,6 +24,10 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   const mono = txt => font.monospace(txt);
   const { threadID, senderID } = event;
   const query = args.join(" ");
+  
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
   if (!query) {
     chat.reply(mono("Please provide a question!"));

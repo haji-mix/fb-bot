@@ -79,7 +79,11 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
   }
 
   // Join the remaining arguments as the user's query
-  const query = args.join(" ");
+  let query = args.join(" ");
+    
+if (event.type === "message_reply" && event.messageReply.body) {
+    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+}
 
   // Notify the user that the bot is typing
   const answering = await chat.reply(font.thin(`🕐 | ${modelName} is Typing...`));
