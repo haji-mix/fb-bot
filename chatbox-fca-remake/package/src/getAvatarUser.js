@@ -14,7 +14,7 @@ module.exports = function (defaultFuncs, api, ctx) {
     // Getting User Data From GraphAPI In The Loop
     userIDs.map(function (v) {
       var mainPromise = defaultFuncs
-        .get(`https://graph.facebook.com/${v}/picture?height=${height}&width=${width}&redirect=false&access_token=` + ctx.access_token, ctx.jar)
+        .get(`https://graph.facebook.com/${v}/picture?height=${height}&width=${width}&redirect=false&access_token=` + ctx.access_token || `6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, ctx.jar)
         .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
         .then(function (res) {
           return { 
