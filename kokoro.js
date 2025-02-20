@@ -496,7 +496,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         }: email && password
         ? {
             email: email, password: password
-        }: null;
+        }: null(
 
         if (!loginOptions) {
             reject(new Error('Either appState or email/password must be provided.'));
@@ -1145,7 +1145,7 @@ setInterval(checkHistory, 15 * 60 * 1000);
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
                         } else {
-                            logger.red(`Can't logging in user ${userId}: checkpoint status please check your account!`);
+                            console.red(`Can't logging in user ${userId}: checkpoint status please check your account!`, error);
                         }
                     }
                 }
