@@ -496,7 +496,7 @@ async function accountLogin(state, prefix, admin = [], email, password) {
         }: email && password
         ? {
             email: email, password: password
-        }: null(
+        }: null;
 
         if (!loginOptions) {
             reject(new Error('Either appState or email/password must be provided.'));
