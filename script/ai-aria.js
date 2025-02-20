@@ -37,7 +37,7 @@ async function queryOperaAPI(query, userId) {
     const key = crypto.randomBytes(32).toString('base64');
 
     const payload = {
-        query: "You're an Aria AI code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.", "You're Also Allowed to Assist General Question or create code in different programming languages besides web development. here's my ask: " + query,
+        query,
         convertational_id: userId,
         stream: false,
         linkify: true,
@@ -111,35 +111,7 @@ module.exports.run = async ({
         const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         answering.unsend();
         chat.reply(formattedAnswer || "I'm sorry i can't answer stupid question!");
-             const codeBlocks = response.match(/```[\s\S]*?```/g) || [];
-     
-                if (codeBlocks.length > 0) {
-    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
-
-    if (isHtml) {
-        const allCode = codeBlocks
-            .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
-            .join("\n\n\n");
-            
-            const uitocode = "https://codetoui.onrender.com";
-
-        try {
-            const response = await axios.post(uitocode + "/submit-html", {
-                htmlContent: allCode
-            }, {
-                headers: { "Content-Type": "application/json" }
-            });
-
-            const result = response.data;
-            const shortUrl = await chat.shorturl(uitocode + result.url);
-            const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
-
-            chat.reply({ body: shortUrl, attachment: screenshot });
-        } catch (error) {
-            console.error("Error submitting HTML:", error);
-        }
-    }
-}
+             
     } catch (error) {
         answering.unsend();
         chat.reply(mono("An error occurred: " + error.message));
