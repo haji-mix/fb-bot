@@ -1145,7 +1145,7 @@ setInterval(checkHistory, 15 * 60 * 1000);
                             Utils.account.delete(userId);
                             deleteThisUser(userId);
                         } else {
-                            console.red(`Can't logging in user ${userId}: checkpoint status please check your account!`, error);
+                            console.error(`Can't logging in user ${userId}: checkpoint status please check your account!`, error);
                         }
                     }
                 }
