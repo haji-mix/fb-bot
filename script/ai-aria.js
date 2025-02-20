@@ -4,6 +4,7 @@ const randomUseragent = require('random-useragent');
 
 module.exports.config = {
     name: "aria",
+    aliases: ["ai"],
     info: "Aria AI",
     usage: "[prompt]",
     credits: "Kenneth Panio",
@@ -110,6 +111,35 @@ module.exports.run = async ({
         const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         answering.unsend();
         chat.reply(formattedAnswer || "I'm sorry i can't answer stupid question!");
+             const codeBlocks = response.match(/```[\s\S]*?```/g) || [];
+     
+                if (codeBlocks.length > 0) {
+    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
+
+    if (isHtml) {
+        const allCode = codeBlocks
+            .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
+            .join("\n\n\n");
+            
+            const uitocode = "https://codetoui.onrender.com";
+
+        try {
+            const response = await axios.post(uitocode + "/submit-html", {
+                htmlContent: allCode
+            }, {
+                headers: { "Content-Type": "application/json" }
+            });
+
+            const result = response.data;
+            const shortUrl = await chat.shorturl(uitocode + result.url);
+            const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
+
+            chat.reply({ body: shortUrl, attachment: screenshot });
+        } catch (error) {
+            console.error("Error submitting HTML:", error);
+        }
+    }
+}
     } catch (error) {
         answering.unsend();
         chat.reply(mono("An error occurred: " + error.message));
