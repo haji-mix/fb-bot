@@ -905,6 +905,7 @@ if (event && event?.body && aliases(command)?.name) {
                         name
                     } of Utils.handleEvent.values()) {
                         if (handleEvent && name) {
+                            try {
                             handleEvent({
                                 api,
                                 chat,
@@ -919,8 +920,13 @@ if (event && event?.body && aliases(command)?.name) {
 
                                 Utils,
                             });
+                            } catch (error) {
+                                console.error(error.stack);
+                            }
                         }
                     }
+                    
+                    try {
 
                     switch (event.type) {
                         case "message":
@@ -999,6 +1005,9 @@ if (event && event?.body && aliases(command)?.name) {
                                                 }
                                             }
                                             break;
+                                }
+                                } catch {error} {
+                                    chat.reply(error.stack);
                                 }
                         });
                 } catch (error) {
