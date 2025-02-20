@@ -37,7 +37,7 @@ async function queryOperaAPI(query, userId) {
     const key = crypto.randomBytes(32).toString('base64');
 
     const payload = {
-        query,
+        query: "You're an AI code and browsing assistant can answer general question or create a website but you're only allowed to make single html mixed with css and js and other frameworks you can't separate, also you're capable of creating program besides web development. here's my ask: ",
         convertational_id: userId,
         stream: false,
         linkify: true,
