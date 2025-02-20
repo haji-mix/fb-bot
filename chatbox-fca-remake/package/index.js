@@ -303,7 +303,7 @@ function buildAPI(globalOptions, html, jar) {
     }
     
     log.info("login", `Logged in as ${userID}`);
-    log.info("login", "Fix By Kenneth Panio");
+ //   log.info("login", "Fix By Kenneth Panio");
     
     try {
         clearInterval(checkVerified);
@@ -561,7 +561,7 @@ function refreshAction() {
 }
 
 
-log.info("cronjob", `fb_dtsg for ${userID} will automatically refresh at 12:00 AM in PH Time.`)
+// log.info("cronjob", `fb_dtsg for ${userID} will automatically refresh at 12:00 AM in PH Time.`)
 
 cron.schedule('0 0 * * *', () => {
     refreshAction();
