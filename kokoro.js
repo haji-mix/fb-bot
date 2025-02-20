@@ -1138,25 +1138,25 @@ setInterval(checkHistory, 15 * 60 * 1000);
                             await accountLogin(decState, prefix, admin);
                         }
                     } catch (error) {
-    const unsupportedBrowserRegex = /https:\/\/www\.facebook\.com\/unsupportedbrowser/;
-    
+    const ERROR_PATTERNS = {
+        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
+        errorRetrieving: /Error retrieving userID.*unknown location/
+    };
+
     const ERROR = error.message || error.error || error.Error;
 
-    if (
-        ERROR ===
-        "Error retrieving userID. This can be caused by a lot of things, including getting blocked by Facebook for logging in from an unknown location. Try logging in with a browser to verify."
-    ) {
+    if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
+        logger.yellow(`Detected login issue for user ${userId}. Deleting account.`);
         Utils.account.delete(userId);
         deleteThisUser(userId);
-    } else if (unsupportedBrowserRegex.test(ERROR)) {
-        console.warn(`Detected unsupported browser for user ${userId}. Deleting account.`);
+    } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
+        logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
         Utils.account.delete(userId);
         deleteThisUser(userId);
     } else {
-        console.error(`Can't log in user ${userId}: checkpoint status, please check your account!`, error);
+        console.error(`Can't log in user ${userId}: checkpoint status, please check your account!`, error.stack);
     }
 }
-
                 }
 
                 // Handle environment-based logins (each as a separate user)
