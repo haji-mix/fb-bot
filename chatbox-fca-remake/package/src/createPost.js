@@ -263,12 +263,10 @@ module.exports = function (defaultFuncs, api, ctx) {
       .then(_ => handleMention(msg, form))
       .then(_ => createContent(form))
       .then(function (res) {
-        if (res.error || res.errors) throw res;
-
         return cb(null, (res[0] || res).data.story_create.story.url);
       })
       .catch(function (err) {
-       // log.error('createPost', err);
+     //   log.error('createPost', err);
         return cb(err);
       });
 
