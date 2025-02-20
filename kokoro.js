@@ -602,9 +602,9 @@ async function accountLogin(state, prefix, admin = [], email, password) {
                     if (!event) return;
                     if (error) {
                         if (error === 'Connection closed.') {
-                            logger.red(`Error during API listen: ${error}`, userid);
+                            logger.yellow(`Error during API listen: ${error}`, userid);
                         }
-                        logger.red(error)
+                        console.error(error.stack)
                     }
 
                     const chat = new OnChat(api, event);
@@ -1002,7 +1002,7 @@ if (event && event?.body && aliases(command)?.name) {
                                 }
                         });
                 } catch (error) {
-                    logger.red(error);
+                    console.error(error.stack);
                     Utils.account.delete(userid);
                     deleteThisUser(userid);
 
@@ -1026,7 +1026,7 @@ if (event && event?.body && aliases(command)?.name) {
             try {
                 fs.unlinkSync(sessionFile);
             } catch (error) {
-                logger.red(error);
+                console.error(error.stack);
             }
         }
         async function addThisUser(userid, state, prefix, admin) {
@@ -1110,7 +1110,7 @@ const checkHistory = async () => {
 
         fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
     } catch (error) {
-        console.error("Error checking history:", error);
+        console.error("Error checking history:", error.stack);
     }
 };
 
@@ -1165,7 +1165,7 @@ setInterval(checkHistory, 15 * 60 * 1000);
                         const envState = JSON.parse(process.env.APPSTATE);
                         await accountLogin(envState, process.env.PREFIX || "#", []);
                     } catch (error) {
-                        logger.red(error);
+                        console.error(error.stack);
                     }
                 }
 
@@ -1173,11 +1173,11 @@ setInterval(checkHistory, 15 * 60 * 1000);
                     try {
                         await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
                     } catch (error) {
-                        logger.red(error);
+                        console.error(error.stack);
                     }
                 }
             } catch (error) {
-                logger.red(error);
+                console.error(error.stack);
             }
         }
 
@@ -1207,11 +1207,5 @@ setInterval(checkHistory, 15 * 60 * 1000);
         main();
 
         process.on("unhandledRejection", (reason, promise) => {
-            if (reason instanceof Error) {
-                logger.red("Reason:", reason.message);
-                logger.red("Stack Trace:" + reason.stack);
-            } else {
-                logger.red("Reason:" + reason);
-                logger.red("Synthetic Stack Trace:" + new Error("Synthetic error for tracing").stack);
-            }
+            console.error(reason.message || reason.stack)
         });
