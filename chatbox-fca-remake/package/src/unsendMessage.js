@@ -29,10 +29,6 @@ module.exports = function (defaultFuncs, api, ctx) {
       .post("https://www.facebook.com/messaging/unsend_message/", ctx.jar, form)
       .then(utils.parseAndCheckLogin(ctx, defaultFuncs))
       .then(function (resData) {
-        if (resData.error) {
-          throw resData;
-        }
-
         return callback();
       })
       .catch(function (err) {
