@@ -103,10 +103,19 @@ module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
     const message = event?.body;
     const triggerRegex = /^(@aria|@ai|@meta)/i;
     const allCommands = [...Utils.commands.values()];
-    const commandNames = allCommands.flatMap(({ name, aliases = [] }) => [name, ...aliases]);
-    const commandRegex = new RegExp(`^(${commandNames.join("|")})`, "i");
 
-    if (message && commandRegex.test(message)) {
+    const isCommand = allCommands.some(command => {
+        const { aliases = [] } = command;
+
+        if (aliases.length === 0) {
+            return false;
+        }
+
+        const commandRegex = new RegExp(`^(${aliases.join('|')})`, 'i');
+        return message && commandRegex.test(message);
+    });
+
+    if (isCommand) {
         return;
     }
 
