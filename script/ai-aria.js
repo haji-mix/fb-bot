@@ -123,3 +123,33 @@ if (event.type === "message_reply" && event.messageReply.body) {
         chat.reply(mono("An error occurred: " + error.message));
     }
 };
+
+module.exports.handleEvent = async ({ chat, event, font }) => {
+    const message = event?.body;
+
+    if (message && (message.startsWith("@aria") || message.startsWith("@ai") || message.startsWith("@"))) {
+        let prompt = message.replace(/@aria|@ai|@/g, "").trim();
+
+        if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
+            return chat.reply(font.monospace("This AI is a text-based model. Please use Gemini for more advanced capabilities."));
+        }
+
+        if (event.type === "message_reply" && event.messageReply.body) {
+            prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+        }
+
+        if (!prompt) return;
+
+        const answering = await chat.reply(font.monospace("Generating response..."));
+
+        try {
+            const response = await queryOperaAPI(prompt, event.senderID);
+            const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
+            answering.unsend();
+            chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
+        } catch (error) {
+            answering.unsend();
+            console.error(error.message || error.stack);
+        }
+    }
+};
