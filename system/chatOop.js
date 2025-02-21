@@ -212,14 +212,6 @@ class OnChat {
     async threadList(total = 25, array = ["INBOX"]) {
         return this.handleError(this.api.getThreadList(total, null, array), "Error in threadList");
     }
-    
-    log(txt) {
-        logger.instagram(txt);
-    }
-
-    error(txt) {
-        logger.red(txt);
-    }
 }
 
 module.exports = { OnChat };
