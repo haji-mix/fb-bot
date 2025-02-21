@@ -77,30 +77,42 @@ module.exports = function (defaultFuncs, api, ctx) {
     }
 
     try {
-      let Link = String(link);
-      if (/facebook\.com|fb/i.test(Link)) {
-        let LinkSplit = Link.split('/');
-        
-        if (Link.startsWith("https:")) {
-          if (!isNaN(LinkSplit[3]) && !Link.includes('=') || isNaN(Link.split('=')[1])) {
-            log.error('getUID', 'Invalid link format.');
-            return callback(null, "Not found");
-          }
+      let Link = String(link).trim();
 
-          if (Link.includes('=') && !isNaN(Link.split('=')[1])) {
-            let Format = `https://www.facebook.com/profile.php?id=${Link.split('=')[1]}`;
-            getUID(Format).then(data => callback(null, data));
-          } else {
-            getUID(Link).then(data => callback(null, data));
-          }
-        } else {
-          let Form = `https://www.facebook.com/${LinkSplit[1]}`;
-          getUID(Form).then(data => callback(null, data));
-        }
-      } else {
+      // Validate if the link is a Facebook URL
+      if (!/facebook\.com|fb\.com/i.test(Link)) {
         log.error('getUID', 'Invalid link. Must be a Facebook link.');
         return callback(null, "Not found");
       }
+
+      // Normalize the URL
+      if (!Link.startsWith("http")) {
+        Link = `https://${Link}`;
+      }
+
+      // Parse the URL
+      const parsedUrl = new URL(Link);
+
+      // Handle profile.php links
+      if (parsedUrl.pathname.includes('/profile.php')) {
+        const idParam = parsedUrl.searchParams.get('id');
+        if (idParam && !isNaN(idParam)) {
+          return getUID(`https://www.facebook.com/profile.php?id=${idParam}`).then(data => callback(null, data));
+        } else {
+          log.error('getUID', 'Invalid profile.php link format.');
+          return callback(null, "Not found");
+        }
+      }
+
+      // Handle username-based links
+      const username = parsedUrl.pathname.split('/')[1];
+      if (username) {
+        return getUID(`https://www.facebook.com/${username}`).then(data => callback(null, data));
+      }
+
+      // If no valid format is found
+      log.error('getUID', 'Invalid link format.');
+      return callback(null, "Not found");
     } catch (e) {
       log.error('getUID', e.message);
       return callback(null, "Not found");
