@@ -140,9 +140,7 @@ module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
             prompt += `\n\nUser replied mentioning this message: ${event.messageReply.body}`;
         }
 
-        if (!prompt) {
-            return chat.reply(font.monospace("Please kindly provide your message!"));
-        }
+        if (!prompt) return;
 
         try {
             const response = await queryOperaAPI(prompt);
