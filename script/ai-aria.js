@@ -100,6 +100,8 @@ module.exports.run = async ({
     const mono = txt => font.monospace(txt);
     let prompt = args.join(" ");
     
+    if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) return chat.reply(mono("This AI is a text-based model. Please use Gemini for more advanced capabilities."))
+    
 if (event.type === "message_reply" && event.messageReply.body) {
     prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
 }
