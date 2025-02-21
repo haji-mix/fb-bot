@@ -125,7 +125,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
 };
 
 module.exports.handleEvent = async ({ chat, event, font }) => {
-    const message = event?.body;
+    const message = event?.body.join(" ");
 
     if (message && (message.startsWith("@aria") || message.startsWith("@ai") || message.startsWith("@"))) {
         let prompt = message.replace(/@aria|@ai|@/g, "").trim();
