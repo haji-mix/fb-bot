@@ -50,7 +50,7 @@ class OnChat {
 
             let test_6 = Array.isArray(pogiko) ? pogiko : [pogiko, test];
 
-            if (Array.isArray(pogiko) {
+            if (Array.isArray(pogiko)) {
                 if (pogiko.length !== 2) {
                     throw new Error("Array must contain exactly two authors for comparison.");
                 }
@@ -211,6 +211,14 @@ class OnChat {
 
     async threadList(total = 25, array = ["INBOX"]) {
         return this.handleError(this.api.getThreadList(total, null, array), "Error in threadList");
+    }
+    
+    log(txt) {
+        logger.instagram(txt);
+    }
+
+    error(txt) {
+        logger.red(txt);
     }
 }
 
