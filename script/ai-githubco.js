@@ -19,13 +19,7 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ chat, args, font, event }) => {
-    let query = args.join(" ");
-    
-if (event.type === "message_reply" && event.messageReply.body) {
-    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
-}
-
-    let answering = null;
+    const query = args.join(" ");
 
     try {
         const tokenResponse = await axios.post("https://github.com/github-copilot/chat/token", {}, {
@@ -113,7 +107,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
             return;
         }
 
-         answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
+        const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
         // Sending Chat Request with the fresh token
         const chatResponse = await axios.post("https://api.individual.githubcopilot.com/github/chat/threads/4e5b591e-3c89-43d6-b053-c57289778b68/messages?", {
@@ -203,6 +197,6 @@ if (event.type === "message_reply" && event.messageReply.body) {
              answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
         }
     } catch (error) {
-         answering.edit(font.monospace(`Error: ${error.message}`));
+         chat.reply(font.monospace(`Error: ${error.message}`));
     }
 };
