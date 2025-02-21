@@ -16,7 +16,6 @@ module.exports.config = {
 async function getAccessToken() {
     const data = new URLSearchParams({
         client_id: 'ofa',
-  //      client_secret: 'I8oKnWWDv68Gr8Z5/Ftv25nK9Vy9CSEW+F0dmGvbamFxqwyaOeBdEOn/ZrQ3Bags',
         grant_type: 'refresh_token',
         refresh_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI5ODY2NDQzMDciLCJjaWQiOiJvZmEiLCJ2ZXIiOiIyIiwiaWF0IjoxNzM1NDYzMjgzLCJqdGkiOiI4dHdOSFhleEJSMTczNTQ2MzI4MyJ9.UWlp9m4iDwU3fBQ7KuTyMZ02vUmc56LyiqbUaDXJuRw',
         scope: 'shodan:aria user:read',
@@ -39,7 +38,7 @@ async function queryOperaAPI(query) {
     const payload = {
         query,
         convertational_id: Date.now(),
-        stream: true,
+        stream: false,
         linkify: true,
         linkify_version: 3,
         sia: true,
@@ -66,92 +65,72 @@ async function queryOperaAPI(query) {
             'sec-fetch-dest': 'empty',
             priority: 'u=1, i',
         },
-        responseType: 'stream',
     });
-    
-  //  return response.data.message;
 
-    return new Promise((resolve, reject) => {
-        let result = '';
-        response.data.on('data', chunk => {
-            const match = chunk.toString().match(/"message":"(.*?)"/);
-            if (match) {
-                const message = match[1]
-                .replace(/\\n/g, '\n')
-                .replace(/\\u([0-9a-fA-F]{4})/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
-                .replace(/\\([^\\\s]+)/g, '\n$1').replace(/\\+/g, '');
-                result += message;
-            }
-        });
-
-        response.data.on('end',
-            () => {
-                resolve(result.trim());
-            });
-
-        response.data.on('error',
-            err => reject(err));
-    });
+    return response.data.message;
 }
 
-module.exports.run = async ({
-    chat, args, font, event
-}) => {
+module.exports.run = async ({ chat, args, font, event }) => {
     const mono = txt => font.monospace(txt);
     let prompt = args.join(" ");
-    
-    if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) return chat.reply(mono("This AI is a text-based model. Please use Gemini for more advanced capabilities."))
-    
-if (event.type === "message_reply" && event.messageReply.body) {
-    prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
-}
+
+    if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
+        return chat.reply(mono("This AI is a text-based model. Please use Gemini for more advanced capabilities."));
+    }
+
+    if (event.type === "message_reply" && event.messageReply.body) {
+        prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+    }
 
     if (!prompt) {
         return chat.reply(mono("Please kindly provide your message!"));
     }
-    
+
     const answering = await chat.reply(mono("Generating response..."));
 
     try {
         const response = await queryOperaAPI(prompt);
         const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         answering.unsend();
-        chat.reply(formattedAnswer || "I'm sorry i can't answer stupid question!");
-             
+        chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
     } catch (error) {
         answering.unsend();
-      //  chat.reply(mono("An error occurred: " + error.message));
-          chat.reply(mono("This command is under maintenance! please use gemini or other ai commands"))
+        chat.reply(mono(error.response?.data?.detail || error.message));
     }
 };
 
-module.exports.handleEvent = async ({ chat, event, font }) => {
-
+module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
     const message = event?.body;
+    const triggerRegex = /^(@aria|@ai|@meta)/i;
+    const allCommands = [...Utils.commands.values()];
+    const commandNames = allCommands.flatMap(({ name, aliases = [] }) => [name, ...aliases]);
+    const commandRegex = new RegExp(`^(${commandNames.join("|")})`, "i");
 
-    if (message && (message.startsWith("@aria") || message.startsWith("@ai") || message.startsWith("@"))) {
-        let prompt = message.replace(/@aria|@ai|@/g, "").trim();
+    if (message && commandRegex.test(message)) {
+        return;
+    }
+
+    if ((event.isGroup && message && triggerRegex.test(message)) || !event.isGroup) {
+        let prompt = event.isGroup ? message.replace(triggerRegex, "").trim() : message;
 
         if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
             return chat.reply(font.monospace("This AI is a text-based model. Please use Gemini for more advanced capabilities."));
         }
 
         if (event.type === "message_reply" && event.messageReply.body) {
-            prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+            prompt += `\n\nUser replied mentioning this message: ${event.messageReply.body}`;
         }
 
-        if (!prompt) return chat.reply(font.monospace("Please kindly provide your message!"));
-
-        const answering = await chat.reply(font.monospace("Generating response..."));
+        if (!prompt) {
+            return chat.reply(font.monospace("Please kindly provide your message!"));
+        }
 
         try {
             const response = await queryOperaAPI(prompt);
             const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-            answering.unsend();
             chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
         } catch (error) {
-            answering.unsend();
-            console.error(error.message || error.stack);
+            console.error(error.response?.data?.detail || error.message);
         }
     }
 };
