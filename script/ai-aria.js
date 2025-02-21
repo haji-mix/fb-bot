@@ -99,28 +99,24 @@ module.exports.run = async ({ chat, args, font, event }) => {
     }
 };
 
-module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
+module.exports.handleEvent = async ({ chat, event, font, Utils, prefix }) => {
     const message = event?.body;
     const triggerRegex = /^(@aria|@ai|@meta)/i;
     const allCommands = [...Utils.commands.values()];
 
-    // Function to escape special regex characters
     const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    // Check if the message matches any command alias (excluding name)
     const isCommand = allCommands.some(command => {
-        const { aliases = [] } = command;
+        const { aliases = [], isPrefix = false } = command;
 
-        // Skip commands with no aliases
         if (aliases.length === 0) {
             return false;
         }
 
-        // Escape special characters in aliases
         const escapedAliases = aliases.map(alias => escapeRegex(alias));
 
-        // Create regex pattern using only aliases
-        const commandRegex = new RegExp(`^(${escapedAliases.join('|')})`, 'i');
+        const prefixPattern = isPrefix ? prefix : '';
+        const commandRegex = new RegExp(`^${prefixPattern}(${escapedAliases.join('|')})`, 'i');
         return message && commandRegex.test(message);
     });
 
@@ -138,7 +134,6 @@ module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
         }
 
         if (!prompt) return;
-
         try {
             const response = await queryOperaAPI(prompt);
             const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));

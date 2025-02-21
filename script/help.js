@@ -152,47 +152,30 @@ module.exports["run"] = async ({
 };
 
 
-module.exports.handleEvent = async ({ chat, event, font, Utils, prefix }) => {
-    const message = event?.body;
-    const triggerRegex = /^(@aria|@ai|@meta)/i;
-    const allCommands = [...Utils.commands.values()];
+module.exports["handleEvent"] = async ({
+    api, event, prefix, chat, font
+}) => {
+    const {
+        threadID,
+        messageID,
+        body
+    } = event;
+    try {
 
-    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const message = prefix ? `PREFIX > ["${prefix}"]`: `KOKORO AI SYSTEM > ["NO PREFIX"]`;
 
-    const isCommand = allCommands.some(command => {
-        const { aliases = [], isPrefix = false } = command;
+        const url_array = [
+            "https://files.catbox.moe/gv8exy.gif",
+            "https://files.catbox.moe/7wtf0h.gif"
+        ];
+        const url = await chat.stream(url_array[Math.floor(Math.random() * url_array.length)]);
 
-        if (aliases.length === 0) {
-            return false;
+        if (["prefix", "system"].includes(body?.toLowerCase())) {
+            let ireply = await chat.reply({
+                body: font.thin(message), attachment: url
+            });
         }
-
-        const escapedAliases = aliases.map(alias => escapeRegex(alias));
-
-        const prefixPattern = isPrefix ? prefix : '';
-        const commandRegex = new RegExp(`^${prefixPattern}(${escapedAliases.join('|')})`, 'i');
-        return message && commandRegex.test(message);
-    });
-
-    if (isCommand) return;
-
-    if ((event.isGroup && message && triggerRegex.test(message)) || !event.isGroup) {
-        let prompt = event.isGroup ? message.replace(triggerRegex, "").trim() : message;
-
-        if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
-            return chat.reply(font.monospace("This AI is a text-based model. Please use Gemini for more advanced capabilities."));
-        }
-
-        if (event.type === "message_reply" && event.messageReply.body) {
-            prompt += `\n\nUser replied mentioning this message: ${event.messageReply.body}`;
-        }
-
-        if (!prompt) return;
-        try {
-            const response = await queryOperaAPI(prompt);
-            const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-            chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
-        } catch (error) {
-            console.error(error.response?.data?.detail || error.message);
-        }
-    }
-};
+    } catch (error) {
+        console.error(error.message);
+    };
+}
