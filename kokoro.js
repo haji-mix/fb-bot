@@ -740,7 +740,7 @@ if (event && event.senderID && event?.body) {
                             event.senderID
                         );
 
-                        const bot_owner = (Array.isArray(admin) && admin.includes(event.senderID)) || super_admin;
+                        const bot_owner = ((admin ?? []).includes(event.senderID)) || super_admin;
 
 
                         const threadInfo = await chat.threadInfo(event.threadID);
