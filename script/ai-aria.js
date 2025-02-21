@@ -32,13 +32,13 @@ async function getAccessToken() {
     return response.data.access_token;
 }
 
-async function queryOperaAPI(query, userId) {
+async function queryOperaAPI(query) {
     const token = await getAccessToken();
     const key = crypto.randomBytes(32).toString('base64');
 
     const payload = {
         query,
-        convertational_id: userId,
+        convertational_id: Date.now(),
         stream: false,
         linkify: true,
         linkify_version: 3,
@@ -113,7 +113,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
     const answering = await chat.reply(mono("Generating response..."));
 
     try {
-        const response = await queryOperaAPI(prompt, event.senderID);
+        const response = await queryOperaAPI(prompt);
         const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         answering.unsend();
         chat.reply(formattedAnswer || "I'm sorry i can't answer stupid question!");
@@ -139,12 +139,12 @@ module.exports.handleEvent = async ({ chat, event, font }) => {
             prompt += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
         }
 
-        if (!prompt) return chat.reply(font.monospace("Missing Prompt!"));
+        if (!prompt) return chat.reply(font.monospace("Please kindly provide your message!"));
 
         const answering = await chat.reply(font.monospace("Generating response..."));
 
         try {
-            const response = await queryOperaAPI(prompt, event.senderID);
+            const response = await queryOperaAPI(prompt);
             const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
             answering.unsend();
             chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
