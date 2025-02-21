@@ -104,17 +104,27 @@ module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
     const triggerRegex = /^(@aria|@ai|@meta)/i;
     const allCommands = [...Utils.commands.values()];
 
+    // Function to escape special regex characters
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    // Check if the message matches any command alias (excluding name)
     const isCommand = allCommands.some(command => {
         const { aliases = [] } = command;
 
+        // Skip commands with no aliases
         if (aliases.length === 0) {
             return false;
         }
 
-        const commandRegex = new RegExp(`^(${aliases.join('|')})`, 'i');
+        // Escape special characters in aliases
+        const escapedAliases = aliases.map(alias => escapeRegex(alias));
+
+        // Create regex pattern using only aliases
+        const commandRegex = new RegExp(`^(${escapedAliases.join('|')})`, 'i');
         return message && commandRegex.test(message);
     });
 
+    // If the message is a command, do not proceed further
     if (isCommand) {
         return;
     }
