@@ -7,13 +7,11 @@ const fs = require("fs");
 const SCRIPT_FILE = "kokoro.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-// Define your npm packages, defaulting to 'latest' versions
 let npmPackages = [
     { name: "canvas", version: "latest" },
     { name: "kleur", version: "latest" }
 ];
 
-// Add TypeScript-related packages only if TypeScript is supported
 if (isTypeScriptSupported()) {
     npmPackages.push(
         { name: "typescript", version: "latest" },
@@ -21,16 +19,15 @@ if (isTypeScriptSupported()) {
     );
 }
 
-const restartEnabled = process.env.RESTART_ENABLED === "true"; // Explicit boolean check
+const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 
 function getOutdatedPackages() {
     try {
         const outdatedData = JSON.parse(execSync("npm outdated -g --json", { encoding: "utf8" }));
-        return npmPackages.filter(pkg => outdatedData[pkg.name]); // Look for outdated packages
+        return npmPackages.filter(pkg => outdatedData[pkg.name]);
     } catch (error) {
-        console.error("Error checking for outdated packages:", error); // Log the error
-        return npmPackages; // Assume all need updating on error
+        return npmPackages;
     }
 }
 
@@ -42,7 +39,7 @@ function installPackages(callback) {
 
     console.log(`Installing/Updating packages:`);
     outdatedPackages.forEach(pkg => {
-        const version = pkg.version ? `@${pkg.version}` : ''; // Default to latest if no version
+        const version = pkg.version ? `@${pkg.version}` : '';
         console.log(`- Installing ${pkg.name}${version}`);
         const installProcess = spawn("npm", ["install", "-g", `${pkg.name}${version}`], { stdio: "inherit", shell: true });
 
@@ -57,7 +54,6 @@ function installPackages(callback) {
 }
 
 function setupTypeScript() {
-    // Attempt to run TypeScript setup and handle errors if TypeScript isn't supported
     try {
         if (!fs.existsSync("tsconfig.json")) {
             console.log("Setting up TypeScript...");
@@ -66,24 +62,21 @@ function setupTypeScript() {
             console.log("TypeScript already set up.");
         }
     } catch (error) {
-        // If an error occurs, assume TypeScript isn't supported
         console.error("TypeScript setup failed (likely due to environment limitations). Skipping TypeScript setup...");
     }
 }
 
 function isTypeScriptSupported() {
     try {
-        execSync("tsc --version", { stdio: "ignore" }); // Try running `tsc` to check if it's installed
+        execSync("tsc --version", { stdio: "ignore" });
         return true;
     } catch (error) {
-        return false; // If `tsc` command fails, TypeScript is not supported
+        return false;
     }
 }
 
 function start() {
-    const port = process.env.PORT; // Access env AFTER dotenv.config()
-
-    // Log the current port or default message if no port is set
+    const port = process.env.PORT;
     if (port) {
         console.log(`Starting main process on PORT=${port}`);
     } else {
@@ -94,12 +87,12 @@ function start() {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
-        env: { ...process.env, PORT: port }, // Pass PORT as env variable, even if it's empty or undefined
+        env: { ...process.env, PORT: port }, 
     });
 
     mainProcess.on("error", (error) => {
         console.error("Failed to start main process:", error);
-        process.exit(1);  // Handle start errors
+        process.exit(1); 
     });
 
     mainProcess.on("close", (exitCode) => {
@@ -117,15 +110,13 @@ function start() {
 
 function restartProcess() {
     if (mainProcess && mainProcess.pid) {
-        mainProcess.kill("SIGKILL"); // Force kill if necessary
+        mainProcess.kill("SIGKILL"); 
         console.log("Main process killed. Restarting...");
     }
     start();
 }
 
-// Ensure dotenv is called before any attempt to use process.env
 installPackages(() => {
-    // Only set up TypeScript if it's supported
     if (isTypeScriptSupported()) {
         setupTypeScript();
     }
