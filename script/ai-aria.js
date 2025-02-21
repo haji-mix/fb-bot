@@ -124,10 +124,7 @@ module.exports.handleEvent = async ({ chat, event, font, Utils }) => {
         return message && commandRegex.test(message);
     });
 
-    // If the message is a command, do not proceed further
-    if (isCommand) {
-        return;
-    }
+    if (isCommand) return;
 
     if ((event.isGroup && message && triggerRegex.test(message)) || !event.isGroup) {
         let prompt = event.isGroup ? message.replace(triggerRegex, "").trim() : message;
