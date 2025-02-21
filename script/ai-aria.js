@@ -120,7 +120,8 @@ if (event.type === "message_reply" && event.messageReply.body) {
              
     } catch (error) {
         answering.unsend();
-        chat.reply(mono("An error occurred: " + error.message));
+      //  chat.reply(mono("An error occurred: " + error.message));
+          chat.reply(mono("This command is under maintenance! please use gemini or other ai commands"))
     }
 };
 
