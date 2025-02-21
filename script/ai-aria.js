@@ -39,7 +39,7 @@ async function queryOperaAPI(query) {
     const payload = {
         query,
         convertational_id: Date.now(),
-        stream: false,
+        stream: true,
         linkify: true,
         linkify_version: 3,
         sia: true,
@@ -66,12 +66,12 @@ async function queryOperaAPI(query) {
             'sec-fetch-dest': 'empty',
             priority: 'u=1, i',
         },
-    //    responseType: 'stream',
+        responseType: 'stream',
     });
     
-    return response.data.message;
+  //  return response.data.message;
 
-  /*  return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         let result = '';
         response.data.on('data', chunk => {
             const match = chunk.toString().match(/"message":"(.*?)"/);
@@ -91,7 +91,7 @@ async function queryOperaAPI(query) {
 
         response.data.on('error',
             err => reject(err));
-    });*/
+    });
 }
 
 module.exports.run = async ({
