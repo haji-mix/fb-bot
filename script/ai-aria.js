@@ -94,6 +94,11 @@ module.exports.run = async ({ chat, args, font, event }) => {
         answering.unsend();
         chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
     } catch (error) {
+        if (error.response?.data?.detail === "user_limit") {
+     answering.unsend();
+    chat.reply(mono("This command is under maintenance! please use gemini or gpt4o for more info get started with 'help'."));
+    return;
+    }
         answering.unsend();
         chat.reply(mono(error.response?.data?.detail || error.message));
     }
