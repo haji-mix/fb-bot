@@ -1,8 +1,9 @@
 const axios = require("axios");
 const fs = require("fs");
 
-// Store user-specific model selections
+// Store user-specific model selections and conversation threads
 const userModelMap = new Map();
+const userThreadMap = new Map();
 
 module.exports["config"] = {
     name: "copilot",
@@ -18,16 +19,47 @@ module.exports["config"] = {
     cd: 6,
 };
 
-module.exports["run"] = async ({ chat, args, font, event }) => {
-    
-    let query = args.join(" ");
-    
-if (event.type === "message_reply" && event.messageReply.body) {
-    query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+/**
+ * Create a new conversation thread for a user.
+ * @returns {Promise<string>} The new thread ID.
+ */
+async function createNewThread(token) {
+    try {
+        const response = await axios.post(
+            "https://api.individual.githubcopilot.com/github/chat/threads",
+            { custom_copilot_id: null },
+            {
+                headers: {
+                    "authorization": `GitHub-Bearer ${token}`,
+                    "copilot-integration-id": "copilot-chat",
+                    "content-type": "application/json",
+                    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+                },
+            }
+        );
+        return response.data.thread_id;
+    } catch (error) {
+        throw new Error(`Failed to create new thread: ${error.message}`);
+    }
 }
 
+module.exports["run"] = async ({ chat, args, font, event }) => {
+    let query = args.join(" ");
+
+    // Check if the user wants to reset the conversation
+    const resetCommands = ["clear", "forget", "reset"];
+    if (resetCommands.includes(query.toLowerCase())) {
+        userThreadMap.delete(event.senderID); // Delete the existing thread
+        chat.reply(font.bold("✅ | Conversation reset. A new thread will be created for your next message."));
+        return;
+    }
+
+    if (event.type === "message_reply" && event.messageReply.body) {
+        query += `\n\nUser replied mentioned about this message: ${event.messageReply.body}`;
+    }
 
     try {
+        // Fetch GitHub Copilot token
         const tokenResponse = await axios.post("https://github.com/github-copilot/chat/token", {}, {
             headers: {
                 'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
@@ -44,7 +76,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
                 'sec-fetch-dest': 'empty',
                 'referer': 'https://github.com/copilot',
                 'accept-language': 'en-US,en;q=0.9',
-                'cookie': '_octo=GH1.1.1126303553.1735553986; _device_id=1e2414f73f81229b737b92251e7ddb0c; saved_user_sessions=152267140%3AkEByvUOa2PyeMqXwXMG0zqreQxAjhYq7FM2Emmk3pbYD6baD%7C191758792%3A6vqKEQ11AHXzjXhz_1jNOnMQIvd39mg0xqlq07boIUx374Zd; user_session=6vqKEQ11AHXzjXhz_1jNOnMQIvd39mg0xqlq07boIUx374Zd; __Host-user_session_same_site=6vqKEQ11AHXzjXhz_1jNOnMQIvd39mg0xqlq07boIUx374Zd; logged_in=yes; dotcom_user=haji-mix; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; cpu_bucket=lg; preferred_color_mode=dark; tz=Asia%2FManila; _gh_sess=58hwKZze2uyKpibEOGA43wFRI1XyooQ3bWQSeJt3HpP%2BG%2FbXu%2BqfhGDHPlTZTHjIfda1iPXXRZGPUilowDi%2BDKPoD2OCTEqz%2FMiXgXLmz1b5ybqQCYSmtQNXoFG2D188puQ6olKwAVnbdTHwMjhdKfKjumcrEbM2OKYknQTAnw1oVWGc9Ztu%2Bbaf5Q%2Ff4mgVrugVk3lJb5VsvwmoYaDauRERIRxgeeFbA8PDjYNmldlvM9x9gPeoMcNH9tq5XQtFUCafFOohv4QS%2BjzmKzDxjWJHB4gkF9sB%2FLhpRYI8q5D3w3hszcFfkNIGRm8K3IHulf8H0Q%3D%3D--OwW62Ih0MPSXaE8u--yDHGLg7xBS8ZjreAoZD%2BHQ%3D%3D'
+                'Cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3A4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; user_session=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; __Host-user_session_same_site=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; dotcom_user=haji-mix; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=AZti3wukfx1mrAhA%2FKORV12jFRmXSk20mhxhtngKXYrrYZuWC%2FramnoJTZMR9AnK3%2Bg304xH7F7R451uZDhDhB%2BX51TaAaclZ2VqZLQhzO%2FKEvpoDUqWXT3Trv1oXDOnXlOyIGoAEG%2FsJS96Fi23OBjDagWtpLEjkt%2BdI%2B%2B2F42bZR6ci8rzdOiB7IWSyWDXgxevdbUYzKE%2FzThQLLYOsXbNFDpGHvra3yq9Mrnn82h%2BGEVG9P4q8jFF0cUGq0u9ExVOAMH5bczo%2F7fXSSObGMdzX8ckP4McERz9d0xs6P3Sy3FpK5rqQ5ikGUYWHlfjoFTBH87P1iZuipejo1uZeGa4OwoeXtI7qilLLdxJFFAcfpWTIAkqjebJv%2Fz%2FEhUF0ljjmHggCoKzVOtuO%2FVZqaOuOuplT5FfvDFy4Xonb91ssZPc8nIi%2BrAldCk3nJuukqIvvfQWV05AFILXfk6jFqTVX%2FVgBdKoERVJSH38DhsHf%2BN%2FyP%2F7tvatenfw9z8ZPtB6%2B3EGmI%2B0trgeDNW%2BVqSe79WJ4Og3t3wPZMpoixs0mt%2Bl67bVtCVmgkPbYZ0zvend25xrtY2TD3Ns5iuMoccrXxrEH9BcUiuduEXn7ulChU9jDuUUUtb9cJtb2PzSEMLmDfD6XQPkh%2FY%2B7Dcb5wWmMKthrkrccjxeP1kuqmDdAABgHgO3mZFoi9UCQADspvKngtSO2UNcDH8HyWYQ5cGe7bjp4c9oQo3UwzkHvU%2BPbpEgCaGLyVoCtlK4ydv9Eb%2B0So4cntIM0HeOY3qwMQ%3D%3D--QY0PT1jcIrVakzld--SN%2FdYchv8tyWx8MhH8Zoag%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila'
             }
         });
 
@@ -58,7 +90,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
                 'copilot-integration-id': 'copilot-chat',
                 'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
                 'sec-ch-ua-mobile': '?1',
-                'authorization': `GitHub-Bearer ${token}`, // Use the fetched token here
+                'authorization': `GitHub-Bearer ${token}`,
                 'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
                 'sec-ch-ua-platform': '"Android"',
                 'accept': '*/*',
@@ -108,43 +140,57 @@ if (event.type === "message_reply" && event.messageReply.body) {
             chat.reply(
                 font.bold("🤖 | Available Models:\n") +
                 font.thin(modelList +
-                "\n\nTo switch models, use: copilot model [number]\nExample: copilot model 2\nTo chat use: copilot hello"
-            ));
+                    "\n\nTo switch models, use: copilot model [number]\nExample: copilot model 2\nTo chat use: copilot hello"
+                ));
             return;
+        }
+
+        // Get or create a thread ID for the user
+        let threadId = userThreadMap.get(event.senderID);
+        if (!threadId) {
+            threadId = await createNewThread(token);
+            userThreadMap.set(event.senderID, threadId);
         }
 
         const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
-        // Sending Chat Request with the fresh token
-        const chatResponse = await axios.post("https://api.individual.githubcopilot.com/github/chat/threads/4e5b591e-3c89-43d6-b053-c57289778b68/messages?", {
-            content: query,
-            intent: "conversation",
-            references: [],
-            context: [],
-            currentURL: "https://github.com/copilot",
-            streaming: true,
-            confirmations: [],
-            customInstructions: ["You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.", "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"],
-            model: selectedModel.id, // Use the selected model
-            mode: "immersive",
-            customCopilotID: null,
-            parentMessageID: "",
-            tools: [],
-            mediaContent: []
-        }, {
-            headers: {
-                "authorization": `GitHub-Bearer ${token}`, // Use the fetched token here
-                "copilot-integration-id": "copilot-chat",
-                "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
-                "content-type": "text/event-stream",
-                "accept": "*/*",
-                "origin": "https://github.com",
-                "sec-fetch-site": "cross-site",
-                "sec-fetch-mode": "cors",
-                "sec-fetch-dest": "empty",
-                "referer": "https://github.com/"
+        // Sending Chat Request with the fresh token and thread ID
+        const chatResponse = await axios.post(
+            `https://api.individual.githubcopilot.com/github/chat/threads/${threadId}/messages`,
+            {
+                content: query,
+                intent: "conversation",
+                references: [],
+                context: [],
+                currentURL: "https://github.com/copilot",
+                streaming: true,
+                confirmations: [],
+                customInstructions: [
+                    "You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.",
+                    "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"
+                ],
+                model: selectedModel.id, // Use the selected model
+                mode: "immersive",
+                customCopilotID: null,
+                parentMessageID: "",
+                tools: [],
+                mediaContent: []
+            },
+            {
+                headers: {
+                    "authorization": `GitHub-Bearer ${token}`,
+                    "copilot-integration-id": "copilot-chat",
+                    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+                    "content-type": "application/json",
+                    "accept": "*/*",
+                    "origin": "https://github.com",
+                    "sec-fetch-site": "cross-site",
+                    "sec-fetch-mode": "cors",
+                    "sec-fetch-dest": "empty",
+                    "referer": "https://github.com/"
+                }
             }
-        });
+        );
 
         if (chatResponse.status === 200) {
             let completeMessage = "";
@@ -168,41 +214,39 @@ if (event.type === "message_reply" && event.messageReply.body) {
             completeMessage = completeMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
             const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage + line + font.thin(`Model: ` + selectedModel.id);
-             answering.edit(message);
+            answering.edit(message);
 
-           if (codeBlocks.length > 0) {
-    const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
+            if (codeBlocks.length > 0) {
+                const isHtml = codeBlocks.some(block => /<html[\s>]/i.test(block) || /<!DOCTYPE html>/i.test(block));
 
-    if (isHtml) {
-        const allCode = codeBlocks
-            .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
-            .join("\n\n\n");
-            
-            const uitocode = "https://codetoui.onrender.com";
+                if (isHtml) {
+                    const allCode = codeBlocks
+                        .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
+                        .join("\n\n\n");
 
-        try {
-            const response = await axios.post(uitocode + "/submit-html", {
-                htmlContent: allCode
-            }, {
-                headers: { "Content-Type": "application/json" }
-            });
+                    const uitocode = "https://codetoui.onrender.com";
 
-            const result = response.data;
-            const shortUrl = await chat.shorturl(uitocode + result.url);
-            const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
+                    try {
+                        const response = await axios.post(uitocode + "/submit-html", {
+                            htmlContent: allCode
+                        }, {
+                            headers: { "Content-Type": "application/json" }
+                        });
 
-            chat.reply({ body: shortUrl, attachment: screenshot });
-        } catch (error) {
-            console.error("Error submitting HTML:", error);
-        }
-    }
-}
+                        const result = response.data;
+                        const shortUrl = await chat.shorturl(uitocode + result.url);
+                        const screenshot = await chat.stream(`https://image.thum.io/get/width/1920/crop/400/fullpage/noanimate/${shortUrl}`);
 
-
+                        chat.reply({ body: shortUrl, attachment: screenshot });
+                    } catch (error) {
+                        console.error("Error submitting HTML:", error);
+                    }
+                }
+            }
         } else {
-             answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
+            answering.edit(font.monospace(`Request failed with status code ${chatResponse.status}`));
         }
     } catch (error) {
-         chat.reply(font.monospace(`Error: ${error.message}`));
+        chat.reply(font.monospace(`Error: ${error.message}`));
     }
 };
