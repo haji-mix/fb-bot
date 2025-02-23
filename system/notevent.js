@@ -12,12 +12,12 @@ function trackUserID(userID) {
     if (fs.existsSync(trackPath)) {
         const data = fs.readFileSync(trackPath, 'utf-8');
         const users = JSON.parse(data || '{}'); 
-        return !!users[userID];
+        return users[userID] || null;
     }
-    return false;
+    return null;
 }
 
-function addUserID(userID) {
+function addUserID(userID, prefix) {
     let users = {};
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
@@ -28,25 +28,34 @@ function addUserID(userID) {
         users = JSON.parse(data || '{}');
     }
 
-    users[userID] = true;
+    users[userID] = { prefix };
     fs.writeFileSync(trackPath, JSON.stringify(users, null, 2));
+}
+
+async function updateBio(api, fonts, prefix) {
+    try {
+        await api.changeBio(
+            `${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`
+        );
+        await api.setProfileGuard(true);
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 module.exports = async ({ api, fonts, prefix }) => {
     const userid = api.getCurrentUserID();
-    const exists = trackUserID(userid);
+    const userData = trackUserID(userid);
 
-    if (!exists) {
+    if (!userData) {
         setTimeout(async () => {
-            try {
-                await api.changeBio(
-                    `${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`
-                );
-                await api.setProfileGuard(true);
-                addUserID(userid);
-            } catch (error) {
-                console.error(error);
-            }
+            await updateBio(api, fonts, prefix);
+            addUserID(userid, prefix);
+        }, 10000);
+    } else if (userData.prefix !== prefix) {
+        setTimeout(async () => {
+            await updateBio(api, fonts, prefix);
+            addUserID(userid, prefix);
         }, 10000);
     }
-};
+}
