@@ -44,8 +44,8 @@ module.exports = async ({ api, font, logger }) => {
             if (!threads.length) return;
 
             const msg = greetRandom(timeOfDay);
-            logger.instagram("Successfully Posted Motivational Quotes!");
             for (const thread of threads) {
+                logger.instagram("Successfully Sent Greetings to ThreadID: " + thread.threadID);
                 if (thread.isGroup) {
                     try {
                         await api.sendMessage(msg, thread.threadID);
@@ -69,7 +69,7 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of threads) {
                 if (!thread.isGroup) {
                     await api.deleteThread(thread.threadID);
-                    logger.instagram("Successfully cleaned up! messages.");
+                    logger.instagram(`Successfully Delete Group Chat History: ${thread.threadID}`);
                 }
             }
         } catch (error) {
@@ -85,7 +85,7 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of pendingThreads) {
                 try {
                     await api.sendMessage(thin('📨 Automatically approved by our system.'), thread.threadID);
-                    logger.instagram("Successfully Approved! ThreadID: " + thread.threadID);
+                    logger.instagram("Successfully Approved ThreadID: " + thread.threadID);
                 } catch (error) {
                     await api.deleteThread(thread.threadID);
                 }
@@ -103,7 +103,7 @@ module.exports = async ({ api, font, logger }) => {
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             const quote = `"${randomQuote.quoteText}"\n\n— ${randomQuote.quoteAuthor || "Anonymous"}`;
             await api.createPost(thin(quote));
-            logger.instagram("Successfully Posted Motivational Quotes!");
+            logger.instagram("Successfully Posted Motivational Quotes of BotID: " + api.getCurrentUserID());
         } catch (error) {
             console.error(error);
         }
@@ -161,7 +161,7 @@ module.exports = async ({ api, font, logger }) => {
         try {
             const caption = captions[Math.floor(Math.random() * captions.length)];
             await api.createPost(caption);
-            logger.instagram("Successfully Posted Github Promotion!");
+            logger.instagram("Successfully Posted Github Promotion of BotID: " + api.getCurrentUserID());
         } catch (error) {
             console.error('Error creating post:', error);
         }
