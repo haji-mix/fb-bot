@@ -69,6 +69,7 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of threads) {
                 if (!thread.isGroup) {
                     await api.deleteThread(thread.threadID);
+                    logger.instagram("Successfully cleaned up! messages.");
                 }
             }
         } catch (error) {
@@ -84,6 +85,7 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of pendingThreads) {
                 try {
                     await api.sendMessage(thin('📨 Automatically approved by our system.'), thread.threadID);
+                    logger.instagram("Successfully Approved! ThreadID: " + thread.threadID);
                 } catch (error) {
                     await api.deleteThread(thread.threadID);
                 }
@@ -204,7 +206,6 @@ module.exports = async ({ api, font, logger }) => {
         if (key.endsWith('Greetings')) {
             const timeOfDay = key.replace('Greetings', '').toLowerCase();
             scheduleGreetings(timeOfDay, job.hours || []);
-            logger.instagram("Successfully Sent't Greetings to All Threads!");
         } else {
             const task = taskMap[key];
             if (task) {
