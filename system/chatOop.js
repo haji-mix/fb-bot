@@ -133,7 +133,7 @@ class OnChat {
     }
 
     async reply(msg, tid = this.threadID || this.botID(), mid = this.messageID || null) {
-        if (!tid  !msg) return;
+        if (!tid && !msg) return;
         return this.handleError((async () => {
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
             if (!replyMsg?.messageID) return;
