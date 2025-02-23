@@ -17,7 +17,7 @@ module.exports["config"] = {
     cd: 8
 };
 
-const urlRegex = /^https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=]*)?$/i;
+const urlRegex = /^(.*?\b)?https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=+]*)?(\b.*)?$/i;
 const tempDir = path.join(__dirname, "cache");
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
