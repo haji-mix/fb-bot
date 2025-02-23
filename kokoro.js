@@ -486,7 +486,7 @@ function changePort() {
 
 startServer();
 
-async function accountLogin(state, prefix = "", admin = [], email, password) {
+async function accountLogin(state, prefix = "", admin, email, password) {
     const global = await workers();
 
     return new Promise((resolve, reject) => {
@@ -531,7 +531,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
             }
 
             const userid = await api.getCurrentUserID();
-            await addThisUser(userid, appState, prefix, admin_uid);
+            addThisUser(userid, appState, prefix, admin_uid);
             try {
 
                 let time = (
@@ -915,9 +915,9 @@ if (event && event?.body && aliases(command)?.name) {
                                 box: chat,
                                 fonts,
                                 font: fonts,
+                                admin,
                                 global,
                                 event,
-                                admin,
                                 prefix,
 
                                 Utils,
@@ -963,8 +963,8 @@ if (event && event?.body && aliases(command)?.name) {
                                                         message: chat,
                                                         fonts,
                                                         font: fonts,
-                                                        global,
                                                         admin,
+                                                        global,
                                                         prefix,
 
                                                         Utils,
@@ -998,6 +998,7 @@ if (event && event?.body && aliases(command)?.name) {
                                                         font: fonts,
                                                         global,
                                                         admin,
+                                            
                                                         prefix,
 
                                                         Utils,
