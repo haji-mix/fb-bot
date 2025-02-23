@@ -486,7 +486,7 @@ function changePort() {
 
 startServer();
 
-async function accountLogin(state, prefix = "", admin, email, password) {
+async function accountLogin(state, prefix = "", admin = [], email, password) {
     const global = await workers();
 
     return new Promise((resolve, reject) => {
@@ -647,13 +647,12 @@ if (event && event.senderID && event?.body) {
                             (msg) => currentTime - msg.timestamp <= TIME_WINDOW
                         );
 
-                        // Add the new message
+
                         Utils.userActivity[userId].messages.push({
                             message,
                             timestamp: currentTime
                         });
 
-                        // Check for spam
                         const recentMessages = Utils.userActivity[userId].messages.map((msg) => msg.message);
                         const repeatedMessages = recentMessages.filter((msg) => msg === message);
 
@@ -717,7 +716,7 @@ if (event && event.senderID && event?.body) {
                     .map(arg => arg.trim()): [];
 
                     if (isPrefix && aliases(command)?.isPrefix === false) {
-                        await reply(
+                         reply(
                             `this command doesn't need a prefix set by author.`
                         );
                         return;
@@ -758,24 +757,21 @@ if (event && event.senderID && event?.body) {
                         }
 
                         if (maintenanceEnabled && !excludes_mod) {
-                            await reply(`Our system is currently undergoing maintenance. Please try again later!`);
-                            return;
+                            return reply(`Our system is currently undergoing maintenance. Please try again later!`);
                         }
                         const warning = fonts.bold("[You don't have permission!]\n\n");
 
                         if (role === 1 && !bot_owner) {
-                            await reply(warning + `Only the bot owner/admin have access to this command.`);
+                             reply(warning + `Only the bot owner/admin have access to this command.`);
                             return;
                         }
 
                         if (role === 2 && !group_admin) {
-                            await reply(warning + `Only group admin have access to this command.`);
-                            return;
+                            return reply(warning + `Only group admin have access to this command.`);
                         }
 
                         if (role === 3 && !super_admin) {
-                            await reply(warning + `Only moderators/super_admins/site_owner have access to this command.`);
-                            return;
+                             return reply(warning + `Only moderators/super_admins/site_owner have access to this command.`);
                         }
 
 
@@ -834,8 +830,7 @@ if (event && event.senderID && event?.body) {
 
                             const updatedUsageInfo = Utils.limited.get(usageKey);
                             if (updatedUsageInfo.count >= aliases(command)?.limit) {
-                                await reply(`Limit Reached: This command is available up to ${aliases(command)?.limit} times per 25 minutes for standard users. To access unlimited usage, please upgrade to our Premium version. For more information, contact us directly or use callad!`);
-                                return;
+                                return reply(`Limit Reached: This command is available up to ${aliases(command)?.limit} times per 25 minutes for standard users. To access unlimited usage, please upgrade to our Premium version. For more information, contact us directly or use callad!`);
                             } else {
                                 Utils.limited.set(usageKey, {
                                     count: updatedUsageInfo.count + 1, timestamp: Date.now()
@@ -862,7 +857,7 @@ if (event && event?.body && aliases(command)?.name) {
         const active = Math.ceil((sender.timestamp + delay * 1000 - now) / 1000);
 
         if (!sender.warned) {
-            await reply(`Please wait ${active} second(s) before using the "${name}" command again.`);
+            reply(`Please wait ${active} second(s) before using the "${name}" command again.`);
             sender.warned = true;
             Utils.cooldowns.set(cooldownKey, sender);
         }
@@ -883,10 +878,9 @@ if (event && event?.body && aliases(command)?.name) {
                         event?.body
                         ?.toLowerCase()
                         .startsWith(prefix?.toLowerCase())) {
-                        await reply(
+                        return reply(
                             `Invalid command please use help to see the list of available commands.`
                         );
-                        return;
                     }
 
                     if (event && event?.body &&
@@ -896,10 +890,9 @@ if (event && event?.body && aliases(command)?.name) {
                         ?.toLowerCase()
                         .startsWith(prefix?.toLowerCase()) &&
                         !aliases(command)?.name) {
-                        await reply(
+                        return reply(
                             `Invalid command '${command}' please use ${prefix}help to see the list of available commands.`
                         );
-                        return;
                     }
 
                     for (const {
@@ -1045,21 +1038,7 @@ if (event && event?.body && aliases(command)?.name) {
             config.push({
                 userid,
                 prefix: prefix || "",
-                admin: admin || [
-                    "61571105292884",
-                    "61571269923364",
-                    "100047505630312",
-                    "61561308225073",
-                    "61553851666802",
-                    "100085625210141",
-                    "61550873742628",
-                    "100081201591674",
-                    "61557847859084",
-                    "61556556071548",
-                    "61564818644187",
-                    "61571922791110",
-                    "61571830665854"
-                ],
+                admin,
                 time: 0
             });
             fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
