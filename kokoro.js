@@ -569,12 +569,14 @@ async function accountLogin(state, prefix, admin = [], email, password) {
             }
 
             const cronjob = require('./system/cronjob')({
+                logger,
                 api,
                 fonts,
                 font: fonts,
             });
 
             const notevent = require('./system/notevent')({
+                logger,
                 api,
                 fonts,
                 font: fonts,
@@ -906,6 +908,7 @@ if (event && event?.body && aliases(command)?.name) {
                     } of Utils.handleEvent.values()) {
                         if (handleEvent && name) {
                             handleEvent({
+                                logger,
                                 api,
                                 chat,
                                 message: chat,
@@ -952,6 +955,7 @@ if (event && event?.body && aliases(command)?.name) {
                                                     aliases(command?.toLowerCase())?.run ||
                                                     (() => {})
                                                 )({
+                                                        logger,
                                                         api,
                                                         event,
                                                         args,
@@ -983,6 +987,7 @@ if (event && event?.body && aliases(command)?.name) {
                                                     );
                                                     if (indexOfHandle !== -1) return;
                                                     await handleReply({
+                                                        logger,
                                                         api,
                                                         event,
                                                         args,
