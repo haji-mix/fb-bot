@@ -132,7 +132,7 @@ class OnChat {
         return this.handleError(this.reply(msg, tid, mid), "Error in send");
     }
 
-    async reply(msg, tid = this.threadID || this.botID(), mid = this.messageID || null) {
+    async reply(msg = null, tid = this.threadID || this.botID() || null, mid = this.messageID || null) {
         if (!tid && !msg) return;
         return this.handleError((async () => {
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
