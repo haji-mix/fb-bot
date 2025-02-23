@@ -1058,50 +1058,41 @@ if (event && event?.body && aliases(command)?.name) {
 
 
         async function main() {
-            const empty = require("fs-extra");
-            const fs = require("fs");
-            const path = require("path");
-            const cacheFile = "./script/cache";
-            const configFile = "./data/history.json";
-            const sessionFolder = path.join("./data/session");
+const empty = require("fs-extra");
+const fs = require("fs");
+const path = require("path");
+const cacheFile = "./script/cache";
+const configFile = "./data/history.json";
+const sessionFolder = path.join("./data/session");
 
-            if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
-            if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
-            if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
+if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
+if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
+if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
 
-            const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-            const adminOfConfig =
-            fs.existsSync("./data") && fs.existsSync("./data/config.json")
-            ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
+const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+const adminOfConfig =
+    fs.existsSync("./data") && fs.existsSync("./data/config.json")
+        ? JSON.parse(fs.readFileSync("./data/config.json", "utf8"))
+        : createConfig();
 
-const checkHistory = async () => {
-    try {
-        let history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
-
-        history = history.filter(user => {
-            if (!user || typeof user !== "object") return false;
-            if (user.time === undefined || user.time === null || isNaN(user.time)) {
-                user.time = 0;
-            }
-            return true;
-        });
-
-        for (let user of history) {
-            const update = Utils.account.get(user.userid);
-            if (update) {
-                user.time = update.time;
-            }
-        }
-
-        await empty.emptyDir(cacheFile);
-
-        fs.writeFileSync("./data/history.json", JSON.stringify(history, null, 2));
-    } catch (error) {
-        console.error("Error checking history:", error.stack);
-    }
+const executeTask = async () => {
+  try {
+    const history = JSON.parse(fs.readFileSync('./data/history.json', 'utf-8'));
+    history.forEach(user => {
+      if (!user || typeof user !== 'object') process.exit(1);
+      if (user.time === undefined || user.time === null || isNaN(user.time)) process.exit(1);
+      const update = Utils.account.get(user.userid);
+      if (update) user.time = update.time;
+    });
+    await empty.emptyDir(cacheFile);
+    await fs.writeFileSync('./data/history.json', JSON.stringify(history, null, 2));
+  } catch (error) {
+    console.error('Error executing task:', error);
+    process.exit(1);
+  }
 };
 
-setInterval(checkHistory, 15 * 60 * 1000);
+executeTask();
 
             try {
                 const files = fs.readdirSync(sessionFolder);
