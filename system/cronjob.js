@@ -44,6 +44,7 @@ module.exports = async ({ api, font, logger }) => {
             if (!threads.length) return;
 
             const msg = greetRandom(timeOfDay);
+            logger.instagram("Successfully Posted Motivational Quotes!");
             for (const thread of threads) {
                 if (thread.isGroup) {
                     try {
@@ -200,15 +201,14 @@ module.exports = async ({ api, font, logger }) => {
 
     Object.entries(config.cronJobs).forEach(([key, job]) => {
         if (!job.enabled) return;
-
         if (key.endsWith('Greetings')) {
             const timeOfDay = key.replace('Greetings', '').toLowerCase();
             scheduleGreetings(timeOfDay, job.hours || []);
+            logger.instagram("Successfully Sent't Greetings to All Threads!");
         } else {
             const task = taskMap[key];
             if (task) {
                 cron.schedule(job.cronExpression, task, { timezone });
-                logger.instagram("Successfully Sent't Greetings to All Threads!");
             } else {
                 console.error(`Unknown task: ${key}`);
             }
