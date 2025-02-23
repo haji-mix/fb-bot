@@ -1094,14 +1094,15 @@ if (event && event?.body && aliases(command)?.name) {
             fs.existsSync("./data") && fs.existsSync("./data/config.json")
             ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
 
-
 const checkHistory = async () => {
     try {
         let history = JSON.parse(fs.readFileSync("./data/history.json", "utf-8"));
 
         history = history.filter(user => {
-            if (!user || typeof user !== "object") return false; // Remove non-objects
-            if (user.time === undefined || user.time === null || isNaN(user.time)) return false; 
+            if (!user || typeof user !== "object") return false;
+            if (user.time === undefined || user.time === null || isNaN(user.time)) {
+                user.time = 0;
+            }
             return true;
         });
 
