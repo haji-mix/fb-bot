@@ -157,22 +157,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
         const line = "\n" + '━'.repeat(18) + "\n";
         const formattedAnswer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
         const message = font.bold(`🌐 | ${modelName}`) + line + formattedAnswer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
-        await answering.edit(message);
+         answering.edit(message);
 
-        // Handle code blocks in the response
-        const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
-        if (codeBlocks.length > 0) {
-            const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
-            const cacheFolderPath = path.join(__dirname, "cache");
-            if (!fs.existsSync(cacheFolderPath)) {
-                fs.mkdirSync(cacheFolderPath);
-            }
-            const uniqueFileName = `code_snippet_${Math.floor(Math.random() * 1e6)}.txt`;
-            const filePath = path.join(cacheFolderPath, uniqueFileName);
-            fs.writeFileSync(filePath, allCode, 'utf8');
-            const fileStream = fs.createReadStream(filePath);
-            await chat.reply({ attachment: fileStream });
-            fs.unlinkSync(filePath);
-        }
     }
 };

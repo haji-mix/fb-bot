@@ -87,32 +87,13 @@ if (event.type === "message_reply" && event.messageReply.body) {
   if (success) {
     conversationHistories[senderID].push({ role: "assistant", content: answer });
 
-    const codeBlocks = answer.match(/```[\s\S]*?```/g) || [];
     const line = "\n" + '━'.repeat(18) + "\n";
     
     answer = answer.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
     
     const message = font.bold(" 🤖 | " + name) + line + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.`);
 
-    await answering.edit(message);
+     answering.edit(message);
 
-    if (codeBlocks.length > 0) {
-      const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
-      const cacheFolderPath = path.join(__dirname, "cache");
-
-      if (!fs.existsSync(cacheFolderPath)) {
-        fs.mkdirSync(cacheFolderPath);
-      }
-
-      const uniqueFileName = `code_snippet_${Math.floor(Math.random() * 1e6)}.txt`;
-      const filePath = path.join(cacheFolderPath, uniqueFileName);
-
-      fs.writeFileSync(filePath, allCode, 'utf8');
-
-      const fileStream = fs.createReadStream(filePath);
-      await chat.reply({ attachment: fileStream });
-
-      fs.unlinkSync(filePath);
-    }
   }
 };

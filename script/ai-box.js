@@ -1,6 +1,4 @@
 const axios = require("axios");
-const fs = require('fs');
-const path = require('path');
 
 module.exports["config"] = {
     name: "box",
@@ -163,28 +161,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
 
         const message = font.bold("⬛ | BLACKBOX AI") + line + answer + line + mono(`◉ USE "CLEAR" TO RESET CONVERSATION.\n◉ USE "TOGGLE" TO SWITCH WEBSEARCH\n◉ USE "CODE" TO SWITCH CODING MODEL.`);
 
-        await answering.edit(message);
-
-        if (codeBlocks.length > 0) {
-            const allCode = codeBlocks.map(block => block.replace(/```/g, '').trim()).join('\n\n\n');
-            const cacheFolderPath = path.join(__dirname, "cache");
-
-            if (!fs.existsSync(cacheFolderPath)) {
-                fs.mkdirSync(cacheFolderPath);
-            }
-
-            const uniqueFileName = `code_snippet_${Math.floor(Math.random() * 1e6)}.txt`;
-            const filePath = path.join(cacheFolderPath, uniqueFileName);
-
-            fs.writeFileSync(filePath, allCode, 'utf8');
-
-            const fileStream = fs.createReadStream(filePath);
-            await chat.reply({
-                attachment: fileStream
-            });
-
-            fs.unlinkSync(filePath);
-        }
+         answering.edit(message);
     }
 };
 
