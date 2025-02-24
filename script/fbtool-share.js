@@ -3,7 +3,6 @@ const randomUserAgent = require('random-useragent');
 
 module.exports["config"] = {
   name: "fbshare",
-  isPrivate: true,
   aliases: ["share", "sharehandle", "shareboost", "spamshare"],
   version: "2.0.1",
   role: 1,
