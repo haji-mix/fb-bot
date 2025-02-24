@@ -2,13 +2,13 @@
 
 # Function to install packages for Alpine Linux
 install_alpine() {
-    apk update && apk upgrade
+    apk update
     apk add --no-cache nodejs npm python3 make g++ pkgconfig pixman-dev cairo-dev pango-dev libjpeg-turbo-dev giflib-dev
 }
 
 # Function to install packages for Debian-based distributions
 install_debian() {
-    apt-get update && apt-get upgrade -y
+    apt-get update -y
     apt-get install -y nodejs npm python3 make g++ pkg-config libpixman-1-dev libcairo2-dev libpango1.0-dev libjpeg-turbo8-dev libgif-dev
 }
 
