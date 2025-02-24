@@ -281,7 +281,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             const line = "\n" + "━".repeat(18) + "\n";
             completeMessage = completeMessage.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
 
-            const message = font.bold(" 🤖 | GITHUB COPILOT") + line + completeMessage || "Github Copilot is under maintenance!" + line + font.thin(`Model: ` + selectedModel.id);
+            const message = font.bold(" 🤖 | GITHUB COPILOT") + line + (completeMessage || "Github Copilot is under maintenance!") + line + font.thin(`Model: ` + selectedModel.id);
             answering.edit(message);
 
             if (codeBlocks.length > 0) {
