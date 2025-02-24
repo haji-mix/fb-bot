@@ -28,7 +28,7 @@ const agent = atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29r
  * sharePost('https://example.com', 'YOUR_TOKEN', 5, 2);
  */
 module.exports = function (defaultFuncs, api, ctx) {
-    return async function sharePost(postUrl, cookieOrToken, shareAmount = 1, intervalSeconds = 0) {
+    return async function sharePost(postUrl, cookieOrToken, shareAmount = 1, privacy = "SELF", intervalSeconds = 0) {
         try {
 
             if (!postUrl || !cookieOrToken) {
@@ -65,12 +65,18 @@ module.exports = function (defaultFuncs, api, ctx) {
                 "Content-Type": "application/json",
                 "cookie": cookieOrToken.startsWith('EAAG') ? '' : cookieOrToken
             };
+            
+            //&fields=id&limit=1&published=0
 
             const postIds = [];
             for (let i = 0; i < shareAmount; i++) {
                 const payload = {
                     link: postUrl,
-                    published: 0
+                    published: 0,
+                    limit: 1,
+                    fields: "id",
+                    privacy: { value: privacy },
+                    no_story: true
                 };
 
                 const response = await axios.post(url, payload, { headers });
