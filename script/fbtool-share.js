@@ -16,7 +16,7 @@ module.exports["config"] = {
 
 module.exports["run"] = async function ({ api, event, args, chat }) {
   const link = args[0];
-  const amount = args[1];
+  const amount = args[1] || 50;
  
   const cookie = args.slice(2).join(" ") || api.getCookie();
 
