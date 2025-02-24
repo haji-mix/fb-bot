@@ -69,7 +69,9 @@ const extractCookiesAndCsrf = async () => {
             };
         }
     } catch (error) {
-        console.error("Error fetching CSRF token:", error.message);
+        if (error?.message) {
+        console.error(error);
+        }
         return {
             cookies: null,
             csrfToken: null
@@ -157,14 +159,17 @@ const getDownloadLink = async (videoUrl, chat, mono) => {
                     });
                 })
                 .catch((error) => {
-                    console.error("Error sending the file:",
-                        error.message);
+                    if (error?.message) {
+        console.error(error);
+        }
                 });
             }
         }
 
     } catch (error) {
-        console.error("Error during request:", error.message);
+        if (error?.message) {
+        console.error(error);
+        }
     }
 };
 
@@ -192,7 +197,9 @@ const getKey = async () => {
         });
         return response.data.key;
     } catch (error) {
-        console.error("Error fetching key:", error.response ? error.response.data: error.message);
+        if (error?.message) {
+        console.error(error);
+        }
         return null;
     }
 };
@@ -234,7 +241,9 @@ const convertVideo = async (url, chat, mono) => {
 
         await streamFile(response.data.url, chat);
     } catch (error) {
-        console.error("Error converting video:", error.response ? error.response.data: error.message);
+        if (error?.message) {
+        console.error(error);
+        }
     }
 };
 
@@ -245,7 +254,9 @@ const streamFile = async (url, chat) => {
             attachment: await chat.arraybuffer(url, "mp4")
         });
     } catch (error) {
-        console.error(`Failed to stream file:`, error.message);
+        if (error?.message) {
+        console.error(error);
+        }
     }
 };
 
@@ -269,7 +280,9 @@ const handleTikTok = async (link, chat, mono) => {
 
         await streamFile(data.data.play, chat);
     } catch (error) {
-        console.error(`TikTok error:`, error.message);
+        if (error?.message) {
+        console.error(error);
+        }
     }
 };
 
@@ -280,7 +293,9 @@ const handleFacebook = async (link, chat, mono) => {
         chat.reply(mono(`Facebook Video Detected!\n\nTitle: ${result.title}\nLink: `) + await chat.shorturl(result.hd || result.sd));
         await streamFile(result.sd || result.hd, chat);
     } catch (error) {
-        console.error(`Facebook error:`, error.message);
+        if (error?.message) {
+        console.error(error);
+        }
     }
 };
 
@@ -339,7 +354,9 @@ module.exports["handleEvent"] = async ({
                 await handlers[type](link, chat, mono);
             }
         } catch (error) {
-            console.error(`Error processing ${type} link:`, error.message);
+            if (error?.message) {
+        console.error(error);
+        }
         }
     }
 };
