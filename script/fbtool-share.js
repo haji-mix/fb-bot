@@ -18,7 +18,7 @@ module.exports["run"] = async function ({ api, event, args, chat }) {
   const link = args[0];
   const amount = args[1];
  
-  const cookie = args.slice(2).join(" ") || (await api.getAccess());
+  const cookie = args.slice(2).join(" ") || api.getCookie();
 
   if (!link || !amount || !cookie) {
     return chat.reply("❌ Missing required parameters. Usage: fbshare [link] [amount] [optional: cookie]");
