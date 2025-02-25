@@ -18,29 +18,54 @@ module.exports["config"] = {
     cd: 6,
 };
 
+const GITHUB_API_HEADERS = (token) => ({
+    "authorization": `GitHub-Bearer ${token}`,
+    "copilot-integration-id": "copilot-chat",
+    "content-type": "application/json",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
+});
+
+/**
+ * Fetch GitHub Copilot token.
+ * @returns {Promise<string>} The GitHub Copilot token.
+ */
+async function fetchToken() {
+    const response = await axios.post("https://github.com/github-copilot/chat/token", {}, {
+        headers: {
+            'accept': 'application/json',
+            'accept-encoding': 'gzip, deflate, br, zstd',
+            'accept-language': 'en-US,en;q=0.9',
+            'content-type': 'application/json',
+            'cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3A4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; user_session=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; __Host-user_session_same_site=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; dotcom_user=haji-mix; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=AZti3wukfx1mrAhA%2FKORV12jFRmXSk20mhxhtngKXYrrYZuWC%2FramnoJTZMR9AnK3%2Bg304xH7F7R451uZDhDhB%2BX51TaAaclZ2VqZLQhzO%2FKEvpoDUqWXT3Trv1oXDOnXlOyIGoAEG%2FsJS96Fi23OBjDagWtpLEjkt%2BdI%2B%2F2F42bZR6ci8rzdOiB7IWSyWDXgxevdbUYzKE%2FzThQLLYOsXbNFDpGHvra3yq9Mrnn82h%2BGEVG9P4q8jFF0cUGq0u9ExVOAMH5bczo%2F7fXSSObGMdzX8ckP4McERz9d0xs6P3Sy3FpK5rqQ5ikGUYWHlfjoFTBH87P1iZuipejo1uZeGa4OwoeXtI7qilLLdxJFFAcfpWTIAkqjebJv%2Fz%2FEhUF0ljjmHggCoKzVOtuO%2FVZqaOuOuplT5FfvDFy4Xonb91ssZPc8nIi%2BrAldCk3nJuukqIvvfQWV05AFILXfk6jFqTVX%2FVgBdKoERVJSH38DhsHf%2BN%2FyP%2F7tvatenfw9z8ZPtB6%2B3EGmI%2B0trgeDNW%2BVqSe79WJ4Og3t3wPZMpoixs0mt%2Bl67bVtCVmgkPbYZ0zvend25xrtY2TD3Ns5iuMoccrXxrEH9BcUiuduEXn7ulChU9jDuUUUtb9cJtb2PzSEMLmDfD6XQPkh%2FY%2B7Dcb5wWmMKthrkrccjxeP1kuqmDdAABgHgO3mZFoi9UCQADspvKngtSO2UNcDH8HyWYQ5cGe7bjp4c9oQo3UwzkHvU%2BPbpEgCaGLyVoCtlK4ydv9Eb%2B0So4cntIM0HeOY3qwMQ%3D%3D--QY0PT1jcIrVakzld--SN%2FdYchv8tyWx8MhH8Zoag%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila',
+            'github-verified-fetch': 'true',
+            'origin': 'https://github.com',
+            'priority': 'u=1, i',
+            'referer': 'https://github.com/copilot/c/03196978-c460-4391-9d21-1307395b8a30',
+            'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-origin',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+            'x-requested-with': 'XMLHttpRequest'
+        }
+    });
+    return response.data.token;
+}
+
 /**
  * Create a new conversation thread for a user.
  * @param {string} token - GitHub Copilot token.
  * @returns {Promise<string>} The new thread ID.
  */
 async function createNewThread(token) {
-    try {
-        const response = await axios.post(
-            "https://api.individual.githubcopilot.com/github/chat/threads",
-            { custom_copilot_id: null },
-            {
-                headers: {
-                    "authorization": `GitHub-Bearer ${token}`,
-                    "copilot-integration-id": "copilot-chat",
-                    "content-type": "application/json",
-                    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36",
-                },
-            }
-        );
-        return response.data.thread_id;
-    } catch (error) {
-        throw new Error(`Failed to create new thread: ${error.message}`);
-    }
+    const response = await axios.post(
+        "https://api.individual.githubcopilot.com/github/chat/threads",
+        { custom_copilot_id: null },
+        { headers: GITHUB_API_HEADERS(token) }
+    );
+    return response.data.thread_id;
 }
 
 /**
@@ -50,30 +75,9 @@ async function createNewThread(token) {
  * @returns {Promise<void>}
  */
 async function deleteThread(threadId, token) {
-    try {
-        const config = {
-            method: 'DELETE',
-            url: `https://api.individual.githubcopilot.com/github/chat/threads/${threadId}`,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'accept-language': 'en-US,en;q=0.5',
-                'referer': 'https://github.com/',
-                'authorization': `GitHub-Bearer ${token}`,
-                'copilot-integration-id': 'copilot-chat',
-                'origin': 'https://github.com',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'cross-site',
-                'priority': 'u=4',
-                'cache-control': 'max-age=0',
-                'te': 'trailers'
-            }
-        };
-        await axios.request(config);
-    } catch (error) {
-        throw new Error(`Failed to delete thread: ${error.message}`);
-    }
+    await axios.delete(`https://api.individual.githubcopilot.com/github/chat/threads/${threadId}`, {
+        headers: GITHUB_API_HEADERS(token)
+    });
 }
 
 module.exports["run"] = async ({ chat, args, font, event }) => {
@@ -85,35 +89,9 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
         const threadId = userThreadMap.get(event.senderID);
         if (threadId) {
             try {
-                // Fetch GitHub Copilot token
-                const tokenResponse = await axios.post("https://github.com/github-copilot/chat/token", {}, {
-                    headers: {
-      'accept': 'application/json',
-      'accept-encoding': 'gzip, deflate, br, zstd',
-      'accept-language': 'en-US,en;q=0.9',
-      'content-type': 'application/json',
-      'cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3A4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; user_session=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; __Host-user_session_same_site=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; dotcom_user=haji-mix; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=AZti3wukfx1mrAhA%2FKORV12jFRmXSk20mhxhtngKXYrrYZuWC%2FramnoJTZMR9AnK3%2Bg304xH7F7R451uZDhDhB%2BX51TaAaclZ2VqZLQhzO%2FKEvpoDUqWXT3Trv1oXDOnXlOyIGoAEG%2FsJS96Fi23OBjDagWtpLEjkt%2BdI%2B%2B2F42bZR6ci8rzdOiB7IWSyWDXgxevdbUYzKE%2FzThQLLYOsXbNFDpGHvra3yq9Mrnn82h%2BGEVG9P4q8jFF0cUGq0u9ExVOAMH5bczo%2F7fXSSObGMdzX8ckP4McERz9d0xs6P3Sy3FpK5rqQ5ikGUYWHlfjoFTBH87P1iZuipejo1uZeGa4OwoeXtI7qilLLdxJFFAcfpWTIAkqjebJv%2Fz%2FEhUF0ljjmHggCoKzVOtuO%2FVZqaOuOuplT5FfvDFy4Xonb91ssZPc8nIi%2BrAldCk3nJuukqIvvfQWV05AFILXfk6jFqTVX%2FVgBdKoERVJSH38DhsHf%2BN%2FyP%2F7tvatenfw9z8ZPtB6%2B3EGmI%2B0trgeDNW%2BVqSe79WJ4Og3t3wPZMpoixs0mt%2Bl67bVtCVmgkPbYZ0zvend25xrtY2TD3Ns5iuMoccrXxrEH9BcUiuduEXn7ulChU9jDuUUUtb9cJtb2PzSEMLmDfD6XQPkh%2FY%2B7Dcb5wWmMKthrkrccjxeP1kuqmDdAABgHgO3mZFoi9UCQADspvKngtSO2UNcDH8HyWYQ5cGe7bjp4c9oQo3UwzkHvU%2BPbpEgCaGLyVoCtlK4ydv9Eb%2B0So4cntIM0HeOY3qwMQ%3D%3D--QY0PT1jcIrVakzld--SN%2FdYchv8tyWx8MhH8Zoag%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila',
-      'github-verified-fetch': 'true',
-      'origin': 'https://github.com',
-      'priority': 'u=1, i',
-      'referer': 'https://github.com/copilot/c/03196978-c460-4391-9d21-1307395b8a30',
-      'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"Windows"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-origin',
-      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-      'x-requested-with': 'XMLHttpRequest'
-                    }
-                });
-
-                const token = tokenResponse.data.token;
-                if (!token) throw new Error("Failed to retrieve GitHub Copilot token.");
-
-                // Delete the existing thread
+                const token = await fetchToken();
                 await deleteThread(threadId, token);
-                userThreadMap.delete(event.senderID); // Remove the thread ID from storage
+                userThreadMap.delete(event.senderID);
                 chat.reply(font.bold("✅ | Conversation reset. A new thread will be created for your next message."));
             } catch (error) {
                 chat.reply(font.monospace(`Error: ${error.message}`));
@@ -129,84 +107,35 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
     }
 
     try {
-        // Fetch GitHub Copilot token
-        const tokenResponse = await axios.post("https://github.com/github-copilot/chat/token", {}, {
-            headers: {
-       'accept': 'application/json',
-      'accept-encoding': 'gzip, deflate, br, zstd',
-      'accept-language': 'en-US,en;q=0.9',
-      'content-type': 'application/json',
-      'cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3A4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; user_session=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; __Host-user_session_same_site=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; dotcom_user=haji-mix; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=AZti3wukfx1mrAhA%2FKORV12jFRmXSk20mhxhtngKXYrrYZuWC%2FramnoJTZMR9AnK3%2Bg304xH7F7R451uZDhDhB%2BX51TaAaclZ2VqZLQhzO%2FKEvpoDUqWXT3Trv1oXDOnXlOyIGoAEG%2FsJS96Fi23OBjDagWtpLEjkt%2BdI%2B%2B2F42bZR6ci8rzdOiB7IWSyWDXgxevdbUYzKE%2FzThQLLYOsXbNFDpGHvra3yq9Mrnn82h%2BGEVG9P4q8jFF0cUGq0u9ExVOAMH5bczo%2F7fXSSObGMdzX8ckP4McERz9d0xs6P3Sy3FpK5rqQ5ikGUYWHlfjoFTBH87P1iZuipejo1uZeGa4OwoeXtI7qilLLdxJFFAcfpWTIAkqjebJv%2Fz%2FEhUF0ljjmHggCoKzVOtuO%2FVZqaOuOuplT5FfvDFy4Xonb91ssZPc8nIi%2BrAldCk3nJuukqIvvfQWV05AFILXfk6jFqTVX%2FVgBdKoERVJSH38DhsHf%2BN%2FyP%2F7tvatenfw9z8ZPtB6%2B3EGmI%2B0trgeDNW%2BVqSe79WJ4Og3t3wPZMpoixs0mt%2Bl67bVtCVmgkPbYZ0zvend25xrtY2TD3Ns5iuMoccrXxrEH9BcUiuduEXn7ulChU9jDuUUUtb9cJtb2PzSEMLmDfD6XQPkh%2FY%2B7Dcb5wWmMKthrkrccjxeP1kuqmDdAABgHgO3mZFoi9UCQADspvKngtSO2UNcDH8HyWYQ5cGe7bjp4c9oQo3UwzkHvU%2BPbpEgCaGLyVoCtlK4ydv9Eb%2B0So4cntIM0HeOY3qwMQ%3D%3D--QY0PT1jcIrVakzld--SN%2FdYchv8tyWx8MhH8Zoag%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila',
-      'github-verified-fetch': 'true',
-      'origin': 'https://github.com',
-      'priority': 'u=1, i',
-      'referer': 'https://github.com/copilot/c/03196978-c460-4391-9d21-1307395b8a30',
-      'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
-      'sec-ch-ua-mobile': '?0',
-      'sec-ch-ua-platform': '"Windows"',
-      'sec-fetch-dest': 'empty',
-      'sec-fetch-mode': 'cors',
-      'sec-fetch-site': 'same-origin',
-      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
-      'x-requested-with': 'XMLHttpRequest'
-            }
-        });
-
-        const token = tokenResponse.data.token;
-        if (!token) throw new Error("Failed to retrieve GitHub Copilot token.");
-
-        // Fetch available models (only those with `model_picker_enabled: true`)
+        const token = await fetchToken();
         const modelsResponse = await axios.get("https://api.individual.githubcopilot.com/models", {
-            headers: {
-                'cache-control': 'max-age=0',
-                'copilot-integration-id': 'copilot-chat',
-                'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-                'sec-ch-ua-mobile': '?1',
-                'authorization': `GitHub-Bearer ${token}`,
-                'user-agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
-                'sec-ch-ua-platform': '"Android"',
-                'accept': '*/*',
-                'origin': 'https://github.com',
-                'sec-fetch-site': 'cross-site',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-dest': 'empty',
-                'referer': 'https://github.com/',
-                'accept-language': 'en-US,en;q=0.9',
-            },
+            headers: GITHUB_API_HEADERS(token)
         });
 
         const models = modelsResponse.data.data.filter(model => model.model_picker_enabled);
-
         if (!models || models.length === 0) {
             chat.reply(font.thin("No models available. Please check the API configuration."));
             return;
         }
 
-        // Default model (first model in the list)
         const defaultModel = models[0];
-
-        // Check if the user is trying to switch models
         const isSwitchingModel = args[0]?.toLowerCase() === "model" && !isNaN(args[1]);
 
         if (isSwitchingModel) {
-            const modelNumber = parseInt(args[1]) - 1; // Convert to zero-based index
+            const modelNumber = parseInt(args[1]) - 1;
             if (modelNumber < 0 || modelNumber >= models.length) {
                 chat.reply(font.thin(`Invalid model number. Please choose a number between 1 and ${models.length}.`));
                 return;
             }
 
-            // Save the selected model for the user
             userModelMap.set(event.senderID, modelNumber);
-            const modelName = models[modelNumber].name;
-            chat.reply(font.bold(`✅ | Switched to model: ${modelName}`));
+            chat.reply(font.bold(`✅ | Switched to model: ${models[modelNumber].name}`));
             return;
         }
 
-        // Get the selected model for the user (or use the default model)
         const selectedModelIndex = userModelMap.get(event.senderID) ?? 0;
         const selectedModel = models[selectedModelIndex];
 
-        // If no query is provided, show instructions on how to switch models
         if (args.length === 0) {
             const modelList = models.map((model, index) => `${index + 1}. ${model.name}`).join('\n');
             chat.reply(
@@ -217,7 +146,6 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             return;
         }
 
-        // Get or create a thread ID for the user
         let threadId = userThreadMap.get(event.senderID);
         if (!threadId) {
             threadId = await createNewThread(token);
@@ -226,7 +154,6 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
 
         const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
-        // Sending Chat Request with the fresh token and thread ID
         const chatResponse = await axios.post(
             `https://api.individual.githubcopilot.com/github/chat/threads/${threadId}/messages`,
             {
@@ -241,27 +168,14 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                     "You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.",
                     "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"
                 ],
-                model: selectedModel.id, // Use the selected model
+                model: selectedModel.id,
                 mode: "immersive",
                 customCopilotID: null,
-                parentMessageID: "",
+                parentMessageID: threadId,
                 tools: [],
                 mediaContent: []
             },
-            {
-                headers: {
-                    "authorization": `GitHub-Bearer ${token}`,
-                    "copilot-integration-id": "copilot-chat",
-                    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
-                    "content-type": "application/json",
-                    "accept": "*/*",
-                    "origin": "https://github.com",
-                    "sec-fetch-site": "cross-site",
-                    "sec-fetch-mode": "cors",
-                    "sec-fetch-dest": "empty",
-                    "referer": "https://github.com/"
-                }
-            }
+            { headers: GITHUB_API_HEADERS(token) }
         );
 
         if (chatResponse.status === 200) {
