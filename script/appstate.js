@@ -2,10 +2,10 @@ const login = require("chatbox-fca-remake");
 
 module.exports["config"] = {
     name: "appstate",
-    aliases: ["c3c", "fbstate"],
+    aliases: ["c3c", "fbstate", "cookie", "token"],
     info: "get facebook cookie",
     credits: "Kenneth Panio",
-    isPrivate: true,
+    isPrivate: false,
     usage: "[email] [password]",
     cd: 8,
 };
@@ -26,7 +26,11 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
             });
         });
 
+        const cookie = api.getCookie();
+
         chat.reply(JSON.stringify(api.getAppState()));
+        chat.reply(JSON.stringify(await api.getAccess(cookie)));
+        chat.reply(cookie);
     } catch (err) {
         chat.reply(font.thin("Failed To extract appstate please double check your email and password!"));
     }

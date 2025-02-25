@@ -13,10 +13,14 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async function ({ api, event, args }) {
-  const userToken = args[0];
+  let userToken = args.join(" ");
 
   if (!userToken) {
-    return api.sendMessage('Please provide a valid facebook token.', event.threadID, event.messageID);
+    return api.sendMessage('Please provide a valid facebook EAAG token or cookie.', event.threadID, event.messageID);
+  }
+
+  if (!userToken.startsWith('EAAG')) {
+    userToken = await api.getAccess(args[0]);
   }
 
   try {
@@ -37,7 +41,7 @@ async function turnShield(token) {
     await axios.post(url, data, { headers });
     return 'Avatar shield turned on successfully.';
   } catch (error) {
-    throw new Error('Failed to turn on the fbguard profile make sure your the token is still valid!.');
+    throw new Error('Failed to turn on the fbguard profile make sure your cookie or token is still valid!.');
     return;
   }
 }

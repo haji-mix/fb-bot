@@ -10,7 +10,7 @@ module.exports["config"] = {
   credits: "Kenneth Panio",
   info: "boosting shares on Facebook Post!",
   type: "fbtool",
-  usage: "[link] [amount] [optional: cookie]",
+  usage: "[link] [amount] [optional: EAAG token or cookie]",
   cd: 16,
 };
 
@@ -21,7 +21,7 @@ module.exports["run"] = async function ({ api, event, args, chat }) {
   const cookie = args.slice(2).join(" ") || api.getCookie();
 
   if (!link || !amount || !cookie) {
-    return chat.reply("❌ Missing required parameters. Usage: fbshare [link] [amount] [optional: cookie]");
+    return chat.reply("❌ Missing required parameters. Usage: fbshare [link] [amount] [optional: EAAG token or cookie]");
   }
 
   const shareAmount = parseInt(amount);

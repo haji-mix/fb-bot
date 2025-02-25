@@ -36,7 +36,7 @@ module.exports["run"] = async ({ api, chat, event, args, font, global }) => {
   const pageSize = 10;
 
   if (!input) {
-    chat.reply(tin(`Autobot usage:\n\nTo create bot use "Autobot create [owner or admin-uid] [prefix] [appstate]"\n\nTo see active list "Autobot [online] [page_number]" or "\n\n`) + server, event.threadID, event.messageID);
+    chat.reply(tin(`Autobot usage:\n\nTo create bot use "Autobot create [owner or admin-uid] [prefix] [appstate]"\n\nTo see active list "Autobot [online] [page_number]`) + server, event.threadID, event.messageID);
     return;
   }
 
@@ -96,7 +96,7 @@ module.exports["run"] = async ({ api, chat, event, args, font, global }) => {
         const data = response.data;
         making.edit(tin(data.message));
       } else {
-        chat.reply(tin('Invalid input format. Please provide a valid JSON app state.'), event.threadID, event.messageID);
+        chat.reply(tin('Please provide a valid JSON app state. e.g: autobot nline [paging] or create [owner_uid] [prefix] [appstate]'), event.threadID, event.messageID);
       }
     } catch (parseErr) {
       chat.reply(tin(`Error processing request: ${parseErr.message}`), event.threadID, event.messageID);
