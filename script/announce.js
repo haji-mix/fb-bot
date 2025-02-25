@@ -13,7 +13,6 @@ module.exports["config"] = {
     cd: 10
 };
 
-
 // Safely read and parse the admin data file
 let adminData = { admins: [] };
 try {
@@ -24,14 +23,9 @@ try {
     console.error('Error reading or parsing kokoro.json:', error);
 }
 
-
 module.exports["run"] = async ({ event, args, chat, font }) => {
-    if (!chat || !font || !event || !args) {
-        console.error('Required parameters are missing.');
-        return;
-    }
 
-    const mono = txt => font.monospace ? font.monospace(txt) : txt;
+    const mono = txt => font.monospace(txt);
 
     let message = args.join(' ');
 
@@ -56,15 +50,9 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
         return;
     }
 
-    await Promise.all(list.map(async (item) => {
+    for (const item of list) {
         if (item && item.isGroup && item.threadID) {
-            await chat.reply(`𝗡𝗢𝗧𝗜𝗙𝗜𝗖𝗔𝗧𝗜𝗢𝗡 ━━━━━━━━━━━━━━━━━━━ 
-╭┈ ❒ 💬 - 𝗠𝗘𝗦𝗦𝗔𝗚𝗘: 
-╰┈➤ ${message.trim()} 
-𝙵𝚛𝚘𝚖: ${mono(userName)} 
-━━━━━━━━━━━━━━━━━━━ 
-𝗗𝗔𝗧𝗘: ${date} 
-𝗧𝗨𝗠𝗘: ${time}`, item.threadID);
+            await chat.reply(mono(`ANNOUNCEMENT:\n\n${message.trim()}`), item.threadID);
         }
-    }));
+    }
 };

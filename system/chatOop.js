@@ -136,8 +136,6 @@ class OnChat {
         if (!tid && !msg) return;
         return this.handleError((async () => {
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
-            if (!replyMsg?.messageID) return;
-
             return {
                 edit: async (message, delay = 0) => {
                     await new Promise(res => setTimeout(res, delay));
