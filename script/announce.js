@@ -17,11 +17,10 @@ module.exports["config"] = {
 
 module.exports["run"] = async ({ event, args, chat, font }) => {
     var mono = txt => font.monospace(txt);
-    const body = event;
     let message = args.join(' ');
 
     if (!message) {
-        await chat.reply(mono("Please provide a message."));
+         chat.reply(mono("Please provide a message."));
         return;
     }
 
@@ -40,7 +39,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
         if (item.isGroup) {
             await chat.reply(`𝗡𝗢𝗧𝗜𝗙𝗜𝗖𝗔𝗧𝗜𝗢𝗡 ━━━━━━━━━━━━━━━━━━━ 
 ╭┈ ❒ 💬 - 𝗠𝗘𝗦𝗦𝗔𝗚𝗘: 
-╰┈➤ ${message} 
+╰┈➤ ${message.trim()} 
 𝙵𝚛𝚘𝚖: ${mono(userName)} 
 ━━━━━━━━━━━━━━━━━━━ 
 𝗗𝗔𝗧𝗘: ${date} 
