@@ -36,6 +36,8 @@ const agent = atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29r
  */
 module.exports = function (defaultFuncs, api, ctx) {
     return async function sharePost(postUrl, cookieOrToken, shareAmount = 1, privacy = "SELF", intervalSeconds = 0) {
+        let shareCount = 0; 
+
         try {
             if (!postUrl || !cookieOrToken) {
                 throw new Error('Missing required parameters: postUrl or cookie/token');
@@ -78,7 +80,6 @@ module.exports = function (defaultFuncs, api, ctx) {
             };
 
             const postIds = [];
-            let shareCount = 0;
 
             for (let i = 0; i < shareAmount; i++) {
                 const payload = {
