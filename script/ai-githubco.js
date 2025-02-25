@@ -7,7 +7,7 @@ const userThreadMap = new Map();
 module.exports["config"] = {
     name: "copilot",
     isPrefix: false,
-    aliases: ["copilot-chat", "github-copilot", "ghc", "gcop", "cop", "co", "ai"],
+    aliases: ["copilot-chat", "github-copilot", "ghc", "gcop", "cop", "co"],
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,

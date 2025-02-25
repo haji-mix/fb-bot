@@ -11,7 +11,7 @@ module.exports["config"] = {
     cd: 5,
 };
 
-module.exports["run"] = async ({ chat, args, font }) => {
+module.exports["run"] = async ({ chat, args, font, event }) => {
     var mono = txt => font.monospace(txt);
     let prompt = args.join(" ");
     
