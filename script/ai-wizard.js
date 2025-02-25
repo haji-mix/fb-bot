@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports["config"] = {
     name: "wizard",
-    aliases: ["wiz"],
+    aliases: ["wiz", "ai"],
     isPrefix: false,
     version: "1.0.0",
     credits: "Kenneth Panio",
