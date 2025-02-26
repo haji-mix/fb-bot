@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports["config"] = {
     name: "voids",
-    aliases: ["void", "vd", "ai"], // Updated command name and aliases
+    aliases: ["void", "vd"], // Updated command name and aliases
     version: "1.0.0",
     credits: "Kenneth Panio",
     role: 0,
