@@ -55,20 +55,18 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
             max_tokens: 32000
         }, {
             headers: {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
                 'Accept': 'text/event-stream',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
                 'Content-Type': 'application/json',
-                'Origin': 'https://deepinfra.com',
+                'Accept-Language': 'en-US,en;q=0.5',
                 'Referer': 'https://deepinfra.com/',
-                'sec-ch-ua': '"Not)A;Brand";v="24", "Chromium";v="116"',
-                'sec-ch-ua-mobile': '?1',
-                'sec-ch-ua-platform': '"Android"',
+                'X-Deepinfra-Source': 'web-embed',
+                'Origin': 'https://deepinfra.com',
                 'Sec-Fetch-Dest': 'empty',
                 'Sec-Fetch-Mode': 'cors',
                 'Sec-Fetch-Site': 'same-site',
-                'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
-                'X-Deepinfra-Source': 'web-page'
+                'Priority': 'u=0'
             }
         });
     };
