@@ -64,7 +64,7 @@ module.exports["run"] = async ({ chat, args, event, font, global }) => {
     }
 
     // Get the selected model for the user (or default if not set)
-    const selectedModelIndex = userModelMap.get(senderID) ?? 7; // Default to Claude-3-Opus
+    const selectedModelIndex = userModelMap.get(senderID) ?? 1; // Default to Claude-3-Opus
     const selectedModel = availableModels[selectedModelIndex];
     const modelName = selectedModel.toUpperCase();
 
