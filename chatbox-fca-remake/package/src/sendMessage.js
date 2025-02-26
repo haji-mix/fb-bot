@@ -148,7 +148,7 @@ module.exports = function (defaultFuncs, api, ctx) {
           if (resData.error === 1545003) {
               log.warn(
               "sendMessage",
-              "Got error 1545003. This might mean that you're blocked from sending multiple messages to threads in short amount of time " +
+              "Got error 1545003. This might mean that conversation is no longer available or innaccessible or perhaps blocked!" +
               threadID
             );
           }
