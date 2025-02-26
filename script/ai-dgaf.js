@@ -13,39 +13,27 @@ module.exports["config"] = {
     cd: 6
 };
 
-const conversationHistories = {};
+module.exports["run"] = async ({ chat, args, font }) => {
+    const mono = (txt) => font.monospace(txt);
 
-module.exports["run"] = async ({
-    chat, args, event, font
-}) => {
-
-    const mono = txt => font.monospace(txt);
-
-    const userId = event.senderID;
     const prompt = args.join(" ");
 
     if (!prompt) {
         return chat.reply(mono("Please provide a prompt!"));
     }
 
-    if (!conversationHistories[userId]) {
-        conversationHistories[userId] = [];
-    }
-
-
-    conversationHistories[userId].push({
-        role: "user",
-        content: prompt,
-        parts: [{ type: "text", text: prompt }]
-    });
-
     const data = JSON.stringify({
         id: "7tJXkgJWjTyoE9FR",
-        messages: conversationHistories[userId]
+        messages: [
+            {
+                role: "user",
+                content: prompt,
+                parts: [{ type: "text", text: prompt }]
+            }
+        ]
     });
 
     try {
-
         const config = {
             method: 'POST',
             url: 'https://www.dgaf.ai/api/chat',
@@ -69,36 +57,23 @@ module.exports["run"] = async ({
         const response = await axios.request(config);
         const rawResponse = response.data;
 
-        const messageIdMatch = rawResponse.match(/f:\{"messageId":"([^"]+)"\}/);
-        const messageId = messageIdMatch ? messageIdMatch[1] : null;
-
-
+        // Extract the response text and clean it up
         const responseTextMatches = rawResponse.match(/0:"([^"]+)"/g);
         let responseText = responseTextMatches
             ? responseTextMatches.map(match => match.replace(/0:"([^"]+)"/, '$1')).join(' ')
             : '';
 
+        // Unescape characters and clean up formatting
         responseText = responseText
-            .replace(/\\\\/g, '\\')
-            .replace(/\\\(/g, '(')
-            .replace(/\\\)/g, ')')
-            .replace(/\\n/g, '\n')
-            .replace(/\s+/g, ' ')
-            .replace(/\s([,.!?])/g, '$1')
-            .trim();
+            .replace(/\\\\/g, '\\') // Replace \\ with \
+            .replace(/\\\(/g, '(') // Replace \( with (
+            .replace(/\\\)/g, ')') // Replace \) with )
+            .replace(/\\n/g, '\n') // Replace \n with actual newlines
+            .replace(/\s+/g, ' ') // Remove extra spaces
+            .replace(/\s([,.!?])/g, '$1') // Fix spacing around punctuation
+            .trim(); // Remove leading/trailing spaces
 
-        const finishReasonMatch = rawResponse.match(/e:\{"finishReason":"([^"]+)"/);
-        const finishReason = finishReasonMatch ? finishReasonMatch[1] : null;
-
-        const usageMatch = rawResponse.match(/"usage":\{([^}]+)\}/);
-        const usage = usageMatch ? JSON.parse(`{${usageMatch[0]}}`).usage : null;
-
-        conversationHistories[userId].push({
-            role: "assistant",
-            content: responseText,
-            parts: [{ type: "text", text: responseText }]
-        });
-
+        // Send the cleaned-up response to the user
         chat.reply(responseText);
     } catch (error) {
         chat.reply(mono(error.message));
