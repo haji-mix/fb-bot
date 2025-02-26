@@ -105,66 +105,60 @@ module.exports.run = async ({ chat, args, font, event }) => {
 
 module.exports.handleEvent = async ({ chat, event, font, Utils, prefix }) => {
     try {
-    const message = event?.body;
-    const triggerRegex = /^(@aria|@ai|@meta)/i; // Regex to trigger the AI
-    const allCommands = [...Utils.commands.values()];
-
-    // Function to escape special regex characters in command names
-    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-    // Check if the message is a valid command
-    const isCommand = allCommands.some(command => {
-        const { aliases = [], isPrefix = false } = command;
-
-        if (aliases.length === 0) {
-            return false;
+        if (!event || !event.body) {
+            console.error("Invalid event object or missing body");
+            return;
         }
 
-        // Escape all aliases to handle special characters
-        const escapedAliases = aliases.map(alias => escapeRegex(alias));
+        const message = event.body.trim();
+        const triggerPrefixes = ["@aria", "@ai", "@meta"];
+        const allCommands = [...Utils.commands.values()];
 
-        const prefixPattern = isPrefix ? prefix : '';
-        // Construct the regex for matching commands
-        const commandRegex = new RegExp(`^${prefixPattern}(${escapedAliases.join('|')})`, 'i');
-        return message && commandRegex.test(message);
-    });
+        const isCommand = allCommands.some((command) => {
+            const { aliases = [], isPrefix = false } = command;
 
-    // If the message is a command, exit the function
-    if (isCommand) return;
+            if (aliases.length === 0) {
+                return false;
+            }
 
-        // Check if the message matches the trigger regex or is not in a group
-        if ((event.isGroup && message && triggerRegex.test(message)) || !event.isGroup) {
-            let prompt = event.isGroup ? message.replace(triggerRegex, "").trim() : message;
+            return aliases.some((alias) => {
+                const fullPrefix = isPrefix ? prefix + alias : alias;
+                return message.toLowerCase().startsWith(fullPrefix.toLowerCase());
+            });
+        });
 
-            // Handle message replies with attachments
+        if (isCommand) return;
+
+        const isTriggered = triggerPrefixes.some((prefix) =>
+            message.toLowerCase().startsWith(prefix.toLowerCase())
+        );
+
+        if ((event.isGroup && isTriggered) || !event.isGroup) {
+            let prompt = event.isGroup
+                ? message.slice(triggerPrefixes.find((prefix) => message.toLowerCase().startsWith(prefix.toLowerCase()))?.length).trim()
+                : message;
+
             if (event.type === "message_reply" && event.messageReply.attachments?.length > 0) {
                 return chat.reply(font.monospace("This AI is a text-based model. Please use Gemini for more advanced capabilities."));
             }
 
-            // Handle message replies with text
             if (event.type === "message_reply" && event.messageReply.body) {
                 prompt += `\n\nUser replied mentioning this message: ${event.messageReply.body}`;
             }
 
-            // If no prompt is provided, exit
             if (!prompt) return;
 
-            // Query the Opera API for a response
             const response = await queryOperaAPI(prompt);
-            // Format the response (e.g., bold text)
             const formattedAnswer = response.replace(/\*\*(.*?)\*\*/g, (_, text) => font.bold(text));
-            // Send the formatted response
             chat.reply(formattedAnswer || "I'm sorry, I can't answer that question!");
         }
     } catch (error) {
         console.error("Error in handleEvent:", error.message || error);
 
-        // Handle specific errors
         if (error.response?.data?.detail === "user_limit") {
-            chat.reply(font.monospace("This command is under maintenance! Please use Gemini or GPT-4 for more info. Get started with 'help'."));
+     //       chat.reply(font.monospace("This command is under maintenance! Please use Gemini or GPT-4 for more info. Get started with 'help'."));
         } else {
-            // Send a generic error message
-            chat.reply(font.monospace(error.response?.data?.detail || error.message));
+      //      chat.reply(font.monospace(error.response?.data?.detail || error.message));
         }
     }
 };
