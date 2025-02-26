@@ -106,7 +106,6 @@ module.exports.run = async ({ chat, args, font, event }) => {
 module.exports.handleEvent = async ({ chat, event, font, Utils, prefix }) => {
     try {
         if (!event || !event.body) {
-            console.error("Invalid event object or missing body");
             return;
         }
 
