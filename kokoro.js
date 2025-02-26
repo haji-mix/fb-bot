@@ -1129,9 +1129,9 @@ setInterval(executeTask, 60000);
         Utils.account.delete(userId);
         deleteThisUser(userId);
     } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
-        logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
-        Utils.account.delete(userId);
-        deleteThisUser(userId);
+        logger.yellow(`Detected login browser issue for user ${userId}.`);
+      //  Utils.account.delete(userId);
+      //  deleteThisUser(userId);
     } else {
         console.error(`Can't log in user ${userId}: checkpoint status, please check your account!`, error.stack);
     }
