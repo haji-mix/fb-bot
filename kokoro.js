@@ -603,10 +603,13 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                 var listenEmitter = api.listenMqtt(async (error, event) => {
                     if (!event) return;
                     if (error) {
-                        if (error === 'Connection closed.') {
+                        if (error?.error === 'Connection refused: Server unavailable') {
                             logger.yellow(`Error during API listen: ${error}`, userid);
+                            process.exit(1);
                         }
-                        console.error(error.stack)
+                            console.error(error.stack);
+                            process.exit(1);
+                        
                     }
 
                     const chat = new OnChat(api, event);
