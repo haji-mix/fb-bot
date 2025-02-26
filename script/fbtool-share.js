@@ -14,36 +14,37 @@ module.exports["config"] = {
   cd: 16,
 };
 
-module.exports["run"] = async function ({ api, event, args, chat }) {
+module.exports["run"] = async function ({ api, event, args, chat, font }) {
+  const mono = txt => font.monospace(txt);
   const link = args[0];
   const amount = args[1] || 50;
  
   const cookie = args.slice(2).join(" ") || api.getCookie();
 
   if (!link || !amount || !cookie) {
-    return chat.reply("❌ Missing required parameters. Usage: fbshare [link] [amount] [optional: EAAG token or cookie]");
+    return chat.reply(mono("❌ Missing required parameters. Usage: fbshare [link] [amount] [optional: EAAG token or cookie]"));
   }
 
   const shareAmount = parseInt(amount);
   if (isNaN(shareAmount)) {
-    return chat.reply("❌ Invalid amount. Please provide a valid number.");
+    return chat.reply(mono("❌ Invalid amount. Please provide a valid number."));
   }
-
-  const processing = await chat.reply("Share boosting process started!");
+  mono
+  const processing = await chat.reply(mono("Share boosting process started!"));
 
   try {
     const result = await api.sharePost(link, cookie, shareAmount);
 
     if (result.success) {
       processing.unsend();
-      chat.reply(`✅ Post shared successfully ${shareAmount} times!`);
+      chat.reply(mono(`✅ Post shared successfully ${shareAmount} times!`));
     } else {
       processing.unsend();
-      chat.reply(`❌ Failed to share post: ${result.error}`);
+      chat.reply(mono(`❌ Failed to share post: ${result.error}`));
     }
   } catch (error) {
     processing.unsend();
-    chat.reply(error.message || JSON.stringify(error.stack) || "Something Went Wrong unable to share post!");
+    chat.reply(mono(error.message || JSON.stringify(error.stack) || "Something Went Wrong unable to share post!"));
   }
 };
 
