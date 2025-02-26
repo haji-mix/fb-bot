@@ -148,7 +148,7 @@ module.exports = function (defaultFuncs, api, ctx) {
           if (resData.error === 1545003) {
               log.warn(
               "sendMessage",
-              "Got error 1545003. This might mean that conversation is no longer available or innaccessible or perhaps blocked!" +
+              "Got error 1545003. This might mean that conversation is no longer available or innaccessible or perhaps blocked. on " +
               threadID
             );
           }
