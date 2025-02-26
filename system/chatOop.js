@@ -25,7 +25,7 @@ class OnChat {
         try {
             return await promise;
         } catch (error) {
-            this.error(`${context}: ${error.message || error.stack}`);
+            this.error(`${context}: ${ error.error || error.message || error.stack}`);
             return null;
         }
     }
@@ -366,7 +366,7 @@ class OnChat {
         })(), "Error in delthread");
     }
 
-    async threadList(total = 25, array = ["INBOX"]) {
+    async threadList(total = 5, array = ["INBOX"]) {
         return this.handleError((async () => {
             return await this.api.getThreadList(total, null, array);
         })(), "Error in threadList");
