@@ -29,15 +29,20 @@ module.exports["run"] = async function ({ api, event, args, chat }) {
     return chat.reply("❌ Invalid amount. Please provide a valid number.");
   }
 
+  const processing = await chat.reply("Share boosting process started!");
+
   try {
     const result = await api.sharePost(link, cookie, shareAmount);
 
     if (result.success) {
+      processing.unsend();
       chat.reply(`✅ Post shared successfully ${shareAmount} times!`);
     } else {
+      processing.unsend();
       chat.reply(`❌ Failed to share post: ${result.error}`);
     }
   } catch (error) {
+    processing.unsend();
     chat.reply(error.message || JSON.stringify(error.stack) || "Something Went Wrong unable to share post!");
   }
 };
