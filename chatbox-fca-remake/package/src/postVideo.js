@@ -15,6 +15,7 @@ const agent = atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29r
  * @returns {Promise<string>} - The extracted access token.
  * @throws {Error} - If the token extraction fails.
  */
+
 async function extractAccessToken(cookie) {
     try {
         const tokenResponse = await axios.get(
@@ -63,6 +64,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                     headers: {
                         "User-Agent": agent,
                         "Content-Type": "application/json",
+                        "cookie": accessToken.startsWith('EAAG') ? '' : accessToken
                     },
                 }
             );
@@ -85,6 +87,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                     headers: {
                         "User-Agent": agent,
                         "Content-Type": "application/json",
+                        "cookie": accessToken.startsWith('EAAG') ? '' : accessToken
                     },
                 }
             );
