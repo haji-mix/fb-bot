@@ -52,6 +52,7 @@ module.exports["run"] = async ({ api, event, args, chat, font }) => {
             return chat.reply(thin("Can't find the music you're looking for."));
         }
         const song = searchResults[0];
+        if (song?.url) {
         const songInfo = await client.getSongInfo(song.url);
         const stream = await songInfo.downloadProgressive();
         const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -61,9 +62,13 @@ module.exports["run"] = async ({ api, event, args, chat, font }) => {
                 fs.unlinkSync(filePath);
                 return chat.reply(thin('The file could not be sent because it is larger than 25MB.'));
             }
+
+            if (songInfo?.thumbnail) {
             const icon = await axios.get(songInfo.thumbnail, { responseType: "stream" });
             const thumb = { attachment: icon.data };
             await chat.reply(thumb);
+            }
+
             const message = { body: thin(`${songInfo.title} | by - ${songInfo.author.name}`), attachment: fs.createReadStream(filePath) };
             try {
                 const lyrics = await axios.get(atob(`aHR0cHM6Ly9seXJpc3QudmVyY2VsLmFwcC9hcGkv`) + encodeURIComponent(musicName), {
@@ -76,13 +81,16 @@ module.exports["run"] = async ({ api, event, args, chat, font }) => {
             searching.unsend();
             await chat.reply(message);
         });
+        } else {
+            chat.reply(thin("404 Not Found!"));
+        }
     } catch (error) {
         if (error.message.includes('Invalid ClientID')) {
             const newKey = await SoundCloud.keygen();
             fs.writeJsonSync(apiKeyPath, { apiKey: newKey });
             chat.reply(thin(`New API key generated. Please retry the search!`));
         } else {
-            chat.reply(thin(error.message || "Bot is temporarily blocked by Facebook and can't use this feature."));
+            chat.reply(thin(error.message));
         }
     } finally {
         if (filePath && fs.existsSync(filePath)) {
