@@ -48,7 +48,7 @@ module.exports["run"] = async function ({ api, event, args, chat, font }) {
 
     if (result.success) {
       processing.unsend();
-      chat.reply(mono(`✅ Post shared successfully **${shareAmount}** times!`));
+      chat.reply(mono(`✅ Post shared successfully ${shareAmount} times!`));
     } else {
       processing.unsend();
       chat.reply(mono(`❌ Failed to share post: ${result.error}`));
