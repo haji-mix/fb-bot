@@ -4,7 +4,7 @@ const { spawn, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 
-const SCRIPT_FILE = "kokoro.js";
+const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 let npmPackages = [

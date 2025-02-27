@@ -1,7 +1,7 @@
 const axios = require('axios');
 const randomUserAgent = require('random-useragent');
 
-const activeLinks = new Set(); // Track ongoing share processes
+const activeLinks = new Set();
 
 module.exports["config"] = {
   name: "fbshare",
