@@ -226,10 +226,10 @@ class OnChat {
         })(), "Error in send");
     }
 
-    async reply(msg = "", tid = this.threadID || null, mid = this.messageID || null) {
+    async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
         return this.handleError((async () => {
-            if (!tid) {
-                throw new Error("Thread ID is required.");
+            if (!tid || !msg) {
+                throw new Error("Thread ID and Message are required.");
             }
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
             return {
