@@ -1122,7 +1122,7 @@ setInterval(executeTask, 60000);
         errorRetrieving: /Error retrieving userID.*unknown location/
     };
 
-    const ERROR = error.message || error.error || error.Error;
+    const ERROR = error?.error;
 
     if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
         logger.yellow(`Detected login issue for user ${userId}.`);
