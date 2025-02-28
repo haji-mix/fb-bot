@@ -1122,12 +1122,12 @@ setInterval(executeTask, 60000);
         errorRetrieving: /Error retrieving userID.*unknown location/
     };
 
-    const ERROR = error?.error;
+    const ERROR = error?.message || error?.error;
 
     if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
         logger.yellow(`Detected login issue for user ${userId}.`);
          Utils.account.delete(userId);
-        deleteThisUser(userId);
+         deleteThisUser(userId);
     } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
         logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
         Utils.account.delete(userId);
