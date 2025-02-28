@@ -603,7 +603,9 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                 var listenEmitter = api.listenMqtt(async (error, event) => {
                     if (!event) return;
                     if (error) {
-                        if (error?.error === 'Connection refused: Server unavailable') {
+                        const ERROR_LISTEN = error?.message || error?.error;
+            
+                        if (ERROR_LISTEN === "Connection refused: Server unavailable") {
                             logger.yellow(`Error during API listen: ${error}`, userid);
                             process.exit(1);
                         }
