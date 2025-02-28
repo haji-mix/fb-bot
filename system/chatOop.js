@@ -233,6 +233,7 @@ class OnChat {
             }
             const replyMsg = await this.api.sendMessage(msg, tid, mid);
             return {
+                messageID: replyMsg.messageID,
                 edit: async (message, delay = 0) => {
                     await new Promise(res => setTimeout(res, delay));
                     return await this.handleError(this.api.editMessage(message, replyMsg.messageID), "Error in edit");
