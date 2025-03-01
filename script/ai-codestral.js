@@ -110,7 +110,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
             .map(block => block.replace(/^```[a-zA-Z]+\s*[^\n]*\n/, '').replace(/```$/, '').trim())
             .join("\n\n\n");
             
-            const uitocode = "https://codetoui.onrender.com";
+            const uitocode = "https://haji-web.onrender.com";
 
         try {
             const response = await axios.post(uitocode + "/submit-html", {
