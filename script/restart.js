@@ -11,6 +11,6 @@ module.exports["run"] = async function ({ chat, font }) {
     
     const wait = await chat.reply(font.monospace('🔄 | System Rebooting...'));
     await chat.log('System Rebooting!......');
-    process.exit(1);
+    process.exit(0);
   }
 ;
