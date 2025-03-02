@@ -41,7 +41,7 @@ module.exports["handleEvent"] = async ({
                     attachment: await chat.stream("https://files.catbox.moe/5swmuv.gif")
                 });
                 await chat.contact(mono(`Bot connected successfully to ${groupInfo?.name || "Group Chat"}\n\nGet started with "HELP" to see more commands.`), chat.botID());
-                await chat.nickname(`${font.bold("KOKORO AI SYSTEM")} ${mono(`> [${prefix || "No Prefix"}]`)}`, chat.botID());
+                await chat.nickname(`${font.bold("CHATBOX SYSTEM")} ${mono(`> [${prefix || "No Prefix"}]`)}`, chat.botID());
             } else {
                 const name = await chat.userName(joinedUserId);
                 const memberCount = groupInfo?.participantIDs?.length || event?.participantIDs?.length;

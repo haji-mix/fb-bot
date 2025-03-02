@@ -35,7 +35,7 @@ function addUserID(userID, prefix) {
 async function updateBio(api, fonts, prefix) {
     try {
         await api.changeBio(
-            `${fonts.bold("KOKORO AI SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`
+            `${fonts.bold("CHATBOX SYSTEM")} ${fonts.thin(`> [${prefix || "No Prefix"}]`)}`
         );
         await api.setProfileGuard(true);
     } catch (error) {
