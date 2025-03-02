@@ -29,7 +29,7 @@ const GITHUB_API_HEADERS = (token) => ({
  * Fetch GitHub Copilot token.
  * @returns {Promise<string>} The GitHub Copilot token.
  */
-async function fetchToken() {
+async function fetchToken(threadId) {
     const response = await axios.post("https://github.com/github-copilot/chat/token", {}, {
         headers: {
             'accept': 'application/json',
@@ -40,7 +40,7 @@ async function fetchToken() {
             'github-verified-fetch': 'true',
             'origin': 'https://github.com',
             'priority': 'u=1, i',
-            'referer': 'https://github.com/copilot/c/03196978-c460-4391-9d21-1307395b8a30',
+            'referer': `https://github.com/copilot/${threadId ? `c/${threadId}` : ''}`,
             'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
@@ -89,7 +89,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
         const threadId = userThreadMap.get(event.senderID);
         if (threadId) {
             try {
-                const token = await fetchToken();
+                const token = await fetchToken(threadId);
                 await deleteThread(threadId, token);
                 userThreadMap.delete(event.senderID);
                 chat.reply(font.bold("✅ | Conversation reset. A new thread will be created for your next message."));
