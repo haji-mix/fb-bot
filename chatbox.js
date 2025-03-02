@@ -603,15 +603,8 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                 var listenEmitter = api.listenMqtt(async (error, event) => {
                     if (!event) return;
                     if (error) {
-                        const ERROR_LISTEN = error?.message || error?.error;
-            
-                        if (ERROR_LISTEN === "Connection refused: Server unavailable") {
-                            logger.yellow(`Error during API listen: ${error}`, userid);
-                            process.exit(1);
-                        }
-                            console.error(error.stack);
-                            process.exit(1);
-                        
+                        console.warn("Error Occured on Listen: ", error);
+                        process.exit(0);
                     }
 
                     const chat = new OnChat(api, event);
@@ -1125,8 +1118,11 @@ setInterval(executeTask, 60000);
     };
 
     const ERROR = error?.message || error?.error;
-
-    if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
+    
+            
+    if (ERROR === "Connection refused: Server unavailable") {
+        logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account`);
+    } else if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
         logger.yellow(`Detected login issue for user ${userId}.`);
          Utils.account.delete(userId);
          deleteThisUser(userId);
@@ -1135,7 +1131,7 @@ setInterval(executeTask, 60000);
         Utils.account.delete(userId);
         deleteThisUser(userId);
     } else {
-        console.error(`Can't log in user ${userId}: checkpoint status, please check your account!`, error.stack);
+        console.error(`Can't log in user ${userId}: Something wen't wrong! `, error.stack);
     }
 }
                 }
