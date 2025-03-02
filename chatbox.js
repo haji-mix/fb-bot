@@ -1121,7 +1121,9 @@ setInterval(executeTask, 60000);
     
             
     if (ERROR === "Connection refused: Server unavailable") {
-        logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account`);
+        logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account make sure appstate still valid!`);
+        Utils.account.delete(userId);
+        deleteThisUser(userId);
     } else if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
         logger.yellow(`Detected login issue for user ${userId}.`);
          Utils.account.delete(userId);
