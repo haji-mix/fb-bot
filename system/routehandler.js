@@ -1,4 +1,6 @@
-const { workers } = require("./modules");
+const {
+    workers
+} = require("./workers");
 require('dotenv').config();
 
 
