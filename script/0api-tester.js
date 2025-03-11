@@ -2,18 +2,22 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
+let mediaToggleEnabled = false;
+
 module.exports["config"] = {
     name: "apitest",
     isPrefix: false,
     aliases: ["test"],
-    info: "Test any API endpoint with GET or POST",
+    info: "Test any API endpoint with GET or POST. Use 'apitest media' to toggle media sending.",
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
-    "GET: `apitest <url>`\n" +
-    "POST: `apitest <url> <post_data>`\n" +
-    "Example:\n" +
-    "apitest https://example.com/api/chat?q=hello&uid=1\n" +
-    "apitest https://example.com/api/chat q=hello&uid=1",
+        "GET: `apitest <url>`\n" +
+        "POST: `apitest <url> <post_data>`\n" +
+        "Toggle Media: `apitest media`\n" +
+        "Example:\n" +
+        "apitest https://example.com/api/chat?q=hello&uid=1\n" +
+        "apitest https://example.com/api/chat q=hello&uid=1\n" +
+        "apitest media",
     cd: 8
 };
 
@@ -21,9 +25,8 @@ const urlRegex = /^(.*?\b)?https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=+]*)?(\b.*)?$/i
 const tempDir = path.join(__dirname, "cache");
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
-// Function to get file extension from Content-Type
 const getExtensionFromContentType = (contentType) => {
-    if (!contentType) return "txt"; // Default to .txt if unknown
+    if (!contentType) return "txt"; 
     const typeMap = {
         "image/jpeg": "jpg",
         "image/png": "png",
@@ -39,11 +42,16 @@ const getExtensionFromContentType = (contentType) => {
         "video/webm": "webm",
         "video/ogg": "mp4"
     };
-    return typeMap[contentType.split(";")[0]] || "txt"; // Default to .txt if unknown
+    return typeMap[contentType.split(";")[0]] || "txt"; 
 };
 
 module.exports["run"] = async ({ chat, args, font }) => {
     if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
+
+    if (args[0] === "media") {
+        mediaToggleEnabled = !mediaToggleEnabled;
+        return chat.reply(font.thin(`Media sending is now ${mediaToggleEnabled ? "enabled" : "disabled"}.`));
+    }
 
     let url = args[0]?.replace(/\(\.\)/g, ".") || "";
     if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
@@ -85,7 +93,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
                 : chat.reply(formatted);
         }
 
-        if (/image|video|audio|gif/.test(contentType)) {
+        if (mediaToggleEnabled && /image|video|audio|gif/.test(contentType)) {
             return sendFile(chat, fileExt, data, `📽️ API returned a ${fileExt.toUpperCase()}:`);
         }
 
