@@ -1,14 +1,35 @@
 const axios = require('axios');
 
+
+let isMediaUrlDetectorEnabled = true;
+
 module.exports["config"] = {
   name: "media-url-detector",
   role: 0,
   credits: "Kenneth Panio",
-  info: "Detect media URLs and send them as attachments",
+  info: "Detect media URLs and send them as attachments. Use `media-detector on` or `media-detector off` to toggle.",
   cd: 5
 };
 
-module.exports["handleEvent"] = async ({ chat, event, font, global }) => {
+module.exports.run = async ({ chat, event, args }) => {
+  const toggle = args[0]?.toLowerCase();
+
+  if (toggle === "on") {
+    isMediaUrlDetectorEnabled = true;
+    chat.reply("Media URL detector is now enabled.");
+  } else if (toggle === "off") {
+    isMediaUrlDetectorEnabled = false;
+    chat.reply("Media URL detector is now disabled.");
+  } else {
+    chat.reply("Invalid command. Use `media-detector on` or `media-detector off`.");
+  }
+};
+
+module.exports.handleEvent = async ({ chat, event, font, global }) => {
+  if (!isMediaUrlDetectorEnabled) {
+    return;
+  }
+
   const message = event.body?.split(' ')[0];
 
   const mediaUrlRegex = /^(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|bmp|webp|mp4|avi|mov|mkv|wmv|mp3|wav|ogg))(\?.*)?$/i;
@@ -32,7 +53,7 @@ module.exports["handleEvent"] = async ({ chat, event, font, global }) => {
           file_url: mediaUrl,
         }
       });
-      
+
       const output = response.data.message.replace(/```json|```/g, '').trim();
 
       const nsfwData = JSON.parse(output);
@@ -41,9 +62,9 @@ module.exports["handleEvent"] = async ({ chat, event, font, global }) => {
         return;
       }
     }
-    
+
     chat.reply({ attachment: await chat.arraybuffer(mediaUrl, extension) });
-    
+
   } catch (error) {
     console.error(`ERROR: ${error.message}`);
   }
