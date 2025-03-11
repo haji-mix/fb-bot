@@ -5,6 +5,7 @@ let isMediaUrlDetectorEnabled = true;
 
 module.exports["config"] = {
   name: "media-url-detector",
+  aliases: ["imgdetect"],
   role: 0,
   credits: "Kenneth Panio",
   info: "Detect media URLs and send them as attachments. Use `media-detector on` or `media-detector off` to toggle.",
