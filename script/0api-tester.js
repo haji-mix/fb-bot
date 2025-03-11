@@ -15,7 +15,7 @@ module.exports["config"] = {
         "POST: `apitest <url> <post_data>`\n" +
         "Example:\n" +
         "apitest https://example.com/api/chat?q=hello&uid=1\n" +
-        "apitest https://example.com/api/chat q=hello&uid=1\n"
+        "apitest https://example.com/api/chat q=hello&uid=1\n",
     cd: 8
 };
 
