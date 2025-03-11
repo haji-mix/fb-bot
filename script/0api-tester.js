@@ -13,11 +13,9 @@ module.exports["config"] = {
     guide: "Usage:\n" +
         "GET: `apitest <url>`\n" +
         "POST: `apitest <url> <post_data>`\n" +
-        "Toggle Media: `apitest media`\n" +
         "Example:\n" +
         "apitest https://example.com/api/chat?q=hello&uid=1\n" +
-        "apitest https://example.com/api/chat q=hello&uid=1\n" +
-        "apitest media",
+        "apitest https://example.com/api/chat q=hello&uid=1\n"
     cd: 8
 };
 
