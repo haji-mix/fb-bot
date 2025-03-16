@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 
-let isMediaUrlDetectorEnabled = true;
+let isMediaUrlDetectorEnabled = false;
 
 module.exports["config"] = {
   name: "media-url-detector",
