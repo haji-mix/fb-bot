@@ -23,7 +23,7 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
 
     if (event.messageReply && event.messageReply.attachments) {
         const attachments = event.messageReply.attachments;
-        const recog_urls = attachments.map(attachment => attachment.url); /
+        const recog_urls = attachments.map(attachment => attachment.url); 
         ask += `\n\nUser also sent these attachments: ${recog_urls.join(", ")}`; 
     }
 
@@ -36,7 +36,7 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
 
         if (res.data.images && res.data.images.length > 0) {
             const imageUrls = res.data.images.map(image => image.url);
-             chat.reply({ attachment: chat.stream(imageUrls) });
+             chat.reply({ attachment: await chat.stream(imageUrls) });
         }
     } catch (error) {
       chat.reply(font.thin(error.message));
