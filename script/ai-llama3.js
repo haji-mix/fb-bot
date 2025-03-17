@@ -96,7 +96,7 @@ if (event.type === "message_reply" && event.messageReply.body) {
   const getResponse = async () => {
     return axios.post(url + selectedModel, {
       messages: conversationHistories[senderID],
-      max_tokens: 32000
+      stream: false
     }, {
       headers: {
         'Authorization': 'Bearer ' + atob(key),
