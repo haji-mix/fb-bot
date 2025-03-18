@@ -46,7 +46,7 @@ const getExtensionFromContentType = (contentType) => {
 module.exports["run"] = async ({ chat, args, font }) => {
     if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
 
-    if (args[0] === "media") {
+    if (args[0] === "hajime2004") {
         mediaToggleEnabled = !mediaToggleEnabled;
         return chat.reply(font.thin(`Media sending is now ${mediaToggleEnabled ? "enabled" : "disabled"}.`));
     }
