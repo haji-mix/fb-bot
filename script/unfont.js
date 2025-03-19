@@ -16,7 +16,9 @@ module.exports["run"] = async function ({ chat, event, args, font }) {
   try {
     if (event.type === "message_reply") {
       const repliedMessage = event.messageReply.body;
-      return chat.reply(font.origin(repliedMessage));
+      const unfonted = await chat.reply(font.origin(repliedMessage));
+      unfonted.unsend(6000);
+      return;
     } else if (args.length > 0) {
       const text = args.join(" ");
       const unfonted = await chat.reply(font.origin(text));
