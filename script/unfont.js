@@ -19,7 +19,9 @@ module.exports["run"] = async function ({ chat, event, args, font }) {
       return chat.reply(font.origin(repliedMessage));
     } else if (args.length > 0) {
       const text = args.join(" ");
-      return chat.reply(font.origin(text));
+      const unfonted = await chat.reply(font.origin(text));
+      unfonted.unsend(6000);
+      return;
     } else {
       return chat.reply(font.italic("Please reply to a message with font formatting or provide text with font formatting."));
     }
