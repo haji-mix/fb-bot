@@ -1268,7 +1268,8 @@ function parseAndCheckLogin(ctx, defaultFuncs, retryCount, sourceCall) {
 						.then(parseAndCheckLogin(ctx, defaultFuncs, retryCount, sourceCall));
 				}
 			}
-			if (data.statusCose === 404) return;
+			if (data.statusCode === 302 || data.statusCode === 404) return;
+            
 			if (data.statusCode !== 200)
 				throw new CustomError({
 					message: "parseAndCheckLogin got status code: " + data.statusCode + ". Bailing out of trying to parse response.",
