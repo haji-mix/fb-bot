@@ -909,6 +909,7 @@ if (event && event?.body && aliases(command)?.name) {
                                     case "message_reply":
                                         case "message_reply":
                                             if (aliases(command?.toLowerCase())?.name) {
+                                                try {
                                                 Utils.handleReply.findIndex(
                                                     reply => reply.author === event.senderID
                                                 ) !== -1
@@ -947,7 +948,10 @@ if (event && event?.body && aliases(command)?.name) {
                                                         Utils,
 
                                                     });
+                                            } catch (error) {
+                                                reply(`Something went't wrong with the command ${aliases(command?.toLowerCase())?.name} please contact admins/mods or use 'callad' [report issue here! or your message.]`);
                                             }
+                                        }
                                             for (const {
                                                 handleReply
                                             } of Utils.ObjectReply.values()) {
