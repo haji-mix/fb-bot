@@ -25,7 +25,7 @@ const {
     processExit
 } = require("./system/modules");
 
-const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")): createConfig();
+const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")) : createConfig();
 let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
 let pkg_config = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 
@@ -159,7 +159,7 @@ const limiter = rateLimit({
     legacyHeaders: false,
     handler: (req, res) => {
         const clientIP = req.headers["cf-connecting-ip"] || req.ip;
-        
+
         if (!TRUSTED_IPS.includes(clientIP)) {
             console.log(`DDoS detected from ${clientIP}! Blocking IP and switching ports...`);
             blockedIPs.set(clientIP, Date.now());
@@ -202,49 +202,49 @@ const routes = [{
     file: 'index.ejs',
     method: 'get'
 },
-    {
-        path: '/jseditor',
-        file: 'ide.ejs',
-        method: 'get'
-    },
-        {
-        path: '/',
-        file: 'me.ejs',
-        method: 'get'
-    },
-    {
-        path: '/info',
-        method: 'get',
-        handler: (req,
-            res) => getInfo(req,
+{
+    path: '/jseditor',
+    file: 'ide.ejs',
+    method: 'get'
+},
+{
+    path: '/',
+    file: 'me.ejs',
+    method: 'get'
+},
+{
+    path: '/info',
+    method: 'get',
+    handler: (req,
+        res) => getInfo(req,
             res,
             Utils)
-    },
-    {
-        path: '/commands',
-        method: 'get',
-        handler: (req,
-            res) => getCommands(req,
+},
+{
+    path: '/commands',
+    method: 'get',
+    handler: (req,
+        res) => getCommands(req,
             res,
             Utils)
-    },
-    {
-        path: '/login',
-        method: 'post',
-        handler: postLogin
-    },
-    {
-        path: '/restart',
-        method: 'get',
-        handler: (req,
-            res) => processExit(req,
+},
+{
+    path: '/login',
+    method: 'post',
+    handler: postLogin
+},
+{
+    path: '/restart',
+    method: 'get',
+    handler: (req,
+        res) => processExit(req,
             res)
-    },
-    {
-        path: '/login_cred',
-        method: 'get',
-        handler: getLogin
-    }];
+},
+{
+    path: '/login_cred',
+    method: 'get',
+    handler: getLogin
+}];
 
 
 // Destructure values from pkg_config
@@ -335,19 +335,19 @@ app.get('/script/*', (req, res) => {
     fs.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
             return res.status(404).render('404',
-        {
-            cssFiles,
-            jsFiles
-        },
-        (err,
-            renderedHtml) => {
-            if (err) {
-                res.status(500).send('Error rendering template');
-                return;
-            }
+                {
+                    cssFiles,
+                    jsFiles
+                },
+                (err,
+                    renderedHtml) => {
+                    if (err) {
+                        res.status(500).send('Error rendering template');
+                        return;
+                    }
 
-            res.send(minifyHtml(renderedHtml));
-        });
+                    res.send(minifyHtml(renderedHtml));
+                });
         }
 
         if (req.query.raw === 'true') {
@@ -477,12 +477,12 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
 
     return new Promise((resolve, reject) => {
         const loginOptions = state
-        ? {
-            appState: state
-        }: email && password
-        ? {
-            email: email, password: password
-        }: null;
+            ? {
+                appState: state
+            } : email && password
+                ? {
+                    email: email, password: password
+                } : null;
 
         if (!loginOptions) {
             reject(new Error('Either appState or email/password must be provided.'));
@@ -495,7 +495,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                 return;
             }
 
-           // const refresh_c3c = await api.getAppState();
+            // const refresh_c3c = await api.getAppState();
 
 
             let appState = /*refresh_c3c ||*/ state;
@@ -570,8 +570,8 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
             });
 
             const {
-                listenEvents, logLevel, updatePresence, selfListen, forceLogin, online, autoMarkDelivery, autoMarkRead 
-               } = config[0].fcaOption;
+                listenEvents, logLevel, updatePresence, selfListen, forceLogin, online, autoMarkDelivery, autoMarkRead
+            } = config[0].fcaOption;
 
             api.setOptions({
                 listenEvents,
@@ -597,15 +597,15 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                     kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
                     chat.testCo(kokoro_config.author, 2);
 
-if (event && event.senderID && event?.body) {
-    const isGroup = event.isGroup || event.threadID !== event.senderID;
-    const idType = isGroup ? "GroupID" : "Private Chat";
-    const idValue = isGroup ? event.threadID : event.senderID;
+                    if (event && event.senderID && event?.body) {
+                        const isGroup = event.isGroup || event.threadID !== event.senderID;
+                        const idType = isGroup ? "GroupID" : "Private Chat";
+                        const idValue = isGroup ? event.threadID : event.senderID;
 
-    let logMessage = `${idType}: ${idValue}\nSenderID: ${event.senderID}\nMessage: ${(event?.body || "").trim()}`;
+                        let logMessage = `${idType}: ${idValue}\nSenderID: ${event.senderID}\nMessage: ${(event?.body || "").trim()}`;
 
-    logger.instagram(fonts.origin(logMessage));
-}
+                        logger.instagram(fonts.origin(logMessage));
+                    }
 
                     const reply = async (msg) => {
                         const msgInfo = await chat.reply(fonts.thin(msg));
@@ -676,31 +676,31 @@ if (event && event.senderID && event?.body) {
                     } else {
                         history = {};
                     }
-                    
-                    
-                   let isPrefix =
-                    event?.body &&
-                    aliases(
-                        (event?.body || "").trim().toLowerCase()
-                        .split(/ +/)
-                        .shift()
-                    )?.isPrefix == false
-                    ? "": prefix;
+
+
+                    let isPrefix =
+                        event?.body &&
+                            aliases(
+                                (event?.body || "").trim().toLowerCase()
+                                    .split(/ +/)
+                                    .shift()
+                            )?.isPrefix == false
+                            ? "" : prefix;
 
                     let [command,
                         ...args] = (event?.body || "")
-                    .trim()
-                    .toLowerCase()
-                    .startsWith(isPrefix?.toLowerCase())
-                    ? (event?.body || "")
-                    .trim()
-                    .substring(isPrefix?.length)
-                    .trim()
-                    .split(/\s+/)
-                    .map(arg => arg.trim()): [];
+                            .trim()
+                            .toLowerCase()
+                            .startsWith(isPrefix?.toLowerCase())
+                            ? (event?.body || "")
+                                .trim()
+                                .substring(isPrefix?.length)
+                                .trim()
+                                .split(/\s+/)
+                                .map(arg => arg.trim()) : [];
 
                     if (isPrefix && aliases(command)?.isPrefix === false) {
-                         reply(
+                        reply(
                             `this command doesn't need a prefix set by author.`
                         );
                         return;
@@ -721,9 +721,9 @@ if (event && event.senderID && event?.body) {
                         const senderID = event.senderID;
 
                         const super_admin =
-                        kokoro_config?.admins.includes(
-                            event.senderID
-                        );
+                            kokoro_config?.admins.includes(
+                                event.senderID
+                            );
 
                         const bot_owner = ((admin ?? []).includes(event.senderID)) || super_admin;
 
@@ -746,7 +746,7 @@ if (event && event.senderID && event?.body) {
                         const warning = fonts.bold("[You don't have permission!]\n\n");
 
                         if (role === 1 && !bot_owner) {
-                             reply(warning + `Only the bot owner/admin have access to this command.`);
+                            reply(warning + `Only the bot owner/admin have access to this command.`);
                             return;
                         }
 
@@ -755,7 +755,7 @@ if (event && event.senderID && event?.body) {
                         }
 
                         if (role === 3 && !super_admin) {
-                             return reply(warning + `Only moderators/super_admins/site_owner have access to this command.`);
+                            return reply(warning + `Only moderators/super_admins/site_owner have access to this command.`);
                         }
 
 
@@ -823,32 +823,32 @@ if (event && event.senderID && event?.body) {
                         }
                     }
 
-if (event && event?.body && aliases(command)?.name) {
-    const now = Date.now();
-    const name = aliases(command)?.name;
-    const cooldownKey = `${event.senderID}_${name}_${userid}`;
-    const sender = Utils.cooldowns.get(cooldownKey);
-    const delay = aliases(command)?.cd ?? 0;
+                    if (event && event?.body && aliases(command)?.name) {
+                        const now = Date.now();
+                        const name = aliases(command)?.name;
+                        const cooldownKey = `${event.senderID}_${name}_${userid}`;
+                        const sender = Utils.cooldowns.get(cooldownKey);
+                        const delay = aliases(command)?.cd ?? 0;
 
-    if (!sender || now - sender.timestamp >= delay * 1000) {
+                        if (!sender || now - sender.timestamp >= delay * 1000) {
 
-        Utils.cooldowns.set(cooldownKey, {
-            timestamp: now,
-            command: name,
-            warned: false
-        });
-    } else {
-        const active = Math.ceil((sender.timestamp + delay * 1000 - now) / 1000);
+                            Utils.cooldowns.set(cooldownKey, {
+                                timestamp: now,
+                                command: name,
+                                warned: false
+                            });
+                        } else {
+                            const active = Math.ceil((sender.timestamp + delay * 1000 - now) / 1000);
 
-        if (!sender.warned) {
-            reply(`Please wait ${active} second(s) before using the "${name}" command again.`);
-            sender.warned = true;
-            Utils.cooldowns.set(cooldownKey, sender);
-        }
+                            if (!sender.warned) {
+                                reply(`Please wait ${active} second(s) before using the "${name}" command again.`);
+                                sender.warned = true;
+                                Utils.cooldowns.set(cooldownKey, sender);
+                            }
 
-        return;
-    }
-}
+                            return;
+                        }
+                    }
 
 
                     if (event && event.type === "message_reaction") {
@@ -860,8 +860,8 @@ if (event && event?.body && aliases(command)?.name) {
                     if (event && event?.body &&
                         !command &&
                         event?.body
-                        ?.toLowerCase()
-                        .startsWith(prefix?.toLowerCase())) {
+                            ?.toLowerCase()
+                            .startsWith(prefix?.toLowerCase())) {
                         return reply(
                             `Invalid command please use help to see the list of available commands.`
                         );
@@ -871,8 +871,8 @@ if (event && event?.body && aliases(command)?.name) {
                         command &&
                         prefix &&
                         event?.body
-                        ?.toLowerCase()
-                        .startsWith(prefix?.toLowerCase()) &&
+                            ?.toLowerCase()
+                            .startsWith(prefix?.toLowerCase()) &&
                         !aliases(command)?.name) {
                         return reply(
                             `Invalid command '${command}' please use ${prefix}help to see the list of available commands.`
@@ -904,276 +904,275 @@ if (event && event?.body && aliases(command)?.name) {
 
                     switch (event.type) {
                         case "message":
-                            case "message_unsend":
-                                case "message_reaction":
-                                    case "message_reply":
-                                        case "message_reply":
-                                            if (aliases(command?.toLowerCase())?.name) {
-                                                try {
+                        case "message_unsend":
+                        case "message_reaction":
+                        case "message_reply":
+                        case "message_reply":
+                            if (aliases(command?.toLowerCase())?.name) {
+                                try {
+                                    Utils.handleReply.findIndex(
+                                        reply => reply.author === event.senderID
+                                    ) !== -1
+                                        ? (api.unsendMessage(
+                                            Utils.handleReply.find(
+                                                reply =>
+                                                    reply.author ===
+                                                    event.senderID
+                                            ).messageID
+                                        ),
+                                            Utils.handleReply.splice(
                                                 Utils.handleReply.findIndex(
-                                                    reply => reply.author === event.senderID
-                                                ) !== -1
-                                                ? (api.unsendMessage(
-                                                    Utils.handleReply.find(
-                                                        reply =>
+                                                    reply =>
                                                         reply.author ===
                                                         event.senderID
-                                                    ).messageID
                                                 ),
-                                                    Utils.handleReply.splice(
-                                                        Utils.handleReply.findIndex(
-                                                            reply =>
-                                                            reply.author ===
-                                                            event.senderID
-                                                        ),
-                                                        1
-                                                    )): null;
-                                                    
-                                                await (
-                                                    aliases(command?.toLowerCase())?.run ||
-                                                    (() => {})
-                                                )({
-                                                        logger,
-                                                        api,
-                                                        event,
-                                                        args,
-                                                        chat, box: chat,
-                                                        message: chat,
-                                                        fonts,
-                                                        font: fonts,
-                                                        admin,
-                                                        global,
-                                                        prefix,
+                                                1
+                                            )) : null;
 
-                                                        Utils,
+                                    await (
+                                        aliases(command?.toLowerCase())?.run ||
+                                        (() => { })
+                                    )({
+                                        logger,
+                                        api,
+                                        event,
+                                        args,
+                                        chat, box: chat,
+                                        message: chat,
+                                        fonts,
+                                        font: fonts,
+                                        admin,
+                                        global,
+                                        prefix,
 
-                                                    });
-                                            } catch (error) {
-                                                reply(`Something went't wrong with the command ${aliases(command?.toLowerCase())?.name} please contact admins/mods or use 'callad' [report issue here! or your message.]`);
-                                            }
-                                        }
-                                            for (const {
-                                                handleReply
-                                            } of Utils.ObjectReply.values()) {
-                                                if (
-                                                    Array.isArray(Utils.handleReply) &&
-                                                    Utils.handleReply.length > 0
-                                                ) {
-                                                    if (!event.messageReply) return;
-                                                    const indexOfHandle =
-                                                    Utils.handleReply.findIndex(
-                                                        reply =>
-                                                        reply.author ===
-                                                        event.messageReply.senderID
-                                                    );
-                                                    if (indexOfHandle !== -1) return;
-                                                    await handleReply({
-                                                        logger,
-                                                        api,
-                                                        event,
-                                                        args,
-                                                        chat,
-                                                        box: chat,
-                                                        message: chat,
-                                                        fonts,
-                                                        font: fonts,
-                                                        global,
-                                                        admin,
-                                            
-                                                        prefix,
-
-                                                        Utils,
-                                                    });
-                                                }
-                                            }
-                                            break;
+                                        Utils,
+                                    });
+                                } catch (error) {
+                                    reply(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]`);
                                 }
-                        });
-                } catch (error) {
-                    console.error(error.stack);
-                    Utils.account.delete(userid);
-                    deleteThisUser(userid);
+                            }
+                            for (const {
+                                handleReply
+                            } of Utils.ObjectReply.values()) {
+                                if (
+                                    Array.isArray(Utils.handleReply) &&
+                                    Utils.handleReply.length > 0
+                                ) {
+                                    if (!event.messageReply) return;
+                                    const indexOfHandle =
+                                        Utils.handleReply.findIndex(
+                                            reply =>
+                                                reply.author ===
+                                                event.messageReply.senderID
+                                        );
+                                    if (indexOfHandle !== -1) return;
+                                    await handleReply({
+                                        logger,
+                                        api,
+                                        event,
+                                        args,
+                                        chat,
+                                        box: chat,
+                                        message: chat,
+                                        fonts,
+                                        font: fonts,
+                                        global,
+                                        admin,
 
-                    return;
-                }
+                                        prefix,
 
-                    resolve();
-                }
-            );
-        });
-    }
-
-        async function deleteThisUser(userid) {
-            const configFile = "./data/history.json";
-            let config = JSON.parse(fs.readFileSync(configFile,
-                "utf-8"));
-            const sessionFile = path.join("./data/session", `${userid}.json`);
-            const index = config.findIndex(item => item.userid === userid);
-            if (index !== -1) config.splice(index, 1);
-            fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-            try {
-                fs.unlinkSync(sessionFile);
+                                        Utils,
+                                    });
+                                }
+                            }
+                            break;
+                    }
+                });
             } catch (error) {
                 console.error(error.stack);
+                Utils.account.delete(userid);
+                deleteThisUser(userid);
+
+                return;
             }
+
+            resolve();
         }
-        async function addThisUser(userid, state, prefix, admin) {
-            const configFile = "./data/history.json";
-            const sessionFolder = "./data/session";
-            const sessionFile = path.join(sessionFolder, `${userid}.json`);
-            if (fs.existsSync(sessionFile)) return;
-            const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-            config.push({
-                userid,
-                prefix: prefix || "",
-                admin,
-                time: 0
-            });
-            fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-            const xorState = encryptSession(state);
-            fs.writeFileSync(sessionFile, JSON.stringify(xorState));
-        }
-
-        function aliases(command) {
-            const aliases = Array.from(Utils.commands.entries()).find(([commands]) =>
-                commands?.includes(command?.toLowerCase())
-            );
-            if (aliases) {
-                return aliases[1];
-            }
-            return null;
-        }
-
-
-        async function main() {
-const empty = require("fs-extra");
-const fs = require("fs");
-const path = require("path");
-const cacheFile = "./script/cache";
-const configFile = "./data/history.json";
-const sessionFolder = path.join("./data/session");
-
-if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
-if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
-if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
-
-const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-const adminOfConfig =
-    fs.existsSync("./data") && fs.existsSync("./data/config.json")
-        ? JSON.parse(fs.readFileSync("./data/config.json", "utf8"))
-        : createConfig();
-
-const executeTask = async () => {
-  try {
-    const history = JSON.parse(fs.readFileSync('./data/history.json', 'utf-8'));
-    history.forEach(user => {
-      if (!user && !user.userid) return;
-      const update = Utils.account.get(user.userid);
-      if (update) user.time = update.time;
+        );
     });
-    await empty.emptyDir(cacheFile);
-    await fs.writeFileSync('./data/history.json', JSON.stringify(history, null, 2));
-  } catch (error) {
-    console.error('Error executing task:', error);
-  }
-};
+}
 
-setInterval(executeTask, 60000);
-
-            try {
-                const files = fs.readdirSync(sessionFolder);
-
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    const filePath = path.join(sessionFolder, file);
-                    const userId = path.parse(file).name;
-
-                    try {
-                        const {
-                            prefix,
-                            admin
-                        } = config.find(item => item.userid === userId) || {};
-                        const state = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-
-                        fs.writeFileSync(filePath, JSON.stringify(state, null, 2), "utf-8");
-
-                        if (state) {
-                            const decState = decryptSession(state);
-                            await accountLogin(decState, prefix, admin);
-                        }
-                    } catch (error) {
-    const ERROR_PATTERNS = {
-        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
-        errorRetrieving: /Error retrieving userID.*unknown location/
-    };
-
-    const ERROR = error?.message || error?.error;
-    
-            
-    if (ERROR === "Connection refused: Server unavailable") {
-        logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account make sure appstate still valid!`);
-        Utils.account.delete(userId);
-        deleteThisUser(userId);
-    } else if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
-        logger.yellow(`Detected login issue for user ${userId}.`);
-         Utils.account.delete(userId);
-         deleteThisUser(userId);
-    } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
-        logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
-        Utils.account.delete(userId);
-        deleteThisUser(userId);
-    } else {
-        console.error(`Can't log in user ${userId}: Something wen't wrong! `, error.stack);
+async function deleteThisUser(userid) {
+    const configFile = "./data/history.json";
+    let config = JSON.parse(fs.readFileSync(configFile,
+        "utf-8"));
+    const sessionFile = path.join("./data/session", `${userid}.json`);
+    const index = config.findIndex(item => item.userid === userid);
+    if (index !== -1) config.splice(index, 1);
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    try {
+        fs.unlinkSync(sessionFile);
+    } catch (error) {
+        console.error(error.stack);
     }
 }
-                }
+async function addThisUser(userid, state, prefix, admin) {
+    const configFile = "./data/history.json";
+    const sessionFolder = "./data/session";
+    const sessionFile = path.join(sessionFolder, `${userid}.json`);
+    if (fs.existsSync(sessionFile)) return;
+    const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+    config.push({
+        userid,
+        prefix: prefix || "",
+        admin,
+        time: 0
+    });
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    const xorState = encryptSession(state);
+    fs.writeFileSync(sessionFile, JSON.stringify(xorState));
+}
 
-                if (process.env.APPSTATE) {
-                    try {
-                        const envState = JSON.parse(process.env.APPSTATE);
-                        await accountLogin(envState, process.env.PREFIX || "#", []);
-                    } catch (error) {
-                        console.error(error.stack);
-                    }
-                }
+function aliases(command) {
+    const aliases = Array.from(Utils.commands.entries()).find(([commands]) =>
+        commands?.includes(command?.toLowerCase())
+    );
+    if (aliases) {
+        return aliases[1];
+    }
+    return null;
+}
 
-                if (process.env.EMAIL && process.env.PASSWORD) {
-                    try {
-                        await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
-                    } catch (error) {
-                        console.error(error.stack);
-                    }
+
+async function main() {
+    const empty = require("fs-extra");
+    const fs = require("fs");
+    const path = require("path");
+    const cacheFile = "./script/cache";
+    const configFile = "./data/history.json";
+    const sessionFolder = path.join("./data/session");
+
+    if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile);
+    if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
+    if (!fs.existsSync(sessionFolder)) fs.mkdirSync(sessionFolder);
+
+    const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+    const adminOfConfig =
+        fs.existsSync("./data") && fs.existsSync("./data/config.json")
+            ? JSON.parse(fs.readFileSync("./data/config.json", "utf8"))
+            : createConfig();
+
+    const executeTask = async () => {
+        try {
+            const history = JSON.parse(fs.readFileSync('./data/history.json', 'utf-8'));
+            history.forEach(user => {
+                if (!user && !user.userid) return;
+                const update = Utils.account.get(user.userid);
+                if (update) user.time = update.time;
+            });
+            await empty.emptyDir(cacheFile);
+            await fs.writeFileSync('./data/history.json', JSON.stringify(history, null, 2));
+        } catch (error) {
+            console.error('Error executing task:', error);
+        }
+    };
+
+    setInterval(executeTask, 60000);
+
+    try {
+        const files = fs.readdirSync(sessionFolder);
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const filePath = path.join(sessionFolder, file);
+            const userId = path.parse(file).name;
+
+            try {
+                const {
+                    prefix,
+                    admin
+                } = config.find(item => item.userid === userId) || {};
+                const state = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+
+                fs.writeFileSync(filePath, JSON.stringify(state, null, 2), "utf-8");
+
+                if (state) {
+                    const decState = decryptSession(state);
+                    await accountLogin(decState, prefix, admin);
                 }
+            } catch (error) {
+                const ERROR_PATTERNS = {
+                    unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
+                    errorRetrieving: /Error retrieving userID.*unknown location/
+                };
+
+                const ERROR = error?.message || error?.error;
+
+
+                if (ERROR === "Connection refused: Server unavailable") {
+                    logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account make sure appstate still valid!`);
+                    Utils.account.delete(userId);
+                    deleteThisUser(userId);
+                } else if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
+                    logger.yellow(`Detected login issue for user ${userId}.`);
+                    Utils.account.delete(userId);
+                    deleteThisUser(userId);
+                } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
+                    logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
+                    Utils.account.delete(userId);
+                    deleteThisUser(userId);
+                } else {
+                    console.error(`Can't log in user ${userId}: Something wen't wrong! `, error.stack);
+                }
+            }
+        }
+
+        if (process.env.APPSTATE) {
+            try {
+                const envState = JSON.parse(process.env.APPSTATE);
+                await accountLogin(envState, process.env.PREFIX || "#", []);
             } catch (error) {
                 console.error(error.stack);
             }
         }
 
+        if (process.env.EMAIL && process.env.PASSWORD) {
+            try {
+                await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
+            } catch (error) {
+                console.error(error.stack);
+            }
+        }
+    } catch (error) {
+        console.error(error.stack);
+    }
+}
 
-        function createConfig() {
-            const config = [{
-                fcaOption: {
-                    userAgent: generateUserAgent(),
-                    forceLogin: false,
-                    listenEvents: true,
-                    logLevel: "silent",
-                    updatePresence: true,
-                    selfListen: false,
-                    online: true,
-                    autoMarkDelivery: false,
-                    autoMarkRead: false
 
-                }
-            }];
+function createConfig() {
+    const config = [{
+        fcaOption: {
+            userAgent: generateUserAgent(),
+            forceLogin: false,
+            listenEvents: true,
+            logLevel: "silent",
+            updatePresence: true,
+            selfListen: false,
+            online: true,
+            autoMarkDelivery: false,
+            autoMarkRead: false
 
-            const dataFolder = "./data";
-            if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
-            fs.writeFileSync("./data/config.json", JSON.stringify(config, null, 2));
-            return config;
-        };
+        }
+    }];
 
-        main();
+    const dataFolder = "./data";
+    if (!fs.existsSync(dataFolder)) fs.mkdirSync(dataFolder);
+    fs.writeFileSync("./data/config.json", JSON.stringify(config, null, 2));
+    return config;
+};
 
-        process.on("unhandledRejection", (reason, promise) => {
-            console.error(reason.message || reason.stack)
-        });
+main();
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error(reason.message || reason.stack)
+});
