@@ -947,7 +947,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                                         Utils
                                     });
                                 } catch (error) {
-                                    reply(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]`);
+                                    reply(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${error.stack}`);
                                     console.error(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: `, error.stack);
                                 }
                             }
