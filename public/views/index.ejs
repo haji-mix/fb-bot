@@ -15,24 +15,16 @@
     <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
     <meta name="google-adsense-account" content="ca-pub-8366475952965401">
     
-    
-
     <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
-    <% styleFiles.forEach(file => {
-        %>
+    <% styleFiles.forEach(file => { %>
         <link rel="stylesheet" href="<%= file %>">
-        <%
-    }) %>
-    <% cssFiles.forEach(file => {
-        %>
+    <% }) %>
+    <% cssFiles.forEach(file => { %>
         <link rel="stylesheet" href="<%= file %>">
-        <%
-    }) %>
-    <% jsFiles.forEach(file => {
-        %>
+    <% }) %>
+    <% jsFiles.forEach(file => { %>
         <script src="<%= file %>"></script>
-        <%
-    }) %>
+    <% }) %>
 
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -73,10 +65,18 @@
     <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="closeNav()"></div>
     <div id="navMenu" class="hidden fixed top-0 right-0 bg-gray-800 w-64 h-full p-6 z-50 shadow-lg">
         <ul class="space-y-4">
-            <li><a href="#cookie-form" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Submit Cookie</a></li>
-            <li><a href="#active-users" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Active Users</a></li>
-            <li><a href="#commands" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Commands</a></li>
-            <li><a href="#footer" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">Contact</a></li>
+            <!-- Contact Button with Icon -->
+            <li>
+                <a href="https://petalsandpearls.vercel.app/me.html" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
+                    <i class="fas fa-envelope mr-2"></i> Contact
+                </a>
+            </li>
+            <!-- Buy Me a Coffee Button with Icon -->
+            <li>
+                <a href="https://buymeacoffee.com/hajime.atomyc" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
+                    <i class="fas fa-coffee mr-2"></i> Buy Me a Coffee
+                </a>
+            </li>
         </ul>
     </div>
 
@@ -151,7 +151,6 @@
             </div>
         </section>
 
-
     </main>
 
     <!-- Footer -->
@@ -160,7 +159,7 @@
             Time: <span id="time"></span>
         </p>
         <p class="text-yellow-400">
-            Powered by <a href="" class="text-green-400 hover:text-green-300">Kokoro AI</a>
+            Powered by <a href="" class="text-green-400 hover:text-green-300">Chatbox-FCA-Remake</a>
         </p>
         <p>
             &copy; 2024, All Rights Reserved
@@ -172,11 +171,9 @@
     </footer>
 
     <!-- Scripts -->
-    <% scriptFiles.forEach(file => {
-        %>
+    <% scriptFiles.forEach(file => { %>
         <script src="<%= file %>"></script>
-        <%
-    }) %>
+    <% }) %>
 
    <script>
        eruda.init();
