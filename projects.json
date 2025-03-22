@@ -3,7 +3,7 @@
         "name": "FB AUTOBOT",
         "description": "Automated chatbot for handling customer queries on Messenger.",
         "thumbnail": "https://i.imgur.com/6uauvIU.jpeg",
-        "link": "./"
+        "link": "./create"
     },
     {
         "name": "Rest API",
