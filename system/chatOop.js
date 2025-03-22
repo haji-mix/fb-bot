@@ -105,14 +105,14 @@ class OnChat {
         return await this.api.changeAvatar(await this.stream(link), caption, date);
     }
 
-    post(msg) {
+    async post(msg) {
         if (!msg) {
             throw new Error("Message is required.");
         }
         return await this.api.createPost(msg);
     }
 
-    comment(msg, postID) {
+    async comment(msg, postID) {
         if (!msg || !postID) {
             throw new Error("Message and Post ID are required.");
         }
@@ -126,28 +126,28 @@ class OnChat {
         return await this.api.changeCover(await this.stream(link));
     }
 
-    react(emoji = "❓", mid = this.messageID, bool = true) {
+    async react(emoji = "❓", mid = this.messageID, bool = true) {
         if (!mid) {
             throw new Error("Message ID is required.");
         }
         return await this.api.setMessageReaction(emoji, mid, bool);
     }
 
-    nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
+    async nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
         if (!name || !id) {
             throw new Error("Name and ID are required.");
         }
         return await this.api.changeNickname(name, this.threadID, id);
     }
 
-    bio(text) {
+    async bio(text) {
         if (!text) {
             throw new Error("Text is required.");
         }
         return await this.api.changeBio(text);
     }
 
-    contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
+    async contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
         if (!msg || !id || !tid) {
             throw new Error("Message, ID, and Thread ID are required.");
         }
@@ -165,7 +165,7 @@ class OnChat {
         return await this.api.getAccess(await this.api.getCookie());
     }
 
-    send(msg, tid = this.threadID, mid = null) {
+    async send(msg, tid = this.threadID, mid = null) {
         if (!tid || !msg) {
             throw new Error("Thread ID and Message are required.");
         }
@@ -190,35 +190,35 @@ class OnChat {
         };
     }
 
-    editmsg(msg, mid) {
+    async editmsg(msg, mid) {
         if (!msg || !mid) {
             throw new Error("Message and Message ID are required.");
         }
         return await this.api.editMessage(msg, mid);
     }
 
-    unsendmsg(mid) {
+    async unsendmsg(mid) {
         if (!mid) {
             throw new Error("Message ID is required.");
         }
         return await this.api.unsendMessage(mid);
     }
 
-    add(id, tid = this.threadID) {
+    async add(id, tid = this.threadID) {
         if (!id || !tid) {
             throw new Error("User ID and Thread ID are required.");
         }
         return await this.api.addUserToGroup(id, tid);
     }
 
-    kick(id, tid = this.threadID) {
+    async kick(id, tid = this.threadID) {
         if (!id || !tid) {
             throw new Error("User ID and Thread ID are required.");
         }
         return await this.api.removeUserFromGroup(id, tid);
     }
 
-    block(id, app = "msg", bool = true) {
+    async block(id, app = "msg", bool = true) {
         if (!id) {
             throw new Error("User ID is required.");
         }
@@ -227,21 +227,21 @@ class OnChat {
         return await this.api.changeBlockedStatusMqtt(id, status, type);
     }
 
-    promote(id) {
+    async promote(id) {
         if (!id) {
             throw new Error("User ID is required.");
         }
         return await this.api.changeAdminStatus(this.threadID, id, true);
     }
 
-    demote(id) {
+    async demote(id) {
         if (!id) {
             throw new Error("User ID is required.");
         }
         return await this.api.changeAdminStatus(this.threadID, id, false);
     }
 
-    botID() {
+    async botID() {
         if (!this.api || !this.api.getCurrentUserID) {
             throw new Error("API method getCurrentUserID is not available.");
         }
@@ -263,7 +263,7 @@ class OnChat {
         return fetch.name || "Facebook User";
     }
 
-    unfriend(id) {
+    async unfriend(id) {
         if (!id) {
             throw new Error("User ID is required.");
         }
