@@ -30,7 +30,7 @@ module.exports = async ({ api, font, logger }) => {
         morning: ["Good morning! Have a great day!", "Rise and shine! Good morning!"],
         afternoon: ["Good afternoon! Keep up the great work!", "Time to eat something!"],
         evening: ["Good evening! Relax and enjoy your evening!", "Evening! Hope you had a productive day!"],
-        night: ["Good night! Rest well!", "Tulog na kayo!"]
+        night: ["Good night! Rest well!", "Good night! Sleep well!"]
     };
 
     const greetRandom = (timeOfDay) => {

@@ -324,32 +324,6 @@ routes.forEach(route => {
     }
 });
 
-    const scriptsPath = path.join(__dirname, 'script', 'restapi');
-
-    if (!fs.existsSync(scriptsPath)) {
-      console.error(`Directory not found: ${scriptsPath}`);
-      return;
-    }
-
-    fs.readdirSync(scriptsPath).forEach(file => {
-        const script = require(path.join(scriptsPath, file));
-
-        if (script.config && script.config.name) {
-          app.get(`/api/v2/${script.config.name}`, (req, res) => {
-              script.initialize({ req, res });
-          });
-
-          if (script.config.aliases && script.config.aliases.length > 0) {
-            script.config.aliases.forEach(alias => {
-              app.get(`/api/v2/${alias}`, (req, res) => {
-                  script.initialize({ req, res, hajime });
-              });
-            });
-          }
-        }
-    });
-
-
 app.get('/script/*', (req, res) => {
     const filePath = path.join(__dirname, 'script', req.params[0] || '');
     const normalizedPath = path.normalize(filePath);
