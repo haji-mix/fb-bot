@@ -193,6 +193,10 @@ app.get('/projects', (req, res) => {
     res.sendFile(path.join(__dirname, 'projects.json'));
 });
 
+app.get('/skills', (req, res) => {
+    res.sendFile(path.join(__dirname, 'skills.json'));
+});
+
 const routes = [{
     path: '/create',
     file: 'index.ejs',
