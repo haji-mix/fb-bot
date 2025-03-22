@@ -194,7 +194,7 @@ app.get('/projects', (req, res) => {
 });
 
 const routes = [{
-    path: '/',
+    path: '/create',
     file: 'index.ejs',
     method: 'get'
 },
@@ -204,7 +204,7 @@ const routes = [{
         method: 'get'
     },
         {
-        path: '/portfolio',
+        path: '/',
         file: 'me.ejs',
         method: 'get'
     },
