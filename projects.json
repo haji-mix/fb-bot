@@ -1,0 +1,14 @@
+[
+    {
+        "name": "FB AUTOBOT",
+        "description": "Automated chatbot for handling customer queries on Messenger.",
+        "thumbnail": "https://i.imgur.com/6uauvIU.jpeg",
+        "link": "./"
+    },
+    {
+        "name": "Rest API",
+        "description": "A free Rest API with Websocket",
+        "thumbnail": "https://i.ibb.co/XYk4dXn/image.png",
+        "link": "./https://haji-mix.up.railway.app/"
+    }
+]

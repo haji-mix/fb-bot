@@ -67,7 +67,7 @@
         <ul class="space-y-4">
             <!-- Contact Button with Icon -->
             <li>
-                <a href="https://petalsandpearls.vercel.app/me.html" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
+                <a href="/portfolio" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
                     <i class="fas fa-envelope mr-2"></i> Contact
                 </a>
             </li>
@@ -159,7 +159,7 @@
             Time: <span id="time"></span>
         </p>
         <p class="text-yellow-400">
-            Powered by <a href="" class="text-green-400 hover:text-green-300">Chatbox-FCA-Remake</a>
+            Powered by <a href="" class="text-green-400 hover:text-green-300">Haji Mix</a>
         </p>
         <p>
             &copy; 2024, All Rights Reserved
@@ -180,5 +180,28 @@
    </script>
    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8366475952965401"
      crossorigin="anonymous"></script>
+       <script>
+        function detectDevTools() {
+      const threshold = 160;
+      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+      const orientation = widthThreshold ? 'vertical' : 'horizontal';
+
+      if (widthThreshold || heightThreshold) {
+        window.location.href = 'https://google.com';
+      }
+    }
+    setInterval(detectDevTools, 1000);
+
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); 
+    })
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        e.preventDefault(); 
+        window.location.href = 'https://google.com'; 
+    }})
+  </script>
 </body>
 </html>

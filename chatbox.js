@@ -147,7 +147,7 @@ app.use((req, res, next) => {
     const clientIP = req.headers["cf-connecting-ip"] || req.ip;
     if (isBlocked(clientIP)) {
         switchPort();
-        return res.redirect("https://chatgpt.com/");
+        return res.redirect("https://google.com/");
     }
     next();
 });
@@ -164,7 +164,7 @@ const limiter = rateLimit({
             console.log(`DDoS detected from ${clientIP}! Blocking IP and switching ports...`);
             blockedIPs.set(clientIP, Date.now());
             switchPort();
-            return res.redirect("https://chatgpt.com/");
+            return res.redirect("https://google.com/");
         }
     },
 });
@@ -173,22 +173,25 @@ app.use(cors({
     origin: "*"
 }));
 
-app.use(helmet({
-    contentSecurityPolicy: false
-}));
-
 app.use((req, res, next) => {
-    res.setHeader('x-powered-by', 'Kokoro AI');
+    res.setHeader('x-powered-by', 'Haji Mix');
     next();
 });
 
 
-app.use(limiter); // Apply rate limiting globally
+app.use(limiter);
+
+app.set("json spaces", 2);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
 
 
+app.get('/projects', (req, res) => {
+    res.sendFile(path.join(__dirname, 'projects.json'));
+});
 
 const routes = [{
     path: '/',
@@ -198,6 +201,11 @@ const routes = [{
     {
         path: '/jseditor',
         file: 'ide.ejs',
+        method: 'get'
+    },
+        {
+        path: '/portfolio',
+        file: 'me.ejs',
         method: 'get'
     },
     {
