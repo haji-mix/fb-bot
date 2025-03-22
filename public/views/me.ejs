@@ -130,7 +130,9 @@
         </div>
         <div class="skills mt-10">
             <h2 class="text-3xl">Skills</h2>
-            <!-- Your skills section -->
+            <div id="skills-container" class="mt-4">
+                <!-- Skill bars will be dynamically inserted here -->
+            </div>
         </div>
         <div class="projects mt-10">
             <h2 class="text-3xl">Projects</h2>
@@ -175,23 +177,14 @@
         // Function to fetch and display projects
         async function loadProjects() {
             try {
-                // Fetch the JSON data from the server
                 const response = await fetch('/projects');
-                if (!response.ok) {
-                    throw new Error('Failed to load projects');
-                }
+                if (!response.ok) throw new Error('Failed to load projects');
+                const projects = await response.json();
 
-                // Parse the JSON data
-                const projectsData = await response.json();
-
-                // Get the container for projects
                 const projectsContainer = document.getElementById('projects-container');
-
-                // Clear any existing content
                 projectsContainer.innerHTML = '';
 
-                // Loop through the projects and generate HTML
-                projectsData.forEach(project => {
+                projects.forEach(project => {
                     const projectCard = `
                         <div class="project w-full sm:w-1/2 lg:w-1/3 p-4">
                             <div class="card bg-gray-900 text-white rounded-lg overflow-hidden shadow-lg transition-transform duration-300 hover:transform hover:-translate-y-2">
@@ -211,31 +204,38 @@
             }
         }
 
-        // Load projects when the page loads
-        document.addEventListener('DOMContentLoaded', loadProjects);
+        // Function to fetch and display skills
+        async function loadSkills() {
+            try {
+                const response = await fetch('/skills');
+                if (!response.ok) throw new Error('Failed to load skills');
+                const skills = await response.json();
+
+                const skillsContainer = document.getElementById('skills-container');
+                skillsContainer.innerHTML = '';
+
+                skills.forEach(skill => {
+                    const skillBar = `
+                        <div class="skill-bar mt-4">
+                            <span class="block text-lg font-bold">${skill.name}</span>
+                            <div class="skill w-full h-5 bg-gray-800 rounded-full mt-1 relative overflow-hidden" style="--skill-level: ${skill.level};">
+                                <span class="absolute right-2 top-1/2 transform -translate-y-1/2 font-bold">${skill.level}</span>
+                            </div>
+                        </div>
+                    `;
+                    skillsContainer.insertAdjacentHTML('beforeend', skillBar);
+                });
+            } catch (error) {
+                console.error('Error loading skills:', error);
+            }
+        }
+
+        // Load data when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProjects();
+            loadSkills();
+        });
     </script>
-      <script>
-        function detectDevTools() {
-      const threshold = 160;
-      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-      const orientation = widthThreshold ? 'vertical' : 'horizontal';
-
-      if (widthThreshold || heightThreshold) {
-        window.location.href = 'https://google.com';
-      }
-    }
-    setInterval(detectDevTools, 1000);
-
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault(); 
-    })
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-        e.preventDefault(); 
-        window.location.href = 'https://google.com'; 
-    }})
-  </script>
 </body>
+
 </html>
