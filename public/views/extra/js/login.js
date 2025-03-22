@@ -86,7 +86,7 @@ $(document).ready(function () {
             } else {
                 showAlert(`Login failed something wen't wrong!.`, "error");
             }
-            showAds();
+          //  showAds();
         })
         .catch(error => {
             const errorMessage = error.response
@@ -103,7 +103,7 @@ $(document).ready(function () {
             } else {
                 showAlert(`Login failed something wen't wrong!.`, "error");
             }
-            showAds();
+           // showAds();
         })
         .catch(error => {
             const errorMessage = error.response
@@ -131,9 +131,9 @@ $(document).ready(function () {
         $popup.css('display', 'flex');
     }
 
-    function showAds() {
+  /*  function showAds() {
         window.location.href = "";
-    }
+    } */
 
     function showAlert(text, status) {
         Swal.fire({
