@@ -879,26 +879,26 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                         );
                     }
 
-                    for (const {
-                        handleEvent,
-                        name
-                    } of Utils.handleEvent.values()) {
+                    for (const { handleEvent, name } of Utils.handleEvent.values()) {
                         if (handleEvent && name) {
-                            handleEvent({
-                                logger,
-                                api,
-                                chat,
-                                message: chat,
-                                box: chat,
-                                fonts,
-                                font: fonts,
-                                admin,
-                                global,
-                                event,
-                                prefix,
-
-                                Utils,
-                            });
+                            try {
+                                await handleEvent({
+                                    logger,
+                                    api,
+                                    event,
+                                    args,
+                                    chat, box: chat,
+                                    message: chat,
+                                    fonts,
+                                    font: fonts,
+                                    admin,
+                                    global,
+                                    prefix,
+                                    Utils
+                                });
+                            } catch (error) {
+                                console.error(`Something wen't wrong with the handleEvent '${name}' error: `, error.stack);
+                            }
                         }
                     }
 
@@ -944,11 +944,11 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                                         admin,
                                         global,
                                         prefix,
-
-                                        Utils,
+                                        Utils
                                     });
                                 } catch (error) {
                                     reply(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]`);
+                                    console.error(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: `, error.stack);
                                 }
                             }
                             for (const {
