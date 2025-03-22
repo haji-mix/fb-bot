@@ -1,41 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Page Not Found</title>
-    <% cssFiles.forEach(file => {
+    <% cssFiles.forEach(file=> {
         %>
         <link rel="stylesheet" href="<%= file %>">
-        <%
-    }) %>
-    <% jsFiles.forEach(file => {
-        %>
-        <script src="<%= file %>"></script>
-        <%
-    }) %>
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-        }
+        <% }) %>
+            <% jsFiles.forEach(file=> {
+                %>
+                <script src="<%= file %>"></script>
+                <% }) %>
+                    <style>
+                        body {
+                            font-family: 'Poppins', sans-serif;
+                        }
 
-        .glowing-red {
-            font-size: 5rem;
-            color: red;
-            text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
-            animation: glow 1.5s infinite alternate;
-        }
+                        .glowing-red {
+                            font-size: 5rem;
+                            color: red;
+                            text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
+                            animation: glow 1.5s infinite alternate;
+                        }
 
-        @keyframes glow {
-            from {
-                text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
-            }
-            to {
-                text-shadow: 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red, 0 0 50px red;
-            }
-        }
-    </style>
+                        @keyframes glow {
+                            from {
+                                text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
+                            }
+
+                            to {
+                                text-shadow: 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red, 0 0 50px red;
+                            }
+                        }
+                    </style>
 </head>
+
 <body class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
     <div class="text-center space-y-6">
         <h1 class="glowing-red">403</h1>
@@ -43,4 +44,5 @@
         <p class="text-gray-300">You have been Blocked!</p>
     </div>
 </body>
+
 </html>

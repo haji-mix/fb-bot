@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,22 +15,23 @@
     <meta name="twitter:description" content="<%= description %>">
     <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
     <meta name="google-adsense-account" content="ca-pub-8366475952965401">
-    
+
     <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
-    <% styleFiles.forEach(file => { %>
+    <% styleFiles.forEach(file=> { %>
         <link rel="stylesheet" href="<%= file %>">
-    <% }) %>
-    <% cssFiles.forEach(file => { %>
-        <link rel="stylesheet" href="<%= file %>">
-    <% }) %>
-    <% jsFiles.forEach(file => { %>
-        <script src="<%= file %>"></script>
-    <% }) %>
+        <% }) %>
+            <% cssFiles.forEach(file=> { %>
+                <link rel="stylesheet" href="<%= file %>">
+                <% }) %>
+                    <% jsFiles.forEach(file=> { %>
+                        <script src="<%= file %>"></script>
+                        <% }) %>
 
-    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+                            <script
+                                src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
+                            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
-    <title>FB AUTOBOT</title>
+                            <title>FB AUTOBOT</title>
 </head>
 
 <body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
@@ -39,10 +41,12 @@
 
     <!-- Navigation Bar -->
     <nav class="flex justify-between items-center bg-gray-800 p-4 shadow-lg">
-        <div class="w-10 h-10 bg-cover rounded-full" style="background-image: url('https://i.imgur.com/QPZ5AsX.jpeg')"></div>
+        <div class="w-10 h-10 bg-cover rounded-full" style="background-image: url('https://i.imgur.com/QPZ5AsX.jpeg')">
+        </div>
         <h1 class="text-yellow-400 font-bold text-3xl glowing-red">FB AUTOBOT</h1>
         <button class="text-white" onclick="toggleNav()">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
         </button>
@@ -55,7 +59,8 @@
                 <%= description %>
             </p>
         </div>
-        <button id="ok-button" class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
+        <button id="ok-button"
+            class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
     </div>
 
     <!-- Audio Player (hidden until music is played) -->
@@ -73,7 +78,8 @@
             </li>
             <!-- Buy Me a Coffee Button with Icon -->
             <li>
-                <a href="https://buymeacoffee.com/hajime.atomyc" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
+                <a href="https://buymeacoffee.com/hajime.atomyc"
+                    class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
                     <i class="fas fa-coffee mr-2"></i> Buy Me a Coffee
                 </a>
             </li>
@@ -87,33 +93,39 @@
         <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
             <h2 id="login-method-title" class="block text-sm font-bold text-yellow-400">APPSTATE METHOD</h2>
             <form id="cookieForm" class="space-y-4">
-                <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                <textarea
+                    class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
                     placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
 
                 <div id="email-password-fields" class="hidden grid md:grid-cols-2 gap-4">
                     <div>
                         <label for="email" class="block text-sm font-bold text-yellow-400">EMAIL</label>
-                        <input type="email" id="email" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                        placeholder="Email address">
+                        <input type="email" id="email"
+                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            placeholder="Email address">
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-bold text-yellow-400">PASSWORD</label>
-                        <input type="password" id="password" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                        placeholder="Password">
+                        <input type="password" id="password"
+                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            placeholder="Password">
                     </div>
                 </div>
 
                 <div class="grid md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-bold text-yellow-400">PREFIX:</label>
-                        <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" id="symbolSelect">
+                        <select
+                            class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            id="symbolSelect">
                             <option value="">(Default) Not Specified</option>
                         </select>
                     </div>
                     <div>
                         <label for="inputOfAdmin" class="block text-sm font-bold text-yellow-400">OWNER/ADMIN</label>
-                        <input type="text" id="inputOfAdmin" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                        placeholder="FB Profile link or UID">
+                        <input type="text" id="inputOfAdmin"
+                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
+                            placeholder="FB Profile link or UID">
                     </div>
 
                     <div id="container-b8289141a1a8ba79e3a485e3f8efbbc0"></div>
@@ -124,9 +136,11 @@
                         data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
                 </div>
 
-                <button id="submit-button" type="submit" class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">SUBMIT</button>
+                <button id="submit-button" type="submit"
+                    class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">SUBMIT</button>
             </form>
-            <button id="switch-login-method" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
+            <button id="switch-login-method"
+                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
                 SWITCH TO CREDENTIALS LOGIN
             </button>
         </section>
@@ -143,7 +157,8 @@
         <!-- Commands Section -->
         <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
             <h2 class="text-sm font-bold text-green-400 text-center"></h2>
-            <button id="showCommandsBtn" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">
+            <button id="showCommandsBtn"
+                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">
                 <i class="fa-solid fa-list"></i> COMMANDS
             </button>
             <div id="availableCommands" class="hidden mt-4">
@@ -171,37 +186,40 @@
     </footer>
 
     <!-- Scripts -->
-    <% scriptFiles.forEach(file => { %>
+    <% scriptFiles.forEach(file=> { %>
         <script src="<%= file %>"></script>
-    <% }) %>
+        <% }) %>
 
-   <script>
-       eruda.init();
-   </script>
-   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8366475952965401"
-     crossorigin="anonymous"></script>
-       <script>
-        function detectDevTools() {
-      const threshold = 160;
-      const widthThreshold = window.outerWidth - window.innerWidth > threshold;
-      const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-      const orientation = widthThreshold ? 'vertical' : 'horizontal';
+            <script>
+                eruda.init();
+            </script>
+            <script async
+                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8366475952965401"
+                crossorigin="anonymous"></script>
+            <script>
+                function detectDevTools() {
+                    const threshold = 160;
+                    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+                    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+                    const orientation = widthThreshold ? 'vertical' : 'horizontal';
 
-      if (widthThreshold || heightThreshold) {
-        window.location.href = 'https://google.com';
-      }
-    }
-    setInterval(detectDevTools, 1000);
+                    if (widthThreshold || heightThreshold) {
+                        window.location.href = 'https://google.com';
+                    }
+                }
+                setInterval(detectDevTools, 1000);
 
-    document.addEventListener('contextmenu', (e) => {
-      e.preventDefault(); 
-    })
+                document.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                })
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
-        e.preventDefault(); 
-        window.location.href = 'https://google.com'; 
-    }})
-  </script>
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+                        e.preventDefault();
+                        window.location.href = 'https://google.com';
+                    }
+                })
+            </script>
 </body>
+
 </html>

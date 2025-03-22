@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,9 +51,17 @@
     }
 
     @keyframes glow {
-      0% { text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000; }
-      50% { text-shadow: 0 0 5px #ff7300, 0 0 10px #ff7300; }
-      100% { text-shadow: 0 0 5px #f8f8f2, 0 0 10px #f8f8f2; }
+      0% {
+        text-shadow: 0 0 5px #ff0000, 0 0 10px #ff0000;
+      }
+
+      50% {
+        text-shadow: 0 0 5px #ff7300, 0 0 10px #ff7300;
+      }
+
+      100% {
+        text-shadow: 0 0 5px #f8f8f2, 0 0 10px #f8f8f2;
+      }
     }
 
     #theme-toggle {
@@ -169,6 +178,7 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <h1><i class="fa-solid fa-code"></i> Advanced JS IDE</h1>
@@ -251,7 +261,7 @@
       const file = event.target.files[0];
       const reader = new FileReader();
 
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         const content = e.target.result;
         editor.setValue(content);
       };
@@ -267,7 +277,7 @@
       consoleOutput.innerText = "Console Output:\n";
       try {
         const originalConsoleLog = console.log;
-        console.log = function(...args) {
+        console.log = function (...args) {
           consoleOutput.innerText += args.join(" ") + "\n";
           originalConsoleLog(...args);
         };
@@ -280,27 +290,27 @@
     }
 
     // Toggle menu visibility
-    document.getElementById('action-btn').addEventListener('click', function() {
+    document.getElementById('action-btn').addEventListener('click', function () {
       const menu = document.getElementById('menu');
       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
     });
 
     // Format Code when the option is clicked
-    document.getElementById('format-code').addEventListener('click', function(e) {
+    document.getElementById('format-code').addEventListener('click', function (e) {
       e.preventDefault();
       formatCode();
       document.getElementById('menu').style.display = 'none';
     });
 
     // Save file when the option is clicked
-    document.getElementById('save-file').addEventListener('click', function(e) {
+    document.getElementById('save-file').addEventListener('click', function (e) {
       e.preventDefault();
       saveFile();
       document.getElementById('menu').style.display = 'none';
     });
 
     // Load file when the option is clicked
-    document.getElementById('load-file').addEventListener('click', function(e) {
+    document.getElementById('load-file').addEventListener('click', function (e) {
       e.preventDefault();
       document.getElementById('menu').style.display = 'none';
       const input = document.createElement('input');
@@ -311,7 +321,7 @@
     });
 
     // Run code when the option is clicked
-    document.getElementById('run-code').addEventListener('click', function(e) {
+    document.getElementById('run-code').addEventListener('click', function (e) {
       e.preventDefault();
       runCode();
       document.getElementById('menu').style.display = 'none';
@@ -321,7 +331,7 @@
     editor.getSession().on('change', checkSyntax);
 
     // Toggle dark/light theme
-    themeToggle.addEventListener('click', function() {
+    themeToggle.addEventListener('click', function () {
       const isDark = document.body.style.backgroundColor === "rgb(39, 40, 34)";
       document.body.style.backgroundColor = isDark ? "#f8f8f2" : "#272822";
       document.body.style.color = isDark ? "#272822" : "#f8f8f2";
@@ -330,4 +340,5 @@
     });
   </script>
 </body>
+
 </html>

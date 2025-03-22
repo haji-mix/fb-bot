@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
+    <title>
+        <%= title %>
+    </title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/prettier.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prettier/2.8.0/parser-babel.min.js"></script>
     <script>
-        window.onload = function() {
+        window.onload = function () {
             var editor = ace.edit("editor");
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/javascript");
@@ -27,7 +30,7 @@
 
             editor.setValue(formattedCode);
 
-            setTimeout(function() {
+            setTimeout(function () {
                 editor.getSession().getAnnotations();
             }, 10000);
         }
@@ -58,7 +61,7 @@
             overflow: auto;
         }
 
-@media (max-width: 768px) {
+        @media (max-width: 768px) {
             body {
                 padding: 1rem;
                 display: block;
@@ -71,9 +74,11 @@
         }
     </style>
 </head>
+
 <body>
     <div id="editor">
         <%- code %>
     </div>
 </body>
+
 </html>
