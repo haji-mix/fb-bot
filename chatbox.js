@@ -958,6 +958,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                                     Array.isArray(Utils.handleReply) &&
                                     Utils.handleReply.length > 0
                                 ) {
+                                    try {
                                     if (!event.messageReply) return;
                                     const indexOfHandle =
                                         Utils.handleReply.findIndex(
@@ -983,6 +984,9 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
 
                                         Utils,
                                     });
+                                } catch (error) {
+                                    console.error(`Something wen't wrong with the handleReply error: `, error.stack);
+                                }
                                 }
                             }
                             break;
