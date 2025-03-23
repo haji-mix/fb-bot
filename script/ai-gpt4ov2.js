@@ -29,7 +29,7 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
 
     if (!ask) return chat.reply(font.thin('Please provide a message!'));
 
-    const answering = await chat.reply(mono("Generating response..."));
+    const answering = await chat.reply(font.thin("Generating response..."));
     
     try {
         const res = await axios.get(`https://haji-mix.up.railway.app/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${event.senderID}`);
