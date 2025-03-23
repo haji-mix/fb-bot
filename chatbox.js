@@ -169,9 +169,13 @@ const limiter = rateLimit({
     },
 });
 
-app.use(cors());
+app.use(cors({
+    origin: "*"
+}));
 
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false
+}));
 
 app.use((req, res, next) => {
     res.setHeader('x-powered-by', 'Haji Mix');
