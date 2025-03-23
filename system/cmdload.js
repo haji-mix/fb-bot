@@ -2,7 +2,7 @@ const path = require("path");
 const fs = require("fs");
 
 const scriptDir = path.join(__dirname, "../script");
-const allowedExtensions = [".js", ".ts"];
+const allowedExtensions = [".js"]; // Removed .ts from allowed extensions
 const loadedModuleNames = new Set();
 let autoDelete = true; // Set to `false` to disable auto-delete
 
@@ -87,14 +87,8 @@ async function loadModule(modulePath, Utils, logger, count) {
         logger.rainbow(`LOADED MODULE [${moduleName}]`);
         return count + 1;
     } catch (error) {
-        // If the file is a TypeScript file, skip with a specific message
-        if (path.extname(modulePath).toLowerCase() === '.ts') {
-            logger.yellow(`Unsupported environment for TypeScript module at ${modulePath}. Skipping...`);
-            return count;
-        } else {
-            logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
-            return count;
-        }
+        logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
+        return count;
     }
 }
 
