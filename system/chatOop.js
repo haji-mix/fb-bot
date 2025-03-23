@@ -266,11 +266,11 @@ class OnChat {
       edit: async (message, delay = 0) => {
         await new Promise(res => setTimeout(res, delay));
         const formattedEdit = formatBold(message);
-        return await this.api.editMessage(formattedEdit, replyMsg.messageID);
+        return await this.editmsg(formattedEdit, replyMsg.messageID);
       },
       unsend: async (delay = 0) => {
         await new Promise(res => setTimeout(res, delay));
-        return await this.api.unsendMessage(replyMsg.messageID);
+        return await this.unsendmsg(replyMsg.messageID);
       }
     };
   } catch (error) {
