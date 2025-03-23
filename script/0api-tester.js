@@ -1,8 +1,8 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
-export const config = {
+module.exports["config"] = {
     name: "apitest",
     isPrefix: false,
     aliases: ["test"],
@@ -18,33 +18,34 @@ export const config = {
 };
 
 const urlRegex = /^(.*?\b)?https?:\/\/[\w.-]+(:\d+)?(\/[\w-./?%&=+]*)?(\b.*)?$/i;
-const tempDir = path.join(process.cwd(), "cache");
+const tempDir = path.join(__dirname, "cache");
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 
 const getExtensionFromContentType = (contentType) => {
     if (!contentType) return "txt"; 
     const typeMap = {
+      /*"image/jpeg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",*/
         "application/pdf": "pdf",
         "audio/mpeg": "mp3",
         "audio/mp3": "mp3",
         "audio/ogg": "mp3",
         "audio/wav": "mp3",
         "audio/aac": "mp3",
-        "audio/flac": "mp3"
+        "audio/flac": "mp3"/*,
+        "video/mp4": "mp4",
+        "video/webm": "webm",
+        "video/ogg": "mp4"*/
     };
     return typeMap[contentType.split(";")[0]] || "txt"; 
 };
 
-// Define the run function
-export const run = async ({ chat, args, font }) => {
-    if (!args.length) return chat.reply(font.thin(config.guide));
+module.exports["run"] = async ({ chat, args, font }) => {
+    if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
 
     let url = args[0]?.replace(/\(\.\)/g, ".") || "";
-    try {
-        new URL(url); // Validate URL
-    } catch {
-        return chat.reply(font.thin("❌ Invalid URL."));
-    }
+    if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
 
     const isPost = args.length >= 2;
     let postData = isPost ? args.slice(1).join(" ") : null;

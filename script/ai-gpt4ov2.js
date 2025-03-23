@@ -1,6 +1,6 @@
-import axios from "axios";
+const axios = require("axios");
 
-export const config = {
+module.exports["config"] = {
     name: "gpt4o",
     isPrefix: false,
     aliases: ["gpt", "gpt4", "ai"],
@@ -14,7 +14,7 @@ export const config = {
     cd: 6
 };
 
-export const run = async ({ args, chat, font, event }) => {
+module.exports["run"] = async ({ args, chat, font, event }) => {
     let ask = args.join(" ");
 
     if (event.type === "message_reply" && event.messageReply.body) {
@@ -39,6 +39,7 @@ export const run = async ({ args, chat, font, event }) => {
         if (res.data.images && res.data.images.length > 0) {
             const imageUrls = res.data.images.map(image => image.url);
             const imageDescriptions = res.data.images.map((image, index) => `${index + 1}. ${image.description}`).join("\n\n");
+            
             
             const attachments = await Promise.all(imageUrls.map(url => chat.stream(url)));
             return chat.reply({ body: imageDescriptions, attachment: attachments });
