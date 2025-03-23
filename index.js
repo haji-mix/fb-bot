@@ -6,11 +6,13 @@ const fs = require("fs");
 const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-let npmPackages = [
+let normalPackages = [
     { name: "canvas", version: "latest" },
-    { name: "kleur", version: "latest" },
-    { name: "@babel/core", version: "latest" }, 
-    { name: "@babel/node", version: "latest" }, 
+    { name: "kleur", version: "latest" }
+];
+
+let babelPackages = [
+    { name: "@babel/core", version: "latest" },
     { name: "@babel/preset-env", version: "latest" }
 ];
 
@@ -19,10 +21,19 @@ let mainProcess;
 
 function getOutdatedPackages() {
     try {
-        const outdatedData = JSON.parse(execSync("npm outdated -g --json", { encoding: "utf8" }));
-        return npmPackages.filter(pkg => outdatedData[pkg.name]);
+        const outdatedData = JSON.parse(execSync("npm outdated --json", { encoding: "utf8" }));
+        return normalPackages.filter(pkg => outdatedData[pkg.name]);
     } catch (error) {
-        return npmPackages;
+        return normalPackages;
+    }
+}
+
+function getOutdatedDevPackages() {
+    try {
+        const outdatedData = JSON.parse(execSync("npm outdated --json", { encoding: "utf8" }));
+        return babelPackages.filter(pkg => outdatedData[pkg.name]);
+    } catch (error) {
+        return babelPackages;
     }
 }
 
@@ -30,20 +41,40 @@ function installPackages(callback) {
     console.log("Checking npm packages...");
 
     const outdatedPackages = getOutdatedPackages();
-    if (outdatedPackages.length === 0) return callback();
+    const outdatedDevPackages = getOutdatedDevPackages();
 
-    console.log(`Installing/Updating packages:`);
-    outdatedPackages.forEach(pkg => {
-        const version = pkg.version ? `@${pkg.version}` : '';
-        console.log(`- Installing ${pkg.name}${version}`);
-        const installProcess = spawn("npm", ["install", "-g", `${pkg.name}${version}`, `--no-bin-links`], { stdio: "inherit", shell: true });
+    if (outdatedPackages.length === 0 && outdatedDevPackages.length === 0) return callback();
 
-        installProcess.on("close", (code) => {
-            if (code !== 0) {
-                console.error(`Failed to install/update ${pkg.name}. Skipping...`);
-            }
+    // Install regular dependencies
+    if (outdatedPackages.length > 0) {
+        console.log(`Installing/Updating regular packages:`);
+        outdatedPackages.forEach(pkg => {
+            const version = pkg.version ? `@${pkg.version}` : '';
+            console.log(`- Installing ${pkg.name}${version}`);
+            const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, `--no-bin-links`], { stdio: "inherit", shell: true });
+
+            installProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`Failed to install/update ${pkg.name}. Skipping...`);
+                }
+            });
         });
-    });
+    }
+
+    if (outdatedDevPackages.length > 0) {
+        console.log(`Installing/Updating dev packages:`);
+        outdatedDevPackages.forEach(pkg => {
+            const version = pkg.version ? `@${pkg.version}` : '';
+            console.log(`- Installing ${pkg.name}${version} (dev)`);
+            const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, `--save-dev`, `--no-bin-links`], { stdio: "inherit", shell: true });
+
+            installProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`Failed to install/update ${pkg.name}. Skipping...`);
+                }
+            });
+        });
+    }
 
     callback();
 }
@@ -56,7 +87,7 @@ function start() {
         console.log("No PORT set, starting main process without a specific port.");
     }
 
-    mainProcess = spawn("npx", ["babel-node", "--no-warnings", SCRIPT_PATH], {
+    mainProcess = spawn("node", [SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
@@ -89,17 +120,6 @@ function restartProcess() {
     start();
 }
 
-function ensureBabelConfig() {
-    const babelConfigPath = path.join(__dirname, ".babelrc");
-    if (!fs.existsSync(babelConfigPath)) {
-        console.log("Creating .babelrc file...");
-        fs.writeFileSync(babelConfigPath, JSON.stringify({
-            presets: ["@babel/preset-env"]
-        }, null, 2));
-    }
-}
-
-ensureBabelConfig();
 installPackages(() => {
     start();
 });
