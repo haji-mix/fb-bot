@@ -308,7 +308,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                     Utils
                                 });
                             } catch (error) {
-                                console.error(`Something wen't wrong with the handleEvent '${name}' error: `, error.stack);
+                                logger.red(`Something wen't wrong with the handleEvent '${name}' error: `, error.stack);
                             }
                         }
                     }
@@ -321,7 +321,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         case "message_reply":
                             if (aliases(command?.toLowerCase())?.name) {
                                 try {
-                                    logger.rainbow(`[${aliases(command?.toLowerCase())?.name}] [CMD] [EXECUTED ✓]`);
+                                    logger.rainbow(`[${aliases(command?.toUpperCase())?.name}] [CMD] [EXECUTED ✓]`);
                                     Utils.handleReply.findIndex(
                                         reply => reply.author === event.senderID
                                     ) !== -1
@@ -360,7 +360,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                     });
                                 } catch (error) {
                                     reply(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${error.stack}`);
-                                    console.error(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: `, error.stack);
+                                    logger.red(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: `, error.stack);
                                 }
                             }
                             for (const {
@@ -397,7 +397,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                         Utils,
                                     });
                                 } catch (error) {
-                                    console.error(`Something wen't wrong with the handleReply error: `, error.stack);
+                                    logger.red(`Something wen't wrong with the handleReply error: `, error.stack);
                                 }
                                 }
                             }

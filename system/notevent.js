@@ -39,22 +39,22 @@ async function updateBio(api, fonts, prefix) {
         );
         await api.setProfileGuard(true);
     } catch (error) {
-        console.error(error);
+        logger.red(error.stack);
     }
 }
 
-module.exports = async ({ api, fonts, prefix }) => {
+module.exports = async ({ api, fonts, prefix, logger }) => {
     const userid = api.getCurrentUserID();
     const userData = trackUserID(userid);
 
     if (!userData) {
         setTimeout(async () => {
-            await updateBio(api, fonts, prefix);
+            await updateBio(api, fonts, prefix, logger);
             addUserID(userid, prefix);
         }, 10000);
     } else if (userData.prefix !== prefix) {
         setTimeout(async () => {
-            await updateBio(api, fonts, prefix);
+            await updateBio(api, fonts, prefix, logger);
             addUserID(userid, prefix);
         }, 10000);
     }

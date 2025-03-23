@@ -517,7 +517,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                 logger,
                 api,
                 fonts,
-                font: fonts,
+                font: fonts
             });
 
             const notevent = require('./system/notevent')({
@@ -645,7 +645,7 @@ async function main() {
             await empty.emptyDir(cacheFile);
             await fs.writeFileSync('./data/history.json', JSON.stringify(history, null, 2));
         } catch (error) {
-            console.error('Error executing task:', error);
+            logger.red('Error executing task:', error.stack);
         }
     };
 
@@ -694,7 +694,7 @@ async function main() {
                     Utils.account.delete(userId);
                     deleteThisUser(userId);
                 } else {
-                    console.error(`Can't log in user ${userId}: Something wen't wrong! `, error.stack);
+                    logger.red(`Can't log in user ${userId}: Something wen't wrong!: `, error.stack);
                 }
             }
         }
@@ -704,7 +704,7 @@ async function main() {
                 const envState = JSON.parse(process.env.APPSTATE);
                 await accountLogin(envState, process.env.PREFIX || "#", []);
             } catch (error) {
-                console.error(error.stack);
+                logger.red(error.stack);
             }
         }
 
@@ -712,11 +712,11 @@ async function main() {
             try {
                 await accountLogin(null, process.env.PREFIX || "#", [], process.env.EMAIL, process.env.PASSWORD);
             } catch (error) {
-                console.error(error.stack);
+                logger.red(error.stack);
             }
         }
     } catch (error) {
-        console.error(error.stack);
+        logger.red(error.stack);
     }
 }
 
@@ -746,5 +746,5 @@ function createConfig() {
 main();
 
 process.on("unhandledRejection", (reason, promise) => {
-    console.error(reason.message || reason.stack)
+    console.error(reason.stack)
 });

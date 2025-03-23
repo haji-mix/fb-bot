@@ -84,7 +84,7 @@ async function loadModule(modulePath, Utils, logger, count) {
             Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run: executeFunction });
         }
 
-        logger.rainbow(`LOADED MODULE [${moduleName}]`);
+        logger.rainbow(`LOADED MODULE [${moduleName.toUpperCase()}]`);
         return count + 1;
     } catch (error) {
         logger.red(`Error loading module at ${modulePath}: ${error.stack}`);

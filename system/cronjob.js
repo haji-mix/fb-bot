@@ -20,7 +20,7 @@ module.exports = async ({ api, font, logger }) => {
         config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (!config || typeof config !== 'object') throw new Error("Invalid configuration file.");
     } catch (error) {
-        console.error("Error reading config file:", error);
+        logger.red("Error reading config file: ", error.stack);
         return;
     }
 
@@ -55,7 +55,7 @@ module.exports = async ({ api, font, logger }) => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.red(error.stack);
         }
     };
 
@@ -73,7 +73,7 @@ module.exports = async ({ api, font, logger }) => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.red(error.stack);
         }
     };
 
@@ -91,7 +91,7 @@ module.exports = async ({ api, font, logger }) => {
                 }
             }
         } catch (error) {
-            console.error(error);
+            logger.red(error.stack);
         }
     };
 
@@ -105,7 +105,7 @@ module.exports = async ({ api, font, logger }) => {
             await api.createPost(thin(quote));
             logger.instagram("Successfully Posted Motivational Quotes of BotID: " + api.getCurrentUserID());
         } catch (error) {
-            console.error(error);
+            logger.red(error.stack);
         }
     };
 
@@ -163,7 +163,7 @@ module.exports = async ({ api, font, logger }) => {
             await api.createPost(caption);
             logger.instagram("Successfully Posted Github Promotion of BotID: " + api.getCurrentUserID());
         } catch (error) {
-            console.error('Error creating post:', error);
+            logger.red('Error creating post:', error.stack);
         }
     };
     
@@ -180,7 +180,7 @@ module.exports = async ({ api, font, logger }) => {
 
     const scheduleGreetings = (timeOfDay, hours) => {
         if (!greetings[timeOfDay]) {
-            console.error(`Invalid time of day: ${timeOfDay}`);
+            logger.red(`Invalid time of day: ${timeOfDay}`);
             return;
         }
 
@@ -190,7 +190,7 @@ module.exports = async ({ api, font, logger }) => {
     };
 
     if (!config.cronJobs || typeof config.cronJobs !== 'object') {
-        console.error("Invalid or missing cron jobs configuration.");
+        logger.red("Invalid or missing cron jobs configuration.");
         return;
     }
 
@@ -211,7 +211,7 @@ module.exports = async ({ api, font, logger }) => {
             if (task) {
                 cron.schedule(job.cronExpression, task, { timezone });
             } else {
-                console.error(`Unknown task: ${key}`);
+                logger.red(`Unknown task: ${key}`);
             }
         }
     });
