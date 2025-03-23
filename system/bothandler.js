@@ -10,12 +10,12 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
 
                     if (event && event.senderID && event?.body) {
                         const isGroup = event.isGroup || event.threadID !== event.senderID;
-                        const idType = isGroup ? "GroupID" : "Private Chat";
+                        const idType = isGroup ? "GROUP ID" : "PRIVATE ID";
                         const idValue = isGroup ? event.threadID : event.senderID;
 
-                        let logMessage = `${idType}: ${idValue}\nSenderID: ${event.senderID}\nMessage: ${(event?.body || "").trim()}`;
+                        let logMessage = `[${idType}]: ${idValue}\n[SENDER ID]: ${event.senderID}\n[MESSAGE]: ${(event?.body || "").trim()}`;
 
-                        logger.instagram(fonts.origin(logMessage));
+                        logger.rainbow(fonts.origin(logMessage));
                     }
 
                     const reply = async (msg) => {
