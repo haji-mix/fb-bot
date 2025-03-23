@@ -321,7 +321,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         case "message_reply":
                             if (aliases(command?.toLowerCase())?.name) {
                                 try {
-                                    logger.green(`Executing command: ${aliases(command?.toLowerCase())?.name}`);
+                                    logger.rainbow(`[${aliases(command?.toLowerCase())?.name}] [CMD] [EXECUTED ✓]`);
                                     Utils.handleReply.findIndex(
                                         reply => reply.author === event.senderID
                                     ) !== -1
