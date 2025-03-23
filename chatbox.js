@@ -672,31 +672,47 @@ async function main() {
                     const decState = decryptSession(state);
                     await accountLogin(decState, prefix, admin);
                 }
-            } catch (error) {
-                const ERROR_PATTERNS = {
-                    unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
-                    errorRetrieving: /Error retrieving userID.*unknown location/
-                };
+    } catch (error) {
+    const ERROR_PATTERNS = {
+        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
+        errorRetrieving: /Error retrieving userID.*unknown location/,
+        connectionRefused: /Connection refused: Server unavailable/,
+        notLoggedIn: /Not logged in\./
+    };
 
-                const ERROR = error?.message || error?.error;
+    const ERROR = error?.message || error?.error;
 
+    let errorHandled = false;
 
-                if (ERROR === "Connection refused: Server unavailable" || ERROR === "Not logged in.") {
+    for (const [errorType, pattern] of Object.entries(ERROR_PATTERNS)) {
+        if (pattern.test(ERROR)) {
+            switch (errorType) {
+                case 'connectionRefused':
+                case 'notLoggedIn':
                     logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account make sure appstate still valid!`);
-                    Utils.account.delete(userId);
-                    deleteThisUser(userId);
-                } else if (ERROR_PATTERNS.errorRetrieving.test(ERROR)) {
+                    break;
+                case 'errorRetrieving':
                     logger.yellow(`Detected login issue for user ${userId}.`);
-                    Utils.account.delete(userId);
-                    deleteThisUser(userId);
-                } else if (ERROR_PATTERNS.unsupportedBrowser.test(ERROR)) {
+                    break;
+                case 'unsupportedBrowser':
                     logger.yellow(`Detected login browser issue for user ${userId}. Deleting account.`);
-                    Utils.account.delete(userId);
-                    deleteThisUser(userId);
-                } else {
-                    logger.red(`Can't log in user ${userId}: Something wen't wrong!: ` + error.stack);
-                }
+                    break;
+                default:
+                    logger.red(`Can't log in user ${userId}: Something went wrong!: ` + error.stack);
+                    break;
             }
+
+            Utils.account.delete(userId);
+            deleteThisUser(userId);
+            errorHandled = true;
+            break;
+        }
+    }
+
+    if (!errorHandled) {
+        logger.red(`Can't log in user ${userId}: Something went wrong!: ` + error.stack);
+    }
+}
         }
 
         if (process.env.APPSTATE) {
