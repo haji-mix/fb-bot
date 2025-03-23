@@ -8,7 +8,10 @@ const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 let npmPackages = [
     { name: "canvas", version: "latest" },
-    { name: "kleur", version: "latest" }
+    { name: "kleur", version: "latest" },
+    { name: "@babel/core", version: "latest" }, 
+    { name: "@babel/node", version: "latest" }, 
+    { name: "@babel/preset-env", version: "latest" }
 ];
 
 const restartEnabled = process.env.PID !== "0";
@@ -53,7 +56,7 @@ function start() {
         console.log("No PORT set, starting main process without a specific port.");
     }
 
-    mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
+    mainProcess = spawn("npx", ["babel-node", "--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
@@ -86,6 +89,17 @@ function restartProcess() {
     start();
 }
 
+function ensureBabelConfig() {
+    const babelConfigPath = path.join(__dirname, ".babelrc");
+    if (!fs.existsSync(babelConfigPath)) {
+        console.log("Creating .babelrc file...");
+        fs.writeFileSync(babelConfigPath, JSON.stringify({
+            presets: ["@babel/preset-env"]
+        }, null, 2));
+    }
+}
+
+ensureBabelConfig();
 installPackages(() => {
     start();
 });
