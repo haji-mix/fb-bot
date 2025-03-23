@@ -11,13 +11,6 @@ let npmPackages = [
     { name: "kleur", version: "latest" }
 ];
 
-if (isTypeScriptSupported()) {
-    npmPackages.push(
-        { name: "typescript", version: "latest" },
-        { name: "ts-node", version: "latest" }
-    );
-}
-
 const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 
@@ -50,28 +43,6 @@ function installPackages(callback) {
     });
 
     callback();
-}
-
-function setupTypeScript() {
-    try {
-        if (!fs.existsSync("tsconfig.json")) {
-            console.log("Setting up TypeScript...");
-            execSync("tsc --init", { stdio: "inherit" });
-        } else {
-            console.log("TypeScript already set up.");
-        }
-    } catch (error) {
-        console.error("TypeScript setup failed (likely due to environment limitations). Skipping TypeScript setup...");
-    }
-}
-
-function isTypeScriptSupported() {
-    try {
-        execSync("tsc --version", { stdio: "ignore" });
-        return true;
-    } catch (error) {
-        return false;
-    }
 }
 
 function start() {
@@ -116,8 +87,5 @@ function restartProcess() {
 }
 
 installPackages(() => {
-    if (isTypeScriptSupported()) {
-        setupTypeScript();
-    }
     start();
 });
