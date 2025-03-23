@@ -24,10 +24,12 @@ const {
     getCommands,
     getInfo,
     processExit
-} = require("./routehandler.js");
+} = require("./routehandler");
 const {
     download
 } = require("./download");
+
+const { botHandler } = require("./bothandler");
 
 module.exports = {
     workers,
@@ -41,5 +43,6 @@ module.exports = {
     generateUserAgent,
     getCommands,
     getInfo,
-    processExit
+    processExit,
+    botHandler
 }
