@@ -681,7 +681,7 @@ async function main() {
                 const ERROR = error?.message || error?.error;
 
 
-                if (ERROR === "Connection refused: Server unavailable") {
+                if (ERROR === "Connection refused: Server unavailable" || ERROR === "Not logged in.") {
                     logger.yellow(`Can't log in user ${userId}: checkpoint status, please check your account make sure appstate still valid!`);
                     Utils.account.delete(userId);
                     deleteThisUser(userId);
