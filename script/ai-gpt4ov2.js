@@ -29,12 +29,16 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
 
     if (!ask) return chat.reply(font.thin('Please provide a message!'));
 
+    const answering = await chat.reply(mono("Generating response..."));
+    
     try {
         const res = await axios.get(`https://haji-mix.up.railway.app/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${event.senderID}`);
         
         if (res.data.images && res.data.images.length > 0) {
             const imageUrls = res.data.images.map(image => image.url);
             const imageDescriptions = res.data.images.map((image, index) => `${index + 1}. ${image.description}`).join("\n\n");
+            
+            answering.unsend();
             
             const attachments = await Promise.all(imageUrls.map(url => chat.stream(url)));
             return chat.reply({ body: imageDescriptions, attachment: attachments });
@@ -43,5 +47,6 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
         chat.reply(res.data.answer);
     } catch (error) {
         chat.reply(font.thin(error.message));
+        answering.unsend();
     }
 };
