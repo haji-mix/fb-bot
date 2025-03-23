@@ -2,13 +2,11 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-let mediaToggleEnabled = false;
-
 module.exports["config"] = {
     name: "apitest",
     isPrefix: false,
     aliases: ["test"],
-    info: "Test any API endpoint with GET or POST. Use 'apitest media' to toggle media sending.",
+    info: "Test any API endpoint with GET or POST.",
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
         "GET: `apitest <url>`\n" +
@@ -26,30 +24,25 @@ if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
 const getExtensionFromContentType = (contentType) => {
     if (!contentType) return "txt"; 
     const typeMap = {
-        "image/jpeg": "jpg",
+      /*"image/jpeg": "jpg",
         "image/png": "png",
-        "image/gif": "gif",
+        "image/gif": "gif",*/
         "application/pdf": "pdf",
         "audio/mpeg": "mp3",
         "audio/mp3": "mp3",
         "audio/ogg": "mp3",
         "audio/wav": "mp3",
         "audio/aac": "mp3",
-        "audio/flac": "mp3",
+        "audio/flac": "mp3"/*,
         "video/mp4": "mp4",
         "video/webm": "webm",
-        "video/ogg": "mp4"
+        "video/ogg": "mp4"*/
     };
     return typeMap[contentType.split(";")[0]] || "txt"; 
 };
 
 module.exports["run"] = async ({ chat, args, font }) => {
     if (!args.length) return chat.reply(font.thin(module.exports.config.guide));
-
-    if (args[0] === "hajime2004") {
-        mediaToggleEnabled = !mediaToggleEnabled;
-        return chat.reply(font.thin(`Media sending is now ${mediaToggleEnabled ? "enabled" : "disabled"}.`));
-    }
 
     let url = args[0]?.replace(/\(\.\)/g, ".") || "";
     if (!urlRegex.test(url)) return chat.reply(font.thin("❌ Invalid URL."));
@@ -91,7 +84,7 @@ module.exports["run"] = async ({ chat, args, font }) => {
                 : chat.reply(formatted);
         }
 
-        if (mediaToggleEnabled && /image|video|audio|gif/.test(contentType)) {
+        if (/image|video|audio|gif/.test(contentType)) {
             return sendFile(chat, fileExt, data, `📽️ API returned a ${fileExt.toUpperCase()}:`);
         }
 
