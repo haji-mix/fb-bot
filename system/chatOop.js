@@ -1,6 +1,8 @@
 const { workers } = require("./workers");
 const { logger } = require("./logger");
 const { download } = require("./download");
+const { fonts } = require("./fonts");
+
 
 class OnChat {
     constructor(api = "", event = {}) {
@@ -248,27 +250,33 @@ class OnChat {
         }
     }
 
-    async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
-        try {
-            if (!tid || !msg) {
-                throw new Error("Thread ID and Message are required.");
-            }
-            const replyMsg = await this.api.sendMessage(msg, tid, mid);
-            return {
-                messageID: replyMsg.messageID,
-                edit: async (message, delay = 0) => {
-                    await new Promise(res => setTimeout(res, delay));
-                    return await this.api.editMessage(message, replyMsg.messageID);
-                },
-                unsend: async (delay = 0) => {
-                    await new Promise(res => setTimeout(res, delay));
-                    return await this.api.unsendMessage(replyMsg.messageID);
-                }
-            };
-        } catch (error) {
-            return null;
-        }
+ async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
+  try {
+    if (!tid || !msg) {
+      throw new Error("Thread ID and Message are required.");
     }
+
+    const formatBold = (text) => text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
+    const formattedMsg = formatBold(msg);
+
+    const replyMsg = await this.api.sendMessage(formattedMsg, tid, mid);
+
+    return {
+      messageID: replyMsg.messageID,
+      edit: async (message, delay = 0) => {
+        await new Promise(res => setTimeout(res, delay));
+        const formattedEdit = formatBold(message);
+        return await this.api.editMessage(formattedEdit, replyMsg.messageID);
+      },
+      unsend: async (delay = 0) => {
+        await new Promise(res => setTimeout(res, delay));
+        return await this.api.unsendMessage(replyMsg.messageID);
+      }
+    };
+  } catch (error) {
+    return null;
+  }
+}
 
     async editmsg(msg, mid) {
         try {
