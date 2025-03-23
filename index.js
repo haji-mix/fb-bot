@@ -1,5 +1,4 @@
-require("dotenv").config(); // Load environment variables FIRST
-
+require("dotenv").config();
 const { spawn, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -41,7 +40,7 @@ function installPackages(callback) {
     outdatedPackages.forEach(pkg => {
         const version = pkg.version ? `@${pkg.version}` : '';
         console.log(`- Installing ${pkg.name}${version}`);
-        const installProcess = spawn("npm", ["install", "-g", `${pkg.name}${version}`], { stdio: "inherit", shell: true });
+        const installProcess = spawn("npm", ["install", "-g", `${pkg.name}${version}`, `--no-bin-links`], { stdio: "inherit", shell: true });
 
         installProcess.on("close", (code) => {
             if (code !== 0) {
