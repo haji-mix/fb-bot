@@ -31,6 +31,8 @@ const {
 
 const { botHandler } = require("./bothandler");
 
+const { minifyHtml, obfuscate } = require("./htmlLib");
+
 module.exports = {
     workers,
     logger,
@@ -44,5 +46,7 @@ module.exports = {
     getCommands,
     getInfo,
     processExit,
-    botHandler
+    botHandler,
+    minifyHtml,
+    obfuscate
 }
