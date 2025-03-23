@@ -17,30 +17,23 @@ class OnChat {
             });
         } catch (error) {
             this.error(`Constructor error: ${error.message}`);
-            throw error;
-        }
-    }
-
-    async handleError(promise, context = "An error occurred") {
-        try {
-            return await promise;
-        } catch (error) {
-            this.error(`${context}: ${ error.error || error.message || error.stack}`);
-            return null;
         }
     }
 
     async shorturl(url) {
-        return this.handleError((async () => {
+        try {
             if (!url) {
                 throw new Error("URL is required.");
             }
             return await this.tinyurl(url);
-        })(), "Error in shorturl");
+        } catch (error) {
+            this.error(`Error in shorturl: ${error.message}`);
+            return null;
+        }
     }
 
     async tinyurl(url) {
-        return this.handleError((async () => {
+        try {
             const axios = require("axios");
             const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
 
@@ -50,20 +43,19 @@ class OnChat {
 
             if (!Array.isArray(url)) url = [url];
 
-            return Promise.all(url.map(async (u) => {
+            return await Promise.all(url.map(async (u) => {
                 if (!u || !urlRegex.test(u)) return u;
-                try {
-                    const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
-                    return response.data;
-                } catch {
-                    return u;
-                }
+                const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
+                return response.data;
             }));
-        })(), "Error in tinyurl");
+        } catch (error) {
+            this.error(`Error in tinyurl: ${error.message}`);
+            return url; 
+        }
     }
 
     async testCo(pogiko, lvl = 1) {
-        return this.handleError((async () => {
+        try {
             const hajime = await workers();
             if (!hajime || !hajime.design) {
                 throw new Error("Invalid workers response.");
@@ -91,143 +83,191 @@ class OnChat {
                     return;
                 }
             }
-        })(), "Error in testCo");
+        } catch (error) {
+            this.error(`Error in testCo: ${error.message}`);
+            return null;
+        }
     }
 
     async arraybuffer(link, extension = "png") {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await download(link, 'arraybuffer', extension);
-        })(), "Error in arraybuffer");
+        } catch (error) {
+            this.error(`Error in arraybuffer: ${error.message}`);
+            return null;
+        }
     }
 
     async binary(link, extension = "png") {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await download(link, 'binary', extension);
-        })(), "Error in binary");
+        } catch (error) {
+            this.error(`Error in binary: ${error.message}`);
+            return null;
+        }
     }
 
     async stream(link) {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await download(link, 'stream');
-        })(), "Error in stream");
+        } catch (error) {
+            this.error(`Error in stream: ${error.message}`);
+            return null;
+        }
     }
 
     async decodeStream(base64, extension = "png", responseType = "base64") {
-        return this.handleError((async () => {
+        try {
             if (!base64) {
                 throw new Error("Base64 data is required.");
             }
             return await download(base64, responseType, extension);
-        })(), "Error in decodeStream");
+        } catch (error) {
+            this.error(`Error in decodeStream: ${error.message}`);
+            return null;
+        }
     }
 
     async profile(link, caption = "Profile Changed", date = null) {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await this.api.changeAvatar(await this.stream(link), caption, date);
-        })(), "Error in profile");
+        } catch (error) {
+            this.error(`Error in profile: ${error.message}`);
+            return null;
+        }
     }
 
-    post(msg) {
-        return this.handleError((async () => {
+    async post(msg) {
+        try {
             if (!msg) {
                 throw new Error("Message is required.");
             }
             return await this.api.createPost(msg);
-        })(), "Error in post");
+        } catch (error) {
+            this.error(`Error in post: ${error.message}`);
+            return null;
+        }
     }
 
-    comment(msg, postID) {
-        return this.handleError((async () => {
+    async comment(msg, postID) {
+        try {
             if (!msg || !postID) {
                 throw new Error("Message and Post ID are required.");
             }
             return await this.api.createCommentPost(msg, postID);
-        })(), "Error in comment");
+        } catch (error) {
+            this.error(`Error in comment: ${error.message}`);
+            return null;
+        }
     }
 
     async cover(link) {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await this.api.changeCover(await this.stream(link));
-        })(), "Error in cover");
+        } catch (error) {
+            this.error(`Error in cover: ${error.message}`);
+            return null;
+        }
     }
 
-    react(emoji = "❓", mid = this.messageID, bool = true) {
-        return this.handleError((async () => {
+    async react(emoji = "❓", mid = this.messageID, bool = true) {
+        try {
             if (!mid) {
                 throw new Error("Message ID is required.");
             }
             return await this.api.setMessageReaction(emoji, mid, bool);
-        })(), "Error in react");
+        } catch (error) {
+            this.error(`Error in react: ${error.message}`);
+            return null;
+        }
     }
 
-    nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
-        return this.handleError((async () => {
+    async nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
+        try {
             if (!name || !id) {
                 throw new Error("Name and ID are required.");
             }
             return await this.api.changeNickname(name, this.threadID, id);
-        })(), "Error in nickname");
+        } catch (error) {
+            this.error(`Error in nickname: ${error.message}`);
+            return null;
+        }
     }
 
-    bio(text) {
-        return this.handleError((async () => {
+    async bio(text) {
+        try {
             if (!text) {
                 throw new Error("Text is required.");
             }
             return await this.api.changeBio(text);
-        })(), "Error in bio");
+        } catch (error) {
+            this.error(`Error in bio: ${error.message}`);
+            return null;
+        }
     }
 
-    contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
-        return this.handleError((async () => {
+    async contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
+        try {
             if (!msg || !id || !tid) {
                 throw new Error("Message, ID, and Thread ID are required.");
             }
             return await this.api.shareContact(msg, id, tid);
-        })(), "Error in contact");
+        } catch (error) {
+            this.error(`Error in contact: ${error.message}`);
+            return null;
+        }
     }
 
     async uid(link) {
-        return this.handleError((async () => {
+        try {
             if (!link) {
                 throw new Error("Link is required.");
             }
             return await this.api.getUID(link);
-        })(), "Error in uid");
+        } catch (error) {
+            this.error(`Error in uid: ${error.message}`);
+            return null;
+        }
     }
 
     async token() {
-        return this.handleError((async () => {
+        try {
             return await this.api.getAccess(await this.api.getCookie());
-        })(), "Error in token");
+        } catch (error) {
+            this.error(`Error in token: ${error.message}`);
+            return null;
+        }
     }
 
-    send(msg, tid = this.threadID, mid = null) {
-        return this.handleError((async () => {
+    async send(msg, tid = this.threadID, mid = null) {
+        try {
             if (!tid || !msg) {
                 throw new Error("Thread ID and Message are required.");
             }
             return await this.reply(msg, tid, mid);
-        })(), "Error in send");
+        } catch (error) {
+            this.error(`Error in send: ${error.message}`);
+            return null;
+        }
     }
 
     async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
-        return this.handleError((async () => {
+        try {
             if (!tid || !msg) {
                 throw new Error("Thread ID and Message are required.");
             }
@@ -236,141 +276,186 @@ class OnChat {
                 messageID: replyMsg.messageID,
                 edit: async (message, delay = 0) => {
                     await new Promise(res => setTimeout(res, delay));
-                    return await this.handleError(this.api.editMessage(message, replyMsg.messageID), "Error in edit");
+                    return await this.api.editMessage(message, replyMsg.messageID);
                 },
                 unsend: async (delay = 0) => {
                     await new Promise(res => setTimeout(res, delay));
-                    return await this.handleError(this.api.unsendMessage(replyMsg.messageID), "Error in unsend");
+                    return await this.api.unsendMessage(replyMsg.messageID);
                 }
             };
-        })(), "Error in reply");
+        } catch (error) {
+            this.error(`Error in reply: ${error.message}`);
+            return null;
+        }
     }
 
-    editmsg(msg, mid) {
-        return this.handleError((async () => {
+    async editmsg(msg, mid) {
+        try {
             if (!msg || !mid) {
                 throw new Error("Message and Message ID are required.");
             }
             return await this.api.editMessage(msg, mid);
-        })(), "Error in editmsg");
+        } catch (error) {
+            this.error(`Error in editmsg: ${error.message}`);
+            return null;
+        }
     }
 
-    unsendmsg(mid) {
-        return this.handleError((async () => {
+    async unsendmsg(mid) {
+        try {
             if (!mid) {
                 throw new Error("Message ID is required.");
             }
             return await this.api.unsendMessage(mid);
-        })(), "Error in unsendmsg");
+        } catch (error) {
+            this.error(`Error in unsendmsg: ${error.message}`);
+            return null;
+        }
     }
 
-    add(id, tid = this.threadID) {
-        return this.handleError((async () => {
+    async add(id, tid = this.threadID) {
+        try {
             if (!id || !tid) {
                 throw new Error("User ID and Thread ID are required.");
             }
             return await this.api.addUserToGroup(id, tid);
-        })(), "Error in add");
+        } catch (error) {
+            this.error(`Error in add: ${error.message}`);
+            return null;
+        }
     }
 
-    kick(id, tid = this.threadID) {
-        return this.handleError((async () => {
+    async kick(id, tid = this.threadID) {
+        try {
             if (!id || !tid) {
                 throw new Error("User ID and Thread ID are required.");
             }
             return await this.api.removeUserFromGroup(id, tid);
-        })(), "Error in kick");
+        } catch (error) {
+            this.error(`Error in kick: ${error.message}`);
+            return null;
+        }
     }
 
-    block(id, app = "msg", bool = true) {
-        return this.handleError((async () => {
+    async block(id, app = "msg", bool = true) {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             const status = bool ? (app === "fb" ? 3 : 1) : (app === "fb" ? 0 : 2);
             const type = app === "fb" ? "facebook" : "messenger";
             return await this.api.changeBlockedStatusMqtt(id, status, type);
-        })(), "Error in block");
+        } catch (error) {
+            this.error(`Error in block: ${error.message}`);
+            return null;
+        }
     }
 
-    promote(id) {
-        return this.handleError((async () => {
+    async promote(id) {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             return await this.api.changeAdminStatus(this.threadID, id, true);
-        })(), "Error in promote");
+        } catch (error) {
+            this.error(`Error in promote: ${error.message}`);
+            return null;
+        }
     }
 
-    demote(id) {
-        return this.handleError((async () => {
+    async demote(id) {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             return await this.api.changeAdminStatus(this.threadID, id, false);
-        })(), "Error in demote");
+        } catch (error) {
+            this.error(`Error in demote: ${error.message}`);
+            return null;
+        }
     }
 
-    botID() {
-        return this.handleError((async () => {
+    async botID() {
+        try {
             if (!this.api || !this.api.getCurrentUserID) {
                 throw new Error("API method getCurrentUserID is not available.");
             }
             return await this.api.getCurrentUserID();
-        })(), "Error in botID");
+        } catch (error) {
+            this.error(`Error in botID: ${error.message}`);
+            return null;
+        }
     }
 
     async userInfo(id = this.senderID) {
-        return this.handleError((async () => {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             return await this.api.getUserInfo(id);
-        })(), "Error in userInfo");
+        } catch (error) {
+            this.error(`Error in userInfo: ${error.message}`);
+            return null;
+        }
     }
 
     async userName(id = this.senderID) {
-        return this.handleError((async () => {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             const fetch = await this.api.getInfo(id);
             return fetch.name || "Facebook User";
-        })(), "Error in userName");
+        } catch (error) {
+            this.error(`Error in userName: ${error.message}`);
+            return null;
+        }
     }
 
-    unfriend(id) {
-        return this.handleError((async () => {
+    async unfriend(id) {
+        try {
             if (!id) {
                 throw new Error("User ID is required.");
             }
             return await this.api.unfriend(id);
-        })(), "Error in unfriend");
+        } catch (error) {
+            this.error(`Error in unfriend: ${error.message}`);
+            return null;
+        }
     }
 
     async threadInfo(tid = this.threadID) {
-        return this.handleError((async () => {
+        try {
             if (!tid) {
                 throw new Error("Thread ID is required.");
             }
             return await this.api.getThreadInfo(tid);
-        })(), "Error in threadInfo");
+        } catch (error) {
+            this.error(`Error in threadInfo: ${error.message}`);
+            return null;
+        }
     }
 
     async delthread(tid, delay = 0) {
-        return this.handleError((async () => {
+        try {
             if (!tid) {
                 throw new Error("Thread ID is required.");
             }
             await new Promise(resolve => setTimeout(resolve, delay));
             return await this.api.deleteThread(tid);
-        })(), "Error in delthread");
+        } catch (error) {
+            this.error(`Error in delthread: ${error.message}`);
+            return null;
+        }
     }
 
     async threadList(total = 5, array = ["INBOX"]) {
-        return this.handleError((async () => {
+        try {
             return await this.api.getThreadList(total, null, array);
-        })(), "Error in threadList");
+        } catch (error) {
+            this.error(`Error in threadList: ${error.message}`);
+            return null;
+        }
     }
 
     log(txt) {

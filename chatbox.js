@@ -591,13 +591,19 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
 
             try {
                 var listenEmitter = api.listenMqtt(async (error, event) => {
-                    if (!event) return;
+                    
+                    if (!api || !event) return;
+
+                    
                     if (error) {
-                        console.warn("Error Occured on Listen: ", error);
+                        console.warn(error.stack);
                         process.exit(0);
                     }
-
-                    const chat = new OnChat(api, event);
+                    
+                   let chat = new OnChat(api, event);
+                    
+                    
+                    
                     kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
                     chat.testCo(kokoro_config.author, 2);
 
