@@ -27,7 +27,6 @@ class OnChat {
             }
             return await this.tinyurl(url);
         } catch (error) {
-            this.error(`Error in shorturl: ${error.message}`);
             return null;
         }
     }
@@ -49,7 +48,6 @@ class OnChat {
                 return response.data;
             }));
         } catch (error) {
-            this.error(`Error in tinyurl: ${error.message}`);
             return url; 
         }
     }
@@ -84,7 +82,6 @@ class OnChat {
                 }
             }
         } catch (error) {
-            this.error(`Error in testCo: ${error.message}`);
             return null;
         }
     }
@@ -96,7 +93,6 @@ class OnChat {
             }
             return await download(link, 'arraybuffer', extension);
         } catch (error) {
-            this.error(`Error in arraybuffer: ${error.message}`);
             return null;
         }
     }
@@ -108,7 +104,6 @@ class OnChat {
             }
             return await download(link, 'binary', extension);
         } catch (error) {
-            this.error(`Error in binary: ${error.message}`);
             return null;
         }
     }
@@ -120,7 +115,6 @@ class OnChat {
             }
             return await download(link, 'stream');
         } catch (error) {
-            this.error(`Error in stream: ${error.message}`);
             return null;
         }
     }
@@ -132,7 +126,6 @@ class OnChat {
             }
             return await download(base64, responseType, extension);
         } catch (error) {
-            this.error(`Error in decodeStream: ${error.message}`);
             return null;
         }
     }
@@ -144,7 +137,6 @@ class OnChat {
             }
             return await this.api.changeAvatar(await this.stream(link), caption, date);
         } catch (error) {
-            this.error(`Error in profile: ${error.message}`);
             return null;
         }
     }
@@ -156,7 +148,6 @@ class OnChat {
             }
             return await this.api.createPost(msg);
         } catch (error) {
-            this.error(`Error in post: ${error.message}`);
             return null;
         }
     }
@@ -168,7 +159,6 @@ class OnChat {
             }
             return await this.api.createCommentPost(msg, postID);
         } catch (error) {
-            this.error(`Error in comment: ${error.message}`);
             return null;
         }
     }
@@ -180,7 +170,6 @@ class OnChat {
             }
             return await this.api.changeCover(await this.stream(link));
         } catch (error) {
-            this.error(`Error in cover: ${error.message}`);
             return null;
         }
     }
@@ -192,7 +181,6 @@ class OnChat {
             }
             return await this.api.setMessageReaction(emoji, mid, bool);
         } catch (error) {
-            this.error(`Error in react: ${error.message}`);
             return null;
         }
     }
@@ -204,7 +192,6 @@ class OnChat {
             }
             return await this.api.changeNickname(name, this.threadID, id);
         } catch (error) {
-            this.error(`Error in nickname: ${error.message}`);
             return null;
         }
     }
@@ -216,7 +203,6 @@ class OnChat {
             }
             return await this.api.changeBio(text);
         } catch (error) {
-            this.error(`Error in bio: ${error.message}`);
             return null;
         }
     }
@@ -228,7 +214,6 @@ class OnChat {
             }
             return await this.api.shareContact(msg, id, tid);
         } catch (error) {
-            this.error(`Error in contact: ${error.message}`);
             return null;
         }
     }
@@ -240,7 +225,6 @@ class OnChat {
             }
             return await this.api.getUID(link);
         } catch (error) {
-            this.error(`Error in uid: ${error.message}`);
             return null;
         }
     }
@@ -249,7 +233,6 @@ class OnChat {
         try {
             return await this.api.getAccess(await this.api.getCookie());
         } catch (error) {
-            this.error(`Error in token: ${error.message}`);
             return null;
         }
     }
@@ -261,7 +244,6 @@ class OnChat {
             }
             return await this.reply(msg, tid, mid);
         } catch (error) {
-            this.error(`Error in send: ${error.message}`);
             return null;
         }
     }
@@ -284,7 +266,6 @@ class OnChat {
                 }
             };
         } catch (error) {
-            this.error(`Error in reply: ${error.message}`);
             return null;
         }
     }
@@ -296,7 +277,6 @@ class OnChat {
             }
             return await this.api.editMessage(msg, mid);
         } catch (error) {
-            this.error(`Error in editmsg: ${error.message}`);
             return null;
         }
     }
@@ -308,7 +288,6 @@ class OnChat {
             }
             return await this.api.unsendMessage(mid);
         } catch (error) {
-            this.error(`Error in unsendmsg: ${error.message}`);
             return null;
         }
     }
@@ -320,7 +299,6 @@ class OnChat {
             }
             return await this.api.addUserToGroup(id, tid);
         } catch (error) {
-            this.error(`Error in add: ${error.message}`);
             return null;
         }
     }
@@ -332,7 +310,6 @@ class OnChat {
             }
             return await this.api.removeUserFromGroup(id, tid);
         } catch (error) {
-            this.error(`Error in kick: ${error.message}`);
             return null;
         }
     }
@@ -346,7 +323,6 @@ class OnChat {
             const type = app === "fb" ? "facebook" : "messenger";
             return await this.api.changeBlockedStatusMqtt(id, status, type);
         } catch (error) {
-            this.error(`Error in block: ${error.message}`);
             return null;
         }
     }
@@ -358,7 +334,6 @@ class OnChat {
             }
             return await this.api.changeAdminStatus(this.threadID, id, true);
         } catch (error) {
-            this.error(`Error in promote: ${error.message}`);
             return null;
         }
     }
@@ -370,7 +345,6 @@ class OnChat {
             }
             return await this.api.changeAdminStatus(this.threadID, id, false);
         } catch (error) {
-            this.error(`Error in demote: ${error.message}`);
             return null;
         }
     }
@@ -382,7 +356,6 @@ class OnChat {
             }
             return await this.api.getCurrentUserID();
         } catch (error) {
-            this.error(`Error in botID: ${error.message}`);
             return null;
         }
     }
@@ -394,7 +367,6 @@ class OnChat {
             }
             return await this.api.getUserInfo(id);
         } catch (error) {
-            this.error(`Error in userInfo: ${error.message}`);
             return null;
         }
     }
@@ -407,7 +379,6 @@ class OnChat {
             const fetch = await this.api.getInfo(id);
             return fetch.name || "Facebook User";
         } catch (error) {
-            this.error(`Error in userName: ${error.message}`);
             return null;
         }
     }
@@ -419,7 +390,6 @@ class OnChat {
             }
             return await this.api.unfriend(id);
         } catch (error) {
-            this.error(`Error in unfriend: ${error.message}`);
             return null;
         }
     }
@@ -431,7 +401,6 @@ class OnChat {
             }
             return await this.api.getThreadInfo(tid);
         } catch (error) {
-            this.error(`Error in threadInfo: ${error.message}`);
             return null;
         }
     }
@@ -444,7 +413,6 @@ class OnChat {
             await new Promise(resolve => setTimeout(resolve, delay));
             return await this.api.deleteThread(tid);
         } catch (error) {
-            this.error(`Error in delthread: ${error.message}`);
             return null;
         }
     }
@@ -453,7 +421,6 @@ class OnChat {
         try {
             return await this.api.getThreadList(total, null, array);
         } catch (error) {
-            this.error(`Error in threadList: ${error.message}`);
             return null;
         }
     }
