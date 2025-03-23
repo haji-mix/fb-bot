@@ -361,7 +361,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                 } catch (error) {
                                     const error_msg = `Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${error.stack}`;
                                     reply(error_msg);
-                                    logger.red(`Something wen't wrong with the command '${name}' error: ` + error.stack);
+                                    logger.red(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: ` + error.stack);
                                     for (const adminID of kokoro_config.admins) {
             await chat.send(error_msg, adminID);
         }
