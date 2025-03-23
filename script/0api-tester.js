@@ -110,5 +110,4 @@ async function sendFile(chat, ext, data, caption) {
     });
 
     fs.unlinkSync(filePath);
-    message.unsend(180000);
 }
