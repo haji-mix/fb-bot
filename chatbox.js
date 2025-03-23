@@ -585,7 +585,7 @@ async function deleteThisUser(userid) {
     try {
         fs.unlinkSync(sessionFile);
     } catch (error) {
-        console.error(error.stack);
+        logger.red(error.stack);
     }
 }
 async function addThisUser(userid, state, prefix, admin) {
@@ -645,7 +645,7 @@ async function main() {
             await empty.emptyDir(cacheFile);
             await fs.writeFileSync('./data/history.json', JSON.stringify(history, null, 2));
         } catch (error) {
-            logger.red('Error executing task:', error.stack);
+            logger.red('Error executing task:' + error.stack);
         }
     };
 
@@ -694,7 +694,7 @@ async function main() {
                     Utils.account.delete(userId);
                     deleteThisUser(userId);
                 } else {
-                    logger.red(`Can't log in user ${userId}: Something wen't wrong!: `, error.stack);
+                    logger.red(`Can't log in user ${userId}: Something wen't wrong!: ` + error.stack);
                 }
             }
         }
