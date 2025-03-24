@@ -3,6 +3,9 @@ const { logger } = require("./logger");
 const { download } = require("./download");
 const { fonts } = require("./fonts");
 
+const axios = require("axios");
+
+
 const formatBold = (text) => {
       if (typeof text === 'string') {
         return text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
@@ -39,26 +42,36 @@ class OnChat {
         }
     }
 
-    async tinyurl(url) {
-        try {
-            const axios = require("axios");
-            const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
+async function tinyurl(url) {
+    const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
 
-            if (!url) {
-                throw new Error("URL is required.");
-            }
-
-            if (!Array.isArray(url)) url = [url];
-
-            return await Promise.all(url.map(async (u) => {
-                if (!u || !urlRegex.test(u)) return u;
-                const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
-                return response.data;
-            }));
-        } catch (error) {
-            return url; 
-        }
+    if (!url) {
+        throw new Error("URL is required.");
     }
+
+    if (!Array.isArray(url)) {
+        url = [url];
+    }
+
+    try {
+        const shortenedUrls = await Promise.all(
+            url.map(async (u) => {
+                if (!u || !urlRegex.test(u)) {
+                    return u;
+                }
+
+                const response = await axios.get(
+                    `https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`
+                );
+                return response.data;
+            })
+        );
+
+        return url.length === 1 ? shortenedUrls[0] : shortenedUrls;
+    } catch (error) {
+        return url.length === 1 ? url[0] : url;
+    }
+}
 
     async testCo(pogiko, lvl = 1) {
         try {
