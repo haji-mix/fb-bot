@@ -42,7 +42,7 @@ class OnChat {
         }
     }
 
-async function tinyurl(url) {
+async tinyurl(url) {
     const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
 
     if (!url) {
