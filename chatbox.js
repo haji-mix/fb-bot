@@ -555,8 +555,14 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
                         process.exit(0);
                     }
                     
-                    let chat = new OnChat(api, event);                              
+                    let chat = new OnChat(api, event);
                     
+                    for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(chat))) {
+    if (typeof chat[key] === 'function' && key !== 'constructor') {
+        global[key] = (...args) => chat[key](...args);
+    }
+}
+                
                     botHandler({ fonts, chat, api, Utils, logger, event, aliases, admin, global, prefix, userid });
                                   
                 });
