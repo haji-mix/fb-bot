@@ -273,11 +273,7 @@ class OnChat {
       messageID: replyMsg.messageID,
       edit: async (message, delay = 0) => {
         await new Promise(res => setTimeout(res, delay));
-        const formattedEdit = typeof message === 'string' ? formatBold(message) : {
-          ...message,
-          body: message.body ? formatBold(message.body) : undefined
-        };
-        return await this.editmsg(formattedEdit, replyMsg.messageID);
+        return await this.editmsg(message, replyMsg.messageID);
       },
       unsend: async (delay = 0) => {
         await new Promise(res => setTimeout(res, delay));
