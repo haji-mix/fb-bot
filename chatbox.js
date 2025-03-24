@@ -432,7 +432,9 @@ function changePort() {
 startServer();
 
 async function accountLogin(state, prefix = "", admin = [], email, password) {
-    const global = await workers();
+     const global = await workers()
+     
+     Object.assign(global, global);
 
     return new Promise((resolve, reject) => {
         const loginOptions = state
