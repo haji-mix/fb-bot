@@ -256,8 +256,17 @@ class OnChat {
       throw new Error("Thread ID and Message are required.");
     }
 
-    const formatBold = (text) => text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
-    const formattedMsg = formatBold(msg);
+    const formatBold = (text) => {
+      if (typeof text === 'string') {
+        return text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
+      }
+      return text; 
+    };
+
+    const formattedMsg = typeof msg === 'string' ? formatBold(msg) : {
+      ...msg,
+      body: msg.body ? formatBold(msg.body) : undefined
+    };
 
     const replyMsg = await this.api.sendMessage(formattedMsg, tid, mid);
 
@@ -265,7 +274,10 @@ class OnChat {
       messageID: replyMsg.messageID,
       edit: async (message, delay = 0) => {
         await new Promise(res => setTimeout(res, delay));
-        const formattedEdit = formatBold(message);
+        const formattedEdit = typeof message === 'string' ? formatBold(message) : {
+          ...message,
+          body: message.body ? formatBold(message.body) : undefined
+        };
         return await this.editmsg(formattedEdit, replyMsg.messageID);
       },
       unsend: async (delay = 0) => {
