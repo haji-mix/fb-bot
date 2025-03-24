@@ -377,12 +377,9 @@ async tinyurl(url) {
         }
     }
 
-    async botID() {
+     botID() {
         try {
-            if (!this.api || !this.api.getCurrentUserID) {
-                throw new Error("API method getCurrentUserID is not available.");
-            }
-            return await this.api.getCurrentUserID();
+            return this.api.getCurrentUserID();
         } catch (error) {
             return null;
         }
