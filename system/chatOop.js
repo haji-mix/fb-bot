@@ -3,6 +3,12 @@ const { logger } = require("./logger");
 const { download } = require("./download");
 const { fonts } = require("./fonts");
 
+const formatBold = (text) => {
+      if (typeof text === 'string') {
+        return text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
+      }
+      return text; 
+    };
 
 class OnChat {
     constructor(api = "", event = {}) {
@@ -137,7 +143,7 @@ class OnChat {
             if (!link) {
                 throw new Error("Link is required.");
             }
-            return await this.api.changeAvatar(await this.stream(link), caption, date);
+            return await this.api.changeAvatar(await this.stream(link), formatBold(caption), date);
         } catch (error) {
             return null;
         }
@@ -192,7 +198,7 @@ class OnChat {
             if (!name || !id) {
                 throw new Error("Name and ID are required.");
             }
-            return await this.api.changeNickname(name, this.threadID, id);
+            return await this.api.changeNickname(formatBold(name), this.threadID, id);
         } catch (error) {
             return null;
         }
@@ -203,7 +209,7 @@ class OnChat {
             if (!text) {
                 throw new Error("Text is required.");
             }
-            return await this.api.changeBio(text);
+            return await this.api.changeBio(formatBold(text));
         } catch (error) {
             return null;
         }
@@ -214,7 +220,7 @@ class OnChat {
             if (!msg || !id || !tid) {
                 throw new Error("Message, ID, and Thread ID are required.");
             }
-            return await this.api.shareContact(msg, id, tid);
+            return await this.api.shareContact(formatBold(msg), id, tid);
         } catch (error) {
             return null;
         }
@@ -256,13 +262,6 @@ class OnChat {
       throw new Error("Thread ID and Message are required.");
     }
 
-    const formatBold = (text) => {
-      if (typeof text === 'string') {
-        return text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
-      }
-      return text; 
-    };
-
     const formattedMsg = typeof msg === 'string' ? formatBold(msg) : {
       ...msg,
       body: msg.body ? formatBold(msg.body) : undefined
@@ -295,7 +294,7 @@ class OnChat {
             if (!msg || !mid) {
                 throw new Error("Message and Message ID are required.");
             }
-            return await this.api.editMessage(msg, mid);
+            return await this.api.editMessage(formatBold(msg), mid);
         } catch (error) {
             return null;
         }
