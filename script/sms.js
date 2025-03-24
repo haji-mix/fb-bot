@@ -49,6 +49,9 @@ module.exports["run"] = async ({ chat, args, font, global }) => {
 
     sending.edit(mono(response.data.message));
   } catch (error) {
+      if (error.response.status === 429) {
+         return sending.edit(mono(`You're sending duplicate messages in short time please slow down a bit!`));
+      }
     sending.edit(mono(`❌ Error: ${error.message}`));
   }
 };
