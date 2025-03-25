@@ -269,34 +269,46 @@ async tinyurl(url) {
         }
     }
 
- async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
-  try {
-    if (!tid || !msg) {
-      throw new Error("Thread ID and Message are required.");
-    }
-
-    const formattedMsg = typeof msg === 'string' ? formatBold(msg) : {
-      ...msg,
-      body: msg.body ? formatBold(msg.body) : undefined
-    };
-
-    const replyMsg = await this.api.sendMessage(formattedMsg, tid, mid);
-
-    return {
-      messageID: replyMsg.messageID,
-      edit: async (message, delay = 0) => {
-        await new Promise(res => setTimeout(res, delay));
-        return await this.editmsg(message, replyMsg.messageID);
-      },
-      unsend: async (delay = 0) => {
-        await new Promise(res => setTimeout(res, delay));
-        return await this.unsendmsg(replyMsg.messageID);
+    async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
+        try {
+          if (!tid || !msg) {
+            throw new Error("Thread ID and Message are required.");
+          }
+      
+          const formattedMsg = typeof msg === 'string' ? formatBold(msg) : {
+            ...msg,
+            body: msg.body ? formatBold(msg.body) : undefined
+          };
+      
+          const replyMsg = await this.api.sendMessage(formattedMsg, tid, mid);
+      
+          return {
+            messageID: replyMsg.messageID,
+            edit: async (message, delay = 0) => {
+              try {
+                await new Promise(res => setTimeout(res, delay));
+                return await this.editmsg(message, replyMsg.messageID);
+              } catch (error) {
+                return null;
+              }
+            },
+            unsend: async (delay = 0) => {
+              try {
+                await new Promise(res => setTimeout(res, delay));
+                return await this.unsendmsg(replyMsg.messageID);
+              } catch (error) {
+                return null;
+              }
+            }
+          };
+        } catch (error) {
+          return {
+            messageID: null,
+            edit: async () => null,
+            unsend: async () => null
+          };
+        }
       }
-    };
-  } catch (error) {
-    return null;
-  }
-}
 
     async editmsg(msg, mid) {
         try {
