@@ -113,6 +113,50 @@
                 background-position: 100px 100px;
             }
         }
+        
+        /* New styles for collapsible skills */
+        .skills-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        
+        .skills-container.expanded {
+            max-height: 1000px; /* Adjust based on your content */
+        }
+        
+        .toggle-skills {
+            background: rgba(255, 152, 0, 0.2);
+            border: 1px solid rgba(255, 152, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        .toggle-skills:hover {
+            background: rgba(255, 152, 0, 0.3);
+        }
+        
+        .toggle-skills i {
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-skills.expanded i {
+            transform: rotate(180deg);
+        }
+        
+        /* Loading states */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -136,12 +180,17 @@
                 class="mx-2 text-white transition-colors duration-300 hover:text-yellow-400"><i
                     class="fab fa-facebook fa-2x"></i></a>
         </div>
+        
+        <!-- Skills Section with Toggle -->
         <div class="skills mt-10">
-            <h2 class="text-3xl">Skills</h2>
-            <div id="skills-container" class="mt-4">
+            <button id="toggle-skills-btn" class="toggle-skills text-white py-2 px-6 rounded-full mb-4">
+                <span>Show Skills</span> <i class="fas fa-chevron-down ml-2"></i>
+            </button>
+            <div id="skills-container" class="skills-container">
                 <!-- Skill bars will be dynamically inserted here -->
             </div>
         </div>
+        
         <div class="projects mt-10">
             <h2 class="text-3xl">Projects</h2>
             <!-- Search Input -->
@@ -153,7 +202,10 @@
                 </div>
             </div>
             <div id="projects-container" class="flex flex-wrap justify-center mt-6">
-                <!-- Project cards will be dynamically inserted here -->
+                <div class="w-full text-center py-8">
+                    <div class="loading mx-auto"></div>
+                    <p class="mt-2">Loading projects...</p>
+                </div>
             </div>
             <div id="no-results" class="hidden text-center py-8">
                 <i class="fas fa-search fa-3x text-gray-500 mb-4"></i>
@@ -195,28 +247,6 @@
             themeToggle.innerHTML = body.classList.contains('light-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
         }
 
-        // Sample projects data (replace with your actual fetch)
-        const projectsData = [
-            {
-                "name": "FB AUTOBOT",
-                "description": "Automated chatbot for handling customer queries on Messenger.",
-                "thumbnail": "https://i.imgur.com/6uauvIU.jpeg",
-                "link": "./create"
-            },
-            {
-                "name": "Rest API",
-                "description": "A free Rest API with Websocket",
-                "thumbnail": "https://i.ibb.co/XYk4dXn/image.png",
-                "link": "https://haji-mix.up.railway.app/"
-            },
-            {
-                "name": "Cosplay Haven",
-                "description": "18+ Anime Cosplay Premium for free.",
-                "thumbnail": "https://i.imgur.com/piFzfKJ.jpeg",
-                "link": "./cosplay"
-            }
-        ];
-
         // Function to display projects
         function displayProjects(projects) {
             const projectsContainer = document.getElementById('projects-container');
@@ -249,7 +279,7 @@
         // Search functionality
         document.getElementById('project-search').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase();
-            const filteredProjects = projectsData.filter(project => 
+            const filteredProjects = window.projectsData.filter(project => 
                 project.name.toLowerCase().includes(searchTerm) || 
                 project.description.toLowerCase().includes(searchTerm)
             );
@@ -259,11 +289,13 @@
         // Function to fetch and display skills
         async function loadSkills() {
             try {
+                const skillsContainer = document.getElementById('skills-container');
+                skillsContainer.innerHTML = '<div class="text-center py-4"><div class="loading mx-auto"></div><p class="mt-2">Loading skills...</p></div>';
+                
                 const response = await fetch('/skills');
                 if (!response.ok) throw new Error('Failed to load skills');
                 const skills = await response.json();
 
-                const skillsContainer = document.getElementById('skills-container');
                 skillsContainer.innerHTML = '';
 
                 skills.forEach(skill => {
@@ -279,29 +311,52 @@
                 });
             } catch (error) {
                 console.error('Error loading skills:', error);
+                const skillsContainer = document.getElementById('skills-container');
+                skillsContainer.innerHTML = '<div class="text-red-400 py-4">Failed to load skills. Please try again later.</div>';
             }
         }
 
-        // Load data when the page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            displayProjects(projectsData); // Display initial projects
-            loadSkills();
+        // Toggle skills visibility
+        document.getElementById('toggle-skills-btn').addEventListener('click', function() {
+            const skillsContainer = document.getElementById('skills-container');
+            const toggleBtn = this;
+            
+            skillsContainer.classList.toggle('expanded');
+            toggleBtn.classList.toggle('expanded');
+            
+            if (skillsContainer.classList.contains('expanded')) {
+                toggleBtn.querySelector('span').textContent = 'Hide Skills';
+                // Load skills if not already loaded
+                if (skillsContainer.innerHTML === '') {
+                    loadSkills();
+                }
+            } else {
+                toggleBtn.querySelector('span').textContent = 'Show Skills';
+            }
         });
 
-        // If you want to fetch projects from an endpoint instead of using the sample data:
-        /*
-        async function loadProjects() {
+        // Load data when the page loads
+        document.addEventListener('DOMContentLoaded', async () => {
             try {
-                const response = await fetch('/projects');
-                if (!response.ok) throw new Error('Failed to load projects');
-                projectsData = await response.json();
-                displayProjects(projectsData);
+                // Load projects
+                const projectsResponse = await fetch('/projects');
+                if (!projectsResponse.ok) throw new Error('Failed to load projects');
+                window.projectsData = await projectsResponse.json();
+                displayProjects(window.projectsData);
+                
+                // Don't load skills by default - they'll load when expanded
             } catch (error) {
                 console.error('Error loading projects:', error);
+                const projectsContainer = document.getElementById('projects-container');
+                projectsContainer.innerHTML = `
+                    <div class="w-full text-center py-8 text-red-400">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-4"></i>
+                        <h3 class="text-2xl">Failed to load projects</h3>
+                        <p class="mt-2">Please try again later</p>
+                    </div>
+                `;
             }
-        }
-        // Then call loadProjects() instead of displayProjects(projectsData) in DOMContentLoaded
-        */
+        });
     </script>
     <script>
         function detectDevTools() {
