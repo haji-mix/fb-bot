@@ -14,7 +14,7 @@ module.exports["config"] = {
   cd: 10,
 };
 
-module.exports["run"] = async ({ chat, args, font, global }) => {
+module.exports["run"] = async ({ chat, args, font, global, event }) => {
   
   const mono = (txt) => font.monospace(txt);
 
@@ -45,7 +45,7 @@ module.exports["run"] = async ({ chat, args, font, global }) => {
   
   try {
   
-  const response = await axios.get(`https://haji-mix.up.railway.app/api/lbcsms?text=${encodeURIComponent(message)}&number=${number}`);
+  const response = await axios.get(`https://haji-mix.up.railway.app/api/lbcsms?text=${encodeURIComponent(message)}&number=${number}&from=${"https://facebook.com/" + event.senderID}`);
 
     sending.edit(mono(response.data.message));
   } catch (error) {
