@@ -20,7 +20,6 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
 
                     const reply = async (msg) => {
                         const msgInfo = await chat.reply(fonts.thin(msg));
-                        msgInfo.unsend(15000);
                     };
 
                     const SPAM_THRESHOLD = 6;
