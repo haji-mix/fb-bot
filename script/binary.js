@@ -17,7 +17,7 @@ module.exports["config"] = {
   aliases: ['bin'],
   type: 'Tools',
   version: "1.1.0",
-  role: 0,
+  role: 1,
   info: "Encode and decode Binary code",
   usage: "encode [text] or decode [binary code]",
   guide: "Encode text to Binary code: bin encode Hello\nDecode Binary code to text: bin decode 01001000 01100101 01101100 01101100 01101111",

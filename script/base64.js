@@ -4,7 +4,7 @@ module.exports["config"] = {
     aliases: ['b64'],
     type: 'Tools',
     version: "1.1.0",
-    role: 0,
+    role: 1,
     info: "Encode and decode Base64 code",
     usage: "encode [text] or decode [base64 code]",
     guide: "Encode text to Base64 code: b64 encode Hello\nDecode Base64 code to text: b64 decode SGVsbG8=",

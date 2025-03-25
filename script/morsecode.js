@@ -22,7 +22,7 @@ module.exports["config"] = {
   aliases: ['morse', 'mc'],
   type: 'Tools',
   version: "1.1.0",
-  role: 0,
+  role: 1,
   info: "Encode and decode Morse code",
   usage: "encode [text] or decode [morse code]",
   guide: "Encode text to Morse code: mc encode Hello\nDecode Morse code to text: mc decode .... . .-.. .-.. ---",
