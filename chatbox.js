@@ -209,6 +209,11 @@ const routes = [{
     method: 'get'
 },
 {
+    path: '/cosplay',
+    file: 'cosplay.ejs',
+    method: 'get'
+},
+{
     path: '/jseditor',
     file: 'ide.ejs',
     method: 'get'

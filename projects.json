@@ -10,5 +10,11 @@
         "description": "A free Rest API with Websocket",
         "thumbnail": "https://i.ibb.co/XYk4dXn/image.png",
         "link": "https://haji-mix.up.railway.app/"
+    },
+       {
+        "name": "Cosplay Haven",
+        "description": "18+ Anime Cosplay Premium for free.",
+        "thumbnail": "https://i.imgur.com/piFzfKJ.jpeg",
+        "link": "./cosplay"
     }
 ]
