@@ -774,6 +774,13 @@ function createConfig() {
 
 main();
 
-process.on("unhandledRejection", (reason, promise) => {
-    console.error(reason.stack)
+process.on("unhandledRejection", (reason) => {
+    try {
+        const message = reason instanceof Error 
+            ? `${reason.name}: ${reason.message}\n${reason.stack}`
+            : JSON.stringify(reason);
+        throw new Error(message);
+    } catch (error) {
+        logger.red(error);
+    }
 });
