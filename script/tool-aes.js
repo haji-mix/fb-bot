@@ -15,7 +15,7 @@ const decrypt = (ciphertext, secretKey) => {
 module.exports["config"] = {
     name: "aes",
     version: "1.2.0",
-    role: 0,
+    role: 1,
     credits: "Kenneth Panio",
     info: "AES encryption/decryption",
     type: "tools",
