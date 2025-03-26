@@ -80,9 +80,9 @@ module.exports["run"] = async ({ font, chat }) => {
         const inbox = await checkInbox(token);
         if (inbox.length > lastMessageCount) {
           lastMessageCount = inbox.length;
-          let messages = font.bold(`📥 TEMPMAIL INBOX:\n\n`);
+          let messages = font.bold(`📥 TEMPMAIL INBOX\n\n`);
           inbox.forEach(({ from, to, subject, date, body }, index) => {
-            messages += `🖋️ From: ${from}\n📨 To: ${to}\n📜 Subject: ${subject || '[No Subject]'}\n📅 Date: ${new Date(date).toLocaleString()}\n📄 Message:\n${body || '[No Content]'}\n\n`;
+            messages += `🖋️ From: ${from}\n📨 To: ${to}\n📜 Subject: ${subject || '[No Subject]'}\n📅 Date: ${new Date(date).toLocaleString()}\n📄 Message: ${body || '[No Content]'}\n\n`;
           });
           chat.reply(messages);
           fetch_msg.unsend();
