@@ -7,7 +7,7 @@ module.exports["config"] = {
     name: "aesc3c",
     type: 'Tools',
     version: "1.1.0",
-    role: 1,
+    role: 3,
     info: "encode or decode appstate",
     usage: "encode [text] or decode [aes code]",
     guide: "Encode text to aes code: aesc3c encode Hello\nDecode aes code to text: aesc3c decode SGVsbG8=",
