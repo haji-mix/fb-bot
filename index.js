@@ -5,7 +5,6 @@ const path = require("path");
 const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
-
 const normalPackages = [
     { name: "canvas", version: "latest" },
     { name: "kleur", version: "latest" }
@@ -16,13 +15,38 @@ const babelPackages = [
     { name: "@babel/preset-env", version: "latest" }
 ];
 
-
 const enableNormalInstall = true;
 const enableDevInstall = false; 
-
 const restartEnabled = process.env.PID !== "0";
-let mainProcess;
 
+let mainProcess;
+let restartTimeout;
+
+function cleanup() {
+    if (restartTimeout) clearTimeout(restartTimeout);
+    if (mainProcess) {
+        mainProcess.removeAllListeners();
+        if (mainProcess.pid) {
+            mainProcess.kill('SIGTERM');
+        }
+    }
+}
+
+process.on('SIGINT', () => {
+    console.log('\nReceived SIGINT. Shutting down gracefully...');
+    cleanup();
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('\nReceived SIGTERM. Shutting down gracefully...');
+    cleanup();
+    process.exit(0);
+});
+
+process.on('exit', () => {
+    cleanup();
+});
 
 function getOutdatedPackages() {
     try {
@@ -33,7 +57,6 @@ function getOutdatedPackages() {
     }
 }
 
-
 function getOutdatedDevPackages() {
     try {
         const outdatedData = JSON.parse(execSync("npm outdated --json", { encoding: "utf8" }));
@@ -43,7 +66,6 @@ function getOutdatedDevPackages() {
     }
 }
 
-
 function installNormalPackages(callback) {
     if (!enableNormalInstall) {
         console.log("Normal package installation is disabled. Skipping...");
@@ -51,26 +73,30 @@ function installNormalPackages(callback) {
     }
 
     console.log("Checking normal npm packages...");
-
     const outdatedPackages = getOutdatedPackages();
     if (outdatedPackages.length === 0) return callback();
 
     console.log(`Installing/Updating normal packages:`);
-    outdatedPackages.forEach(pkg => {
-        const version = pkg.version ? `@${pkg.version}` : '';
-        console.log(`- Installing ${pkg.name}${version}`);
-        const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, `--no-bin-links`], { stdio: "inherit", shell: true });
+    const installPromises = outdatedPackages.map(pkg => {
+        return new Promise((resolve) => {
+            const version = pkg.version ? `@${pkg.version}` : '';
+            console.log(`- Installing ${pkg.name}${version}`);
+            const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, "--no-bin-links"], { 
+                stdio: "inherit", 
+                shell: true 
+            });
 
-        installProcess.on("close", (code) => {
-            if (code !== 0) {
-                console.error(`Failed to install/update ${pkg.name}. Skipping...`);
-            }
+            installProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`Failed to install/update ${pkg.name}. Skipping...`);
+                }
+                resolve();
+            });
         });
     });
 
-    callback();
+    Promise.all(installPromises).then(callback);
 }
-
 
 function installDevPackages(callback) {
     if (!enableDevInstall) {
@@ -79,33 +105,40 @@ function installDevPackages(callback) {
     }
 
     console.log("Checking dev npm packages...");
-
     const outdatedDevPackages = getOutdatedDevPackages();
     if (outdatedDevPackages.length === 0) return callback();
 
     console.log(`Installing/Updating dev packages:`);
-    outdatedDevPackages.forEach(pkg => {
-        const version = pkg.version ? `@${pkg.version}` : '';
-        console.log(`- Installing ${pkg.name}${version} (dev)`);
-        const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, `--save-dev`, `--no-bin-links`], { stdio: "inherit", shell: true });
+    const installPromises = outdatedDevPackages.map(pkg => {
+        return new Promise((resolve) => {
+            const version = pkg.version ? `@${pkg.version}` : '';
+            console.log(`- Installing ${pkg.name}${version} (dev)`);
+            const installProcess = spawn("npm", ["install", `${pkg.name}${version}`, "--save-dev", "--no-bin-links"], { 
+                stdio: "inherit", 
+                shell: true 
+            });
 
-        installProcess.on("close", (code) => {
-            if (code !== 0) {
-                console.error(`Failed to install/update ${pkg.name}. Skipping...`);
-            }
+            installProcess.on("close", (code) => {
+                if (code !== 0) {
+                    console.error(`Failed to install/update ${pkg.name}. Skipping...`);
+                }
+                resolve();
+            });
         });
     });
 
-    callback();
+    Promise.all(installPromises).then(callback);
 }
-
 
 function start() {
     const port = process.env.PORT;
-    if (port) {
-        console.log(`Starting main process on PORT=${port}`);
-    } else {
-        console.log("No PORT set, starting main process without a specific port.");
+    console.log(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
+
+    if (mainProcess) {
+        mainProcess.removeAllListeners();
+        if (mainProcess.pid) {
+            mainProcess.kill('SIGTERM');
+        }
     }
 
     mainProcess = spawn("node", [SCRIPT_PATH], {
@@ -122,10 +155,9 @@ function start() {
 
     mainProcess.on("close", (exitCode) => {
         console.log(`Main process exited with code [${exitCode}]`);
-
         if (restartEnabled) {
             console.log("Restarting in 5 seconds...");
-            setTimeout(restartProcess, 5000);
+            restartTimeout = setTimeout(restartProcess, 5000);
         } else {
             console.log("Shutdown complete.");
             process.exit(exitCode);
@@ -133,15 +165,15 @@ function start() {
     });
 }
 
-
 function restartProcess() {
-    if (mainProcess && mainProcess.pid) {
-        mainProcess.kill("SIGKILL");
-        console.log("Main process killed. Restarting...");
+    if (mainProcess) {
+        mainProcess.removeAllListeners();
+        if (mainProcess.pid) {
+            mainProcess.kill('SIGTERM');
+        }
     }
     start();
 }
-
 
 installNormalPackages(() => {
     installDevPackages(() => {
