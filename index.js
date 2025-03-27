@@ -1,4 +1,5 @@
 require("dotenv").config();
+require('events').EventEmitter.prototype._maxListeners = 0;
 const { spawn, execSync } = require("child_process");
 const path = require("path");
 
