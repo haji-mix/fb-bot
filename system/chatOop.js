@@ -229,11 +229,12 @@ async tinyurl(url) {
     }
 
     async contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
+        const threadID = tid !== null && tid !== undefined ? String(tid) : null;
         try {
             if (!msg || !id || !tid) {
                 throw new Error("Message, ID, and Thread ID are required.");
             }
-            return await this.api.shareContact(formatBold(msg), id, tid);
+            return await this.api.shareContact(formatBold(msg), id, threadID);
         } catch (error) {
             return null;
         }
@@ -311,6 +312,7 @@ async tinyurl(url) {
             };
         }
     }
+
     async editmsg(msg, mid) {
         try {
             if (!msg || !mid) {
