@@ -96,21 +96,19 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                     .shift()
                             )?.isPrefix == false
                             ? "" : prefix;
-
 let [command, ...args] = [];
-const body = event?.body || "";
+const body = (event?.body || "").trim();
 
-if (typeof isPrefix === 'string') {
-    const prefix = isPrefix.toLowerCase();
-    const trimmedBody = body.trim().toLowerCase();
+if (typeof isPrefix === 'string' && body.toLowerCase().startsWith(isPrefix.toLowerCase())) {
+    // Remove prefix (case insensitive) and trim
+    const prefixRemoved = body.slice(isPrefix.length).trim();
     
-    if (trimmedBody.startsWith(prefix)) {
-        const commandString = body.trim().substring(isPrefix.length).trim();
-        const parts = commandString.split(/\s+/).filter(part => part.length > 0);
-        if (parts.length > 0) {
-            command = parts[0].toLowerCase();
-            args = parts.slice(1);
-        }
+    // Split by whitespace (including multiple spaces), but filter out empty strings
+    const parts = prefixRemoved.split(/\s+/).filter(Boolean);
+    
+    if (parts.length > 0) {
+        command = parts[0].toLowerCase();
+        args = parts.slice(1);
     }
 }
 
