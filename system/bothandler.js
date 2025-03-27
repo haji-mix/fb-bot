@@ -102,9 +102,9 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
     ? (event?.body || "")
         .trim()
         .substring(isPrefix.length)
-        .replace(/\s+/g, ' ')
         .trim()
-        .split(' ')
+        .split(/\s+/)
+        .filter(Boolean)  // Better than .map(trim) as it removes empty strings
     : [];
 
                     if (isPrefix && aliases(command)?.isPrefix === false) {
