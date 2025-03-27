@@ -97,18 +97,20 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                             )?.isPrefix == false
                             ? "" : prefix;
 
-let fullCommand = (event?.body || "").trim();
-let command, args = [];
+let [command, ...args] = [];
+const body = event?.body || "";
 
-if (fullCommand.toLowerCase().startsWith(isPrefix?.toLowerCase())) {
-    let content = fullCommand.substring(isPrefix?.length).trim();
-    let firstSpace = content.search(/\s/);
+if (typeof isPrefix === 'string') {
+    const prefix = isPrefix.toLowerCase();
+    const trimmedBody = body.trim().toLowerCase();
     
-    if (firstSpace === -1) {
-        command = content;
-    } else {
-        command = content.substring(0, firstSpace).trim();
-        args = [content.substring(firstSpace).trim()]; 
+    if (trimmedBody.startsWith(prefix)) {
+        const commandString = body.trim().substring(isPrefix.length).trim();
+        const parts = commandString.split(/\s+/).filter(part => part.length > 0);
+        if (parts.length > 0) {
+            command = parts[0].toLowerCase();
+            args = parts.slice(1);
+        }
     }
 }
 
