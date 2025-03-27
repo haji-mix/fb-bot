@@ -22,31 +22,54 @@ const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 let restartTimeout;
 
+// Cleanup handlers storage
+const cleanupHandlers = {
+    sigint: () => {
+        console.log('\nReceived SIGINT. Shutting down gracefully...');
+        cleanup();
+        process.exit(0);
+    },
+    sigterm: () => {
+        console.log('\nReceived SIGTERM. Shutting down gracefully...');
+        cleanup();
+        process.exit(0);
+    },
+    exit: () => {
+        cleanup();
+    }
+};
+
+// Initialize process listeners once
+function initializeProcessListeners() {
+    process.on('SIGINT', cleanupHandlers.sigint);
+    process.on('SIGTERM', cleanupHandlers.sigterm);
+    process.on('exit', cleanupHandlers.exit);
+}
+
+// Remove process listeners (not used in current flow but good to have)
+function removeProcessListeners() {
+    process.off('SIGINT', cleanupHandlers.sigint);
+    process.off('SIGTERM', cleanupHandlers.sigterm);
+    process.off('exit', cleanupHandlers.exit);
+}
+
 function cleanup() {
-    if (restartTimeout) clearTimeout(restartTimeout);
+    if (restartTimeout) {
+        clearTimeout(restartTimeout);
+        restartTimeout = null;
+    }
     if (mainProcess) {
         mainProcess.removeAllListeners();
         if (mainProcess.pid) {
-            mainProcess.kill('SIGTERM');
+            try {
+                mainProcess.kill('SIGTERM');
+            } catch (e) {
+                console.error('Error killing process:', e.message);
+            }
         }
+        mainProcess = null;
     }
 }
-
-process.on('SIGINT', () => {
-    console.log('\nReceived SIGINT. Shutting down gracefully...');
-    cleanup();
-    process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-    console.log('\nReceived SIGTERM. Shutting down gracefully...');
-    cleanup();
-    process.exit(0);
-});
-
-process.on('exit', () => {
-    cleanup();
-});
 
 function getOutdatedPackages() {
     try {
@@ -134,10 +157,15 @@ function start() {
     const port = process.env.PORT;
     console.log(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
 
+    // Clean up any existing process
     if (mainProcess) {
         mainProcess.removeAllListeners();
         if (mainProcess.pid) {
-            mainProcess.kill('SIGTERM');
+            try {
+                mainProcess.kill('SIGTERM');
+            } catch (e) {
+                console.error('Error killing previous process:', e.message);
+            }
         }
     }
 
@@ -166,15 +194,14 @@ function start() {
 }
 
 function restartProcess() {
-    if (mainProcess) {
-        mainProcess.removeAllListeners();
-        if (mainProcess.pid) {
-            mainProcess.kill('SIGTERM');
-        }
-    }
+    cleanup(); // Clean up before restarting
     start();
 }
 
+// Initialize process listeners once at startup
+initializeProcessListeners();
+
+// Start the application
 installNormalPackages(() => {
     installDevPackages(() => {
         start();
