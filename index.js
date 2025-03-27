@@ -1,7 +1,19 @@
 require("dotenv").config();
-require('events').EventEmitter.prototype._maxListeners = 0;
 const { spawn, execSync } = require("child_process");
 const path = require("path");
+const EventEmitter = require('events');
+
+process.setMaxListeners(20);
+const originalEmitWarning = process.emitWarning;
+
+process.emitWarning = (warning, ...args) => {
+    if (typeof warning === 'string' && warning.includes('MaxListenersExceeded')) {
+        console.warn('MaxListenersExceeded warning detected. Preparing for controlled restart...');
+        scheduleRestart(1000);
+        return;
+    }
+    return originalEmitWarning.call(process, warning, ...args);
+};
 
 const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
@@ -22,6 +34,9 @@ const restartEnabled = process.env.PID !== "0";
 
 let mainProcess;
 let restartTimeout;
+let isRestarting = false;
+let restartCount = 0;
+const MAX_RESTARTS = 5;
 
 // Cleanup handlers storage
 const cleanupHandlers = {
@@ -40,18 +55,18 @@ const cleanupHandlers = {
     }
 };
 
-// Initialize process listeners once
 function initializeProcessListeners() {
+    removeProcessListeners();
+
     process.on('SIGINT', cleanupHandlers.sigint);
     process.on('SIGTERM', cleanupHandlers.sigterm);
     process.on('exit', cleanupHandlers.exit);
 }
 
-// Remove process listeners (not used in current flow but good to have)
 function removeProcessListeners() {
-    process.off('SIGINT', cleanupHandlers.sigint);
-    process.off('SIGTERM', cleanupHandlers.sigterm);
-    process.off('exit', cleanupHandlers.exit);
+    process.removeListener('SIGINT', cleanupHandlers.sigint);
+    process.removeListener('SIGTERM', cleanupHandlers.sigterm);
+    process.removeListener('exit', cleanupHandlers.exit);
 }
 
 function cleanup() {
@@ -69,6 +84,25 @@ function cleanup() {
             }
         }
         mainProcess = null;
+    }
+}
+
+function scheduleRestart(delay = 0) {
+    if (isRestarting || restartCount >= MAX_RESTARTS) return;
+    
+    isRestarting = true;
+    restartCount++;
+    
+    console.log(`Scheduling restart #${restartCount}/${MAX_RESTARTS} in ${delay}ms...`);
+    
+    cleanup();
+    
+    if (delay > 0) {
+        restartTimeout = setTimeout(() => {
+            restartProcess();
+        }, delay);
+    } else {
+        restartProcess();
     }
 }
 
@@ -155,10 +189,11 @@ function installDevPackages(callback) {
 }
 
 function start() {
+    isRestarting = false;
+    
     const port = process.env.PORT;
     console.log(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
 
-    // Clean up any existing process
     if (mainProcess) {
         mainProcess.removeAllListeners();
         if (mainProcess.pid) {
@@ -179,14 +214,13 @@ function start() {
 
     mainProcess.on("error", (error) => {
         console.error("Failed to start main process:", error);
-        process.exit(1);
+        scheduleRestart(5000);
     });
 
     mainProcess.on("close", (exitCode) => {
         console.log(`Main process exited with code [${exitCode}]`);
         if (restartEnabled) {
-            console.log("Restarting in 5 seconds...");
-            restartTimeout = setTimeout(restartProcess, 5000);
+            scheduleRestart(5000);
         } else {
             console.log("Shutdown complete.");
             process.exit(exitCode);
@@ -195,14 +229,14 @@ function start() {
 }
 
 function restartProcess() {
-    cleanup(); // Clean up before restarting
+    console.log("Performing controlled restart...");
+    cleanup();
+    initializeProcessListeners();
     start();
 }
 
-// Initialize process listeners once at startup
 initializeProcessListeners();
 
-// Start the application
 installNormalPackages(() => {
     installDevPackages(() => {
         start();
