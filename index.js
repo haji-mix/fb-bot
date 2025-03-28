@@ -3,7 +3,6 @@ const { spawn, execSync } = require("child_process");
 const path = require("path");
 const EventEmitter = require('events');
 
-process.setMaxListeners(20);
 const originalEmitWarning = process.emitWarning;
 
 process.emitWarning = (warning, ...args) => {
@@ -35,8 +34,6 @@ const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 let restartTimeout;
 let isRestarting = false;
-let restartCount = 0;
-const MAX_RESTARTS = 5;
 
 // Cleanup handlers storage
 const cleanupHandlers = {
@@ -88,12 +85,11 @@ function cleanup() {
 }
 
 function scheduleRestart(delay = 0) {
-    if (isRestarting || restartCount >= MAX_RESTARTS) return;
+    if (isRestarting) return;
     
     isRestarting = true;
-    restartCount++;
     
-    console.log(`Scheduling restart #${restartCount}/${MAX_RESTARTS} in ${delay}ms...`);
+    console.log(`Scheduling restart in ${delay}ms...`);
     
     cleanup();
     
