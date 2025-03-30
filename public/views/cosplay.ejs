@@ -614,7 +614,7 @@
                         ${searchTerm ? `Searching for "${searchTerm}"...` : 'Loading featured cosplay...'}
                     </div>`;
                 
-                const apiUrl = `https://haji-mix.up.railway.app/api/cosplaytele?search=${encodeURIComponent(searchTerm)}&stream=false&filter=true`;
+                const apiUrl = `https://haji-mix.up.railway.app/api/cosplaytele?search=${encodeURIComponent(searchTerm)}&stream=false`;
                 
                 fetch(apiUrl)
                     .then(response => {
