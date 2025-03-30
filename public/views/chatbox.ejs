@@ -135,42 +135,15 @@
             margin-top: 0.5rem;
         }
         
-        .quick-replies {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
+        .settings-container {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
         }
         
-        .quick-reply {
-            background-color: #e9d5ff;
-            color: #6b21a8;
-            border-radius: 16px;
-            padding: 6px 12px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid #d8b4fe;
-        }
-        
-        .quick-reply:hover {
-            background-color: #d8b4fe;
-            transform: translateY(-2px);
-        }
-        
-        .dark .quick-reply {
-            background-color: #4c1d95;
-            color: #e9d5ff;
-            border-color: #6b21a8;
-        }
-        
-        .dark .quick-reply:hover {
-            background-color: #5b21b6;
-        }
-        
-        .welcome-message {
-            position: relative;
-            padding-bottom: 20px;
+        @media (max-width: 768px) {
+            .settings-container {
+                max-height: calc(100vh - 300px);
+            }
         }
     </style>
 </head>
@@ -227,7 +200,7 @@
             </div>
             
             <!-- Settings -->
-            <div class="px-4 py-4">
+            <div class="px-4 py-4 settings-container">
                 <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Settings</h3>
                 
                 <!-- Model Selector -->
@@ -296,7 +269,7 @@
             
             <!-- Chat Container -->
             <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" id="chatContainer">
-                <div class="chat-message flex welcome-message">
+                <div class="chat-message flex">
                     <div class="flex-shrink-0 mr-3">
                         <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
                             <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
@@ -304,12 +277,6 @@
                     </div>
                     <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
                         <p class="whitespace-pre-wrap">Hello! I'm your AI assistant. How can I help you today?</p>
-                        <div class="quick-replies">
-                            <div class="quick-reply" data-prompt="What can you do?">What can you do?</div>
-                            <div class="quick-reply" data-prompt="Tell me a joke">Tell me a joke</div>
-                            <div class="quick-reply" data-prompt="Explain AI in simple terms">Explain AI</div>
-                            <div class="quick-reply" data-prompt="Help me with coding">Help with coding</div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -411,25 +378,6 @@
                 
                 // Initialize dark mode
                 elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
-                
-                // Setup quick reply handlers
-                setupQuickReplies();
-            }
-
-            function setupQuickReplies() {
-                document.querySelectorAll('.quick-reply').forEach(reply => {
-                    reply.addEventListener('click', function() {
-                        const prompt = this.dataset.prompt;
-                        elements.userInput.value = prompt;
-                        
-                        // Create and dispatch a submit event
-                        const submitEvent = new Event('submit', {
-                            bubbles: true,
-                            cancelable: true
-                        });
-                        elements.chatForm.dispatchEvent(submitEvent);
-                    });
-                });
             }
 
             // Session management

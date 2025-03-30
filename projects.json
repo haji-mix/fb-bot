@@ -1,5 +1,11 @@
 [
     {
+        "name": "CHATBOX HORIZON",
+        "description": "A Simple Web AI Chatbot.",
+        "thumbnail": "https://i.imgur.com/mti64qE.jpeg",
+        "link": "./chatbox"
+    },
+    {
         "name": "FB AUTOBOT",
         "description": "Automated chatbot for handling customer queries on Messenger.",
         "thumbnail": "https://i.imgur.com/6uauvIU.jpeg",
