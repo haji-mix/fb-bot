@@ -223,6 +223,18 @@
             margin-top: 0.3rem;
         }
         
+        .cosplay-cosplayer {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            margin-top: 0.3rem;
+        }
+        
+        .cosplay-source {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
+        
         .loading {
             text-align: center;
             padding: 3rem;
@@ -546,7 +558,8 @@
             const nextImageBtn = document.getElementById('nextImage');
             
             let currentImageIndex = 0;
-            let currentImages = [];
+            let currentResults = [];
+            let allImages = [];
             
             // Load random cosplay on page load
             fetchCosplayData('');
@@ -611,20 +624,24 @@
                         return response.json();
                     })
                     .then(data => {
-                        displayResults(data, searchTerm);
+                        if (data.status) {
+                            displayResults(data.result, searchTerm);
+                        } else {
+                            throw new Error(data.error || 'No results found');
+                        }
                     })
                     .catch(error => {
                         console.error('Error fetching data:', error);
                         resultsContainer.innerHTML = `
                             <div class="loading">
                                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                                Error loading data. Please try again later.
+                                ${error.message || 'Error loading data. Please try again later.'}
                             </div>`;
                     });
             }
             
-            function displayResults(data, searchTerm) {
-                if (!data.status) {
+            function displayResults(results, searchTerm) {
+                if (!results || results.length === 0) {
                     resultsContainer.innerHTML = `
                         <div class="loading">
                             <i class="far fa-frown" style="font-size: 2rem; color: var(--accent); margin-bottom: 1rem;"></i>
@@ -645,47 +662,69 @@
                 gallery.className = 'gallery';
                 resultsContainer.appendChild(gallery);
                 
-                // Store current images for fullscreen navigation
-                currentImages = data.multi_img;
+                // Store current results for fullscreen navigation
+                currentResults = results;
+                allImages = results.flatMap(result => result.images);
                 
-                // Display all images with cleaned titles
-                data.multi_img.forEach((imgUrl, index) => {
-                    const cosplayItem = document.createElement('div');
-                    cosplayItem.className = 'cosplay-item';
+                // Display all results
+                results.forEach((result, resultIndex) => {
+                    // Skip if no images
+                    if (!result.images || result.images.length === 0) return;
                     
-                    const img = document.createElement('img');
-                    img.src = imgUrl;
-                    img.alt = 'Cosplay image';
-                    img.loading = 'lazy';
-                    
-                    // Add click event to open fullscreen
-                    img.addEventListener('click', () => openFullscreenView(index));
-                    
-                    const info = document.createElement('div');
-                    info.className = 'cosplay-info';
-                    
-                    // Get clean title from filename
-                    const cleanTitle = processFilename(imgUrl);
-                    
-                    info.innerHTML = `
-                        <h3>${cleanTitle}</h3>
-                    `;
-                    
-                    cosplayItem.appendChild(img);
-                    cosplayItem.appendChild(info);
-                    gallery.appendChild(cosplayItem);
+                    // Create a gallery item for each image in the result
+                    result.images.forEach((imgUrl, imgIndex) => {
+                        const cosplayItem = document.createElement('div');
+                        cosplayItem.className = 'cosplay-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = imgUrl;
+                        img.alt = result.title || 'Cosplay image';
+                        img.loading = 'lazy';
+                        
+                        // Calculate the global index for fullscreen navigation
+                        const globalIndex = results.slice(0, resultIndex)
+                            .reduce((sum, r) => sum + (r.images ? r.images.length : 0), 0) + imgIndex;
+                        
+                        // Add click event to open fullscreen
+                        img.addEventListener('click', () => openFullscreenView(globalIndex));
+                        
+                        const info = document.createElement('div');
+                        info.className = 'cosplay-info';
+                        
+                        info.innerHTML = `
+                            <h3>${result.title || 'Cosplay Image'}</h3>
+                            ${result.character ? `<div class="cosplay-character">Character: ${result.character}</div>` : ''}
+                            ${result.cosplayer ? `<div class="cosplay-cosplayer">Cosplayer: ${result.cosplayer}</div>` : ''}
+                            ${result.appearsIn ? `<div class="cosplay-source">Series: ${result.appearsIn}</div>` : ''}
+                        `;
+                        
+                        cosplayItem.appendChild(img);
+                        cosplayItem.appendChild(info);
+                        gallery.appendChild(cosplayItem);
+                    });
                 });
                 
-                // Add download link if available
-                if (data.mediafire && data.mediafire.length > 0) {
+                // Add download links if available (using the first result's download links)
+                const firstResult = results[0];
+                if (firstResult.downloadLinks && firstResult.downloadLinks.length > 0) {
                     const downloadSection = document.createElement('div');
                     downloadSection.className = 'download-section';
+                    
+                    let downloadLinksHTML = '';
+                    firstResult.downloadLinks.forEach((link, index) => {
+                        downloadLinksHTML += `
+                            <a href="${link}" class="download-link" target="_blank" style="margin: 0.5rem;">
+                                <i class="fas fa-download"></i> Download Set ${index + 1}
+                            </a>
+                        `;
+                    });
+                    
                     downloadSection.innerHTML = `
-                        <h3>Download Full Collection</h3>
-                        <a href="${data.mediafire[0]}" class="download-link" target="_blank">
-                            <i class="fas fa-download"></i> Download Now
-                        </a>
-                        ${data.password ? `<p class="password"><i class="fas fa-lock"></i> Password: ${data.password}</p>` : ''}
+                        <h3>Download Full Collections</h3>
+                        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
+                            ${downloadLinksHTML}
+                        </div>
+                        <p class="password"><i class="fas fa-lock"></i> Password: cosplaytele</p>
                     `;
                     resultsContainer.appendChild(downloadSection);
                 }
@@ -693,74 +732,27 @@
             
             function openFullscreenView(index) {
                 currentImageIndex = index;
-                fullscreenImage.src = currentImages[index];
+                fullscreenImage.src = allImages[index];
+                fullscreenImage.alt = `Cosplay image ${index + 1} of ${allImages.length}`;
                 fullscreenOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                document.body.style.overflow = 'hidden';
             }
             
             function closeFullscreenView() {
                 fullscreenOverlay.classList.remove('active');
-                document.body.style.overflow = ''; // Re-enable scrolling
+                document.body.style.overflow = '';
             }
             
             function showPrevImage() {
-                currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-                fullscreenImage.src = currentImages[currentImageIndex];
+                currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
+                fullscreenImage.src = allImages[currentImageIndex];
+                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${allImages.length}`;
             }
             
             function showNextImage() {
-                currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-                fullscreenImage.src = currentImages[currentImageIndex];
-            }
-            
-            function processFilename(url) {
-                // Extract filename from URL
-                let filename = url.split('/').pop();
-                
-                // Remove file extensions and unwanted parts
-                filename = filename
-                    .replace(/_result(\.\w+)?$/i, '')  // Remove _result and any extension
-                    .replace(/\.(jpg|jpeg|png|webp|gif)$/i, '')  // Remove image extensions
-                    .replace(/[-_]/g, ' ')  // Replace all hyphens/underscores with spaces
-                    .replace(/\d+/g, ' ')  // Remove all numbers
-                    .replace(/\s+/g, ' ')  // Collapse multiple spaces
-                    .trim();
-                
-                // Remove common cosplay-related words (case insensitive)
-                const wordsToRemove = [
-                    'cosplay', 'cos', 'costume', 'outfit', 
-                    'version', 'ver', 'edit', 'photo', 
-                    'pic', 'picture', 'image', 'photoshoot',
-                    'set', 'by', 'from', 'as', 'of', 'the', 'part'
-                ];
-                
-                filename = filename.split(' ')
-                    .filter(word => {
-                        const lowerWord = word.toLowerCase();
-                        return !wordsToRemove.includes(lowerWord) && word.length > 0;
-                    })
-                    .join(' ')
-                    .trim();
-                
-                // Capitalize properly while preserving casing of acronyms
-                return formatName(filename);
-            }
-            
-            function formatName(name) {
-                if (!name) return 'Cosplay Image';
-                
-                return name.split(' ')
-                    .map(word => {
-                        // Don't modify words that are already properly capitalized
-                        if (/^[A-Z][a-z]+$/.test(word)) return word;
-                        
-                        // Don't modify all-caps acronyms (like "DC", "Marvel")
-                        if (/^[A-Z]{2,}$/.test(word)) return word;
-                        
-                        // Capitalize first letter, lowercase the rest
-                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-                    })
-                    .join(' ');
+                currentImageIndex = (currentImageIndex + 1) % allImages.length;
+                fullscreenImage.src = allImages[currentImageIndex];
+                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${allImages.length}`;
             }
         });
     </script>
