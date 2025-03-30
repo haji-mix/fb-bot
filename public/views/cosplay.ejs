@@ -431,6 +431,52 @@
             right: 20px;
         }
         
+        /* Download sets styles */
+        .download-sets-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .download-set {
+            background: rgba(42, 42, 60, 0.7);
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            text-align: left;
+        }
+        
+        .download-set-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(255, 182, 193, 0.2);
+        }
+        
+        .download-set-title {
+            font-size: 1.2rem;
+            color: var(--text-lighter);
+            margin: 0;
+            flex-grow: 1;
+        }
+        
+        .download-set-count {
+            background: var(--primary);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .download-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.8rem;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 992px) {
             h1 {
@@ -444,6 +490,10 @@
             
             .cosplay-item img {
                 height: 260px;
+            }
+            
+            .download-links-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             }
         }
         
@@ -473,6 +523,10 @@
                 width: 35px;
                 height: 35px;
                 font-size: 1rem;
+            }
+            
+            .download-links-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
         }
         
@@ -509,6 +563,14 @@
                 width: 30px;
                 height: 30px;
                 font-size: 0.9rem;
+            }
+            
+            .download-links-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .download-set {
+                padding: 1rem;
             }
         }
     </style>
@@ -704,29 +766,72 @@
                     });
                 });
                 
-                // Add download links if available (using the first result's download links)
-                const firstResult = results[0];
-                if (firstResult.downloadLinks && firstResult.downloadLinks.length > 0) {
-                    const downloadSection = document.createElement('div');
-                    downloadSection.className = 'download-section';
+                // Create a container for all download sets
+                const downloadSetsContainer = document.createElement('div');
+                downloadSetsContainer.className = 'download-sets-container';
+                
+                // Find all unique cosplay sets (group by title)
+                const uniqueSets = {};
+                results.forEach(result => {
+                    if (!result.downloadLinks || result.downloadLinks.length === 0) return;
                     
-                    let downloadLinksHTML = '';
-                    firstResult.downloadLinks.forEach((link, index) => {
-                        downloadLinksHTML += `
-                            <a href="${link}" class="download-link" target="_blank" style="margin: 0.5rem;">
-                                <i class="fas fa-download"></i> Download Set ${index + 1}
-                            </a>
-                        `;
+                    const key = result.title || 'Unknown Set';
+                    if (!uniqueSets[key]) {
+                        uniqueSets[key] = {
+                            title: key,
+                            character: result.character,
+                            cosplayer: result.cosplayer,
+                            appearsIn: result.appearsIn,
+                            downloadLinks: []
+                        };
+                    }
+                    
+                    // Add all download links for this set
+                    result.downloadLinks.forEach(link => {
+                        uniqueSets[key].downloadLinks.push(link);
                     });
+                });
+                
+                // Add download sections for each unique set
+                Object.values(uniqueSets).forEach(set => {
+                    if (set.downloadLinks.length === 0) return;
+                    
+                    const downloadSection = document.createElement('div');
+                    downloadSection.className = 'download-set';
+                    
+                    const downloadLinksHTML = set.downloadLinks.map((link, index) => `
+                        <a href="${link}" class="download-link" target="_blank">
+                            <i class="fas fa-download"></i> Download Part ${index + 1}
+                        </a>
+                    `).join('');
                     
                     downloadSection.innerHTML = `
-                        <h3>Download Full Collections</h3>
-                        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem;">
+                        <div class="download-set-header">
+                            <h3 class="download-set-title">${set.title}</h3>
+                            <span class="download-set-count">${set.downloadLinks.length} Parts</span>
+                        </div>
+                        ${set.character ? `<div class="cosplay-character">Character: ${set.character}</div>` : ''}
+                        ${set.cosplayer ? `<div class="cosplay-cosplayer">Cosplayer: ${set.cosplayer}</div>` : ''}
+                        ${set.appearsIn ? `<div class="cosplay-source">Series: ${set.appearsIn}</div>` : ''}
+                        <div class="download-links-grid">
                             ${downloadLinksHTML}
                         </div>
+                    `;
+                    
+                    downloadSetsContainer.appendChild(downloadSection);
+                });
+                
+                // Only add the download sections container if there are any download links
+                if (downloadSetsContainer.children.length > 0) {
+                    const downloadHeader = document.createElement('div');
+                    downloadHeader.className = 'download-section';
+                    downloadHeader.innerHTML = `
+                        <h3>Download Full Collections</h3>
                         <p class="password"><i class="fas fa-lock"></i> Password: cosplaytele</p>
                     `;
-                    resultsContainer.appendChild(downloadSection);
+                    
+                    resultsContainer.appendChild(downloadHeader);
+                    resultsContainer.appendChild(downloadSetsContainer);
                 }
             }
             
