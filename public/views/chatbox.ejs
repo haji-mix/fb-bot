@@ -223,21 +223,22 @@
         }
 
         .code-content pre {
-    margin: 0;
-    padding: 0;
-    background: transparent;
-}
+            margin: 0;
+            padding: 0;
+            background: transparent;
+        }
+
         .code-content pre code {
-    display: block;
-    white-space: pre;
-    overflow-x: auto;
-    padding: 1em;
-    margin: 0;
-    background: #1e1e1e;
-    color: #d4d4d4;
-    font-family: 'Fira Code', 'Courier New', monospace;
-    border-radius: 0 0 0.5rem 0.5rem;
-}
+            display: block;
+            white-space: pre;
+            overflow-x: auto;
+            padding: 1em;
+            margin: 0;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
 
         .inline-code {
             background-color: rgba(175, 184, 193, 0.2);
@@ -589,47 +590,47 @@
             init();
 
             async function init() {
-    // Load settings FIRST
-    loadSettings();
-    
-    // Then load sessions (which will use the loaded settings)
-    loadSessions();
-    
-    // Then fetch models for the current provider
-    await fetchModels();
-    
-    setupEventListeners();
-    
-    if (state.sessions.length === 0) {
-        createNewSession('General Chat');
-    } else {
-        loadSession(state.sessions[0].id);
-    }
-    
-    // Update UI based on loaded settings
-    updateUI();
-    
-    elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
-    hljs.highlightAll();
-}
+                // Load settings FIRST
+                loadSettings();
 
-function loadSettings() {
-    try {
-        const savedSettings = localStorage.getItem('chatbox_settings');
-        if (savedSettings) {
-            const parsed = JSON.parse(savedSettings);
-            
-            // Only update settings that exist in both objects
-            Object.keys(state.settings).forEach(key => {
-                if (parsed[key] !== undefined) {
-                    state.settings[key] = parsed[key];
+                // Then load sessions (which will use the loaded settings)
+                loadSessions();
+
+                // Then fetch models for the current provider
+                await fetchModels();
+
+                setupEventListeners();
+
+                if (state.sessions.length === 0) {
+                    createNewSession('General Chat');
+                } else {
+                    loadSession(state.sessions[0].id);
                 }
-            });
-        }
-    } catch (e) {
-        console.error("Error loading settings:", e);
-    }
-}
+
+                // Update UI based on loaded settings
+                updateUI();
+
+                elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+                hljs.highlightAll();
+            }
+
+            function loadSettings() {
+                try {
+                    const savedSettings = localStorage.getItem('chatbox_settings');
+                    if (savedSettings) {
+                        const parsed = JSON.parse(savedSettings);
+
+                        // Only update settings that exist in both objects
+                        Object.keys(state.settings).forEach(key => {
+                            if (parsed[key] !== undefined) {
+                                state.settings[key] = parsed[key];
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error loading settings:", e);
+                }
+            }
 
             function loadSessions() {
                 try {
@@ -745,42 +746,42 @@ function loadSettings() {
             }
 
             async function fetchModels() {
-    try {
-        const apiUrl = state.settings.provider === 'githubco' ? 
-            'https://haji-mix.up.railway.app/api/githubco' : 
-            'https://haji-mix.up.railway.app/api/workers';
+                try {
+                    const apiUrl = state.settings.provider === 'githubco' ?
+                        'https://haji-mix.up.railway.app/api/githubco' :
+                        'https://haji-mix.up.railway.app/api/workers';
 
-        const response = await fetch(apiUrl);
-        
-        const data = await response.json();
-        
-        if (data.supported_models && Array.isArray(data.supported_models)) {
-            state.models = data.supported_models;
-            populateModelSelect();
-            updateModelDisplay();
-            
-            // Ensure current model is valid for the provider
-            if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
-                state.settings.model = state.models[0];
-                updateModelDisplay();
+                    const response = await fetch(apiUrl);
+
+                    const data = await response.json();
+
+                    if (data.supported_models && Array.isArray(data.supported_models)) {
+                        state.models = data.supported_models;
+                        populateModelSelect();
+                        updateModelDisplay();
+
+                        // Ensure current model is valid for the provider
+                        if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
+                            state.settings.model = state.models[0];
+                            updateModelDisplay();
+                        }
+                        return;
+                    }
+
+                    throw new Error(data.error || "No supported models found in response");
+
+                } catch (error) {
+                    console.error("Failed to fetch models:", error);
+                    elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
+                    elements.currentModel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Model Error';
+
+                    // Fallback to default model if available
+                    if (state.models.length > 0) {
+                        state.settings.model = state.models[0];
+                        updateModelDisplay();
+                    }
+                }
             }
-            return;
-        }
-        
-        throw new Error(data.error || "No supported models found in response");
-        
-    } catch (error) {
-        console.error("Failed to fetch models:", error);
-        elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
-        elements.currentModel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Model Error';
-        
-        // Fallback to default model if available
-        if (state.models.length > 0) {
-            state.settings.model = state.models[0];
-            updateModelDisplay();
-        }
-    }
-}
 
             function populateModelSelect() {
                 elements.modelSelect.innerHTML = state.models.map(model =>
@@ -837,7 +838,7 @@ function loadSettings() {
 
                 // In the providerSelect event listener, modify it to:
                 elements.providerSelect.addEventListener('change', async function () {
-                    state.settings.provider = this.value || 'workers';
+                    state.settings.provider = this.value;
                     state.models = [];
                     elements.modelSelect.innerHTML = '<option value="loading">Loading models...</option>';
                     updateModelDisplay();
@@ -846,37 +847,35 @@ function loadSettings() {
 
                     await fetchModels();
 
-                    // Update the current session settings
-                    const session = state.sessions.find(s => s.id === state.currentSessionId);
-                    if (session) {
+                    // Save the provider change immediately
+                    localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
+
+                    // Update all sessions to use the new provider
+                    state.sessions.forEach(session => {
                         session.settings.provider = state.settings.provider;
-                        // Set to first available model if current model isn't available
-                        if (state.models.length > 0 && !state.models.includes(session.settings.model)) {
-                            session.settings.model = state.models[0];
-                        }
-                        saveSessions();
-                    }
+                    });
+                    saveSessions();
                 });
 
-                eelements.saveSettings.addEventListener('click', function() {
-    // Update state from UI elements
-    state.settings.provider = elements.providerSelect.value;
-    state.settings.model = elements.modelSelect.value;
-    state.settings.customInstructions = elements.customPersonality.value;
-    
-    // Save to localStorage
-    localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
-    
-    // Update current session settings
-    const session = state.sessions.find(s => s.id === state.currentSessionId);
-    if (session) {
-        session.settings = {...state.settings};
-        saveSessions();
-    }
-    
-    showToast('Settings saved!');
-    updateModelDisplay();
-});
+                elements.saveSettings.addEventListener('click', function () {
+                    // Update state from UI elements
+                    state.settings.provider = elements.providerSelect.value;
+                    state.settings.model = elements.modelSelect.value;
+                    state.settings.customInstructions = elements.customPersonality.value;
+
+                    // Save to localStorage
+                    localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
+
+                    // Update current session settings
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session) {
+                        session.settings = { ...state.settings };
+                        saveSessions();
+                    }
+
+                    showToast('Settings saved!');
+                    updateModelDisplay();
+                });
 
                 elements.chatForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
@@ -1233,20 +1232,20 @@ function loadSettings() {
             }
 
             function formatMessageContent(content) {
-    // First escape HTML in non-code parts
-    let formattedContent = escapeHtml(content);
-    
-    // Process code blocks more carefully
-    const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
-    
-    formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
-        const lang = language || 'plaintext';
-        const displayFilename = filename ? filename.trim() : '';
-        
-        // Preserve the original code exactly (don't escape HTML here)
-        const rawCode = code;
-        
-        return `
+                // First escape HTML in non-code parts
+                let formattedContent = escapeHtml(content);
+
+                // Process code blocks more carefully
+                const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+
+                formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
+                    const lang = language || 'plaintext';
+                    const displayFilename = filename ? filename.trim() : '';
+
+                    // Preserve the original code exactly (don't escape HTML here)
+                    const rawCode = code;
+
+                    return `
             <div class="code-container">
                 <div class="code-header">
                     <div class="code-header-info">
@@ -1262,16 +1261,16 @@ function loadSettings() {
                 </div>
             </div>
         `;
-    });
-    
-    // Process inline code
-    formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-    
-    // Process regular line breaks outside code blocks
-    formattedContent = formattedContent.replace(/(?<!<\/code>)\n(?!<code)/g, '<br>');
-    
-    return `<div class="message-content">${formattedContent}</div>`;
-}
+                });
+
+                // Process inline code
+                formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+                // Process regular line breaks outside code blocks
+                formattedContent = formattedContent.replace(/(?<!<\/code>)\n(?!<code)/g, '<br>');
+
+                return `<div class="message-content">${formattedContent}</div>`;
+            }
 
             function formatCodeIndentation(code) {
                 // Normalize line endings
