@@ -1230,85 +1230,84 @@
                     }
                 }
             }
-
             function formatMessageContent(content) {
-                // First escape HTML in non-code parts
-                let formattedContent = escapeHtml(content);
+    // First escape HTML in non-code parts
+    let formattedContent = escapeHtml(content);
 
-                // Process code blocks more carefully
-                const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+    // Process code blocks more carefully
+    const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
 
-                formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
-                    const lang = language || 'plaintext';
-                    const displayFilename = filename ? filename.trim() : '';
+    formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
+        const lang = language || 'plaintext';
+        const displayFilename = filename ? filename.trim() : '';
+        
+        // Preserve the original code exactly (don't escape HTML here)
+        const rawCode = formatCodeIndentation(code);
 
-                    // Preserve the original code exactly (don't escape HTML here)
-                    const rawCode = code;
+        return `
+<div class="code-container">
+    <div class="code-header">
+        <div class="code-header-info">
+            <span class="code-language">${lang}</span>
+            ${displayFilename ? `<span class="code-filename">${displayFilename}</span>` : ''}
+        </div>
+    </div>
+    <div class="code-content">
+        <button class="code-copy-btn" title="Copy code">
+            <i class="far fa-copy"></i>
+        </button>
+        <pre><code class="language-${lang}">${rawCode}</code></pre>
+    </div>
+</div>
+`;
+    });
 
-                    return `
-            <div class="code-container">
-                <div class="code-header">
-                    <div class="code-header-info">
-                        <span class="code-language">${lang}</span>
-                        ${displayFilename ? `<span class="code-filename">${displayFilename}</span>` : ''}
-                    </div>
-                </div>
-                <div class="code-content">
-                    <button class="code-copy-btn" title="Copy code">
-                        <i class="far fa-copy"></i>
-                    </button>
-                    <pre><code class="language-${lang}">${rawCode}</code></pre>
-                </div>
-            </div>
-        `;
-                });
+    // Process inline code
+    formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
 
-                // Process inline code
-                formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+    // Process regular line breaks outside code blocks
+    formattedContent = formattedContent.replace(/(?<!<\/code>)\n(?!<code)/g, '<br>');
 
-                // Process regular line breaks outside code blocks
-                formattedContent = formattedContent.replace(/(?<!<\/code>)\n(?!<code)/g, '<br>');
+    return `<div class="message-content">${formattedContent}</div>`;
+}
 
-                return `<div class="message-content">${formattedContent}</div>`;
-            }
+function formatCodeIndentation(code) {
+    // Normalize line endings
+    code = code.replace(/\r\n/g, '\n');
 
-            function formatCodeIndentation(code) {
-                // Normalize line endings
-                code = code.replace(/\r\n/g, '\n');
+    // Split into lines and remove empty lines at start/end
+    let lines = code.split('\n');
 
-                // Split into lines and remove empty lines at start/end
-                let lines = code.split('\n');
+    while (lines.length > 0 && lines[0].trim() === '') {
+        lines.shift();
+    }
 
-                while (lines.length > 0 && lines[0].trim() === '') {
-                    lines.shift();
-                }
+    while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+        lines.pop();
+    }
 
-                while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
-                    lines.pop();
-                }
+    if (lines.length === 0) return '';
 
-                if (lines.length === 0) return '';
+    // Calculate minimum indentation
+    let minIndent = Infinity;
+    for (const line of lines) {
+        if (line.trim().length === 0) continue;
+        const leadingSpaces = line.match(/^[ ]*/)[0].length;
+        if (leadingSpaces < minIndent) {
+            minIndent = leadingSpaces;
+        }
+    }
 
-                // Calculate minimum indentation
-                let minIndent = Infinity;
-                for (const line of lines) {
-                    if (line.trim().length === 0) continue;
-                    const leadingSpaces = line.match(/^[ ]*/)[0].length;
-                    if (leadingSpaces < minIndent) {
-                        minIndent = leadingSpaces;
-                    }
-                }
+    // Remove common indentation
+    if (minIndent > 0 && minIndent !== Infinity) {
+        lines = lines.map(line =>
+            line.startsWith(' ') ? line.substring(minIndent) : line
+        );
+    }
 
-                // Remove common indentation
-                if (minIndent > 0 && minIndent !== Infinity) {
-                    lines = lines.map(line =>
-                        line.startsWith(' ') ? line.substring(minIndent) : line
-                    );
-                }
-
-                // Preserve all line breaks by joining with newlines
-                return lines.join('\n');
-            }
+    // Preserve all line breaks by joining with newlines
+    return lines.join('\n');
+}
 
             function showTypingIndicator() {
                 const typingDiv = document.createElement('div');
