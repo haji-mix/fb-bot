@@ -197,11 +197,6 @@
             height: 300px;
             object-fit: cover;
             display: block;
-            transition: transform 0.3s ease;
-        }
-        
-        .cosplay-item:hover img {
-            transform: scale(1.05);
         }
         
         .cosplay-info {
@@ -259,84 +254,157 @@
             to { transform: rotate(360deg); }
         }
         
-        .download-section {
-            text-align: center;
-            margin: 3rem 0;
+        /* Gallery View Styles */
+        .gallery-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            z-index: 1000;
+            overflow-y: auto;
+            display: none;
             padding: 2rem;
-            background: linear-gradient(135deg, var(--darker), var(--dark));
+        }
+        
+        .gallery-view.active {
+            display: block;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gallery-title {
+            font-size: 1.8rem;
+            color: var(--text-lighter);
+        }
+        
+        .close-gallery {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .close-gallery:hover {
+            transform: scale(1.1);
+        }
+        
+        .gallery-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .gallery-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .gallery-images img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .gallery-images img:hover {
+            transform: scale(1.02);
+        }
+        
+        .gallery-info {
+            background-color: var(--darker);
+            padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
         }
         
-        .download-section::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,182,193,0.05) 0%, transparent 70%);
-            transform: rotate(30deg);
-            pointer-events: none;
-        }
-        
-        .download-section h3 {
+        .gallery-info h2 {
             color: var(--text-lighter);
             margin-bottom: 1rem;
             font-size: 1.5rem;
-            position: relative;
         }
         
-        .download-link {
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            color: var(--accent);
+            margin-bottom: 0.2rem;
+        }
+        
+        .info-value {
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+        
+        .download-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .download-btn {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            margin-top: 1rem;
-            padding: 0.8rem 2rem;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            background: rgba(255, 77, 125, 0.2);
+            color: var(--text-light);
+            border: 1px solid var(--primary);
             border-radius: 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(255, 77, 125, 0.4);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
         }
         
-        .download-link:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 77, 125, 0.5);
+        .download-btn:hover {
+            background: rgba(255, 77, 125, 0.4);
+            transform: translateY(-2px);
         }
         
-        .download-link::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: 0.5s;
+        .password-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--accent);
+            border-radius: 30px;
+            font-size: 1rem;
         }
         
-        .download-link:hover::before {
-            left: 100%;
-        }
-        
-        .password {
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            background-color: rgba(0, 0, 0, 0.3);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            display: inline-block;
-        }
-        
-        /* Fullscreen overlay styles */
+        /* Fullscreen overlay for images */
         .fullscreen-overlay {
             position: fixed;
             top: 0;
@@ -347,7 +415,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 1001;
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -390,7 +458,6 @@
             justify-content: center;
             align-items: center;
             transition: all 0.3s ease;
-            z-index: 1001;
         }
         
         .close-fullscreen:hover {
@@ -415,7 +482,6 @@
             justify-content: center;
             align-items: center;
             transition: all 0.3s ease;
-            z-index: 1001;
         }
         
         .nav-arrow:hover {
@@ -429,52 +495,6 @@
         
         .nav-arrow.next {
             right: 20px;
-        }
-        
-        /* Download sets styles */
-        .download-sets-container {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        
-        .download-set {
-            background: rgba(42, 42, 60, 0.7);
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            text-align: left;
-        }
-        
-        .download-set-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255, 182, 193, 0.2);
-        }
-        
-        .download-set-title {
-            font-size: 1.2rem;
-            color: var(--text-lighter);
-            margin: 0;
-            flex-grow: 1;
-        }
-        
-        .download-set-count {
-            background: var(--primary);
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-        
-        .download-links-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.8rem;
         }
         
         /* Responsive adjustments */
@@ -492,8 +512,12 @@
                 height: 260px;
             }
             
-            .download-links-grid {
-                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            .gallery-images {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+            
+            .gallery-images img {
+                height: 200px;
             }
         }
         
@@ -515,18 +539,26 @@
                 height: 220px;
             }
             
-            .download-section {
-                padding: 1.5rem;
+            .gallery-view {
+                padding: 1rem;
             }
             
-            .close-fullscreen, .nav-arrow {
+            .gallery-images {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .gallery-images img {
+                height: 150px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .close-fullscreen, .nav-arrow, .close-gallery {
                 width: 35px;
                 height: 35px;
                 font-size: 1rem;
-            }
-            
-            .download-links-grid {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
         }
         
@@ -559,18 +591,27 @@
                 font-size: 1.5rem;
             }
             
-            .close-fullscreen, .nav-arrow {
+            .gallery-images {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+            
+            .gallery-images img {
+                height: 120px;
+            }
+            
+            .close-fullscreen, .nav-arrow, .close-gallery {
                 width: 30px;
                 height: 30px;
                 font-size: 0.9rem;
             }
             
-            .download-links-grid {
-                grid-template-columns: 1fr;
+            .download-buttons {
+                gap: 0.5rem;
             }
             
-            .download-set {
-                padding: 1rem;
+            .download-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -598,7 +639,32 @@
         </div>
     </div>
 
-    <!-- Fullscreen overlay -->
+    <!-- Gallery View -->
+    <div class="gallery-view" id="galleryView">
+        <div class="container">
+            <div class="gallery-header">
+                <h2 class="gallery-title" id="galleryTitle">Gallery</h2>
+                <button class="close-gallery" id="closeGallery"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="gallery-content">
+                <div class="gallery-images" id="galleryImages"></div>
+                
+                <div class="gallery-info" id="galleryInfo">
+                    <h2 id="galleryInfoTitle">Cosplay Information</h2>
+                    <div class="info-grid" id="infoGrid"></div>
+                    
+                    <div class="download-buttons" id="downloadButtons"></div>
+                    
+                    <div class="password-indicator" id="passwordIndicator" style="display: none;">
+                        <i class="fas fa-lock"></i> <span id="passwordText">Password: </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen overlay for images -->
     <div class="fullscreen-overlay" id="fullscreenOverlay">
         <button class="close-fullscreen" id="closeFullscreen"><i class="fas fa-times"></i></button>
         <button class="nav-arrow prev" id="prevImage"><i class="fas fa-chevron-left"></i></button>
@@ -613,6 +679,16 @@
             const searchInput = document.getElementById('searchInput');
             const searchButton = document.getElementById('searchButton');
             const resultsContainer = document.getElementById('resultsContainer');
+            const galleryView = document.getElementById('galleryView');
+            const galleryImages = document.getElementById('galleryImages');
+            const galleryInfo = document.getElementById('galleryInfo');
+            const galleryTitle = document.getElementById('galleryTitle');
+            const infoGrid = document.getElementById('infoGrid');
+            const downloadButtons = document.getElementById('downloadButtons');
+            const passwordIndicator = document.getElementById('passwordIndicator');
+            const passwordText = document.getElementById('passwordText');
+            const closeGallery = document.getElementById('closeGallery');
+            
             const fullscreenOverlay = document.getElementById('fullscreenOverlay');
             const fullscreenImage = document.getElementById('fullscreenImage');
             const closeFullscreen = document.getElementById('closeFullscreen');
@@ -622,6 +698,8 @@
             let currentImageIndex = 0;
             let currentResults = [];
             let allImages = [];
+            let currentGalleryItem = null;
+            let globalPassword = ''; // Stores the single password from API response
             
             // Load random cosplay on page load
             fetchCosplayData('');
@@ -640,6 +718,12 @@
                 }
             });
             
+            // Close gallery view
+            closeGallery.addEventListener('click', function() {
+                galleryView.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+            
             // Close fullscreen when clicking overlay (but not the image)
             fullscreenOverlay.addEventListener('click', function(e) {
                 if (e.target === fullscreenOverlay) {
@@ -650,7 +734,12 @@
             // Close fullscreen with escape key
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
-                    closeFullscreenView();
+                    if (fullscreenOverlay.classList.contains('active')) {
+                        closeFullscreenView();
+                    } else if (galleryView.classList.contains('active')) {
+                        galleryView.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
                 }
             });
             
@@ -687,6 +776,8 @@
                     })
                     .then(data => {
                         if (data.status) {
+                            // Get the password directly from response.data.password
+                            globalPassword = data.password || '';
                             displayResults(data.result, searchTerm);
                         } else {
                             throw new Error(data.error || 'No results found');
@@ -724,115 +815,115 @@
                 gallery.className = 'gallery';
                 resultsContainer.appendChild(gallery);
                 
-                // Store current results for fullscreen navigation
+                // Store current results for gallery view
                 currentResults = results;
-                allImages = results.flatMap(result => result.images);
+                allImages = results.flatMap(result => result.images || []);
                 
                 // Display all results
                 results.forEach((result, resultIndex) => {
                     // Skip if no images
                     if (!result.images || result.images.length === 0) return;
                     
-                    // Create a gallery item for each image in the result
-                    result.images.forEach((imgUrl, imgIndex) => {
-                        const cosplayItem = document.createElement('div');
-                        cosplayItem.className = 'cosplay-item';
-                        
-                        const img = document.createElement('img');
-                        img.src = imgUrl;
-                        img.alt = result.title || 'Cosplay image';
-                        img.loading = 'lazy';
-                        
-                        // Calculate the global index for fullscreen navigation
-                        const globalIndex = results.slice(0, resultIndex)
-                            .reduce((sum, r) => sum + (r.images ? r.images.length : 0), 0) + imgIndex;
-                        
-                        // Add click event to open fullscreen
-                        img.addEventListener('click', () => openFullscreenView(globalIndex));
-                        
-                        const info = document.createElement('div');
-                        info.className = 'cosplay-info';
-                        
-                        info.innerHTML = `
-                            <h3>${result.title || 'Cosplay Image'}</h3>
-                            ${result.character ? `<div class="cosplay-character">Character: ${result.character}</div>` : ''}
-                            ${result.cosplayer ? `<div class="cosplay-cosplayer">Cosplayer: ${result.cosplayer}</div>` : ''}
-                            ${result.appearsIn ? `<div class="cosplay-source">Series: ${result.appearsIn}</div>` : ''}
+                    const cosplayItem = document.createElement('div');
+                    cosplayItem.className = 'cosplay-item';
+                    
+                    // Only show the first image as thumbnail
+                    const firstImage = result.images[0];
+                    const img = document.createElement('img');
+                    img.src = firstImage;
+                    img.alt = result.title || 'Cosplay image';
+                    img.loading = 'lazy';
+                    
+                    const info = document.createElement('div');
+                    info.className = 'cosplay-info';
+                    
+                    info.innerHTML = `
+                        <h3>${result.title || 'Cosplay Image'}</h3>
+                        ${result.character ? `<div class="cosplay-character">Character: ${result.character}</div>` : ''}
+                        ${result.cosplayer ? `<div class="cosplay-cosplayer">Cosplayer: ${result.cosplayer}</div>` : ''}
+                        ${result.appearsIn ? `<div class="cosplay-source">Series: ${result.appearsIn}</div>` : ''}
+                        ${result.images.length > 1 ? `<div class="cosplay-source" style="margin-top: 0.8rem;"><i class="fas fa-images"></i> ${result.images.length} images in set</div>` : ''}
+                    `;
+                    
+                    // Add click event to open gallery view
+                    cosplayItem.addEventListener('click', () => {
+                        openGalleryView(result);
+                    });
+                    
+                    cosplayItem.appendChild(img);
+                    cosplayItem.appendChild(info);
+                    gallery.appendChild(cosplayItem);
+                });
+            }
+            
+            function openGalleryView(result) {
+                currentGalleryItem = result;
+                galleryTitle.textContent = result.title || 'Cosplay Gallery';
+                
+                // Clear previous content
+                galleryImages.innerHTML = '';
+                infoGrid.innerHTML = '';
+                downloadButtons.innerHTML = '';
+                
+                // Display all images
+                result.images.forEach((imageUrl, index) => {
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.alt = `Image ${index + 1}`;
+                    img.addEventListener('click', () => {
+                        const globalIndex = currentResults.findIndex(r => r === result);
+                        const offset = currentResults.slice(0, globalIndex)
+                            .reduce((sum, r) => sum + (r.images ? r.images.length : 0), 0);
+                        openFullscreenView(offset + index);
+                    });
+                    galleryImages.appendChild(img);
+                });
+                
+                // Display information
+                const infoItems = [
+                    { label: 'Character', value: result.character },
+                    { label: 'Cosplayer', value: result.cosplayer },
+                    { label: 'Series', value: result.appearsIn },
+                    { label: 'Images', value: result.images.length }
+                ];
+                
+                infoItems.forEach(item => {
+                    if (item.value) {
+                        const infoItem = document.createElement('div');
+                        infoItem.className = 'info-item';
+                        infoItem.innerHTML = `
+                            <div class="info-label">${item.label}</div>
+                            <div class="info-value">${item.value}</div>
                         `;
-                        
-                        cosplayItem.appendChild(img);
-                        cosplayItem.appendChild(info);
-                        gallery.appendChild(cosplayItem);
-                    });
-                });
-                
-                // Create a container for all download sets
-                const downloadSetsContainer = document.createElement('div');
-                downloadSetsContainer.className = 'download-sets-container';
-                
-                // Find all unique cosplay sets (group by title)
-                const uniqueSets = {};
-                results.forEach(result => {
-                    if (!result.downloadLinks || result.downloadLinks.length === 0) return;
-                    
-                    const key = result.title || 'Unknown Set';
-                    if (!uniqueSets[key]) {
-                        uniqueSets[key] = {
-                            title: key,
-                            character: result.character,
-                            cosplayer: result.cosplayer,
-                            appearsIn: result.appearsIn,
-                            downloadLinks: []
-                        };
+                        infoGrid.appendChild(infoItem);
                     }
-                    
-                    // Add all download links for this set
-                    result.downloadLinks.forEach(link => {
-                        uniqueSets[key].downloadLinks.push(link);
+                });
+                
+                // Create download buttons if downloadLinks exist
+                if (result.downloadLinks && result.downloadLinks.length > 0) {
+                    result.downloadLinks.forEach((link, index) => {
+                        const downloadBtn = document.createElement('a');
+                        downloadBtn.href = link;
+                        downloadBtn.className = 'download-btn';
+                        downloadBtn.target = '_blank';
+                        downloadBtn.innerHTML = `
+                            <i class="fas fa-download"></i> Server ${index + 1}
+                        `;
+                        downloadButtons.appendChild(downloadBtn);
                     });
-                });
-                
-                // Add download sections for each unique set
-                Object.values(uniqueSets).forEach(set => {
-                    if (set.downloadLinks.length === 0) return;
-                    
-                    const downloadSection = document.createElement('div');
-                    downloadSection.className = 'download-set';
-                    
-                    const downloadLinksHTML = set.downloadLinks.map((link, index) => `
-                        <a href="${link}" class="download-link" target="_blank">
-                            <i class="fas fa-download"></i> Download Part ${index + 1}
-                        </a>
-                    `).join('');
-                    
-                    downloadSection.innerHTML = `
-                        <div class="download-set-header">
-                            <h3 class="download-set-title">${set.title}</h3>
-                            <span class="download-set-count">${set.downloadLinks.length} Parts</span>
-                        </div>
-                        ${set.character ? `<div class="cosplay-character">Character: ${set.character}</div>` : ''}
-                        ${set.cosplayer ? `<div class="cosplay-cosplayer">Cosplayer: ${set.cosplayer}</div>` : ''}
-                        ${set.appearsIn ? `<div class="cosplay-source">Series: ${set.appearsIn}</div>` : ''}
-                        <div class="download-links-grid">
-                            ${downloadLinksHTML}
-                        </div>
-                    `;
-                    
-                    downloadSetsContainer.appendChild(downloadSection);
-                });
-                
-                // Only add the download sections container if there are any download links
-                if (downloadSetsContainer.children.length > 0) {
-                    const downloadHeader = document.createElement('div');
-                    downloadHeader.className = 'download-section';
-                    downloadHeader.innerHTML = `
-                        <h3>Download Full Collections</h3>
-                        <p class="password"><i class="fas fa-lock"></i> Password: cosplaytele</p>
-                    `;
-                    
-                    resultsContainer.appendChild(downloadHeader);
-                    resultsContainer.appendChild(downloadSetsContainer);
                 }
+                
+                // Add password from globalPassword (response.data.password)
+                if (globalPassword) {
+                    passwordIndicator.style.display = 'inline-flex';
+                    passwordText.textContent = `Archive Password: ${globalPassword}`;
+                } else {
+                    passwordIndicator.style.display = 'none';
+                }
+                
+                // Show gallery view
+                galleryView.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }
             
             function openFullscreenView(index) {
@@ -845,7 +936,7 @@
             
             function closeFullscreenView() {
                 fullscreenOverlay.classList.remove('active');
-                document.body.style.overflow = '';
+                document.body.style.overflow = galleryView.classList.contains('active') ? 'hidden' : '';
             }
             
             function showPrevImage() {
