@@ -112,32 +112,6 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             headers: GITHUB_API_HEADERS(token)
         });
 
-        const axios = require('axios');
-// un used code yet
-        let config = {
-            method: 'GET',
-            url: 'https://api.individual.githubcopilot.com/github/chat/system_prompt/immersive',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-                'accept-language': 'en-US,en;q=0.5',
-                'referer': 'https://github.com/',
-                'authorization': 'GitHub-Bearer ff7OjmZfIJ4JYVLSr32Iqq2D9NJUCkvNGc1exLY7yqljPYFtnT_Y6egfuHVzWc8FuoFhMkWFVtDTowRXmsGGeD9C4UUWUd_APGswiaE0r-0=',
-                'copilot-integration-id': 'copilot-chat',
-                'origin': 'https://github.com',
-                'sec-fetch-dest': 'empty',
-                'sec-fetch-mode': 'cors',
-                'sec-fetch-site': 'cross-site',
-                'priority': 'u=4',
-                'cache-control': 'max-age=0',
-                'te': 'trailers'
-            }
-        };
-
-        axios.request(config)
-            .then(response => console.log(response.data.prompt))
-            .catch(error => console.log('error', error));
-
         const models = modelsResponse.data.data.filter(model => model.model_picker_enabled);
         if (!models || models.length === 0) {
             chat.reply(font.thin("No models available. Please check the API configuration."));
@@ -178,33 +152,33 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             userThreadMap.set(event.senderID, threadId);
         }
         
-        let config = {
-        method: 'GET',
-        url: 'https://api.individual.githubcopilot.com/github/chat/system_prompt/immersive',
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
-            'Accept-Encoding': 'gzip, deflate, br, zstd',
-            'accept-language': 'en-US,en;q=0.5',
-            'referer': 'https://github.com/',
-            'authorization': `GitHub-Bearer ${token}`,
-            'copilot-integration-id': 'copilot-chat',
-            'origin': 'https://github.com',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'cross-site',
-            'priority': 'u=4',
-            'cache-control': 'max-age=0',
-            'te': 'trailers'
+        let system_prompt = {
+            method: 'GET',
+            url: 'https://api.individual.githubcopilot.com/github/chat/system_prompt/immersive',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'accept-language': 'en-US,en;q=0.5',
+                'referer': 'https://github.com/',
+                'authorization': `GitHub-Bearer ${token}`,
+                'copilot-integration-id': 'copilot-chat',
+                'origin': 'https://github.com',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'cross-site',
+                'priority': 'u=4',
+                'cache-control': 'max-age=0',
+                'te': 'trailers'
+            }
+        };
+    
+        let systemPrompt = null;
+        try {
+            const systemPromptResponse = await axios.request(system_prompt);
+            systemPrompt = systemPromptResponse.data.prompt;
+        } catch (error) {
+            return systemPrompt;
         }
-    };
-
-    let systemPrompt = null;
-    try {
-        const systemPromptResponse = await axios.request(config);
-        systemPrompt = systemPromptResponse.data.prompt;
-    } catch (error) {
-        return systemPrompt;
-    }
 
         const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
