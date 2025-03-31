@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,55 +28,137 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .chat-message { animation: fadeIn 0.3s ease-out; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .chat-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .typing-dot { animation: bounce 1.4s infinite ease-in-out; }
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        .typing-dot {
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
         @keyframes bounce {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-4px); }
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-4px);
+            }
         }
-        .sidebar { transition: transform 0.3s ease; }
+
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+
         @media (max-width: 768px) {
-            .sidebar { 
-                transform: translateX(-100%); position: fixed;
-                top: 0; left: 0; height: 100vh; z-index: 50;
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 50;
             }
-            .sidebar-open { transform: translateX(0); }
+
+            .sidebar-open {
+                transform: translateX(0);
+            }
+
             .sidebar-overlay {
-                display: none; position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5); z-index: 40;
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
             }
-            .sidebar-open + .sidebar-overlay { display: block; }
+
+            .sidebar-open+.sidebar-overlay {
+                display: block;
+            }
         }
+
         .personality-btn {
-            transition: all 0.2s ease; border: 1px solid transparent;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
+
         .personality-btn.active {
-            background-color: var(--color); color: white;
+            background-color: var(--color);
+            color: white;
             border-color: var(--color);
         }
+
         .personality-btn:not(.active) {
             background-color: rgba(255, 255, 255, 0.1);
             border-color: currentColor;
         }
-        .personality-btn:hover:not(.active) { opacity: 0.8; }
-        .session-item.active { background-color: #7c3aed; color: white; }
-        .session-item:hover { background-color: #4B5563; }
+
+        .personality-btn:hover:not(.active) {
+            opacity: 0.8;
+        }
+
+        .session-item.active {
+            background-color: #7c3aed;
+            color: white;
+        }
+
+        .session-item:hover {
+            background-color: #4B5563;
+        }
+
         .custom-personality-container {
-            transition: all 0.3s ease; max-height: 0; overflow: hidden;
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
         }
-        .custom-personality-container.open { max-height: 200px; margin-top: 0.5rem; }
-        .settings-container { max-height: calc(100vh - 400px); overflow-y: auto; }
+
+        .custom-personality-container.open {
+            max-height: 200px;
+            margin-top: 0.5rem;
+        }
+
+        .settings-container {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+        }
+
         @media (max-width: 768px) {
-            .settings-container { max-height: calc(100vh - 300px); }
+            .settings-container {
+                max-height: calc(100vh - 300px);
+            }
         }
+
         .code-container {
             position: relative;
             margin: 0.75rem 0;
@@ -84,6 +167,7 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
         .code-header {
             display: flex;
             justify-content: space-between;
@@ -94,26 +178,31 @@
             font-family: 'Fira Code', 'Courier New', monospace;
             font-size: 0.8rem;
         }
+
         .code-header-info {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
+
         .code-language {
             font-weight: 600;
         }
+
         .code-filename {
             color: #ce9178;
             font-style: italic;
             font-size: 0.75rem;
             opacity: 0.9;
         }
+
         .code-content {
             position: relative;
             background-color: #1e1e1e;
             padding: 1rem;
             overflow-x: auto;
         }
+
         .code-copy-btn {
             position: absolute;
             top: 0.5rem;
@@ -127,15 +216,18 @@
             transition: all 0.2s;
             z-index: 10;
         }
+
         .code-copy-btn:hover {
             background: rgba(60, 60, 60, 0.8);
             color: white;
         }
+
         .code-content pre {
             white-space: pre-wrap;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
+
         .inline-code {
             background-color: rgba(175, 184, 193, 0.2);
             border-radius: 0.25rem;
@@ -144,6 +236,7 @@
             font-size: 0.9em;
             color: #db7093;
         }
+
         .html-preview-message {
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 0.5rem;
@@ -153,6 +246,7 @@
             color: black;
             transition: all 0.3s ease;
         }
+
         .html-preview-header {
             padding: 0.5rem;
             background-color: #f3f4f6;
@@ -162,12 +256,14 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .html-preview-actions {
             display: flex;
             gap: 0.5rem;
         }
+
         .html-preview-action-btn {
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             border: none;
             border-radius: 0.25rem;
             padding: 0.25rem 0.5rem;
@@ -175,18 +271,22 @@
             font-size: 0.8rem;
             transition: all 0.2s;
         }
+
         .html-preview-action-btn:hover {
-            background: rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.2);
         }
+
         .html-preview-content {
             padding: 1rem;
         }
+
         .safe-html-preview {
             width: 100%;
             height: 300px;
             border: none;
             background: white;
         }
+
         .html-preview-fullscreen {
             position: fixed;
             top: 0;
@@ -198,25 +298,31 @@
             margin: 0;
             border-radius: 0;
         }
+
         .html-preview-fullscreen .safe-html-preview {
             height: calc(100vh - 40px);
         }
+
         .dark .code-container {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
+
         .dark .inline-code {
             background-color: rgba(110, 118, 129, 0.4);
             color: #e995b3;
         }
+
         .dark .html-preview-message {
             background-color: #1e1e1e;
             color: white;
             border-color: rgba(255, 255, 255, 0.2);
         }
+
         .dark .html-preview-header {
             background-color: #2d3748;
             border-bottom-color: rgba(255, 255, 255, 0.1);
         }
+
         .message-copy-btn {
             position: absolute;
             top: 0.5rem;
@@ -231,26 +337,32 @@
             border-radius: 0.25rem;
             z-index: 10;
         }
+
         .chat-message:hover .message-copy-btn {
             opacity: 1;
         }
+
         .chat-message:hover .message-copy-btn:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+
         .dark .message-copy-btn {
             background: rgba(0, 0, 0, 0.2);
             border-color: rgba(255, 255, 255, 0.1);
         }
+
         .dark .chat-message:hover .message-copy-btn:hover {
             background: rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
+
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
     <div class="flex h-screen overflow-hidden">
         <div id="sidebarOverlay" class="sidebar-overlay"></div>
-        
-        <div id="sidebar" class="sidebar w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
+
+        <div id="sidebar"
+            class="sidebar w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
             <div class="bg-primary-600 px-4 py-6">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xl font-bold text-white">Chatbox Horizon</h2>
@@ -258,102 +370,126 @@
                 </div>
                 <p class="text-indigo-200 text-sm mt-1">Powered by Haji Mix</p>
                 <div class="mt-4 flex justify-end">
-                    <button id="themeToggle" class="text-white text-sm"><i class="fas fa-sun mr-1"></i> Light Mode</button>
+                    <button id="themeToggle" class="text-white text-sm"><i class="fas fa-sun mr-1"></i> Light
+                        Mode</button>
                 </div>
             </div>
-            
+
             <div class="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</h3>
-                    <button id="newSessionBtn" class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-xs">
+                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions
+                    </h3>
+                    <button id="newSessionBtn"
+                        class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-xs">
                         <i class="fas fa-plus mr-1"></i> New
                     </button>
                 </div>
                 <div class="space-y-1 max-h-40 overflow-y-auto" id="sessionList">
-                    <div class="text-center py-2 text-gray-500 dark:text-gray-400"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                    <div class="text-center py-2 text-gray-500 dark:text-gray-400"><i
+                            class="fas fa-spinner fa-spin"></i> Loading...</div>
                 </div>
             </div>
-            
+
             <div class="flex-1 overflow-y-auto px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Chat History</h3>
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Chat
+                    History</h3>
                 <div class="space-y-1" id="chatHistory">
                     <div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>
                 </div>
             </div>
-            
+
             <div class="px-4 py-4 settings-container">
-                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Settings</h3>
-                
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Settings</h3>
+
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provider</label>
-                    <select id="providerSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+                    <select id="providerSelect"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
                         <option value="workers">Workers (Default)</option>
                         <option value="githubco">GitHubCo</option>
                     </select>
                 </div>
-                
+
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">AI Model</label>
-                    <select id="modelSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+                    <select id="modelSelect"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
                         <option value="loading">Loading models...</option>
                     </select>
                 </div>
-                
+
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Personality</label>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button data-personality="default" style="--color: #7c3aed" class="personality-btn active px-3 py-1 rounded-full text-xs font-medium">Default</button>
-                        <button data-personality="friendly" style="--color: #3b82f6" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Friendly</button>
-                        <button data-personality="professional" style="--color: #10b981" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Professional</button>
-                        <button data-personality="humorous" style="--color: #f59e0b" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Humorous</button>
-                        <button data-personality="custom" style="--color: #ec4899" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Custom</button>
+                        <button data-personality="default" style="--color: #7c3aed"
+                            class="personality-btn active px-3 py-1 rounded-full text-xs font-medium">Default</button>
+                        <button data-personality="friendly" style="--color: #3b82f6"
+                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Friendly</button>
+                        <button data-personality="professional" style="--color: #10b981"
+                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Professional</button>
+                        <button data-personality="humorous" style="--color: #f59e0b"
+                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Humorous</button>
+                        <button data-personality="custom" style="--color: #ec4899"
+                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Custom</button>
                     </div>
                     <div id="customPersonalityContainer" class="custom-personality-container">
-                        <textarea id="customPersonality" placeholder="Enter custom instructions (e.g., 'Respond like a pirate')" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"></textarea>
+                        <textarea id="customPersonality"
+                            placeholder="Enter custom instructions (e.g., 'Respond like a pirate')"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"></textarea>
                     </div>
                 </div>
-                
+
                 <div class="mb-6" id="tokenSettings">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response Length</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response
+                        Length</label>
                     <div class="flex items-center space-x-3">
-                        <input type="range" id="maxTokens" min="50" max="32000" class="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                        <span id="tokenValue" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-16">Auto</span>
+                        <input type="range" id="maxTokens" min="50" max="32000"
+                            class="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        <span id="tokenValue"
+                            class="text-sm font-medium text-gray-700 dark:text-gray-300 w-16">Auto</span>
                     </div>
                     <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                         <span>Short</span><span>Long</span>
                     </div>
                 </div>
             </div>
-            
+
             <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-                <button id="saveSettings" class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
+                <button id="saveSettings"
+                    class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
                 </button>
             </div>
         </div>
-        
+
         <div class="flex-1 flex flex-col overflow-hidden">
             <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between px-4 py-3">
                     <div class="flex items-center">
-                        <button id="toggleSidebar" class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+                        <button id="toggleSidebar"
+                            class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
                             <i class="fas fa-sliders-h"></i>
                         </button>
                         <h1 class="text-lg font-semibold" id="currentSessionName">New Session</h1>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span id="currentProvider" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">Haji Mix</span>
-                        <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                        <span id="currentProvider"
+                            class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">Haji
+                            Mix</span>
+                        <span id="currentModel"
+                            class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
                             <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
                         </span>
                     </div>
                 </div>
             </header>
-            
+
             <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" id="chatContainer">
                 <div class="chat-message flex">
                     <div class="flex-shrink-0 mr-3">
-                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                        <div
+                            class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
                             <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
                         </div>
                     </div>
@@ -362,13 +498,15 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
                 <form id="chatForm" class="flex space-x-3">
                     <div class="flex-1 relative">
-                        <input type="text" id="userInput" placeholder="Type your message..." class="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+                        <input type="text" id="userInput" placeholder="Type your message..."
+                            class="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
                     </div>
-                    <button type="submit" class="bg-primary-600 text-white p-3 rounded-xl hover:bg-primary-700 transition">
+                    <button type="submit"
+                        class="bg-primary-600 text-white p-3 rounded-xl hover:bg-primary-700 transition">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -383,21 +521,21 @@
             general: ['Conversation', 'Discussion', 'Chat Session', 'Q&A', 'Talk'],
             business: ['Strategy Talk', 'Business Chat', 'Professional Discussion', 'Meeting Notes', 'Plan Session'],
             random: ['Thought Exchange', 'Mind Meld', 'Digital Dialogue', 'Virtual Chat', 'AI Conversation'],
-            
+
             generateName(message) {
                 const lowerMsg = message.toLowerCase();
                 let category = 'random';
-                
+
                 if (/(code|program|tech|computer|ai|algorithm)/i.test(lowerMsg)) category = 'tech';
                 else if (/(art|creative|write|story|design|music)/i.test(lowerMsg)) category = 'creative';
                 else if (/(business|work|professional|meeting|strategy)/i.test(lowerMsg)) category = 'business';
                 else if (/(hello|hi|hey|greeting)/i.test(lowerMsg)) category = 'general';
-                
+
                 return this[category][Math.floor(Math.random() * this[category].length)];
             }
         };
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const state = {
                 models: [],
                 sessions: [],
@@ -443,12 +581,12 @@
                 loadSessions();
                 await fetchModels();
                 setupEventListeners();
-                
+
                 if (state.sessions.length === 0) createNewSession('General Chat');
                 else loadSession(state.sessions[0].id);
-                
+
                 elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
-                
+
                 hljs.highlightAll();
             }
 
@@ -459,8 +597,8 @@
                         state.sessions = JSON.parse(sessions);
                     } else {
                         state.sessions = [];
-                    createNewSession('General Chat');
-                    return;
+                        createNewSession('General Chat');
+                        return;
                     }
                 } catch (e) {
                     console.error("Error loading sessions:", e);
@@ -477,7 +615,7 @@
             function createNewSession(name = null) {
                 const sessionId = 'session_' + Date.now();
                 const sessionName = name || `Session ${state.sessions.length + 1}`;
-                
+
                 const newSession = {
                     id: sessionId,
                     name: sessionName,
@@ -488,9 +626,9 @@
                         content: 'Hello! I\'m your AI assistant. How can I help you today?',
                         timestamp: new Date().toISOString()
                     }],
-                    settings: {...state.settings}
+                    settings: { ...state.settings }
                 };
-                
+
                 state.sessions.unshift(newSession);
                 saveSessions();
                 loadSession(sessionId);
@@ -500,12 +638,12 @@
             function loadSession(sessionId) {
                 const session = state.sessions.find(s => s.id === sessionId);
                 if (!session) return;
-                
+
                 state.currentSessionId = sessionId;
                 elements.currentSessionName.textContent = session.name;
-                state.settings = {...session.settings};
+                state.settings = { ...session.settings };
                 updateUI();
-                
+
                 elements.chatContainer.innerHTML = '';
                 session.messages.forEach(msg => {
                     if (msg.isHtmlPreview) {
@@ -514,11 +652,11 @@
                         addChatMessage(msg.role, msg.content, false);
                     }
                 });
-                
+
                 document.querySelectorAll('.session-item').forEach(item => {
                     item.classList.toggle('active', item.dataset.sessionId === sessionId);
                 });
-                
+
                 renderChatHistory();
             }
 
@@ -539,10 +677,10 @@
             function renderChatHistory() {
                 const session = state.sessions.find(s => s.id === state.currentSessionId);
                 if (!session) return;
-                
+
                 const conversations = [];
                 let currentConversation = [];
-                
+
                 session.messages.forEach(msg => {
                     if (msg.role === 'user' && currentConversation.length > 0) {
                         conversations.push([...currentConversation]);
@@ -550,10 +688,10 @@
                     }
                     currentConversation.push(msg);
                 });
-                
+
                 if (currentConversation.length > 0) conversations.push(currentConversation);
-                
-                elements.chatHistory.innerHTML = conversations.length ? 
+
+                elements.chatHistory.innerHTML = conversations.length ?
                     conversations.map(convo => {
                         const firstUserMessage = convo.find(m => m.role === 'user');
                         if (!firstUserMessage) return '';
@@ -561,46 +699,55 @@
                         return `<div class="px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 truncate">
                             ${content}${firstUserMessage.content.length > 50 ? '...' : ''}
                         </div>`;
-                    }).join('') : 
+                    }).join('') :
                     '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
             }
 
             async function fetchModels() {
                 try {
-                    const apiUrl = state.settings.provider === 'githubco' ? 
-                        'https://haji-mix.up.railway.app/api/githubco' : 
+                    const apiUrl = state.settings.provider === 'githubco' ?
+                        'https://haji-mix.up.railway.app/api/githubco' :
                         'https://haji-mix.up.railway.app/api/workers';
 
                     const response = await fetch(apiUrl);
+                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+
                     const data = await response.json();
-                    
+
                     if (data.supported_models && Array.isArray(data.supported_models)) {
                         state.models = data.supported_models;
                         populateModelSelect();
                         updateModelDisplay();
-                        
+
                         if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
                             state.settings.model = state.models[0];
                             updateModelDisplay();
+
+                            const session = state.sessions.find(s => s.id === state.currentSessionId);
+                            if (session) {
+                                session.settings.model = state.settings.model;
+                                saveSessions();
+                            }
                         }
                         return;
                     }
-                    
+
                     throw new Error(data.error || "No supported models found in response");
-                    
+
                 } catch (error) {
                     console.error("Failed to fetch models:", error);
+                    elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
+                    elements.currentModel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Model Error';
+
                     if (state.models.length > 0) {
-                        populateModelSelect();
+                        state.settings.model = state.models[0];
                         updateModelDisplay();
-                    } else {
-                        elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
                     }
                 }
             }
 
             function populateModelSelect() {
-                elements.modelSelect.innerHTML = state.models.map(model => 
+                elements.modelSelect.innerHTML = state.models.map(model =>
                     `<option value="${model}" ${model === state.settings.model ? 'selected' : ''}>${model}</option>`
                 ).join('');
             }
@@ -609,17 +756,17 @@
                 elements.toggleSidebar.addEventListener('click', toggleSidebar);
                 elements.closeSidebar.addEventListener('click', toggleSidebar);
                 elements.sidebarOverlay.addEventListener('click', toggleSidebar);
-                
+
                 elements.themeToggle.addEventListener('click', () => {
                     const isDark = document.documentElement.classList.toggle('dark');
                     localStorage.setItem('darkMode', isDark);
-                    elements.themeToggle.innerHTML = isDark ? 
-                        '<i class="fas fa-sun mr-1"></i> Light Mode' : 
+                    elements.themeToggle.innerHTML = isDark ?
+                        '<i class="fas fa-sun mr-1"></i> Light Mode' :
                         '<i class="fas fa-moon mr-1"></i> Dark Mode';
                 });
-                
+
                 elements.newSessionBtn.addEventListener('click', () => createNewSession());
-                
+
                 elements.sessionList.addEventListener('click', (e) => {
                     if (e.target.closest('.delete-session')) {
                         e.stopPropagation();
@@ -630,13 +777,13 @@
                         if (sessionId) loadSession(sessionId);
                     }
                 });
-                
+
                 elements.personalityBtns.forEach(btn => {
-                    btn.addEventListener('click', function() {
+                    btn.addEventListener('click', function () {
                         elements.personalityBtns.forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
                         state.settings.personality = this.getAttribute('data-personality') || 'default';
-                        
+
                         if (this.getAttribute('data-personality') === 'custom') {
                             elements.customPersonalityContainer.classList.add('open');
                             elements.customPersonality.focus();
@@ -645,47 +792,59 @@
                         }
                     });
                 });
-                
-                elements.maxTokens.addEventListener('input', function() {
+
+                elements.maxTokens.addEventListener('input', function () {
                     const value = parseInt(this.value) || 50;
                     state.settings.max_tokens = value === 50 ? null : value;
                     elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
                 });
-                
-                elements.providerSelect.addEventListener('change', async function() {
+
+                // In the providerSelect event listener, modify it to:
+                elements.providerSelect.addEventListener('change', async function () {
                     state.settings.provider = this.value || 'workers';
                     state.models = [];
-                    populateModelSelect();
+                    elements.modelSelect.innerHTML = '<option value="loading">Loading models...</option>';
                     updateModelDisplay();
-                    
+
                     elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
-                    
+
                     await fetchModels();
-                    
+
+                    // Update the current session settings
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
                         session.settings.provider = state.settings.provider;
-                        session.settings.model = state.settings.model;
+                        // Set to first available model if current model isn't available
+                        if (state.models.length > 0 && !state.models.includes(session.settings.model)) {
+                            session.settings.model = state.models[0];
+                        }
                         saveSessions();
                     }
                 });
-                
-                elements.saveSettings.addEventListener('click', function() {
+
+                elements.saveSettings.addEventListener('click', function () {
                     state.settings.provider = elements.providerSelect.value || 'workers';
                     state.settings.model = elements.modelSelect.value || '';
                     state.settings.customInstructions = elements.customPersonality.value;
-                    
+
+                    // Update personality based on active button
+                    const activePersonalityBtn = document.querySelector('.personality-btn.active');
+                    if (activePersonalityBtn) {
+                        state.settings.personality = activePersonalityBtn.dataset.personality || 'default';
+                    }
+
+                    // Update current session settings
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
-                        session.settings = {...state.settings};
+                        session.settings = { ...state.settings };
                         saveSessions();
                     }
-                    
+
                     showToast('Settings saved!');
                     updateModelDisplay();
                 });
-                
-                elements.chatForm.addEventListener('submit', async function(e) {
+
+                elements.chatForm.addEventListener('submit', async function (e) {
                     e.preventDefault();
                     const message = elements.userInput.value.trim();
                     if (!message) return;
@@ -726,10 +885,10 @@
 
             function deleteSession(sessionId) {
                 if (state.sessions.length <= 1) return showToast("You must have at least one session");
-                
+
                 state.sessions = state.sessions.filter(s => s.id !== sessionId);
                 saveSessions();
-                
+
                 if (state.currentSessionId === sessionId) loadSession(state.sessions[0]?.id || '');
                 renderSessionList();
                 showToast("Session deleted");
@@ -743,21 +902,21 @@
             async function sendChatMessage(message) {
                 const session = state.sessions.find(s => s.id === state.currentSessionId);
                 if (!session) return { error: "No active session" };
-                
+
                 const params = new URLSearchParams();
                 params.append('ask', message);
                 params.append('uid', state.currentSessionId);
                 params.append('model', state.settings.model);
-                
+
                 let instructions = '';
                 if (state.settings.personality === 'custom' && state.settings.customInstructions) {
                     instructions = state.settings.customInstructions;
                 } else if (state.settings.personality !== 'default') {
                     instructions = getPersonalityInstructions(state.settings.personality);
                 }
-                
+
                 if (instructions) params.append('roleplay', instructions);
-                
+
                 if (state.settings.provider === 'workers' && state.settings.max_tokens) {
                     params.append('max_tokens', state.settings.max_tokens);
                 }
@@ -788,18 +947,18 @@
                 const htmlBlockRegex = /```(?:html|htm)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
                 const blocks = [];
                 let match;
-                
+
                 while ((match = htmlBlockRegex.exec(content)) !== null) {
                     blocks.push(match[2]);
                 }
-                
+
                 return blocks;
             }
 
             function addHtmlPreviewMessage(htmlContent, saveToHistory = true) {
                 const previewId = 'preview_' + Date.now();
                 const iframeId = `html-preview-${previewId}`;
-                
+
                 const safeHtml = `
                     <!DOCTYPE html>
                     <html>
@@ -813,10 +972,10 @@
                     <body>${htmlContent}</body>
                     </html>
                 `;
-                
+
                 const blob = new Blob([safeHtml], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
-                
+
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'chat-message flex mb-4';
                 previewDiv.dataset.messageId = previewId;
@@ -845,23 +1004,23 @@
                         </div>
                     </div>
                 `;
-                
+
                 elements.chatContainer.appendChild(previewDiv);
-                
+
                 setTimeout(() => {
                     const iframe = document.getElementById(iframeId);
                     if (iframe) {
                         iframe.src = url;
                     }
                 }, 0);
-                
+
                 const fullscreenBtn = previewDiv.querySelector('.fullscreen-btn');
                 fullscreenBtn.addEventListener('click', () => {
                     previewDiv.querySelector('.html-preview-message').classList.toggle('html-preview-fullscreen');
-                    fullscreenBtn.innerHTML = previewDiv.querySelector('.html-preview-message').classList.contains('html-preview-fullscreen') ? 
+                    fullscreenBtn.innerHTML = previewDiv.querySelector('.html-preview-message').classList.contains('html-preview-fullscreen') ?
                         '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
                 });
-                
+
                 const closeBtn = previewDiv.querySelector('.close-btn');
                 closeBtn.addEventListener('click', () => {
                     previewDiv.remove();
@@ -873,16 +1032,16 @@
                         }
                     }
                 });
-                
+
                 elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-                
+
                 if (saveToHistory) {
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
-                        session.messages.push({ 
-                            id: previewId, 
-                            role: 'assistant', 
-                            content: '[HTML PREVIEW]', 
+                        session.messages.push({
+                            id: previewId,
+                            role: 'assistant',
+                            content: '[HTML PREVIEW]',
                             timestamp: new Date().toISOString(),
                             isHtmlPreview: true,
                             htmlContent: htmlContent
@@ -896,9 +1055,9 @@
             function addChatMessage(role, content, saveToHistory = true) {
                 const messageId = 'msg_' + Date.now();
                 const isUser = role === 'user';
-                
+
                 const formattedContent = formatMessageContent(content);
-                
+
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `chat-message flex ${isUser ? 'justify-end' : ''} mb-4`;
                 messageDiv.dataset.messageId = messageId;
@@ -915,110 +1074,121 @@
                         ${formattedContent}
                     </div>
                 `;
-                
+
                 elements.chatContainer.appendChild(messageDiv);
-                
+
                 const messageCopyBtn = messageDiv.querySelector('.message-copy-btn');
-if (messageCopyBtn) {
-    messageCopyBtn.addEventListener('click', () => {
-        const messageContent = messageDiv.querySelector('.message-content') || 
-                            messageDiv.querySelector('p') || 
+                if (messageCopyBtn) {
+                    messageCopyBtn.addEventListener('click', () => {
+                        const messageContent = messageDiv.querySelector('.message-content') ||
+                            messageDiv.querySelector('p') ||
                             messageDiv.querySelector('div > div:last-child');
-        
-        if (messageContent) {
-            const textToCopy = messageContent.textContent || '';
-            const originalText = messageCopyBtn.innerHTML;
-            
-            // Try modern Clipboard API first
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(textToCopy)
-                    .then(() => {
-                        showCopiedFeedback(messageCopyBtn, originalText);
-                    })
-                    .catch(() => {
-                        // If Clipboard API fails, try fallback
-                        useFallbackCopy(textToCopy, messageCopyBtn, originalText);
+
+                        if (messageContent) {
+                            const textToCopy = messageContent.textContent || '';
+                            const originalText = messageCopyBtn.innerHTML;
+
+                            // Try modern Clipboard API first
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(textToCopy)
+                                    .then(() => {
+                                        showCopiedFeedback(messageCopyBtn, originalText);
+                                    })
+                                    .catch(() => {
+                                        // If Clipboard API fails, try fallback
+                                        useFallbackCopy(textToCopy, messageCopyBtn, originalText);
+                                    });
+                            } else {
+                                // If Clipboard API is not available, use fallback immediately
+                                useFallbackCopy(textToCopy, messageCopyBtn, originalText);
+                            }
+                        }
                     });
-            } else {
-                // If Clipboard API is not available, use fallback immediately
-                useFallbackCopy(textToCopy, messageCopyBtn, originalText);
-            }
-        }
-    });
-}
+                }
 
-// Fallback method (document.execCommand)
-function useFallbackCopy(text, button, originalText) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed'; // Avoid scrolling
-    textArea.style.opacity = '0'; // Hide element
-    
-    document.body.appendChild(textArea);
-    textArea.select();
-    
-    try {
-        const success = document.execCommand('copy');
-        if (success) {
-            showCopiedFeedback(button, originalText);
-        } else {
-            console.error('Fallback copy failed');
-            button.innerHTML = '<i class="fas fa-times"></i> Failed!';
-            setTimeout(() => { button.innerHTML = originalText; }, 2000);
-        }
-    } catch (err) {
-        console.error('Fallback copy error:', err);
-        button.innerHTML = '<i class="fas fa-times"></i> Error!';
-        setTimeout(() => { button.innerHTML = originalText; }, 2000);
-    } finally {
-        document.body.removeChild(textArea);
-    }
-}
+                // Fallback method (document.execCommand)
+                function useFallbackCopy(text, button, originalText) {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed'; // Avoid scrolling
+                    textArea.style.opacity = '0'; // Hide element
 
-// Show "Copied!" feedback
-function showCopiedFeedback(button, originalText) {
-    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-    setTimeout(() => { button.innerHTML = originalText; }, 2000);
-}
-                
+                    document.body.appendChild(textArea);
+                    textArea.select();
+
+                    try {
+                        const success = document.execCommand('copy');
+                        if (success) {
+                            showCopiedFeedback(button, originalText);
+                        } else {
+                            console.error('Fallback copy failed');
+                            button.innerHTML = '<i class="fas fa-times"></i> Failed!';
+                            setTimeout(() => { button.innerHTML = originalText; }, 2000);
+                        }
+                    } catch (err) {
+                        console.error('Fallback copy error:', err);
+                        button.innerHTML = '<i class="fas fa-times"></i> Error!';
+                        setTimeout(() => { button.innerHTML = originalText; }, 2000);
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
+
+                // Show "Copied!" feedback
+                function showCopiedFeedback(button, originalText) {
+                    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    setTimeout(() => { button.innerHTML = originalText; }, 2000);
+                }
+
                 messageDiv.querySelectorAll('.code-container').forEach(container => {
                     const codeBlock = container.querySelector('code');
                     const copyBtn = container.querySelector('.code-copy-btn');
-                    
+
                     if (copyBtn && codeBlock) {
                         copyBtn.addEventListener('click', () => {
-                            navigator.clipboard.writeText(codeBlock.textContent || '')
-                                .then(() => {
-                                    const originalText = copyBtn.innerHTML;
-                                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                                    setTimeout(() => {
-                                        copyBtn.innerHTML = originalText;
-                                    }, 2000);
-                                })
-                                .catch(err => console.error('Failed to copy text:', err));
+                            const textToCopy = codeBlock.textContent || '';
+                            const originalText = copyBtn.innerHTML;
+
+                            // Try modern Clipboard API first
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(textToCopy)
+                                    .then(() => {
+                                        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                                        setTimeout(() => {
+                                            copyBtn.innerHTML = originalText;
+                                        }, 2000);
+                                    })
+                                    .catch(() => {
+                                        // If Clipboard API fails, use fallback
+                                        useFallbackCopy(textToCopy, copyBtn, originalText);
+                                    });
+                            } else {
+                                // If Clipboard API not available, use fallback
+                                useFallbackCopy(textToCopy, copyBtn, originalText);
+                            }
                         });
                     }
                 });
-                
+
                 messageDiv.querySelectorAll('pre code').forEach(block => {
                     hljs.highlightElement(block);
                 });
-                
+
                 const htmlBlocks = extractHtmlCodeBlocks(content);
                 if (htmlBlocks.length > 0) {
                     htmlBlocks.forEach(htmlContent => {
                         addHtmlPreviewMessage(htmlContent, saveToHistory);
                     });
                 }
-                
+
                 elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-                
+
                 if (saveToHistory) {
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
-                        session.messages.push({ 
-                            id: messageId, 
-                            role, 
+                        session.messages.push({
+                            id: messageId,
+                            role,
                             content: content,
                             timestamp: new Date().toISOString()
                         });
@@ -1030,12 +1200,12 @@ function showCopiedFeedback(button, originalText) {
 
             function formatMessageContent(content) {
                 const codeBlockRegex = /```(\w*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
-                
+
                 let formattedContent = content.replace(codeBlockRegex, (match, language, filename, code) => {
                     const lang = language || 'plaintext';
                     const displayFilename = filename ? filename.trim() : '';
                     const formattedCode = formatCodeIndentation(code);
-                    
+
                     return `
                         <div class="code-container">
                             <div class="code-header">
@@ -1053,26 +1223,30 @@ function showCopiedFeedback(button, originalText) {
                         </div>
                     `;
                 });
-                
+
                 formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-                
+
                 return `<div class="message-content">${formattedContent}</div>`;
             }
 
             function formatCodeIndentation(code) {
+                // Normalize line endings
                 code = code.replace(/\r\n/g, '\n');
+
+                // Split into lines and remove empty lines at start/end
                 let lines = code.split('\n');
-                
+
                 while (lines.length > 0 && lines[0].trim() === '') {
                     lines.shift();
                 }
-                
+
                 while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
                     lines.pop();
                 }
-                
+
                 if (lines.length === 0) return '';
-                
+
+                // Calculate minimum indentation
                 let minIndent = Infinity;
                 for (const line of lines) {
                     if (line.trim().length === 0) continue;
@@ -1081,13 +1255,15 @@ function showCopiedFeedback(button, originalText) {
                         minIndent = leadingSpaces;
                     }
                 }
-                
+
+                // Remove common indentation
                 if (minIndent > 0 && minIndent !== Infinity) {
-                    lines = lines.map(line => 
+                    lines = lines.map(line =>
                         line.startsWith(' ') ? line.substring(minIndent) : line
                     );
                 }
-                
+
+                // Preserve all line breaks by joining with newlines
                 return lines.join('\n');
             }
 
@@ -1123,9 +1299,9 @@ function showCopiedFeedback(button, originalText) {
                 elements.currentModel.innerHTML = `<i class="fas fa-microchip mr-1"></i><span class="truncate">${modelName}</span>`;
                 elements.currentProvider.textContent = state.settings.provider === 'githubco' ? 'GitHubCo' : 'workers';
                 elements.providerSelect.value = state.settings.provider;
-                
+
                 elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
-                
+
                 if (state.models.includes(state.settings.model)) {
                     elements.modelSelect.value = state.settings.model;
                 }
@@ -1133,7 +1309,7 @@ function showCopiedFeedback(button, originalText) {
 
             function updateUI() {
                 updateModelDisplay();
-                
+
                 document.querySelectorAll('.personality-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.personality === state.settings.personality);
                     if (btn.dataset.personality === 'custom' && btn.classList.contains('active')) {
@@ -1141,7 +1317,7 @@ function showCopiedFeedback(button, originalText) {
                         elements.customPersonality.value = state.settings.customInstructions || '';
                     }
                 });
-                
+
                 if (state.settings.max_tokens) {
                     elements.maxTokens.value = state.settings.max_tokens;
                     elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
@@ -1156,7 +1332,7 @@ function showCopiedFeedback(button, originalText) {
                 toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center z-50';
                 toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i><span>${message}</span>`;
                 document.body.appendChild(toast);
-                
+
                 setTimeout(() => {
                     toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
                     setTimeout(() => toast.remove(), 300);
@@ -1165,4 +1341,5 @@ function showCopiedFeedback(button, originalText) {
         });
     </script>
 </body>
+
 </html>
