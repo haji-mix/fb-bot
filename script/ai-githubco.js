@@ -36,7 +36,7 @@ async function fetchToken(threadId) {
             'accept-encoding': 'gzip, deflate, br, zstd',
             'accept-language': 'en-US,en;q=0.9',
             'content-type': 'application/json',
-            'cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3A4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; user_session=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; __Host-user_session_same_site=4rqcxsELKWG-11XDhX_tco2wp1kXcqceGRLrkrOjuH9yczse; dotcom_user=haji-mix; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=AZti3wukfx1mrAhA%2FKORV12jFRmXSk20mhxhtngKXYrrYZuWC%2FramnoJTZMR9AnK3%2Bg304xH7F7R451uZDhDhB%2BX51TaAaclZ2VqZLQhzO%2FKEvpoDUqWXT3Trv1oXDOnXlOyIGoAEG%2FsJS96Fi23OBjDagWtpLEjkt%2BdI%2B%2F2F42bZR6ci8rzdOiB7IWSyWDXgxevdbUYzKE%2FzThQLLYOsXbNFDpGHvra3yq9Mrnn82h%2BGEVG9P4q8jFF0cUGq0u9ExVOAMH5bczo%2F7fXSSObGMdzX8ckP4McERz9d0xs6P3Sy3FpK5rqQ5ikGUYWHlfjoFTBH87P1iZuipejo1uZeGa4OwoeXtI7qilLLdxJFFAcfpWTIAkqjebJv%2Fz%2FEhUF0ljjmHggCoKzVOtuO%2FVZqaOuOuplT5FfvDFy4Xonb91ssZPc8nIi%2BrAldCk3nJuukqIvvfQWV05AFILXfk6jFqTVX%2FVgBdKoERVJSH38DhsHf%2BN%2FyP%2F7tvatenfw9z8ZPtB6%2B3EGmI%2B0trgeDNW%2BVqSe79WJ4Og3t3wPZMpoixs0mt%2Bl67bVtCVmgkPbYZ0zvend25xrtY2TD3Ns5iuMoccrXxrEH9BcUiuduEXn7ulChU9jDuUUUtb9cJtb2PzSEMLmDfD6XQPkh%2FY%2B7Dcb5wWmMKthrkrccjxeP1kuqmDdAABgHgO3mZFoi9UCQADspvKngtSO2UNcDH8HyWYQ5cGe7bjp4c9oQo3UwzkHvU%2BPbpEgCaGLyVoCtlK4ydv9Eb%2B0So4cntIM0HeOY3qwMQ%3D%3D--QY0PT1jcIrVakzld--SN%2FdYchv8tyWx8MhH8Zoag%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila',
+            'cookie': '_octo=GH1.1.763746902.1740227869; logged_in=yes; GHCC=Required:1-Analytics:1-SocialMedia:1-Advertising:1; _device_id=39b456c1b0923c455c2ba830bcb42402; saved_user_sessions=191758792%3Aq1zWbVWaLSBFpYKVlvzFIpS84LHY0H-Uc2Qi-z8TvTGlv0kJ; MicrosoftApplicationsTelemetryDeviceId=b5822961-d248-4256-91ac-ce31b5713106; MSFPC=GUID=9f68dd6cfdc24898bed1e87cb1ed6102&HASH=9f68&LV=202502&V=4&LU=1740230898455; user_session=q1zWbVWaLSBFpYKVlvzFIpS84LHY0H-Uc2Qi-z8TvTGlv0kJ; __Host-user_session_same_site=q1zWbVWaLSBFpYKVlvzFIpS84LHY0H-Uc2Qi-z8TvTGlv0kJ; dotcom_user=haji-mix; color_mode=%7B%22color_mode%22%3A%22auto%22%2C%22light_theme%22%3A%7B%22name%22%3A%22light%22%2C%22color_mode%22%3A%22light%22%7D%2C%22dark_theme%22%3A%7B%22name%22%3A%22dark%22%2C%22color_mode%22%3A%22dark%22%7D%7D; _gh_sess=s%2FHoyVuvncwRRPE82jTO79m3v%2F70LB50Q%2BblalxeX6HBkJt6tC6yVYI85q4AVXkC4%2BxWhcw7Z7ZPGVn2mjfDBVwk%2BoH2ZTMWDgUDfWffWxQNR4C%2BV%2FwMyLHv15xJeUwLgjYBBK4p5LuroBekNK50z7Nic8q1RAZA9quaPb%2FbJQvK3taQKzPHbFkRPDQGfSWBDI8%2BetbM%2BOCkOFT0FT92rL4D7O1AVbc8TKl%2FoEm79IzRrBpIWJJy9zaogGChLckA3T3t0ZbGk4fIObS1v9q%2BpDP3XYViHIbPinIb03X5a8PHHzzgrC0BZOvHu1QQXtZQCHLhJ6RilBTg7M%2BBcpFU38RubhcvDLjVYRM%2FVz6nSlCkOTjSuw4EwIFyVJSx5Sz86%2BXQsbwYg3sIt%2BYtNbRmTgIMYYAIaqFJSmSiUWcUaNv1oNqEjeudnCh6sjk7tiKJL0h%2FaQfXcjxULEefklqtHiHzc9StN0pcqLC%2B2JhbgrwKbH3qn1hxuoKi1TCtX3x2J1HmV2eQmhi4NxwijCWeO0uS%2FPMeEneWIq%2BB%2F2rKOkYLkqsZwxmZeGyf3WUck5m%2FDWurdzGBaQYW9ab7KSvPMEfqiIjIq9VG7S9tMsdnRaZySslY5tWjUnZN3XCx2aCJEiA8NhzB9M2L9oHvVc0K%2BnheNAndk3cgYL%2FtSF%2BBuuWwk8jXvS524JsMY%2BkSs6aSQ48g3YTVUVnQZFe9Hc6CalGxL3UnjeaITVrHHcwp%2FwLpK%2FEhhleaeCgDUrTHfhLpTdGNDiSemHDrunJCzBUd1w%3D%3D--Pzq3zIAvnvt4q5q%2F--im4Yu5nYiliT6NPZ7xPmHQ%3D%3D; cpu_bucket=md; preferred_color_mode=dark; tz=Asia%2FManila',
             'github-verified-fetch': 'true',
             'origin': 'https://github.com',
             'priority': 'u=1, i',
@@ -151,6 +151,34 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             threadId = await createNewThread(token);
             userThreadMap.set(event.senderID, threadId);
         }
+        
+        let config = {
+        method: 'GET',
+        url: 'https://api.individual.githubcopilot.com/github/chat/system_prompt/immersive',
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'accept-language': 'en-US,en;q=0.5',
+            'referer': 'https://github.com/',
+            'authorization': `GitHub-Bearer ${token}`,
+            'copilot-integration-id': 'copilot-chat',
+            'origin': 'https://github.com',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            'priority': 'u=4',
+            'cache-control': 'max-age=0',
+            'te': 'trailers'
+        }
+    };
+
+    let systemPrompt = null;
+    try {
+        const systemPromptResponse = await axios.request(config);
+        systemPrompt = systemPromptResponse.data.prompt;
+    } catch (error) {
+        return systemPrompt;
+    }
 
         const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
@@ -165,6 +193,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                 streaming: true,
                 confirmations: [],
                 customInstructions: [
+                    systemPrompt,
                     "You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.",
                     "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"
                 ],
