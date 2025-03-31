@@ -15,6 +15,7 @@
             --text-light: #ffffff;
             --text-lighter: #f5f5f5;
             --bg-dark: #0f0f1a;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         
         * {
@@ -101,7 +102,7 @@
             background-color: rgba(255, 255, 255, 0.15);
             color: var(--text-lighter);
             outline: none;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             backdrop-filter: blur(5px);
         }
         
@@ -123,7 +124,7 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -171,7 +172,7 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            transition: var(--transition);
             position: relative;
             cursor: pointer;
         }
@@ -197,6 +198,7 @@
             height: 300px;
             object-fit: cover;
             display: block;
+            transition: var(--transition);
         }
         
         .cosplay-info {
@@ -266,10 +268,13 @@
             overflow-y: auto;
             display: none;
             padding: 2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
         .gallery-view.active {
             display: block;
+            opacity: 1;
         }
         
         .gallery-header {
@@ -284,6 +289,10 @@
         .gallery-title {
             font-size: 1.8rem;
             color: var(--text-lighter);
+            max-width: 80%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .close-gallery {
@@ -298,11 +307,12 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
         
         .close-gallery:hover {
             transform: scale(1.1);
+            background-color: var(--secondary);
         }
         
         .gallery-content {
@@ -323,11 +333,13 @@
             object-fit: cover;
             border-radius: 8px;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            transition: var(--transition);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         
         .gallery-images img:hover {
             transform: scale(1.02);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
         }
         
         .gallery-info {
@@ -341,6 +353,8 @@
             color: var(--text-lighter);
             margin-bottom: 1rem;
             font-size: 1.5rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 0.5rem;
         }
         
         .info-grid {
@@ -358,11 +372,13 @@
             font-size: 0.9rem;
             color: var(--accent);
             margin-bottom: 0.2rem;
+            font-weight: 500;
         }
         
         .info-value {
             font-size: 1rem;
             color: var(--text-light);
+            word-break: break-word;
         }
         
         .download-buttons {
@@ -383,7 +399,7 @@
             border-radius: 30px;
             font-size: 1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition);
             text-decoration: none;
         }
         
@@ -402,6 +418,7 @@
             color: var(--accent);
             border-radius: 30px;
             font-size: 1rem;
+            border: 1px dashed var(--accent);
         }
         
         /* Fullscreen overlay for images */
@@ -440,6 +457,7 @@
             max-height: 90vh;
             object-fit: contain;
             border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
         }
         
         .close-fullscreen {
@@ -457,7 +475,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            z-index: 2;
         }
         
         .close-fullscreen:hover {
@@ -481,7 +500,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: var(--transition);
+            z-index: 2;
         }
         
         .nav-arrow:hover {
@@ -495,6 +515,53 @@
         
         .nav-arrow.next {
             right: 20px;
+        }
+        
+        .image-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 2;
+        }
+        
+        /* Gallery navigation controls */
+        .gallery-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .gallery-nav-btn {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .gallery-nav-btn:disabled {
+            background-color: var(--dark);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .gallery-nav-btn:hover:not(:disabled) {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
         }
         
         /* Responsive adjustments */
@@ -560,6 +627,16 @@
                 height: 35px;
                 font-size: 1rem;
             }
+            
+            .gallery-nav {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .gallery-nav-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
         
         @media (max-width: 576px) {
@@ -613,6 +690,10 @@
                 padding: 0.5rem 1rem;
                 font-size: 0.8rem;
             }
+            
+            .gallery-info {
+                padding: 1.5rem;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -659,6 +740,15 @@
                     <div class="password-indicator" id="passwordIndicator" style="display: none;">
                         <i class="fas fa-lock"></i> <span id="passwordText">Password: </span>
                     </div>
+                    
+                    <div class="gallery-nav">
+                        <button class="gallery-nav-btn" id="prevAlbumBtn" disabled>
+                            <i class="fas fa-chevron-left"></i> Previous Album
+                        </button>
+                        <button class="gallery-nav-btn" id="nextAlbumBtn" disabled>
+                            Next Album <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -670,6 +760,7 @@
         <button class="nav-arrow prev" id="prevImage"><i class="fas fa-chevron-left"></i></button>
         <div class="fullscreen-image-container">
             <img class="fullscreen-image" id="fullscreenImage" src="" alt="Fullscreen cosplay">
+            <div class="image-counter" id="imageCounter"></div>
         </div>
         <button class="nav-arrow next" id="nextImage"><i class="fas fa-chevron-right"></i></button>
     </div>
@@ -694,12 +785,17 @@
             const closeFullscreen = document.getElementById('closeFullscreen');
             const prevImageBtn = document.getElementById('prevImage');
             const nextImageBtn = document.getElementById('nextImage');
+            const imageCounter = document.getElementById('imageCounter');
+            
+            const prevAlbumBtn = document.getElementById('prevAlbumBtn');
+            const nextAlbumBtn = document.getElementById('nextAlbumBtn');
             
             let currentImageIndex = 0;
             let currentResults = [];
-            let allImages = [];
+            let currentAlbumImages = [];
             let currentGalleryItem = null;
-            let globalPassword = ''; // Stores the single password from API response
+            let currentGalleryIndex = 0;
+            let globalPassword = '';
             
             // Load random cosplay on page load
             fetchCosplayData('');
@@ -720,8 +816,7 @@
             
             // Close gallery view
             closeGallery.addEventListener('click', function() {
-                galleryView.classList.remove('active');
-                document.body.style.overflow = '';
+                closeGalleryView();
             });
             
             // Close fullscreen when clicking overlay (but not the image)
@@ -737,8 +832,7 @@
                     if (fullscreenOverlay.classList.contains('active')) {
                         closeFullscreenView();
                     } else if (galleryView.classList.contains('active')) {
-                        galleryView.classList.remove('active');
-                        document.body.style.overflow = '';
+                        closeGalleryView();
                     }
                 }
             });
@@ -754,9 +848,20 @@
                 }
             });
             
+            // Handle back button on mobile
+            window.addEventListener('popstate', function(event) {
+                if (galleryView.classList.contains('active')) {
+                    closeGalleryView();
+                    event.preventDefault();
+                }
+            });
+            
             closeFullscreen.addEventListener('click', closeFullscreenView);
             prevImageBtn.addEventListener('click', showPrevImage);
             nextImageBtn.addEventListener('click', showNextImage);
+            
+            prevAlbumBtn.addEventListener('click', showPrevAlbum);
+            nextAlbumBtn.addEventListener('click', showNextAlbum);
             
             function fetchCosplayData(searchTerm) {
                 resultsContainer.innerHTML = `
@@ -776,7 +881,6 @@
                     })
                     .then(data => {
                         if (data.status) {
-                            // Get the password directly from response.data.password
                             globalPassword = data.password || '';
                             displayResults(data.result, searchTerm);
                         } else {
@@ -817,7 +921,6 @@
                 
                 // Store current results for gallery view
                 currentResults = results;
-                allImages = results.flatMap(result => result.images || []);
                 
                 // Display all results
                 results.forEach((result, resultIndex) => {
@@ -847,7 +950,7 @@
                     
                     // Add click event to open gallery view
                     cosplayItem.addEventListener('click', () => {
-                        openGalleryView(result);
+                        openGalleryView(result, resultIndex);
                     });
                     
                     cosplayItem.appendChild(img);
@@ -856,9 +959,14 @@
                 });
             }
             
-            function openGalleryView(result) {
+            function openGalleryView(result, resultIndex) {
                 currentGalleryItem = result;
+                currentGalleryIndex = resultIndex;
+                currentAlbumImages = result.images || [];
                 galleryTitle.textContent = result.title || 'Cosplay Gallery';
+                
+                // Update navigation buttons
+                updateAlbumNavButtons();
                 
                 // Clear previous content
                 galleryImages.innerHTML = '';
@@ -866,15 +974,12 @@
                 downloadButtons.innerHTML = '';
                 
                 // Display all images
-                result.images.forEach((imageUrl, index) => {
+                currentAlbumImages.forEach((imageUrl, index) => {
                     const img = document.createElement('img');
                     img.src = imageUrl;
                     img.alt = `Image ${index + 1}`;
                     img.addEventListener('click', () => {
-                        const globalIndex = currentResults.findIndex(r => r === result);
-                        const offset = currentResults.slice(0, globalIndex)
-                            .reduce((sum, r) => sum + (r.images ? r.images.length : 0), 0);
-                        openFullscreenView(offset + index);
+                        openFullscreenView(index);
                     });
                     galleryImages.appendChild(img);
                 });
@@ -924,12 +1029,26 @@
                 // Show gallery view
                 galleryView.classList.add('active');
                 document.body.style.overflow = 'hidden';
+                
+                // Add to history for back button support
+                history.pushState({ galleryOpen: true }, '');
+            }
+            
+            function closeGalleryView() {
+                galleryView.classList.remove('active');
+                document.body.style.overflow = '';
+                
+                // Remove history state if we added it
+                if (history.state && history.state.galleryOpen) {
+                    history.back();
+                }
             }
             
             function openFullscreenView(index) {
                 currentImageIndex = index;
-                fullscreenImage.src = allImages[index];
-                fullscreenImage.alt = `Cosplay image ${index + 1} of ${allImages.length}`;
+                fullscreenImage.src = currentAlbumImages[index];
+                fullscreenImage.alt = `Cosplay image ${index + 1} of ${currentAlbumImages.length}`;
+                imageCounter.textContent = `${index + 1} / ${currentAlbumImages.length}`;
                 fullscreenOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
@@ -940,15 +1059,36 @@
             }
             
             function showPrevImage() {
-                currentImageIndex = (currentImageIndex - 1 + allImages.length) % allImages.length;
-                fullscreenImage.src = allImages[currentImageIndex];
-                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${allImages.length}`;
+                if (currentAlbumImages.length === 0) return;
+                currentImageIndex = (currentImageIndex - 1 + currentAlbumImages.length) % currentAlbumImages.length;
+                fullscreenImage.src = currentAlbumImages[currentImageIndex];
+                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${currentAlbumImages.length}`;
+                imageCounter.textContent = `${currentImageIndex + 1} / ${currentAlbumImages.length}`;
             }
             
             function showNextImage() {
-                currentImageIndex = (currentImageIndex + 1) % allImages.length;
-                fullscreenImage.src = allImages[currentImageIndex];
-                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${allImages.length}`;
+                if (currentAlbumImages.length === 0) return;
+                currentImageIndex = (currentImageIndex + 1) % currentAlbumImages.length;
+                fullscreenImage.src = currentAlbumImages[currentImageIndex];
+                fullscreenImage.alt = `Cosplay image ${currentImageIndex + 1} of ${currentAlbumImages.length}`;
+                imageCounter.textContent = `${currentImageIndex + 1} / ${currentAlbumImages.length}`;
+            }
+            
+            function showPrevAlbum() {
+                if (currentGalleryIndex > 0) {
+                    openGalleryView(currentResults[currentGalleryIndex - 1], currentGalleryIndex - 1);
+                }
+            }
+            
+            function showNextAlbum() {
+                if (currentGalleryIndex < currentResults.length - 1) {
+                    openGalleryView(currentResults[currentGalleryIndex + 1], currentGalleryIndex + 1);
+                }
+            }
+            
+            function updateAlbumNavButtons() {
+                prevAlbumBtn.disabled = currentGalleryIndex <= 0;
+                nextAlbumBtn.disabled = currentGalleryIndex >= currentResults.length - 1;
             }
         });
     </script>
