@@ -177,6 +177,34 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
             threadId = await createNewThread(token);
             userThreadMap.set(event.senderID, threadId);
         }
+        
+        let config = {
+        method: 'GET',
+        url: 'https://api.individual.githubcopilot.com/github/chat/system_prompt/immersive',
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0',
+            'Accept-Encoding': 'gzip, deflate, br, zstd',
+            'accept-language': 'en-US,en;q=0.5',
+            'referer': 'https://github.com/',
+            'authorization': `GitHub-Bearer ${token}`,
+            'copilot-integration-id': 'copilot-chat',
+            'origin': 'https://github.com',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'cross-site',
+            'priority': 'u=4',
+            'cache-control': 'max-age=0',
+            'te': 'trailers'
+        }
+    };
+
+    let systemPrompt = null;
+    try {
+        const systemPromptResponse = await axios.request(config);
+        systemPrompt = systemPromptResponse.data.prompt;
+    } catch (error) {
+        return systemPrompt;
+    }
 
         const answering = await chat.reply(font.monospace(`🕐 | ${selectedModel.name} is Typing...`));
 
@@ -191,6 +219,7 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                 streaming: true,
                 confirmations: [],
                 customInstructions: [
+                    systemPrompt,
                     "You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.",
                     "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"
                 ],
