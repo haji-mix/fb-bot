@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbox Horizon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        },
+                        personality: {
+                            default: '#7c3aed',
+                            friendly: '#3b82f6',
+                            professional: '#10b981',
+                            humorous: '#f59e0b',
+                            custom: '#ec4899'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .chat-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .typing-dot {
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+        
+        .sidebar {
+            transition: transform 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 50;
+            }
+            
+            .sidebar-open {
+                transform: translateX(0);
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+            }
+            
+            .sidebar-open + .sidebar-overlay {
+                display: block;
+            }
+        }
+        
+        .personality-btn {
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .personality-btn.active {
+            background-color: var(--color);
+            color: white;
+            border-color: var(--color);
+        }
+        
+        .personality-btn:not(.active) {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: currentColor;
+        }
+        
+        .personality-btn:hover:not(.active) {
+            opacity: 0.8;
+        }
+        
+        .session-item.active {
+            background-color: #7c3aed;
+            color: white;
+        }
+        
+        .session-item:hover {
+            background-color: #4B5563;
+        }
+        
+        .custom-personality-container {
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+        
+        .custom-personality-container.open {
+            max-height: 200px;
+            margin-top: 0.5rem;
+        }
+        
+        .quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .quick-reply {
+            background-color: #e9d5ff;
+            color: #6b21a8;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #d8b4fe;
+        }
+        
+        .quick-reply:hover {
+            background-color: #d8b4fe;
+            transform: translateY(-2px);
+        }
+        
+        .dark .quick-reply {
+            background-color: #4c1d95;
+            color: #e9d5ff;
+            border-color: #6b21a8;
+        }
+        
+        .dark .quick-reply:hover {
+            background-color: #5b21b6;
+        }
+        
+        .welcome-message {
+            position: relative;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Overlay -->
+        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+        
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
+            <!-- Sidebar Header -->
+            <div class="bg-primary-600 px-4 py-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold text-white">Chatbox Horizon</h2>
+                    <button id="closeSidebar" class="md:hidden text-white">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <p class="text-indigo-200 text-sm mt-1">Powered by Haji Mix</p>
+                
+                <!-- Theme Toggle -->
+                <div class="mt-4 flex justify-end">
+                    <button id="themeToggle" class="text-white text-sm">
+                        <i class="fas fa-sun mr-1"></i> Light Mode
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Session Management -->
+            <div class="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions</h3>
+                    <button id="newSessionBtn" class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-xs">
+                        <i class="fas fa-plus mr-1"></i> New
+                    </button>
+                </div>
+                <div class="space-y-1 max-h-40 overflow-y-auto" id="sessionList">
+                    <!-- Sessions will be added here dynamically -->
+                    <div class="text-center py-2 text-gray-500 dark:text-gray-400">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat History -->
+            <div class="flex-1 overflow-y-auto px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Chat History</h3>
+                <div class="space-y-1" id="chatHistory">
+                    <!-- Chat history will be added here dynamically -->
+                    <div class="text-center py-2 text-gray-500 dark:text-gray-400">
+                        No history yet
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Settings -->
+            <div class="px-4 py-4">
+                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Settings</h3>
+                
+                <!-- Model Selector -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">AI Model</label>
+                    <select id="modelSelect" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+                        <option value="loading">Loading models...</option>
+                    </select>
+                </div>
+                
+                <!-- Personality -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Personality</label>
+                    <div class="flex flex-wrap gap-2 mb-2">
+                        <button data-personality="default" style="--color: #7c3aed" class="personality-btn active px-3 py-1 rounded-full text-xs font-medium">Default</button>
+                        <button data-personality="friendly" style="--color: #3b82f6" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Friendly</button>
+                        <button data-personality="professional" style="--color: #10b981" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Professional</button>
+                        <button data-personality="humorous" style="--color: #f59e0b" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Humorous</button>
+                        <button data-personality="custom" style="--color: #ec4899" class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Custom</button>
+                    </div>
+                    <div id="customPersonalityContainer" class="custom-personality-container">
+                        <textarea id="customPersonality" placeholder="Enter custom instructions (e.g., 'Respond like a pirate')" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"></textarea>
+                    </div>
+                </div>
+                
+                <!-- Response Length -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response Length</label>
+                    <div class="flex items-center space-x-3">
+                        <input type="range" id="maxTokens" min="50" max="32000" class="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                        <span id="tokenValue" class="text-sm font-medium text-gray-700 dark:text-gray-300 w-16">Auto</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        <span>Short</span>
+                        <span>Long</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar Footer -->
+            <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                <button id="saveSettings" class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
+                    <i class="fas fa-save mr-2"></i> Save Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center">
+                        <button id="toggleSidebar" class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+                            <i class="fas fa-sliders-h"></i>
+                        </button>
+                        <h1 class="text-lg font-semibold" id="currentSessionName">New Session</h1>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
+                        </span>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Chat Container -->
+            <div class="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" id="chatContainer">
+                <div class="chat-message flex welcome-message">
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                            <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
+                        <p class="whitespace-pre-wrap">Hello! I'm your AI assistant. How can I help you today?</p>
+                        <div class="quick-replies">
+                            <div class="quick-reply" data-prompt="What can you do?">What can you do?</div>
+                            <div class="quick-reply" data-prompt="Tell me a joke">Tell me a joke</div>
+                            <div class="quick-reply" data-prompt="Explain AI in simple terms">Explain AI</div>
+                            <div class="quick-reply" data-prompt="Help me with coding">Help with coding</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                <form id="chatForm" class="flex space-x-3">
+                    <div class="flex-1 relative">
+                        <input type="text" id="userInput" placeholder="Type your message..." class="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
+                    </div>
+                    <button type="submit" class="bg-primary-600 text-white p-3 rounded-xl hover:bg-primary-700 transition">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Topic-based session name generator
+        const sessionNameGenerator = {
+            tech: ['Code Discussion', 'Tech Talk', 'Debugging Session', 'AI Exploration', 'Future Tech'],
+            creative: ['Brainstorm', 'Creative Session', 'Story Crafting', 'Idea Exchange', 'Artistic Chat'],
+            general: ['Conversation', 'Discussion', 'Chat Session', 'Q&A', 'Talk'],
+            business: ['Strategy Talk', 'Business Chat', 'Professional Discussion', 'Meeting Notes', 'Plan Session'],
+            random: ['Thought Exchange', 'Mind Meld', 'Digital Dialogue', 'Virtual Chat', 'AI Conversation'],
+            
+            generateName(message) {
+                const lowerMsg = message.toLowerCase();
+                let category = 'random';
+                
+                if (/(code|program|tech|computer|ai|algorithm)/i.test(lowerMsg)) {
+                    category = 'tech';
+                } else if (/(art|creative|write|story|design|music)/i.test(lowerMsg)) {
+                    category = 'creative';
+                } else if (/(business|work|professional|meeting|strategy)/i.test(lowerMsg)) {
+                    category = 'business';
+                } else if (/(hello|hi|hey|greeting)/i.test(lowerMsg)) {
+                    category = 'general';
+                }
+                
+                const names = this[category];
+                return names[Math.floor(Math.random() * names.length)];
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // State management
+            const state = {
+                models: [],
+                sessions: [],
+                currentSessionId: null,
+                settings: {
+                    model: '@hf/thebloke/mistral-7b-instruct-v0.1-awq',
+                    personality: 'default',
+                    max_tokens: null,
+                    customInstructions: ''
+                }
+            };
+
+            // DOM elements
+            const elements = {
+                sidebar: document.getElementById('sidebar'),
+                sidebarOverlay: document.getElementById('sidebarOverlay'),
+                toggleSidebar: document.getElementById('toggleSidebar'),
+                closeSidebar: document.getElementById('closeSidebar'),
+                themeToggle: document.getElementById('themeToggle'),
+                newSessionBtn: document.getElementById('newSessionBtn'),
+                sessionList: document.getElementById('sessionList'),
+                chatHistory: document.getElementById('chatHistory'),
+                currentSessionName: document.getElementById('currentSessionName'),
+                modelSelect: document.getElementById('modelSelect'),
+                personalityBtns: document.querySelectorAll('.personality-btn'),
+                customPersonality: document.getElementById('customPersonality'),
+                customPersonalityContainer: document.getElementById('customPersonalityContainer'),
+                maxTokens: document.getElementById('maxTokens'),
+                tokenValue: document.getElementById('tokenValue'),
+                currentModel: document.getElementById('currentModel'),
+                chatForm: document.getElementById('chatForm'),
+                userInput: document.getElementById('userInput'),
+                chatContainer: document.getElementById('chatContainer'),
+                saveSettings: document.getElementById('saveSettings')
+            };
+
+            // Initialize the app
+            init();
+
+            async function init() {
+                loadSessions();
+                await fetchModels();
+                setupEventListeners();
+                
+                // Create first session if none exists
+                if (state.sessions.length === 0) {
+                    createNewSession('General Chat');
+                } else {
+                    loadSession(state.sessions[0].id);
+                }
+                
+                // Initialize dark mode
+                elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+                
+                // Setup quick reply handlers
+                setupQuickReplies();
+            }
+
+            function setupQuickReplies() {
+                document.querySelectorAll('.quick-reply').forEach(reply => {
+                    reply.addEventListener('click', function() {
+                        const prompt = this.dataset.prompt;
+                        elements.userInput.value = prompt;
+                        
+                        // Create and dispatch a submit event
+                        const submitEvent = new Event('submit', {
+                            bubbles: true,
+                            cancelable: true
+                        });
+                        elements.chatForm.dispatchEvent(submitEvent);
+                    });
+                });
+            }
+
+            // Session management
+            function loadSessions() {
+                state.sessions = JSON.parse(localStorage.getItem('chatbox_sessions')) || [];
+                renderSessionList();
+            }
+
+            function saveSessions() {
+                localStorage.setItem('chatbox_sessions', JSON.stringify(state.sessions));
+            }
+
+            function createNewSession(name = null) {
+                const sessionId = 'session_' + Date.now();
+                const sessionName = name || `Session ${state.sessions.length + 1}`;
+                
+                const newSession = {
+                    id: sessionId,
+                    name: sessionName,
+                    createdAt: new Date().toISOString(),
+                    messages: [{
+                        id: 'welcome_' + Date.now(),
+                        role: 'assistant',
+                        content: 'Hello! I\'m your AI assistant. How can I help you today?',
+                        timestamp: new Date().toISOString()
+                    }],
+                    settings: {...state.settings}
+                };
+                
+                state.sessions.unshift(newSession);
+                saveSessions();
+                loadSession(sessionId);
+                renderSessionList();
+            }
+
+            function generateSessionNameFromMessage(message) {
+                return sessionNameGenerator.generateName(message);
+            }
+
+            function loadSession(sessionId) {
+                const session = state.sessions.find(s => s.id === sessionId);
+                if (!session) return;
+                
+                state.currentSessionId = sessionId;
+                elements.currentSessionName.textContent = session.name;
+                
+                // Update UI with session settings
+                state.settings = {...session.settings};
+                updateUI();
+                
+                // Clear and reload chat messages
+                elements.chatContainer.innerHTML = '';
+                session.messages.forEach(msg => {
+                    addChatMessage(msg.role, msg.content, false);
+                });
+                
+                // Update active session in list
+                document.querySelectorAll('.session-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.sessionId === sessionId) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Update chat history
+                renderChatHistory();
+            }
+
+            function renderSessionList() {
+                elements.sessionList.innerHTML = '';
+                
+                state.sessions.forEach(session => {
+                    const sessionEl = document.createElement('div');
+                    sessionEl.className = `session-item flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer ${session.id === state.currentSessionId ? 'active' : ''}`;
+                    sessionEl.dataset.sessionId = session.id;
+                    
+                    sessionEl.innerHTML = `
+                        <div class="flex items-center truncate">
+                            <i class="fas fa-comment-alt mr-2"></i>
+                            <span class="truncate">${session.name}</span>
+                        </div>
+                        <button class="delete-session text-gray-400 hover:text-red-500" data-session-id="${session.id}">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
+                    `;
+                    
+                    sessionEl.addEventListener('click', () => loadSession(session.id));
+                    elements.sessionList.appendChild(sessionEl);
+                });
+            }
+
+            function renderChatHistory() {
+                const session = state.sessions.find(s => s.id === state.currentSessionId);
+                if (!session) return;
+                
+                elements.chatHistory.innerHTML = '';
+                
+                // Get first user message from each conversation
+                const conversations = [];
+                let currentConversation = [];
+                
+                session.messages.forEach(msg => {
+                    if (msg.role === 'user') {
+                        if (currentConversation.length > 0) {
+                            conversations.push([...currentConversation]);
+                            currentConversation = [];
+                        }
+                    }
+                    currentConversation.push(msg);
+                });
+                
+                if (currentConversation.length > 0) {
+                    conversations.push(currentConversation);
+                }
+                
+                conversations.forEach((convo, index) => {
+                    const firstUserMessage = convo.find(m => m.role === 'user');
+                    if (!firstUserMessage) return;
+                    
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 truncate';
+                    historyItem.textContent = firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '');
+                    historyItem.addEventListener('click', () => {
+                        // Scroll to this conversation
+                        const messageId = firstUserMessage.id;
+                        const messageEl = document.querySelector(`[data-message-id="${messageId}"]`);
+                        if (messageEl) {
+                            messageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            messageEl.classList.add('ring-2', 'ring-primary-500');
+                            setTimeout(() => messageEl.classList.remove('ring-2', 'ring-primary-500'), 2000);
+                        }
+                    });
+                    
+                    elements.chatHistory.appendChild(historyItem);
+                });
+                
+                if (conversations.length === 0) {
+                    elements.chatHistory.innerHTML = '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
+                }
+            }
+
+            // Fetch available models from API
+            async function fetchModels() {
+                try {
+                    const response = await fetch('https://haji-mix.up.railway.app/api/workers?ask=&model=@hf/thebloke/mistral-7b-instruct-v0.1-awq');
+                    const data = await response.json();
+                    
+                    if (data.supported_models) {
+                        state.models = data.supported_models;
+                        populateModelSelect();
+                        updateModelDisplay();
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch models:", error);
+                    elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
+                }
+            }
+
+            function populateModelSelect() {
+                elements.modelSelect.innerHTML = '';
+                
+                state.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    elements.modelSelect.appendChild(option);
+                });
+            }
+
+            function loadSettings() {
+                const savedSettings = localStorage.getItem('chatbox_settings');
+                if (savedSettings) {
+                    state.settings = JSON.parse(savedSettings);
+                    updateUI();
+                }
+            }
+
+            function setupEventListeners() {
+                // Sidebar toggle
+                elements.toggleSidebar.addEventListener('click', toggleSidebar);
+                elements.closeSidebar.addEventListener('click', toggleSidebar);
+                elements.sidebarOverlay.addEventListener('click', toggleSidebar);
+                
+                // Theme toggle
+                elements.themeToggle.addEventListener('click', () => {
+                    if (document.documentElement.classList.contains('dark')) {
+                        document.documentElement.classList.remove('dark');
+                        localStorage.setItem('darkMode', 'false');
+                        elements.themeToggle.innerHTML = '<i class="fas fa-moon mr-1"></i> Dark Mode';
+                    } else {
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('darkMode', 'true');
+                        elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+                    }
+                });
+                
+                // New session
+                elements.newSessionBtn.addEventListener('click', () => createNewSession());
+                
+                // Session deletion (delegated)
+                elements.sessionList.addEventListener('click', (e) => {
+                    if (e.target.closest('.delete-session')) {
+                        e.stopPropagation();
+                        const sessionId = e.target.closest('.delete-session').dataset.sessionId;
+                        deleteSession(sessionId);
+                    }
+                });
+                
+                // Personality selection
+                elements.personalityBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        elements.personalityBtns.forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        state.settings.personality = this.dataset.personality;
+                        
+                        // Toggle custom personality input
+                        if (this.dataset.personality === 'custom') {
+                            elements.customPersonalityContainer.classList.add('open');
+                            elements.customPersonality.focus();
+                        } else {
+                            elements.customPersonalityContainer.classList.remove('open');
+                        }
+                    });
+                });
+                
+                // Token slider
+                elements.maxTokens.addEventListener('input', function() {
+                    const value = parseInt(this.value);
+                    if (value === 50) {
+                        state.settings.max_tokens = null;
+                        elements.tokenValue.textContent = 'Auto';
+                    } else {
+                        state.settings.max_tokens = value;
+                        elements.tokenValue.textContent = `${value} tokens`;
+                    }
+                });
+                
+                // Save settings
+                elements.saveSettings.addEventListener('click', function() {
+                    state.settings.model = elements.modelSelect.value;
+                    state.settings.customInstructions = elements.customPersonality.value;
+                    
+                    // Update current session settings
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session) {
+                        session.settings = {...state.settings};
+                        saveSessions();
+                    }
+                    
+                    showToast('Settings saved!');
+                    updateModelDisplay();
+                });
+                
+                // Chat submission
+                elements.chatForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const message = elements.userInput.value.trim();
+                    if (!message) return;
+
+                    // If this is the first user message in a new session, generate a name
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session && session.messages.filter(m => m.role === 'user').length === 0) {
+                        const newName = generateSessionNameFromMessage(message);
+                        session.name = newName;
+                        elements.currentSessionName.textContent = newName;
+                        renderSessionList();
+                    }
+
+                    addChatMessage('user', message);
+                    elements.userInput.value = '';
+                    showTypingIndicator();
+
+                    try {
+                        const response = await sendChatMessage(message);
+                        removeTypingIndicator();
+                        
+                        if (response.answer) {
+                            addChatMessage('assistant', response.answer);
+                        } else {
+                            addChatMessage('assistant', `Error: ${response.error || 'Unknown error'}`);
+                        }
+                    } catch (error) {
+                        removeTypingIndicator();
+                        addChatMessage('assistant', "Sorry, I couldn't process your request. Please try again.");
+                        console.error("API Error:", error);
+                    }
+                });
+            }
+
+            function deleteSession(sessionId) {
+                if (state.sessions.length <= 1) {
+                    showToast("You must have at least one session");
+                    return;
+                }
+                
+                state.sessions = state.sessions.filter(s => s.id !== sessionId);
+                saveSessions();
+                
+                if (state.currentSessionId === sessionId) {
+                    loadSession(state.sessions[0].id);
+                }
+                
+                renderSessionList();
+                showToast("Session deleted");
+            }
+
+            function toggleSidebar() {
+                elements.sidebar.classList.toggle('sidebar-open');
+                elements.sidebarOverlay.classList.toggle('hidden');
+            }
+
+            async function sendChatMessage(message) {
+                const params = new URLSearchParams();
+                params.append('ask', message);
+                params.append('uid', state.currentSessionId);
+                params.append('model', state.settings.model);
+                
+                // Add personality instructions
+                let instructions = '';
+                if (state.settings.personality === 'custom' && state.settings.customInstructions) {
+                    instructions = state.settings.customInstructions;
+                } else if (state.settings.personality !== 'default') {
+                    instructions = getPersonalityInstructions(state.settings.personality);
+                }
+                
+                if (instructions) {
+                    params.append('roleplay', instructions);
+                }
+                
+                if (state.settings.max_tokens) {
+                    params.append('max_tokens', state.settings.max_tokens);
+                }
+
+                const response = await fetch(`https://haji-mix.up.railway.app/api/workers?${params.toString()}`);
+                return await response.json();
+            }
+
+            function getPersonalityInstructions(type) {
+                const personalities = {
+                    'default': 'Respond as a helpful AI assistant',
+                    'friendly': 'Respond in a warm, friendly tone. Use emojis occasionally. Be supportive and encouraging.',
+                    'professional': 'Respond in a formal, business-appropriate tone. Be concise and factual.',
+                    'humorous': 'Respond with humor and wit. Include jokes or funny references when appropriate.'
+                };
+                return personalities[type] || type;
+            }
+
+            function addChatMessage(role, content, saveToHistory = true) {
+                const messageId = 'msg_' + Date.now();
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message flex ${role === 'user' ? 'justify-end' : ''} mb-4`;
+                messageDiv.dataset.messageId = messageId;
+                
+                messageDiv.innerHTML = role === 'user' ? `
+                    <div class="flex-shrink-0 ml-3">
+                        <div class="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-white">
+                            <i class="fas fa-user"></i>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-600 text-white p-4 rounded-xl shadow-xs max-w-[85%]">
+                        <p class="whitespace-pre-wrap">${content}</p>
+                    </div>
+                ` : `
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                            <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
+                        <p class="whitespace-pre-wrap">${content}</p>
+                    </div>
+                `;
+                
+                elements.chatContainer.appendChild(messageDiv);
+                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
+                
+                if (saveToHistory) {
+                    // Save message to current session
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session) {
+                        session.messages.push({
+                            id: messageId,
+                            role,
+                            content,
+                            timestamp: new Date().toISOString()
+                        });
+                        saveSessions();
+                        renderChatHistory();
+                    }
+                }
+            }
+
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'chat-message flex mb-4';
+                typingDiv.id = 'typingIndicator';
+                typingDiv.innerHTML = `
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                            <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
+                        <div class="flex space-x-2 px-2 py-1">
+                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
+                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
+                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
+                        </div>
+                    </div>
+                `;
+                elements.chatContainer.appendChild(typingDiv);
+                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typingIndicator');
+                if (indicator) indicator.remove();
+            }
+
+            function updateModelDisplay() {
+                const modelName = state.settings.model.split('/').pop();
+                elements.currentModel.innerHTML = `
+                    <i class="fas fa-microchip mr-1"></i>
+                    <span class="truncate">${modelName}</span>
+                `;
+                
+                // Update select dropdown
+                if (state.models.includes(state.settings.model)) {
+                    elements.modelSelect.value = state.settings.model;
+                }
+            }
+
+            function updateUI() {
+                updateModelDisplay();
+                
+                // Update active personality button
+                document.querySelectorAll('.personality-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.personality === state.settings.personality) {
+                        btn.classList.add('active');
+                        
+                        // Show custom input if needed
+                        if (btn.dataset.personality === 'custom') {
+                            elements.customPersonalityContainer.classList.add('open');
+                            elements.customPersonality.value = state.settings.customInstructions || '';
+                        }
+                    }
+                });
+                
+                if (state.settings.max_tokens) {
+                    elements.maxTokens.value = state.settings.max_tokens;
+                    elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
+                } else {
+                    elements.maxTokens.value = null;
+                    elements.tokenValue.textContent = 'Auto';
+                }
+            }
+
+            function showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center z-50';
+                toast.innerHTML = `
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>${message}</span>
+                `;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

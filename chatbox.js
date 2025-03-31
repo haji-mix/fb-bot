@@ -209,6 +209,11 @@ const routes = [{
     method: 'get'
 },
 {
+    path: '/chatbox',
+    file: 'chatbox.ejs',
+    method: 'get'
+},
+{
     path: '/cosplay',
     file: 'cosplay.ejs',
     method: 'get'
