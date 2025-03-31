@@ -710,8 +710,7 @@
                         'https://haji-mix.up.railway.app/api/workers';
 
                     const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-
+                    
                     const data = await response.json();
 
                     if (data.supported_models && Array.isArray(data.supported_models)) {
