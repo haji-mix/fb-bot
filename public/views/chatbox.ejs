@@ -62,6 +62,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -88,21 +89,56 @@
         }
 
         @keyframes bounce {
-            0%, 60%, 100% {
+
+            0%,
+            60%,
+            100% {
                 transform: translateY(0);
             }
+
             30% {
                 transform: translateY(-4px);
             }
         }
 
-        /* Sidebar responsiveness */
+        /* Sidebar responsiveness - UPDATED */
         .sidebar {
             transition: transform 0.3s ease;
             width: var(--sidebar-width);
             height: 100vh;
             display: flex;
             flex-direction: column;
+            background: white;
+        }
+
+        .dark .sidebar {
+            background: #1f2937;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+            background: inherit;
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .dark .sidebar-footer {
+            border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .settings-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
         }
 
         @media (max-width: 1024px) {
@@ -129,8 +165,17 @@
                 z-index: 40;
             }
 
-            .sidebar-open + .sidebar-overlay {
+            .sidebar-open+.sidebar-overlay {
                 display: block;
+            }
+
+            .sidebar-footer {
+                position: static;
+                padding-bottom: 1rem;
+            }
+
+            .settings-container {
+                padding-bottom: 0;
             }
         }
 
@@ -187,14 +232,6 @@
             margin-top: 0.5rem;
         }
 
-        /* Settings container */
-        .settings-container {
-            overflow-y: auto;
-            flex: 1;
-            min-height: 200px; /* Ensure it doesn't collapse completely */
-        }
-
-        /* Code container - made fully responsive */
         .code-container {
             position: relative;
             margin: 0;
@@ -454,23 +491,23 @@
             .message-content {
                 font-size: 0.9375rem;
             }
-            
+
             .code-content {
                 padding: 0.5rem;
             }
-            
+
             .code-content pre code {
                 font-size: 0.8125rem;
             }
-            
+
             .html-preview-message {
                 margin: 0.5rem 0;
             }
-            
+
             .html-preview-content {
                 padding: 0.5rem;
             }
-            
+
             .safe-html-preview {
                 height: 250px;
             }
@@ -479,7 +516,7 @@
                 margin-bottom: 0.75rem;
             }
 
-            .chat-message > div:last-child {
+            .chat-message>div:last-child {
                 max-width: 90%;
             }
         }
@@ -489,7 +526,7 @@
             .chat-input-container {
                 padding: 0.75rem;
             }
-            
+
             .chat-input {
                 min-height: 60px;
             }
@@ -497,17 +534,22 @@
 
         /* Prevent zoom on mobile input focus */
         @media (max-width: 480px) {
-            input, textarea, select {
+
+            input,
+            textarea,
+            select {
                 font-size: 16px;
             }
 
-            .chat-message > div:last-child {
+            .chat-message>div:last-child {
                 max-width: 85%;
             }
         }
 
         /* Better touch targets for mobile */
-        button, .personality-btn, .session-item {
+        button,
+        .personality-btn,
+        .session-item {
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
@@ -525,18 +567,18 @@
                 flex-direction: column;
                 align-items: flex-start;
             }
-            
+
             .chat-message.justify-end {
                 align-items: flex-end;
             }
-            
-            .chat-message > div:first-child {
+
+            .chat-message>div:first-child {
                 margin-bottom: 0.5rem;
                 margin-right: 0;
                 margin-left: 0;
             }
-            
-            .chat-message > div:last-child {
+
+            .chat-message>div:last-child {
                 max-width: 95%;
             }
         }
@@ -549,16 +591,6 @@
                 margin-right: -1rem;
                 width: calc(100% + 2rem);
             }
-        }
-
-        /* Sidebar sections */
-        .sidebar-section {
-            flex-shrink: 0;
-        }
-
-        .sidebar-scrollable {
-            flex: 1;
-            overflow-y: auto;
         }
     </style>
 </head>
@@ -661,7 +693,8 @@
                 </div>
             </div>
 
-            <div class="sidebar-section px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div
+                class="sidebar-footer px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
                 <button id="saveSettings"
                     class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
@@ -1095,7 +1128,7 @@
                     try {
                         const response = await sendChatMessage(message);
                         removeTypingIndicator();
-                        
+
 
                         if (response.answer && /<[a-z][\s\S]*>/i.test(response.answer)) {
                             addChatMessage('assistant', response.answer);
@@ -1449,7 +1482,7 @@
                 formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
                     const lang = language || 'plaintext';
                     const displayFilename = filename ? filename.trim() : '';
-                    
+
                     // Preserve the original code exactly (don't escape HTML here)
                     const rawCode = code;
 
