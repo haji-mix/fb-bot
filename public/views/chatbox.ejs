@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chatbox Horizon</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
@@ -247,26 +247,72 @@
             border-color: rgba(255, 255, 255, 0.1);
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
-                width: 85%;
+                width: 85vw;
                 max-width: 300px;
             }
 
-            .message {
-                max-width: 95%;
+            .chat-container {
+                padding-bottom: 80px;
+                /* Space for input */
+            }
+
+            .chat-input-container {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 12px;
+                background: white;
+                z-index: 100;
+            }
+
+            .chat-input-form {
+                display: flex;
+                gap: 8px;
+            }
+
+            .chat-input {
+                flex: 1;
+                min-height: 48px;
+                padding: 12px;
+            }
+
+            .send-button {
+                width: 48px;
+                height: 48px;
+                min-width: 48px;
+            }
+
+            .sidebar-footer {
+                padding: 12px;
+                position: sticky;
+                bottom: 0;
+                background: inherit;
+            }
+
+            .save-settings {
+                padding: 12px;
+                font-size: 14px;
             }
 
             .message-content {
-                max-width: calc(100% - 40px);
+                max-width: 85vw;
             }
         }
 
         /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .fade-in {
@@ -288,12 +334,25 @@
             animation: bounce 1.4s infinite ease-in-out;
         }
 
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
 
         @keyframes bounce {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-4px); }
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-4px);
+            }
         }
 
         /* Personality buttons */
@@ -324,6 +383,22 @@
             max-height: 200px;
             margin-top: 0.5rem;
         }
+
+        @supports (-webkit-touch-callout: none) {
+
+            /* iOS specific styles */
+            .chat-input-container {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+
+            input,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
     </style>
 </head>
 
@@ -349,7 +424,8 @@
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-3">
                         <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Sessions</h3>
-                        <button id="newSessionBtn" class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+                        <button id="newSessionBtn"
+                            class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
                             <i class="fas fa-plus mr-1"></i> New
                         </button>
                     </div>
@@ -371,10 +447,11 @@
                 <!-- Settings -->
                 <div>
                     <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Settings</h3>
-                    
+
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-1">Provider</label>
-                        <select id="providerSelect" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                        <select id="providerSelect"
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                             <option value="workers">Workers (Default)</option>
                             <option value="githubco">GitHubCo</option>
                         </select>
@@ -382,7 +459,8 @@
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-1">AI Model</label>
-                        <select id="modelSelect" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                        <select id="modelSelect"
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
                             <option value="loading">Loading models...</option>
                         </select>
                     </div>
@@ -390,21 +468,30 @@
                     <div class="mb-4">
                         <label class="block text-sm font-medium mb-1">Personality</label>
                         <div class="flex flex-wrap gap-2 mb-2">
-                            <button data-personality="default" class="personality-btn active px-3 py-1 rounded-full text-xs" style="--color: #7c3aed">Default</button>
-                            <button data-personality="friendly" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #3b82f6">Friendly</button>
-                            <button data-personality="professional" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #10b981">Professional</button>
-                            <button data-personality="humorous" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #f59e0b">Humorous</button>
-                            <button data-personality="custom" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #ec4899">Custom</button>
+                            <button data-personality="default"
+                                class="personality-btn active px-3 py-1 rounded-full text-xs"
+                                style="--color: #7c3aed">Default</button>
+                            <button data-personality="friendly" class="personality-btn px-3 py-1 rounded-full text-xs"
+                                style="--color: #3b82f6">Friendly</button>
+                            <button data-personality="professional"
+                                class="personality-btn px-3 py-1 rounded-full text-xs"
+                                style="--color: #10b981">Professional</button>
+                            <button data-personality="humorous" class="personality-btn px-3 py-1 rounded-full text-xs"
+                                style="--color: #f59e0b">Humorous</button>
+                            <button data-personality="custom" class="personality-btn px-3 py-1 rounded-full text-xs"
+                                style="--color: #ec4899">Custom</button>
                         </div>
                         <div id="customPersonalityContainer" class="custom-personality-container">
-                            <textarea id="customPersonality" placeholder="Enter custom instructions" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"></textarea>
+                            <textarea id="customPersonality" placeholder="Enter custom instructions"
+                                class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"></textarea>
                         </div>
                     </div>
 
                     <div class="mb-4" id="tokenSettings">
                         <label class="block text-sm font-medium mb-1">Response Length</label>
                         <div class="flex items-center gap-3">
-                            <input type="range" id="maxTokens" min="50" max="32000" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg">
+                            <input type="range" id="maxTokens" min="50" max="32000"
+                                class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg">
                             <span id="tokenValue" class="text-sm w-16">Auto</span>
                         </div>
                         <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -413,9 +500,10 @@
                     </div>
                 </div>
             </div>
-
-            <div class="sidebar-footer dark:border-gray-700">
-                <button id="saveSettings" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-medium transition">
+            <div
+                class="sidebar-footer px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+                <button id="saveSettings"
+                    class="save-settings w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
                 </button>
             </div>
@@ -424,12 +512,15 @@
         <!-- Main chat area -->
         <div class="chat-container">
             <header class="chat-header bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <button id="toggleSidebar" class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400" onclick="toggleSidebar()">
+                <button id="toggleSidebar"
+                    class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                    onclick="toggleSidebar()">
                     <i class="fas fa-sliders-h"></i>
                 </button>
                 <h1 id="currentSessionName" class="text-lg font-semibold">New Session</h1>
                 <div class="ml-auto flex items-center gap-2">
-                    <span id="currentProvider" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">Haji Mix</span>
+                    <span id="currentProvider" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">Haji
+                        Mix</span>
                     <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
                         <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
                     </span>
@@ -451,9 +542,11 @@
             </div>
 
             <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-                <form id="chatForm" class="flex gap-2">
-                    <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                    <button type="submit" class="w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center">
+                <form id="chatForm" class="chat-input-form">
+                    <input type="text" id="userInput" placeholder="Type your message..."
+                        class="chat-input border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button type="submit"
+                        class="send-button bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center justify-center">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -524,7 +617,7 @@
         };
 
         // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             init();
         });
 
@@ -724,8 +817,8 @@
             const themeToggle = document.createElement('button');
             themeToggle.id = 'themeToggle';
             themeToggle.className = 'ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400';
-            themeToggle.innerHTML = document.documentElement.classList.contains('dark') ? 
-                '<i class="fas fa-sun mr-1"></i> Light Mode' : 
+            themeToggle.innerHTML = document.documentElement.classList.contains('dark') ?
+                '<i class="fas fa-sun mr-1"></i> Light Mode' :
                 '<i class="fas fa-moon mr-1"></i> Dark Mode';
             document.querySelector('.sidebar-header').appendChild(themeToggle);
 
@@ -754,7 +847,7 @@
 
             // Personality buttons
             elements.personalityBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     elements.personalityBtns.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     state.settings.personality = this.getAttribute('data-personality') || 'default';
@@ -769,14 +862,14 @@
             });
 
             // Token slider
-            elements.maxTokens.addEventListener('input', function() {
+            elements.maxTokens.addEventListener('input', function () {
                 const value = parseInt(this.value) || 50;
                 state.settings.max_tokens = value === 50 ? null : value;
                 elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
             });
 
             // Provider change
-            elements.providerSelect.addEventListener('change', async function() {
+            elements.providerSelect.addEventListener('change', async function () {
                 state.settings.provider = this.value;
                 state.models = [];
                 elements.modelSelect.innerHTML = '<option value="loading">Loading models...</option>';
@@ -798,7 +891,7 @@
             });
 
             // Save settings
-            elements.saveSettings.addEventListener('click', function() {
+            elements.saveSettings.addEventListener('click', function () {
                 state.settings.provider = elements.providerSelect.value;
                 state.settings.model = elements.modelSelect.value;
                 state.settings.personality = document.querySelector('.personality-btn.active').getAttribute('data-personality');
@@ -817,7 +910,7 @@
             });
 
             // Chat form submission
-            elements.chatForm.addEventListener('submit', async function(e) {
+            elements.chatForm.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const message = elements.userInput.value.trim();
                 if (!message) return;
@@ -991,7 +1084,7 @@
                 preview.classList.toggle('fixed inset-0 z-50 m-0 w-screen h-screen rounded-none');
                 const iframe = preview.querySelector('iframe');
                 iframe.classList.toggle('h-[calc(100vh-40px)]');
-                fullscreenBtn.innerHTML = preview.classList.contains('fixed') ? 
+                fullscreenBtn.innerHTML = preview.classList.contains('fixed') ?
                     '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
             });
 
@@ -1142,7 +1235,7 @@
 
         function copyToClipboard(text, button) {
             const originalText = button.innerHTML;
-            
+
             // Try modern clipboard API first
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => {
@@ -1165,14 +1258,14 @@
             textarea.style.position = 'fixed';  // Prevent scrolling to bottom
             document.body.appendChild(textarea);
             textarea.select();
-            
+
             try {
                 const successful = document.execCommand('copy');
                 button.innerHTML = successful ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
             } catch (err) {
                 button.innerHTML = '<i class="fas fa-times"></i>';
             }
-            
+
             document.body.removeChild(textarea);
             setTimeout(() => {
                 button.innerHTML = originalText;
@@ -1253,6 +1346,20 @@
                 setTimeout(() => toast.remove(), 300);
             }, 2000);
         }
+
+        // Add this to your existing JS to handle mobile viewport
+        function setupMobileViewport() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+
+            window.addEventListener('resize', () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            });
+        }
+
+        // Call this in your init function
+        setupMobileViewport();
     </script>
 </body>
 
