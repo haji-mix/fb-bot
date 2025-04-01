@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chatbox Horizon</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -73,6 +75,179 @@
         .settings-container { max-height: calc(100vh - 400px); overflow-y: auto; }
         @media (max-width: 768px) {
             .settings-container { max-height: calc(100vh - 300px); }
+        }
+        /* Enhanced code block styles */
+        .code-container {
+            position: relative;
+            margin: 0.75rem 0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0.75rem;
+            background-color: #1e1e1e;
+            color: #9cdcfe;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+        .code-header-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .code-language {
+            font-weight: 600;
+        }
+        .code-filename {
+            color: #ce9178;
+            font-style: italic;
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        .code-content {
+            position: relative;
+            background-color: #1e1e1e;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .code-copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d4d4d4;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .code-copy-btn:hover {
+            background: rgba(60, 60, 60, 0.8);
+            color: white;
+        }
+        .code-compile-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 2.5rem;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d4d4d4;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .code-compile-btn:hover {
+            background: rgba(60, 60, 60, 0.8);
+            color: white;
+        }
+        .code-content pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .inline-code {
+            background-color: rgba(175, 184, 193, 0.2);
+            border-radius: 0.25rem;
+            padding: 0.2em 0.4em;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #db7093;
+        }
+        /* HTML Preview Modal */
+        .html-preview-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .html-preview-container {
+            width: 90%;
+            height: 90%;
+            background-color: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .html-preview-header {
+            padding: 0.75rem;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .html-preview-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            background-color: white;
+        }
+        .html-preview-close {
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        /* Dark mode adjustments */
+        .dark .code-container {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        .dark .inline-code {
+            background-color: rgba(110, 118, 129, 0.4);
+            color: #e995b3;
+        }
+        .dark .html-preview-container {
+            background-color: #1e1e1e;
+        }
+        .dark .html-preview-header {
+            background-color: #2d3748;
+            color: white;
+        }
+        .dark .html-preview-content {
+            background-color: #1e1e1e;
+            color: white;
+        }
+        /* Message copy button */
+        .message-copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: currentColor;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            z-index: 10;
+        }
+        .chat-message:hover .message-copy-btn {
+            opacity: 1;
+        }
+        .chat-message:hover .message-copy-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .dark .message-copy-btn {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .dark .chat-message:hover .message-copy-btn:hover {
+            background: rgba(0, 0, 0, 0.3);
         }
     </style>
 </head>
@@ -278,10 +453,23 @@
                 else loadSession(state.sessions[0].id);
                 
                 elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+                
+                // Initialize highlight.js
+                hljs.highlightAll();
             }
 
             function loadSessions() {
-                state.sessions = JSON.parse(localStorage.getItem('chatbox_sessions')) || [];
+                try {
+                    const sessions = localStorage.getItem('chatbox_sessions');
+                    if (sessions) {
+                        state.sessions = JSON.parse(sessions);
+                    } else {
+                        state.sessions = [];
+                    }
+                } catch (e) {
+                    console.error("Error loading sessions:", e);
+                    state.sessions = [];
+                }
                 renderSessionList();
             }
 
@@ -366,44 +554,47 @@
                     conversations.map(convo => {
                         const firstUserMessage = convo.find(m => m.role === 'user');
                         if (!firstUserMessage) return '';
+                        const content = firstUserMessage.content.substring(0, 50);
                         return `<div class="px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 truncate">
-                            ${firstUserMessage.content.substring(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')}
+                            ${content}${firstUserMessage.content.length > 50 ? '...' : ''}
                         </div>`;
                     }).join('') : 
                     '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
             }
 
- async function fetchModels() {
-    try {
-        const apiUrl = state.settings.provider === 'githubco' ? 
-            'https://haji-mix.up.railway.app/api/githubco' : 
-            'https://haji-mix.up.railway.app/api/workers';
+            async function fetchModels() {
+                try {
+                    const apiUrl = state.settings.provider === 'githubco' ? 
+                        'https://haji-mix.up.railway.app/api/githubco' : 
+                        'https://haji-mix.up.railway.app/api/workers';
 
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        
-        // Check if supported_models exists in response
-        if (data.supported_models && Array.isArray(data.supported_models)) {
-            state.models = data.supported_models;
-            populateModelSelect();
-            updateModelDisplay();
-            return;
-        }
-        
-        // If we got here, there was some problem
-        throw new Error(data.error || "No supported models found in response");
-        
-    } catch (error) {
-        console.error("Failed to fetch models:", error);
-        // Try to use any models we might have gotten despite the error
-        if (state.models.length > 0) {
-            populateModelSelect();
-            updateModelDisplay();
-        } else {
-            elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
-        }
-    }
-}
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.supported_models && Array.isArray(data.supported_models)) {
+                        state.models = data.supported_models;
+                        populateModelSelect();
+                        updateModelDisplay();
+                        
+                        if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
+                            state.settings.model = state.models[0];
+                            updateModelDisplay();
+                        }
+                        return;
+                    }
+                    
+                    throw new Error(data.error || "No supported models found in response");
+                    
+                } catch (error) {
+                    console.error("Failed to fetch models:", error);
+                    if (state.models.length > 0) {
+                        populateModelSelect();
+                        updateModelDisplay();
+                    } else {
+                        elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
+                    }
+                }
+            }
 
             function populateModelSelect() {
                 elements.modelSelect.innerHTML = state.models.map(model => 
@@ -429,9 +620,11 @@
                 elements.sessionList.addEventListener('click', (e) => {
                     if (e.target.closest('.delete-session')) {
                         e.stopPropagation();
-                        deleteSession(e.target.closest('.delete-session').dataset.sessionId);
+                        const sessionId = e.target.closest('.delete-session').getAttribute('data-session-id');
+                        if (sessionId) deleteSession(sessionId);
                     } else if (e.target.closest('.session-item')) {
-                        loadSession(e.target.closest('.session-item').dataset.sessionId);
+                        const sessionId = e.target.closest('.session-item').getAttribute('data-session-id');
+                        if (sessionId) loadSession(sessionId);
                     }
                 });
                 
@@ -439,9 +632,9 @@
                     btn.addEventListener('click', function() {
                         elements.personalityBtns.forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
-                        state.settings.personality = this.dataset.personality;
+                        state.settings.personality = this.getAttribute('data-personality') || 'default';
                         
-                        if (this.dataset.personality === 'custom') {
+                        if (this.getAttribute('data-personality') === 'custom') {
                             elements.customPersonalityContainer.classList.add('open');
                             elements.customPersonality.focus();
                         } else {
@@ -451,18 +644,17 @@
                 });
                 
                 elements.maxTokens.addEventListener('input', function() {
-                    const value = parseInt(this.value);
+                    const value = parseInt(this.value) || 50;
                     state.settings.max_tokens = value === 50 ? null : value;
                     elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
                 });
                 
                 elements.providerSelect.addEventListener('change', async function() {
-                    state.settings.provider = this.value;
+                    state.settings.provider = this.value || 'workers';
                     state.models = [];
                     populateModelSelect();
                     updateModelDisplay();
                     
-                    // Toggle token settings visibility based on provider
                     elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
                     
                     await fetchModels();
@@ -476,8 +668,8 @@
                 });
                 
                 elements.saveSettings.addEventListener('click', function() {
-                    state.settings.provider = elements.providerSelect.value;
-                    state.settings.model = elements.modelSelect.value;
+                    state.settings.provider = elements.providerSelect.value || 'workers';
+                    state.settings.model = elements.modelSelect.value || '';
                     state.settings.customInstructions = elements.customPersonality.value;
                     
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
@@ -524,7 +716,7 @@
                 state.sessions = state.sessions.filter(s => s.id !== sessionId);
                 saveSessions();
                 
-                if (state.currentSessionId === sessionId) loadSession(state.sessions[0].id);
+                if (state.currentSessionId === sessionId) loadSession(state.sessions[0]?.id || '');
                 renderSessionList();
                 showToast("Session deleted");
             }
@@ -536,7 +728,7 @@
 
             async function sendChatMessage(message) {
                 const session = state.sessions.find(s => s.id === state.currentSessionId);
-                if (!session) return;
+                if (!session) return { error: "No active session" };
                 
                 const params = new URLSearchParams();
                 params.append('ask', message);
@@ -552,7 +744,6 @@
                 
                 if (instructions) params.append('roleplay', instructions);
                 
-                // Only add max_tokens for workers provider
                 if (state.settings.provider === 'workers' && state.settings.max_tokens) {
                     params.append('max_tokens', state.settings.max_tokens);
                 }
@@ -579,9 +770,39 @@
                 return personalities[type] || type;
             }
 
+            function showHtmlPreview(htmlContent) {
+                const modal = document.createElement('div');
+                modal.className = 'html-preview-modal';
+                modal.innerHTML = `
+                    <div class="html-preview-container">
+                        <div class="html-preview-header">
+                            <span>HTML Preview</span>
+                            <button class="html-preview-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="html-preview-content">${htmlContent}</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                
+                modal.querySelector('.html-preview-close').addEventListener('click', () => {
+                    document.body.removeChild(modal);
+                });
+                
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                });
+            }
+
             function addChatMessage(role, content, saveToHistory = true) {
                 const messageId = 'msg_' + Date.now();
                 const isUser = role === 'user';
+                
+                const formattedContent = formatMessageContent(content);
                 
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `chat-message flex ${isUser ? 'justify-end' : ''} mb-4`;
@@ -592,22 +813,165 @@
                             <i class="fas ${isUser ? 'fa-user' : 'fa-robot'}"></i>
                         </div>
                     </div>
-                    <div class="${isUser ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800'} p-4 rounded-xl shadow-xs max-w-[85%]">
-                        <p class="whitespace-pre-wrap">${content}</p>
+                    <div class="relative ${isUser ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800'} p-4 rounded-xl shadow-xs max-w-[85%]">
+                        <button class="message-copy-btn" title="Copy message">
+                            <i class="far fa-copy"></i>
+                        </button>
+                        ${formattedContent}
                     </div>
                 `;
                 
                 elements.chatContainer.appendChild(messageDiv);
                 elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
                 
+                // Add copy functionality to the entire message
+                const messageCopyBtn = messageDiv.querySelector('.message-copy-btn');
+                if (messageCopyBtn) {
+                    messageCopyBtn.addEventListener('click', () => {
+                        const messageContent = messageDiv.querySelector('.message-content') || 
+                                              messageDiv.querySelector('p') || 
+                                              messageDiv.querySelector('div > div:last-child');
+                        if (messageContent) {
+                            navigator.clipboard.writeText(messageContent.textContent || '')
+                                .then(() => {
+                                    const originalText = messageCopyBtn.innerHTML;
+                                    messageCopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                                    setTimeout(() => {
+                                        messageCopyBtn.innerHTML = originalText;
+                                    }, 2000);
+                                })
+                                .catch(err => console.error('Failed to copy text:', err));
+                        }
+                    });
+                }
+                
+                // Add functionality to code blocks
+                messageDiv.querySelectorAll('.code-container').forEach(container => {
+                    const codeBlock = container.querySelector('code');
+                    const language = container.querySelector('.code-language')?.textContent.toLowerCase();
+                    const copyBtn = container.querySelector('.code-copy-btn');
+                    
+                    // Add copy functionality
+                    if (copyBtn && codeBlock) {
+                        copyBtn.addEventListener('click', () => {
+                            navigator.clipboard.writeText(codeBlock.textContent || '')
+                                .then(() => {
+                                    const originalText = copyBtn.innerHTML;
+                                    copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                                    setTimeout(() => {
+                                        copyBtn.innerHTML = originalText;
+                                    }, 2000);
+                                })
+                                .catch(err => console.error('Failed to copy text:', err));
+                        });
+                    }
+                    
+                    // Add preview functionality for HTML
+                    if (language === 'html' || language === 'htm') {
+                        const previewBtn = document.createElement('button');
+                        previewBtn.className = 'code-compile-btn';
+                        previewBtn.title = 'Preview HTML';
+                        previewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+                        previewBtn.addEventListener('click', () => {
+                            const htmlContent = codeBlock.textContent;
+                            showHtmlPreview(htmlContent);
+                        });
+                        container.querySelector('.code-header').appendChild(previewBtn);
+                    }
+                });
+                
+                // Apply syntax highlighting to code blocks
+                messageDiv.querySelectorAll('pre code').forEach(block => {
+                    hljs.highlightElement(block);
+                });
+                
                 if (saveToHistory) {
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
-                        session.messages.push({ id: messageId, role, content, timestamp: new Date().toISOString() });
+                        session.messages.push({ 
+                            id: messageId, 
+                            role, 
+                            content: content,
+                            timestamp: new Date().toISOString()
+                        });
                         saveSessions();
                         renderChatHistory();
                     }
                 }
+            }
+
+            function formatMessageContent(content) {
+                // Enhanced code block detection with filename support
+                const codeBlockRegex = /```(\w*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+                
+                // Replace code blocks with formatted HTML
+                let formattedContent = content.replace(codeBlockRegex, (match, language, filename, code) => {
+                    const lang = language || 'plaintext';
+                    const displayFilename = filename ? filename.trim() : '';
+                    const formattedCode = formatCodeIndentation(code);
+                    
+                    return `
+                        <div class="code-container">
+                            <div class="code-header">
+                                <div class="code-header-info">
+                                    <span class="code-language">${lang}</span>
+                                    ${displayFilename ? `<span class="code-filename">${displayFilename}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="code-content">
+                                <button class="code-copy-btn" title="Copy code">
+                                    <i class="far fa-copy"></i>
+                                </button>
+                                <pre><code class="language-${lang}">${formattedCode}</code></pre>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                // Handle inline code
+                formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+                
+                // Wrap the content in a div for easier copying
+                return `<div class="message-content">${formattedContent}</div>`;
+            }
+
+            function formatCodeIndentation(code) {
+                // Normalize line endings
+                code = code.replace(/\r\n/g, '\n');
+                
+                // Split into lines and remove empty lines at start/end
+                let lines = code.split('\n');
+                
+                // Remove leading empty lines
+                while (lines.length > 0 && lines[0].trim() === '') {
+                    lines.shift();
+                }
+                
+                // Remove trailing empty lines
+                while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+                    lines.pop();
+                }
+                
+                if (lines.length === 0) return '';
+                
+                // Find the minimum indentation
+                let minIndent = Infinity;
+                for (const line of lines) {
+                    if (line.trim().length === 0) continue;
+                    const leadingSpaces = line.match(/^[ ]*/)[0].length;
+                    if (leadingSpaces < minIndent) {
+                        minIndent = leadingSpaces;
+                    }
+                }
+                
+                // Remove the common indentation
+                if (minIndent > 0 && minIndent !== Infinity) {
+                    lines = lines.map(line => 
+                        line.startsWith(' ') ? line.substring(minIndent) : line
+                    );
+                }
+                
+                return lines.join('\n');
             }
 
             function showTypingIndicator() {
@@ -616,7 +980,7 @@
                 typingDiv.id = 'typingIndicator';
                 typingDiv.innerHTML = `
                     <div class="flex-shrink-0 mr-3">
-                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-gray-900 flex items-center justify-center">
                             <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
                         </div>
                     </div>
@@ -643,7 +1007,6 @@
                 elements.currentProvider.textContent = state.settings.provider === 'githubco' ? 'GitHubCo' : 'workers';
                 elements.providerSelect.value = state.settings.provider;
                 
-                // Hide token settings for GitHubCo
                 elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
                 
                 if (state.models.includes(state.settings.model)) {
