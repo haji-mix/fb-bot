@@ -76,7 +76,6 @@
         @media (max-width: 768px) {
             .settings-container { max-height: calc(100vh - 300px); }
         }
-        /* Enhanced code block styles */
         .code-container {
             position: relative;
             margin: 0.75rem 0;
@@ -132,23 +131,6 @@
             background: rgba(60, 60, 60, 0.8);
             color: white;
         }
-        .code-compile-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 2.5rem;
-            background: rgba(30, 30, 30, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #d4d4d4;
-            cursor: pointer;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            transition: all 0.2s;
-            z-index: 10;
-        }
-        .code-compile-btn:hover {
-            background: rgba(60, 60, 60, 0.8);
-            color: white;
-        }
         .code-content pre {
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -162,47 +144,63 @@
             font-size: 0.9em;
             color: #db7093;
         }
-        /* HTML Preview Modal */
-        .html-preview-modal {
+        .html-preview-message {
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin: 1rem 0;
+            background: white;
+            color: black;
+            transition: all 0.3s ease;
+        }
+        .html-preview-header {
+            padding: 0.5rem;
+            background-color: #f3f4f6;
+            font-weight: bold;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .html-preview-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .html-preview-action-btn {
+            background: rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .html-preview-action-btn:hover {
+            background: rgba(0,0,0,0.2);
+        }
+        .html-preview-content {
+            padding: 1rem;
+        }
+        .safe-html-preview {
+            width: 100%;
+            height: 300px;
+            border: none;
+            background: white;
+        }
+        .html-preview-fullscreen {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            z-index: 1000;
+            background: white;
+            margin: 0;
+            border-radius: 0;
         }
-        .html-preview-container {
-            width: 90%;
-            height: 90%;
-            background-color: white;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+        .html-preview-fullscreen .safe-html-preview {
+            height: calc(100vh - 40px);
         }
-        .html-preview-header {
-            padding: 0.75rem;
-            background-color: #f3f4f6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .html-preview-content {
-            flex: 1;
-            overflow: auto;
-            padding: 1rem;
-            background-color: white;
-        }
-        .html-preview-close {
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-        /* Dark mode adjustments */
         .dark .code-container {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
@@ -210,18 +208,15 @@
             background-color: rgba(110, 118, 129, 0.4);
             color: #e995b3;
         }
-        .dark .html-preview-container {
+        .dark .html-preview-message {
             background-color: #1e1e1e;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
         }
         .dark .html-preview-header {
             background-color: #2d3748;
-            color: white;
+            border-bottom-color: rgba(255, 255, 255, 0.1);
         }
-        .dark .html-preview-content {
-            background-color: #1e1e1e;
-            color: white;
-        }
-        /* Message copy button */
         .message-copy-btn {
             position: absolute;
             top: 0.5rem;
@@ -454,7 +449,6 @@
                 
                 elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
                 
-                // Initialize highlight.js
                 hljs.highlightAll();
             }
 
@@ -465,10 +459,13 @@
                         state.sessions = JSON.parse(sessions);
                     } else {
                         state.sessions = [];
+                    createNewSession('General Chat');
+                    return;
                     }
                 } catch (e) {
                     console.error("Error loading sessions:", e);
                     state.sessions = [];
+                    createNewSession('General Chat');
                 }
                 renderSessionList();
             }
@@ -510,7 +507,13 @@
                 updateUI();
                 
                 elements.chatContainer.innerHTML = '';
-                session.messages.forEach(msg => addChatMessage(msg.role, msg.content, false));
+                session.messages.forEach(msg => {
+                    if (msg.isHtmlPreview) {
+                        addHtmlPreviewMessage(msg.htmlContent, false);
+                    } else {
+                        addChatMessage(msg.role, msg.content, false);
+                    }
+                });
                 
                 document.querySelectorAll('.session-item').forEach(item => {
                     item.classList.toggle('active', item.dataset.sessionId === sessionId);
@@ -687,6 +690,8 @@
                     const message = elements.userInput.value.trim();
                     if (!message) return;
 
+                    const escapedMessage = escapeHtml(message);
+
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session && session.messages.filter(m => m.role === 'user').length === 0) {
                         session.name = sessionNameGenerator.generateName(message);
@@ -699,7 +704,7 @@
                     showTypingIndicator();
 
                     try {
-                        const response = await sendChatMessage(message);
+                        const response = await sendChatMessage(escapedMessage);
                         removeTypingIndicator();
                         addChatMessage('assistant', response.answer || `Error: ${response.error || 'Unknown error'}`);
                     } catch (error) {
@@ -708,6 +713,15 @@
                         console.error("API Error:", error);
                     }
                 });
+            }
+
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
             }
 
             function deleteSession(sessionId) {
@@ -770,32 +784,113 @@
                 return personalities[type] || type;
             }
 
-            function showHtmlPreview(htmlContent) {
-                const modal = document.createElement('div');
-                modal.className = 'html-preview-modal';
-                modal.innerHTML = `
-                    <div class="html-preview-container">
-                        <div class="html-preview-header">
-                            <span>HTML Preview</span>
-                            <button class="html-preview-close">
-                                <i class="fas fa-times"></i>
-                            </button>
+            function extractHtmlCodeBlocks(content) {
+                const htmlBlockRegex = /```(?:html|htm)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+                const blocks = [];
+                let match;
+                
+                while ((match = htmlBlockRegex.exec(content)) !== null) {
+                    blocks.push(match[2]);
+                }
+                
+                return blocks;
+            }
+
+            function addHtmlPreviewMessage(htmlContent, saveToHistory = true) {
+                const previewId = 'preview_' + Date.now();
+                const iframeId = `html-preview-${previewId}`;
+                
+                const safeHtml = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <base target="_blank">
+                        <style>
+                            body { margin: 0; padding: 0; font-family: sans-serif; }
+                            * { max-width: 100%; box-sizing: border-box; }
+                        </style>
+                    </head>
+                    <body>${htmlContent}</body>
+                    </html>
+                `;
+                
+                const blob = new Blob([safeHtml], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'chat-message flex mb-4';
+                previewDiv.dataset.messageId = previewId;
+                previewDiv.innerHTML = `
+                    <div class="flex-shrink-0 mr-3">
+                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                            <i class="fas fa-code text-indigo-600 dark:text-indigo-400"></i>
                         </div>
-                        <div class="html-preview-content">${htmlContent}</div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="html-preview-message">
+                            <div class="html-preview-header">
+                                <span>HTML Preview</span>
+                                <div class="html-preview-actions">
+                                    <button class="html-preview-action-btn fullscreen-btn" title="Fullscreen">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                    <button class="html-preview-action-btn close-btn" title="Close Preview">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="html-preview-content">
+                                <iframe id="${iframeId}" class="safe-html-preview" sandbox="allow-scripts allow-same-origin"></iframe>
+                            </div>
+                        </div>
                     </div>
                 `;
                 
-                document.body.appendChild(modal);
+                elements.chatContainer.appendChild(previewDiv);
                 
-                modal.querySelector('.html-preview-close').addEventListener('click', () => {
-                    document.body.removeChild(modal);
+                setTimeout(() => {
+                    const iframe = document.getElementById(iframeId);
+                    if (iframe) {
+                        iframe.src = url;
+                    }
+                }, 0);
+                
+                const fullscreenBtn = previewDiv.querySelector('.fullscreen-btn');
+                fullscreenBtn.addEventListener('click', () => {
+                    previewDiv.querySelector('.html-preview-message').classList.toggle('html-preview-fullscreen');
+                    fullscreenBtn.innerHTML = previewDiv.querySelector('.html-preview-message').classList.contains('html-preview-fullscreen') ? 
+                        '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
                 });
                 
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        document.body.removeChild(modal);
+                const closeBtn = previewDiv.querySelector('.close-btn');
+                closeBtn.addEventListener('click', () => {
+                    previewDiv.remove();
+                    if (saveToHistory) {
+                        const session = state.sessions.find(s => s.id === state.currentSessionId);
+                        if (session) {
+                            session.messages = session.messages.filter(m => m.id !== previewId);
+                            saveSessions();
+                        }
                     }
                 });
+                
+                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
+                
+                if (saveToHistory) {
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session) {
+                        session.messages.push({ 
+                            id: previewId, 
+                            role: 'assistant', 
+                            content: '[HTML PREVIEW]', 
+                            timestamp: new Date().toISOString(),
+                            isHtmlPreview: true,
+                            htmlContent: htmlContent
+                        });
+                        saveSessions();
+                        renderChatHistory();
+                    }
+                }
             }
 
             function addChatMessage(role, content, saveToHistory = true) {
@@ -822,9 +917,7 @@
                 `;
                 
                 elements.chatContainer.appendChild(messageDiv);
-                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
                 
-                // Add copy functionality to the entire message
                 const messageCopyBtn = messageDiv.querySelector('.message-copy-btn');
                 if (messageCopyBtn) {
                     messageCopyBtn.addEventListener('click', () => {
@@ -845,13 +938,10 @@
                     });
                 }
                 
-                // Add functionality to code blocks
                 messageDiv.querySelectorAll('.code-container').forEach(container => {
                     const codeBlock = container.querySelector('code');
-                    const language = container.querySelector('.code-language')?.textContent.toLowerCase();
                     const copyBtn = container.querySelector('.code-copy-btn');
                     
-                    // Add copy functionality
                     if (copyBtn && codeBlock) {
                         copyBtn.addEventListener('click', () => {
                             navigator.clipboard.writeText(codeBlock.textContent || '')
@@ -865,25 +955,20 @@
                                 .catch(err => console.error('Failed to copy text:', err));
                         });
                     }
-                    
-                    // Add preview functionality for HTML
-                    if (language === 'html' || language === 'htm') {
-                        const previewBtn = document.createElement('button');
-                        previewBtn.className = 'code-compile-btn';
-                        previewBtn.title = 'Preview HTML';
-                        previewBtn.innerHTML = '<i class="fas fa-eye"></i>';
-                        previewBtn.addEventListener('click', () => {
-                            const htmlContent = codeBlock.textContent;
-                            showHtmlPreview(htmlContent);
-                        });
-                        container.querySelector('.code-header').appendChild(previewBtn);
-                    }
                 });
                 
-                // Apply syntax highlighting to code blocks
                 messageDiv.querySelectorAll('pre code').forEach(block => {
                     hljs.highlightElement(block);
                 });
+                
+                const htmlBlocks = extractHtmlCodeBlocks(content);
+                if (htmlBlocks.length > 0) {
+                    htmlBlocks.forEach(htmlContent => {
+                        addHtmlPreviewMessage(htmlContent, saveToHistory);
+                    });
+                }
+                
+                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
                 
                 if (saveToHistory) {
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
@@ -901,10 +986,8 @@
             }
 
             function formatMessageContent(content) {
-                // Enhanced code block detection with filename support
                 const codeBlockRegex = /```(\w*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
                 
-                // Replace code blocks with formatted HTML
                 let formattedContent = content.replace(codeBlockRegex, (match, language, filename, code) => {
                     const lang = language || 'plaintext';
                     const displayFilename = filename ? filename.trim() : '';
@@ -928,33 +1011,25 @@
                     `;
                 });
                 
-                // Handle inline code
                 formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
                 
-                // Wrap the content in a div for easier copying
                 return `<div class="message-content">${formattedContent}</div>`;
             }
 
             function formatCodeIndentation(code) {
-                // Normalize line endings
                 code = code.replace(/\r\n/g, '\n');
-                
-                // Split into lines and remove empty lines at start/end
                 let lines = code.split('\n');
                 
-                // Remove leading empty lines
                 while (lines.length > 0 && lines[0].trim() === '') {
                     lines.shift();
                 }
                 
-                // Remove trailing empty lines
                 while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
                     lines.pop();
                 }
                 
                 if (lines.length === 0) return '';
                 
-                // Find the minimum indentation
                 let minIndent = Infinity;
                 for (const line of lines) {
                     if (line.trim().length === 0) continue;
@@ -964,7 +1039,6 @@
                     }
                 }
                 
-                // Remove the common indentation
                 if (minIndent > 0 && minIndent !== Infinity) {
                     lines = lines.map(line => 
                         line.startsWith(' ') ? line.substring(minIndent) : line
