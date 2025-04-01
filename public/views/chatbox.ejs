@@ -8,32 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github-dark.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { 600: '#7c3aed', 700: '#6d28d9' },
-                        personality: {
-                            default: '#7c3aed', friendly: '#3b82f6',
-                            professional: '#10b981', humorous: '#f59e0b',
-                            custom: '#ec4899'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        :root {
-            --sidebar-width: 260px;
-            --mobile-header-height: 60px;
-            --chat-input-height: 80px;
-        }
 
         * {
             box-sizing: border-box;
@@ -43,246 +20,134 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Base chat message styles */
-        .chat-message {
-            animation: fadeIn 0.3s ease-out;
-            position: relative;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Typing indicator */
-        .typing-dot {
-            animation: bounce 1.4s infinite ease-in-out;
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: currentColor;
-            border-radius: 50%;
-            margin: 0 2px;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            60%,
-            100% {
-                transform: translateY(0);
-            }
-
-            30% {
-                transform: translateY(-4px);
-            }
-        }
-
-        /* Sidebar responsiveness - UPDATED */
-        .sidebar {
-            transition: transform 0.3s ease;
-            width: var(--sidebar-width);
             height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: white;
+            overflow: hidden;
         }
 
-        .dark .sidebar {
-            background: #1f2937;
+        /* Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            height: 100vh;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+            position: fixed;
+            z-index: 40;
+            left: 0;
+            top: 0;
+            transform: translateX(-100%);
+        }
+
+        .sidebar-open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .sidebar-content {
             flex: 1;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            padding: 1rem;
         }
 
         .sidebar-footer {
             padding: 1rem;
             border-top: 1px solid #e5e7eb;
-            background: inherit;
-            position: sticky;
-            bottom: 0;
-            z-index: 10;
         }
 
-        .dark .sidebar-footer {
-            border-top-color: rgba(255, 255, 255, 0.1);
+        /* Chat area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
         }
 
-        .settings-container {
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding-bottom: 20px;
+            padding: 1rem;
         }
 
-        @media (max-width: 1024px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: 0;
-                z-index: 50;
-                transform: translateX(-100%);
-            }
-
-            .sidebar-open {
-                transform: translateX(0);
-            }
-
-            .sidebar-overlay {
-                display: none;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 40;
-            }
-
-            .sidebar-open+.sidebar-overlay {
-                display: block;
-            }
-
-            .sidebar-footer {
-                position: static;
-                padding-bottom: 1rem;
-            }
-
-            .settings-container {
-                padding-bottom: 0;
-            }
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
         }
 
-        /* Personality buttons */
-        .personality-btn {
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
+        /* Messages */
+        .message {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            max-width: 90%;
         }
 
-        .personality-btn.active {
-            background-color: var(--color);
-            color: white;
-            border-color: var(--color);
+        .message-user {
+            justify-content: flex-end;
+            margin-left: auto;
         }
 
-        .personality-btn:not(.active) {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: currentColor;
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .personality-btn:hover:not(.active) {
-            opacity: 0.8;
-        }
-
-        /* Session items */
-        .session-item {
-            cursor: pointer;
+        .message-content {
             padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            transition: background-color 0.2s ease;
+            border-radius: 0.75rem;
+            max-width: calc(100% - 50px);
         }
 
-        .session-item.active {
-            background-color: #7c3aed;
-            color: white;
-        }
-
-        .session-item:hover {
-            background-color: #4B5563;
-        }
-
-        /* Custom personality container */
-        .custom-personality-container {
-            transition: all 0.3s ease;
-            max-height: 0;
-            overflow: hidden;
-        }
-
-        .custom-personality-container.open {
-            max-height: 200px;
-            margin-top: 0.5rem;
-        }
-
+        /* Code blocks */
         .code-container {
             position: relative;
-            margin: 0;
+            margin: 0.75rem 0;
             border-radius: 0.5rem;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: 100%;
-            max-width: 100%;
+            background: #1e1e1e;
         }
 
         .code-header {
+            padding: 0.5rem 1rem;
+            background: #252526;
+            color: #9cdcfe;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 0.25rem 0.75rem;
-            background-color: #1e1e1e;
-            color: #9cdcfe;
-            font-family: 'Fira Code', 'Courier New', monospace;
-            font-size: 0.8rem;
-            line-height: 1;
-        }
-
-        .code-header-info {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            overflow: hidden;
-        }
-
-        .code-language {
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .code-filename {
-            color: #ce9178;
-            font-style: italic;
-            font-size: 0.75rem;
-            opacity: 0.9;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .code-content {
-            position: relative;
-            background-color: #1e1e1e;
             padding: 0;
             margin: 0;
-            width: 100%;
-            overflow-x: auto;
         }
 
         .code-copy-btn {
@@ -300,452 +165,231 @@
             align-items: center;
             justify-content: center;
             border-radius: 0.25rem;
-            transition: all 0.2s;
             z-index: 10;
             font-size: 12px;
         }
 
-        .code-content pre {
-            margin: 0;
-            padding: 0.5rem;
-            background-color: #1e1e1e;
-            overflow-x: auto;
-            width: 100%;
-        }
-
-        .code-content pre code {
-            display: block;
-            padding: 0;
-            margin: 0;
-            font-size: 0.875rem;
-            line-height: 1.3;
-            white-space: pre;
-            background-color: transparent;
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        /* Message content */
-        .message-content {
-            padding: 0.1em;
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            font-size: 1rem;
-            width: 100%;
-        }
-
         /* HTML preview */
-        .html-preview-message {
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .html-preview {
+            border: 1px solid #e5e7eb;
             border-radius: 0.5rem;
             overflow: hidden;
             margin: 1rem 0;
-            background: white;
-            color: black;
-            transition: all 0.3s ease;
-            width: 100%;
         }
 
         .html-preview-header {
-            padding: 0.5rem;
-            background-color: #f3f4f6;
-            font-weight: bold;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 0.5rem 1rem;
+            background: #f3f4f6;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .html-preview-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .html-preview-action-btn {
-            background: rgba(0, 0, 0, 0.1);
-            border: none;
-            border-radius: 0.25rem;
-            padding: 0.25rem 0.5rem;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-        }
-
-        .html-preview-action-btn:hover {
-            background: rgba(0, 0, 0, 0.2);
-        }
-
         .html-preview-content {
             padding: 1rem;
-            width: 100%;
-        }
-
-        .safe-html-preview {
-            width: 100%;
-            height: 300px;
-            border: none;
-            background: white;
-        }
-
-        .html-preview-fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            z-index: 1000;
-            background: white;
-            margin: 0;
-            border-radius: 0;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .html-preview-fullscreen .safe-html-preview {
-            height: calc(100vh - 40px);
-            width: 100%;
         }
 
         /* Dark mode */
-        .dark {
-            background-color: rgba(110, 118, 129, 0.4);
-            color: #e995b3;
+        .dark .sidebar {
+            background: #1f2937;
+            border-right-color: #374151;
         }
 
-        .dark .html-preview-message {
-            background-color: #1e1e1e;
+        .dark .sidebar-header,
+        .dark .sidebar-footer {
+            border-color: #374151;
+        }
+
+        .dark .message-content {
+            background: #374151;
             color: white;
-            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .html-preview {
+            border-color: #374151;
+            background: #1f2937;
         }
 
         .dark .html-preview-header {
-            background-color: #2d3748;
-            border-bottom-color: rgba(255, 255, 255, 0.1);
+            background: #374151;
+            color: white;
         }
 
-        /* Message copy button */
-        .message-copy-btn {
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            opacity: 0;
-            transition: opacity 0.2s;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: currentColor;
-            cursor: pointer;
-            padding: 0.25rem;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.25rem;
-            z-index: 10;
-            font-size: 12px;
-        }
-
-        .chat-message:hover .message-copy-btn {
-            opacity: 1;
-        }
-
-        .chat-message:hover .message-copy-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .dark .message-copy-btn {
-            background: rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .dark .chat-message:hover .message-copy-btn:hover {
-            background: rgba(0, 0, 0, 0.3);
-        }
-
-        /* Main layout adjustments */
-        .app-container {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-            overflow: hidden;
-        }
-
-        .chat-main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-            width: 100%;
-        }
-
-        /* Additional responsive improvements */
-        @media (max-width: 640px) {
-            .message-content {
-                font-size: 0.9375rem;
-            }
-
-            .code-content {
-                padding: 0.5rem;
-            }
-
-            .code-content pre code {
-                font-size: 0.8125rem;
-            }
-
-            .html-preview-message {
-                margin: 0.5rem 0;
-            }
-
-            .html-preview-content {
-                padding: 0.5rem;
-            }
-
-            .safe-html-preview {
-                height: 250px;
-            }
-
-            .chat-message {
-                margin-bottom: 0.75rem;
-            }
-
-            .chat-message>div:last-child {
-                max-width: 90%;
-            }
-        }
-
-        /* Input area responsiveness */
+        /* Responsive */
         @media (max-width: 768px) {
-            .chat-input-container {
-                padding: 0.75rem;
+            .sidebar {
+                width: 85%;
+                max-width: 300px;
             }
 
-            .chat-input {
-                min-height: 60px;
-            }
-        }
-
-        /* Prevent zoom on mobile input focus */
-        @media (max-width: 480px) {
-
-            input,
-            textarea,
-            select {
-                font-size: 16px;
-            }
-
-            .chat-message>div:last-child {
-                max-width: 85%;
-            }
-        }
-
-        /* Better touch targets for mobile */
-        button,
-        .personality-btn,
-        .session-item {
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Ensure proper spacing on small screens */
-        @media (max-width: 640px) {
-            body {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-        }
-
-        /* Improved message bubbles for mobile */
-        @media (max-width: 480px) {
-            .chat-message {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .chat-message.justify-end {
-                align-items: flex-end;
-            }
-
-            .chat-message>div:first-child {
-                margin-bottom: 0.5rem;
-                margin-right: 0;
-                margin-left: 0;
-            }
-
-            .chat-message>div:last-child {
+            .message {
                 max-width: 95%;
             }
+
+            .message-content {
+                max-width: calc(100% - 40px);
+            }
         }
 
-        /* Full-width code blocks on mobile */
-        @media (max-width: 640px) {
-            .code-container {
-                border-radius: 0;
-                margin-left: -1rem;
-                margin-right: -1rem;
-                width: calc(100% + 2rem);
-            }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.5rem;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
         }
     </style>
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
     <div class="app-container">
-        <div id="sidebarOverlay" class="sidebar-overlay"></div>
+        <!-- Sidebar overlay -->
+        <div id="sidebarOverlay" class="fixed inset-0 bg-black/50 z-30 hidden" onclick="toggleSidebar()"></div>
 
-        <div id="sidebar"
-            class="sidebar bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
-            <div class="sidebar-section bg-primary-600 px-4 py-6">
+        <!-- Sidebar -->
+        <div id="sidebar" class="sidebar dark:bg-gray-800">
+            <div class="sidebar-header dark:border-gray-700">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-bold text-white">Chatbox Horizon</h2>
-                    <button id="closeSidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
-                </div>
-                <p class="text-indigo-200 text-sm mt-1">Powered by Haji Mix</p>
-                <div class="mt-4 flex justify-end">
-                    <button id="themeToggle" class="text-white text-sm"><i class="fas fa-sun mr-1"></i> Light
-                        Mode</button>
-                </div>
-            </div>
-
-            <div class="sidebar-section px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions
-                    </h3>
-                    <button id="newSessionBtn"
-                        class="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-xs">
-                        <i class="fas fa-plus mr-1"></i> New
+                    <h2 class="text-xl font-bold">Chatbox Horizon</h2>
+                    <button id="closeSidebar" class="md:hidden" onclick="toggleSidebar()">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="space-y-1 max-h-40 overflow-y-auto" id="sessionList">
-                    <div class="text-center py-2 text-gray-500 dark:text-gray-400"><i
-                            class="fas fa-spinner fa-spin"></i> Loading...</div>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Powered by Haji Mix</p>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Sessions -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Sessions</h3>
+                        <button id="newSessionBtn" class="text-xs text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
+                            <i class="fas fa-plus mr-1"></i> New
+                        </button>
+                    </div>
+                    <div id="sessionList" class="space-y-1 max-h-40 overflow-y-auto">
+                        <div class="text-center py-2 text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat History -->
+                <div class="mb-6">
+                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Chat History</h3>
+                    <div id="chatHistory" class="space-y-1">
+                        <div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Settings</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Provider</label>
+                        <select id="providerSelect" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                            <option value="workers">Workers (Default)</option>
+                            <option value="githubco">GitHubCo</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">AI Model</label>
+                        <select id="modelSelect" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                            <option value="loading">Loading models...</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-1">Personality</label>
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <button data-personality="default" class="personality-btn active px-3 py-1 rounded-full text-xs" style="--color: #7c3aed">Default</button>
+                            <button data-personality="friendly" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #3b82f6">Friendly</button>
+                            <button data-personality="professional" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #10b981">Professional</button>
+                            <button data-personality="humorous" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #f59e0b">Humorous</button>
+                            <button data-personality="custom" class="personality-btn px-3 py-1 rounded-full text-xs" style="--color: #ec4899">Custom</button>
+                        </div>
+                        <div id="customPersonalityContainer" class="custom-personality-container">
+                            <textarea id="customPersonality" placeholder="Enter custom instructions" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" id="tokenSettings">
+                        <label class="block text-sm font-medium mb-1">Response Length</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="maxTokens" min="50" max="32000" class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg">
+                            <span id="tokenValue" class="text-sm w-16">Auto</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <span>Short</span><span>Long</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="sidebar-section flex-1 overflow-y-auto px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Chat
-                    History</h3>
-                <div class="space-y-1" id="chatHistory">
-                    <div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>
-                </div>
-            </div>
-
-            <div class="sidebar-scrollable px-4 py-4">
-                <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-                    Settings</h3>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Provider</label>
-                    <select id="providerSelect"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
-                        <option value="workers">Workers (Default)</option>
-                        <option value="githubco">GitHubCo</option>
-                    </select>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">AI Model</label>
-                    <select id="modelSelect"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
-                        <option value="loading">Loading models...</option>
-                    </select>
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Personality</label>
-                    <div class="flex flex-wrap gap-2 mb-2">
-                        <button data-personality="default" style="--color: #7c3aed"
-                            class="personality-btn active px-3 py-1 rounded-full text-xs font-medium">Default</button>
-                        <button data-personality="friendly" style="--color: #3b82f6"
-                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Friendly</button>
-                        <button data-personality="professional" style="--color: #10b981"
-                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Professional</button>
-                        <button data-personality="humorous" style="--color: #f59e0b"
-                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Humorous</button>
-                        <button data-personality="custom" style="--color: #ec4899"
-                            class="personality-btn px-3 py-1 rounded-full text-xs font-medium">Custom</button>
-                    </div>
-                    <div id="customPersonalityContainer" class="custom-personality-container">
-                        <textarea id="customPersonality"
-                            placeholder="Enter custom instructions (e.g., 'Respond like a pirate')"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700"></textarea>
-                    </div>
-                </div>
-
-                <div class="mb-6" id="tokenSettings">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Response
-                        Length</label>
-                    <div class="flex items-center space-x-3">
-                        <input type="range" id="maxTokens" min="50" max="32000"
-                            class="flex-1 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
-                        <span id="tokenValue"
-                            class="text-sm font-medium text-gray-700 dark:text-gray-300 w-16">Auto</span>
-                    </div>
-                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        <span>Short</span><span>Long</span>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                class="sidebar-footer px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
-                <button id="saveSettings"
-                    class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
+            <div class="sidebar-footer dark:border-gray-700">
+                <button id="saveSettings" class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-medium transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
                 </button>
             </div>
         </div>
 
-        <div class="chat-main">
-            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-between px-4 py-3">
-                    <div class="flex items-center">
-                        <button id="toggleSidebar"
-                            class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400">
-                            <i class="fas fa-sliders-h"></i>
-                        </button>
-                        <h1 class="text-lg font-semibold" id="currentSessionName">New Session</h1>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span id="currentProvider"
-                            class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">Haji
-                            Mix</span>
-                        <span id="currentModel"
-                            class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full text-gray-700 dark:text-gray-300">
-                            <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
-                        </span>
-                    </div>
+        <!-- Main chat area -->
+        <div class="chat-container">
+            <header class="chat-header bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <button id="toggleSidebar" class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400" onclick="toggleSidebar()">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <h1 id="currentSessionName" class="text-lg font-semibold">New Session</h1>
+                <div class="ml-auto flex items-center gap-2">
+                    <span id="currentProvider" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">Haji Mix</span>
+                    <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
+                    </span>
                 </div>
             </header>
 
-            <div class="chat-messages" id="chatContainer">
-                <div class="chat-message flex">
-                    <div class="flex-shrink-0 mr-3">
-                        <div
-                            class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                            <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
-                        </div>
+            <div id="chatMessages" class="chat-messages bg-white dark:bg-gray-900">
+                <div class="message fade-in">
+                    <div class="message-avatar bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400">
+                        <i class="fas fa-robot"></i>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
+                    <div class="message-content bg-gray-100 dark:bg-gray-800">
                         <p class="whitespace-pre-wrap">Hello! I'm your AI assistant. How can I help you today?</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
-                <form id="chatForm" class="flex space-x-3">
-                    <div class="flex-1 relative">
-                        <input type="text" id="userInput" placeholder="Type your message..."
-                            class="w-full pl-4 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-700">
-                    </div>
-                    <button type="submit"
-                        class="bg-primary-600 text-white p-3 rounded-xl hover:bg-primary-700 transition">
+            <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+                <form id="chatForm" class="flex gap-2">
+                    <input type="text" id="userInput" placeholder="Type your message..." class="flex-1 px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button type="submit" class="w-10 h-10 rounded-full bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -754,6 +398,7 @@
     </div>
 
     <script>
+        // Session name generator
         const sessionNameGenerator = {
             tech: ['Code Discussion', 'Tech Talk', 'Debugging Session', 'AI Exploration', 'Future Tech'],
             creative: ['Brainstorm', 'Creative Session', 'Story Crafting', 'Idea Exchange', 'Artistic Chat'],
@@ -774,810 +419,753 @@
             }
         };
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const state = {
-                models: [],
-                sessions: [],
-                currentSessionId: null,
-                settings: {
-                    provider: 'workers',
-                    model: '@hf/thebloke/mistral-7b-instruct-v0.1-awq',
-                    personality: 'default',
-                    max_tokens: null,
-                    customInstructions: ''
-                }
-            };
+        // App state
+        const state = {
+            models: [],
+            sessions: [],
+            currentSessionId: null,
+            settings: {
+                provider: 'workers',
+                model: '@hf/thebloke/mistral-7b-instruct-v0.1-awq',
+                personality: 'default',
+                max_tokens: null,
+                customInstructions: ''
+            }
+        };
 
-            const elements = {
-                sidebar: document.getElementById('sidebar'),
-                sidebarOverlay: document.getElementById('sidebarOverlay'),
-                toggleSidebar: document.getElementById('toggleSidebar'),
-                closeSidebar: document.getElementById('closeSidebar'),
-                themeToggle: document.getElementById('themeToggle'),
-                newSessionBtn: document.getElementById('newSessionBtn'),
-                sessionList: document.getElementById('sessionList'),
-                chatHistory: document.getElementById('chatHistory'),
-                currentSessionName: document.getElementById('currentSessionName'),
-                currentProvider: document.getElementById('currentProvider'),
-                providerSelect: document.getElementById('providerSelect'),
-                modelSelect: document.getElementById('modelSelect'),
-                personalityBtns: document.querySelectorAll('.personality-btn'),
-                customPersonality: document.getElementById('customPersonality'),
-                customPersonalityContainer: document.getElementById('customPersonalityContainer'),
-                maxTokens: document.getElementById('maxTokens'),
-                tokenValue: document.getElementById('tokenValue'),
-                tokenSettings: document.getElementById('tokenSettings'),
-                currentModel: document.getElementById('currentModel'),
-                chatForm: document.getElementById('chatForm'),
-                userInput: document.getElementById('userInput'),
-                chatContainer: document.getElementById('chatContainer'),
-                saveSettings: document.getElementById('saveSettings')
-            };
+        // DOM elements
+        const elements = {
+            sidebar: document.getElementById('sidebar'),
+            sidebarOverlay: document.getElementById('sidebarOverlay'),
+            toggleSidebar: document.getElementById('toggleSidebar'),
+            closeSidebar: document.getElementById('closeSidebar'),
+            newSessionBtn: document.getElementById('newSessionBtn'),
+            sessionList: document.getElementById('sessionList'),
+            chatHistory: document.getElementById('chatHistory'),
+            currentSessionName: document.getElementById('currentSessionName'),
+            currentProvider: document.getElementById('currentProvider'),
+            providerSelect: document.getElementById('providerSelect'),
+            modelSelect: document.getElementById('modelSelect'),
+            personalityBtns: document.querySelectorAll('.personality-btn'),
+            customPersonality: document.getElementById('customPersonality'),
+            customPersonalityContainer: document.getElementById('customPersonalityContainer'),
+            maxTokens: document.getElementById('maxTokens'),
+            tokenValue: document.getElementById('tokenValue'),
+            tokenSettings: document.getElementById('tokenSettings'),
+            currentModel: document.getElementById('currentModel'),
+            chatForm: document.getElementById('chatForm'),
+            userInput: document.getElementById('userInput'),
+            chatMessages: document.getElementById('chatMessages'),
+            saveSettings: document.getElementById('saveSettings')
+        };
 
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
             init();
+        });
 
-            async function init() {
-                // Load settings FIRST
-                loadSettings();
+        async function init() {
+            loadSettings();
+            loadSessions();
+            await fetchModels();
+            setupEventListeners();
 
-                // Then load sessions (which will use the loaded settings)
-                loadSessions();
+            if (state.sessions.length === 0) {
+                createNewSession('General Chat');
+            } else {
+                loadSession(state.sessions[0].id);
+            }
 
-                // Then fetch models for the current provider
-                await fetchModels();
+            updateUI();
+            hljs.highlightAll();
+        }
 
-                setupEventListeners();
+        function loadSettings() {
+            try {
+                const savedSettings = localStorage.getItem('chatbox_settings');
+                if (savedSettings) {
+                    const parsed = JSON.parse(savedSettings);
+                    Object.keys(state.settings).forEach(key => {
+                        if (parsed[key] !== undefined) {
+                            state.settings[key] = parsed[key];
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error loading settings:", e);
+            }
+        }
 
-                if (state.sessions.length === 0) {
-                    createNewSession('General Chat');
+        function loadSessions() {
+            try {
+                const sessions = localStorage.getItem('chatbox_sessions');
+                if (sessions) {
+                    state.sessions = JSON.parse(sessions);
                 } else {
-                    loadSession(state.sessions[0].id);
-                }
-
-                // Update UI based on loaded settings
-                updateUI();
-
-                elements.themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
-                hljs.highlightAll();
-            }
-
-            function loadSettings() {
-                try {
-                    const savedSettings = localStorage.getItem('chatbox_settings');
-                    if (savedSettings) {
-                        const parsed = JSON.parse(savedSettings);
-
-                        // Only update settings that exist in both objects
-                        Object.keys(state.settings).forEach(key => {
-                            if (parsed[key] !== undefined) {
-                                state.settings[key] = parsed[key];
-                            }
-                        });
-                    }
-                } catch (e) {
-                    console.error("Error loading settings:", e);
-                }
-            }
-
-            function loadSessions() {
-                try {
-                    const sessions = localStorage.getItem('chatbox_sessions');
-                    if (sessions) {
-                        state.sessions = JSON.parse(sessions);
-                    } else {
-                        state.sessions = [];
-                        createNewSession('General Chat');
-                        return;
-                    }
-                } catch (e) {
-                    console.error("Error loading sessions:", e);
                     state.sessions = [];
                     createNewSession('General Chat');
+                    return;
                 }
-                renderSessionList();
+            } catch (e) {
+                console.error("Error loading sessions:", e);
+                state.sessions = [];
+                createNewSession('General Chat');
             }
+            renderSessionList();
+        }
 
-            function saveSessions() {
-                localStorage.setItem('chatbox_sessions', JSON.stringify(state.sessions));
-            }
+        function saveSessions() {
+            localStorage.setItem('chatbox_sessions', JSON.stringify(state.sessions));
+        }
 
-            function createNewSession(name = null) {
-                const sessionId = 'session_' + Date.now();
-                const sessionName = name || `Session ${state.sessions.length + 1}`;
+        function createNewSession(name = null) {
+            const sessionId = 'session_' + Date.now();
+            const sessionName = name || `Session ${state.sessions.length + 1}`;
 
-                const newSession = {
-                    id: sessionId,
-                    name: sessionName,
-                    createdAt: new Date().toISOString(),
-                    messages: [{
-                        id: 'welcome_' + Date.now(),
-                        role: 'assistant',
-                        content: 'Hello! I\'m your AI assistant. How can I help you today?',
-                        timestamp: new Date().toISOString()
-                    }],
-                    settings: { ...state.settings }
-                };
+            const newSession = {
+                id: sessionId,
+                name: sessionName,
+                createdAt: new Date().toISOString(),
+                messages: [{
+                    id: 'welcome_' + Date.now(),
+                    role: 'assistant',
+                    content: 'Hello! I\'m your AI assistant. How can I help you today?',
+                    timestamp: new Date().toISOString()
+                }],
+                settings: { ...state.settings }
+            };
 
-                state.sessions.unshift(newSession);
-                saveSessions();
-                loadSession(sessionId);
-                renderSessionList();
-            }
+            state.sessions.unshift(newSession);
+            saveSessions();
+            loadSession(sessionId);
+            renderSessionList();
+        }
 
-            function loadSession(sessionId) {
-                const session = state.sessions.find(s => s.id === sessionId);
-                if (!session) return;
+        function loadSession(sessionId) {
+            const session = state.sessions.find(s => s.id === sessionId);
+            if (!session) return;
 
-                state.currentSessionId = sessionId;
-                elements.currentSessionName.textContent = session.name;
-                state.settings = { ...session.settings };
-                updateUI();
+            state.currentSessionId = sessionId;
+            elements.currentSessionName.textContent = session.name;
+            state.settings = { ...session.settings };
+            updateUI();
 
-                elements.chatContainer.innerHTML = '';
-                session.messages.forEach(msg => {
-                    if (msg.isHtmlPreview) {
-                        addHtmlPreviewMessage(msg.htmlContent, false);
-                    } else {
-                        addChatMessage(msg.role, msg.content, false);
-                    }
-                });
+            elements.chatMessages.innerHTML = '';
+            session.messages.forEach(msg => {
+                if (msg.isHtmlPreview) {
+                    addHtmlPreviewMessage(msg.htmlContent, false);
+                } else {
+                    addChatMessage(msg.role, msg.content, false);
+                }
+            });
 
-                document.querySelectorAll('.session-item').forEach(item => {
-                    item.classList.toggle('active', item.dataset.sessionId === sessionId);
-                });
+            document.querySelectorAll('.session-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.sessionId === sessionId);
+            });
 
-                renderChatHistory();
-            }
+            renderChatHistory();
+        }
 
-            function renderSessionList() {
-                elements.sessionList.innerHTML = state.sessions.map(session => `
-                    <div class="session-item flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer ${session.id === state.currentSessionId ? 'active' : ''}" data-session-id="${session.id}">
-                        <div class="flex items-center truncate">
-                            <i class="fas fa-comment-alt mr-2"></i>
-                            <span class="truncate">${session.name}</span>
-                        </div>
-                        <button class="delete-session text-gray-400 hover:text-red-500" data-session-id="${session.id}">
-                            <i class="fas fa-trash-alt text-xs"></i>
-                        </button>
+        function renderSessionList() {
+            elements.sessionList.innerHTML = state.sessions.map(session => `
+                <div class="session-item flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer ${session.id === state.currentSessionId ? 'bg-indigo-100 dark:bg-gray-700' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}" data-session-id="${session.id}">
+                    <div class="flex items-center truncate">
+                        <i class="fas fa-comment-alt mr-2 text-gray-500 dark:text-gray-400"></i>
+                        <span class="truncate">${session.name}</span>
                     </div>
-                `).join('');
-            }
+                    <button class="delete-session text-gray-400 hover:text-red-500" data-session-id="${session.id}">
+                        <i class="fas fa-trash-alt text-xs"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
 
-            function renderChatHistory() {
-                const session = state.sessions.find(s => s.id === state.currentSessionId);
-                if (!session) return;
+        function renderChatHistory() {
+            const session = state.sessions.find(s => s.id === state.currentSessionId);
+            if (!session) return;
 
-                const conversations = [];
-                let currentConversation = [];
+            const conversations = [];
+            let currentConversation = [];
 
-                session.messages.forEach(msg => {
-                    if (msg.role === 'user' && currentConversation.length > 0) {
-                        conversations.push([...currentConversation]);
-                        currentConversation = [];
-                    }
-                    currentConversation.push(msg);
-                });
+            session.messages.forEach(msg => {
+                if (msg.role === 'user' && currentConversation.length > 0) {
+                    conversations.push([...currentConversation]);
+                    currentConversation = [];
+                }
+                currentConversation.push(msg);
+            });
 
-                if (currentConversation.length > 0) conversations.push(currentConversation);
+            if (currentConversation.length > 0) conversations.push(currentConversation);
 
-                elements.chatHistory.innerHTML = conversations.length ?
-                    conversations.map(convo => {
-                        const firstUserMessage = convo.find(m => m.role === 'user');
-                        if (!firstUserMessage) return '';
-                        const content = firstUserMessage.content.substring(0, 50);
-                        return `<div class="px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 truncate">
-                            ${content}${firstUserMessage.content.length > 50 ? '...' : ''}
-                        </div>`;
-                    }).join('') :
-                    '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
-            }
+            elements.chatHistory.innerHTML = conversations.length ?
+                conversations.map(convo => {
+                    const firstUserMessage = convo.find(m => m.role === 'user');
+                    if (!firstUserMessage) return '';
+                    const content = firstUserMessage.content.substring(0, 50);
+                    return `<div class="px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 truncate">
+                        ${content}${firstUserMessage.content.length > 50 ? '...' : ''}
+                    </div>`;
+                }).join('') :
+                '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
+        }
 
-            async function fetchModels() {
-                try {
-                    const apiUrl = state.settings.provider === 'githubco' ?
-                        'https://haji-mix.up.railway.app/api/githubco' :
-                        'https://haji-mix.up.railway.app/api/workers';
+        async function fetchModels() {
+            try {
+                const apiUrl = state.settings.provider === 'githubco' ?
+                    'https://haji-mix.up.railway.app/api/githubco' :
+                    'https://haji-mix.up.railway.app/api/workers';
 
-                    const response = await fetch(apiUrl);
+                const response = await fetch(apiUrl);
+                const data = await response.json();
 
-                    const data = await response.json();
+                if (data.supported_models && Array.isArray(data.supported_models)) {
+                    state.models = data.supported_models;
+                    populateModelSelect();
+                    updateModelDisplay();
 
-                    if (data.supported_models && Array.isArray(data.supported_models)) {
-                        state.models = data.supported_models;
-                        populateModelSelect();
-                        updateModelDisplay();
-
-                        // Ensure current model is valid for the provider
-                        if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
-                            state.settings.model = state.models[0];
-                            updateModelDisplay();
-                        }
-                        return;
-                    }
-
-                    throw new Error(data.error || "No supported models found in response");
-
-                } catch (error) {
-                    console.error("Failed to fetch models:", error);
-                    elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
-                    elements.currentModel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Model Error';
-
-                    // Fallback to default model if available
-                    if (state.models.length > 0) {
+                    if (state.models.length > 0 && !state.models.includes(state.settings.model)) {
                         state.settings.model = state.models[0];
                         updateModelDisplay();
                     }
+                    return;
+                }
+
+                throw new Error(data.error || "No supported models found in response");
+
+            } catch (error) {
+                console.error("Failed to fetch models:", error);
+                elements.modelSelect.innerHTML = '<option value="error">Failed to load models</option>';
+                elements.currentModel.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Model Error';
+
+                if (state.models.length > 0) {
+                    state.settings.model = state.models[0];
+                    updateModelDisplay();
                 }
             }
+        }
 
-            function populateModelSelect() {
-                elements.modelSelect.innerHTML = state.models.map(model =>
-                    `<option value="${model}" ${model === state.settings.model ? 'selected' : ''}>${model}</option>`
-                ).join('');
+        function populateModelSelect() {
+            elements.modelSelect.innerHTML = state.models.map(model =>
+                `<option value="${model}" ${model === state.settings.model ? 'selected' : ''}>${model}</option>`
+            ).join('');
+        }
+
+        function setupEventListeners() {
+            // Theme toggle
+            const themeToggle = document.createElement('button');
+            themeToggle.id = 'themeToggle';
+            themeToggle.className = 'ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400';
+            themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+            document.querySelector('.sidebar-header').appendChild(themeToggle);
+
+            themeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('darkMode', isDark);
+                themeToggle.innerHTML = isDark ?
+                    '<i class="fas fa-sun mr-1"></i> Light Mode' :
+                    '<i class="fas fa-moon mr-1"></i> Dark Mode';
+            });
+
+            // Check for saved theme preference
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark');
+                themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
             }
 
-            function setupEventListeners() {
-                elements.toggleSidebar.addEventListener('click', toggleSidebar);
-                elements.closeSidebar.addEventListener('click', toggleSidebar);
-                elements.sidebarOverlay.addEventListener('click', toggleSidebar);
+            // New session
+            elements.newSessionBtn.addEventListener('click', () => createNewSession());
 
-                elements.themeToggle.addEventListener('click', () => {
-                    const isDark = document.documentElement.classList.toggle('dark');
-                    localStorage.setItem('darkMode', isDark);
-                    elements.themeToggle.innerHTML = isDark ?
-                        '<i class="fas fa-sun mr-1"></i> Light Mode' :
-                        '<i class="fas fa-moon mr-1"></i> Dark Mode';
-                });
+            // Session list interactions
+            elements.sessionList.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-session')) {
+                    e.stopPropagation();
+                    const sessionId = e.target.closest('.delete-session').getAttribute('data-session-id');
+                    if (sessionId) deleteSession(sessionId);
+                } else if (e.target.closest('.session-item')) {
+                    const sessionId = e.target.closest('.session-item').getAttribute('data-session-id');
+                    if (sessionId) loadSession(sessionId);
+                }
+            });
 
-                elements.newSessionBtn.addEventListener('click', () => createNewSession());
+            // Personality buttons
+            elements.personalityBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    elements.personalityBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    state.settings.personality = this.getAttribute('data-personality') || 'default';
 
-                elements.sessionList.addEventListener('click', (e) => {
-                    if (e.target.closest('.delete-session')) {
-                        e.stopPropagation();
-                        const sessionId = e.target.closest('.delete-session').getAttribute('data-session-id');
-                        if (sessionId) deleteSession(sessionId);
-                    } else if (e.target.closest('.session-item')) {
-                        const sessionId = e.target.closest('.session-item').getAttribute('data-session-id');
-                        if (sessionId) loadSession(sessionId);
+                    if (this.getAttribute('data-personality') === 'custom') {
+                        elements.customPersonalityContainer.classList.add('open');
+                        elements.customPersonality.focus();
+                    } else {
+                        elements.customPersonalityContainer.classList.remove('open');
                     }
                 });
+            });
 
-                elements.personalityBtns.forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        elements.personalityBtns.forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
-                        state.settings.personality = this.getAttribute('data-personality') || 'default';
+            // Token slider
+            elements.maxTokens.addEventListener('input', function() {
+                const value = parseInt(this.value) || 50;
+                state.settings.max_tokens = value === 50 ? null : value;
+                elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
+            });
 
-                        if (this.getAttribute('data-personality') === 'custom') {
-                            elements.customPersonalityContainer.classList.add('open');
-                            elements.customPersonality.focus();
-                        } else {
-                            elements.customPersonalityContainer.classList.remove('open');
-                        }
-                    });
-                });
+            // Provider change
+            elements.providerSelect.addEventListener('change', async function() {
+                state.settings.provider = this.value;
+                state.models = [];
+                elements.modelSelect.innerHTML = '<option value="loading">Loading models...</option>';
+                updateModelDisplay();
 
-                elements.maxTokens.addEventListener('input', function () {
-                    const value = parseInt(this.value) || 50;
-                    state.settings.max_tokens = value === 50 ? null : value;
-                    elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
-                });
+                elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
+                await fetchModels();
 
-                // In the providerSelect event listener, modify it to:
-                elements.providerSelect.addEventListener('change', async function () {
-                    state.settings.provider = this.value;
-                    state.models = [];
-                    elements.modelSelect.innerHTML = '<option value="loading">Loading models...</option>';
-                    updateModelDisplay();
+                localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
 
-                    elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
-
-                    await fetchModels();
-
-                    // Save the provider change immediately
-                    localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
-
-                    // Update current session settings
-                    const session = state.sessions.find(s => s.id === state.currentSessionId);
-                    if (session) {
-                        session.settings = { ...state.settings };
-                        saveSessions();
-                    }
-
-                    showToast('Settings saved!');
-                    updateModelDisplay();
-                });
-
-                elements.saveSettings.addEventListener('click', function () {
-                    // Update state from UI elements
-                    state.settings.provider = elements.providerSelect.value;
-                    state.settings.model = elements.modelSelect.value;
-                    state.settings.customInstructions = elements.customPersonality.value;
-
-                    // Save to localStorage
-                    localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
-
-                    // Update current session settings
-                    const session = state.sessions.find(s => s.id === state.currentSessionId);
-                    if (session) {
-                        session.settings = { ...state.settings };
-                        saveSessions();
-                    }
-
-                    showToast('Settings saved!');
-                    updateModelDisplay();
-                });
-
-                elements.chatForm.addEventListener('submit', async function (e) {
-                    e.preventDefault();
-                    const message = elements.userInput.value.trim();
-                    if (!message) return;
-
-                    const session = state.sessions.find(s => s.id === state.currentSessionId);
-                    if (session && session.messages.filter(m => m.role === 'user').length === 0) {
-                        session.name = sessionNameGenerator.generateName(message);
-                        elements.currentSessionName.textContent = session.name;
-                        renderSessionList();
-                    }
-
-                    // Add the original message (with HTML) to the chat
-                    addChatMessage('user', message);
-                    elements.userInput.value = '';
-                    showTypingIndicator();
-
-                    try {
-                        const response = await sendChatMessage(message);
-                        removeTypingIndicator();
-
-
-                        if (response.answer && /<[a-z][\s\S]*>/i.test(response.answer)) {
-                            addChatMessage('assistant', response.answer);
-                        } else {
-                            addChatMessage('assistant', response.answer || `Error: ${response.error || 'Unknown error'}`);
-                        }
-                    } catch (error) {
-                        removeTypingIndicator();
-                        addChatMessage('assistant', "Sorry, I couldn't process your request. Please try again.");
-                        console.error("API Error:", error);
-                    }
-                });
-            }
-
-            function escapeHtml(unsafe) {
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
-
-            function deleteSession(sessionId) {
-                if (state.sessions.length <= 1) return showToast("You must have at least one session");
-
-                state.sessions = state.sessions.filter(s => s.id !== sessionId);
-                saveSessions();
-
-                if (state.currentSessionId === sessionId) loadSession(state.sessions[0]?.id || '');
-                renderSessionList();
-                showToast("Session deleted");
-            }
-
-            function toggleSidebar() {
-                elements.sidebar.classList.toggle('sidebar-open');
-                elements.sidebarOverlay.classList.toggle('hidden');
-            }
-
-            async function sendChatMessage(message) {
                 const session = state.sessions.find(s => s.id === state.currentSessionId);
-                if (!session) return { error: "No active session" };
-
-                // Create a temporary div to extract text content if message contains HTML
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = message;
-                const textContent = tempDiv.textContent || tempDiv.innerText || '';
-
-                const params = new URLSearchParams();
-                params.append('ask', textContent); // Send text content only
-                params.append('uid', state.currentSessionId);
-                params.append('model', state.settings.model);
-
-                let instructions = '';
-                if (state.settings.personality === 'custom' && state.settings.customInstructions) {
-                    instructions = state.settings.customInstructions;
-                } else if (state.settings.personality !== 'default') {
-                    instructions = getPersonalityInstructions(state.settings.personality);
+                if (session) {
+                    session.settings = { ...state.settings };
+                    saveSessions();
                 }
 
-                if (instructions) params.append('roleplay', instructions);
+                showToast('Settings saved!');
+                updateModelDisplay();
+            });
 
-                if (state.settings.provider === 'workers' && state.settings.max_tokens) {
-                    params.append('max_tokens', state.settings.max_tokens);
+            // Save settings
+            elements.saveSettings.addEventListener('click', function() {
+                state.settings.provider = elements.providerSelect.value;
+                state.settings.model = elements.modelSelect.value;
+                state.settings.customInstructions = elements.customPersonality.value;
+
+                localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
+
+                const session = state.sessions.find(s => s.id === state.currentSessionId);
+                if (session) {
+                    session.settings = { ...state.settings };
+                    saveSessions();
                 }
 
-                const apiUrl = `https://haji-mix.up.railway.app/api/${state.settings.provider}?${params.toString()}`;
+                showToast('Settings saved!');
+                updateModelDisplay();
+            });
+
+            // Chat form submission
+            elements.chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const message = elements.userInput.value.trim();
+                if (!message) return;
+
+                const session = state.sessions.find(s => s.id === state.currentSessionId);
+                if (session && session.messages.filter(m => m.role === 'user').length === 0) {
+                    session.name = sessionNameGenerator.generateName(message);
+                    elements.currentSessionName.textContent = session.name;
+                    renderSessionList();
+                }
+
+                addChatMessage('user', message);
+                elements.userInput.value = '';
+                showTypingIndicator();
 
                 try {
-                    const response = await fetch(apiUrl);
-                    if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-                    return await response.json();
+                    const response = await sendChatMessage(message);
+                    removeTypingIndicator();
+
+                    if (response.answer && /<[a-z][\s\S]*>/i.test(response.answer)) {
+                        addChatMessage('assistant', response.answer);
+                    } else {
+                        addChatMessage('assistant', response.answer || `Error: ${response.error || 'Unknown error'}`);
+                    }
                 } catch (error) {
+                    removeTypingIndicator();
+                    addChatMessage('assistant', "Sorry, I couldn't process your request. Please try again.");
                     console.error("API Error:", error);
-                    return { error: error.message };
                 }
+            });
+        }
+
+        function deleteSession(sessionId) {
+            if (state.sessions.length <= 1) return showToast("You must have at least one session");
+
+            state.sessions = state.sessions.filter(s => s.id !== sessionId);
+            saveSessions();
+
+            if (state.currentSessionId === sessionId) loadSession(state.sessions[0]?.id || '');
+            renderSessionList();
+            showToast("Session deleted");
+        }
+
+        function toggleSidebar() {
+            elements.sidebar.classList.toggle('sidebar-open');
+            elements.sidebarOverlay.classList.toggle('hidden');
+        }
+
+        async function sendChatMessage(message) {
+            const session = state.sessions.find(s => s.id === state.currentSessionId);
+            if (!session) return { error: "No active session" };
+
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = message;
+            const textContent = tempDiv.textContent || tempDiv.innerText || '';
+
+            const params = new URLSearchParams();
+            params.append('ask', textContent);
+            params.append('uid', state.currentSessionId);
+            params.append('model', state.settings.model);
+
+            let instructions = '';
+            if (state.settings.personality === 'custom' && state.settings.customInstructions) {
+                instructions = state.settings.customInstructions;
+            } else if (state.settings.personality !== 'default') {
+                instructions = getPersonalityInstructions(state.settings.personality);
             }
 
-            function getPersonalityInstructions(type) {
-                const personalities = {
-                    'default': 'Respond as a helpful AI assistant',
-                    'friendly': 'Respond in a warm, friendly tone. Use emojis occasionally. Be supportive and encouraging.',
-                    'professional': 'Respond in a formal, business-appropriate tone. Be concise and factual.',
-                    'humorous': 'Respond with humor and wit. Include jokes or funny references when appropriate.'
-                };
-                return personalities[type] || type;
+            if (instructions) params.append('roleplay', instructions);
+
+            if (state.settings.provider === 'workers' && state.settings.max_tokens) {
+                params.append('max_tokens', state.settings.max_tokens);
             }
 
-            function extractHtmlCodeBlocks(content) {
-                const htmlBlockRegex = /```(?:html|htm)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
-                const blocks = [];
-                let match;
+            const apiUrl = `https://haji-mix.up.railway.app/api/${state.settings.provider}?${params.toString()}`;
 
-                while ((match = htmlBlockRegex.exec(content)) !== null) {
-                    blocks.push(match[2]);
-                }
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error("API Error:", error);
+                return { error: error.message };
+            }
+        }
 
-                return blocks;
+        function getPersonalityInstructions(type) {
+            const personalities = {
+                'default': 'Respond as a helpful AI assistant',
+                'friendly': 'Respond in a warm, friendly tone. Use emojis occasionally. Be supportive and encouraging.',
+                'professional': 'Respond in a formal, business-appropriate tone. Be concise and factual.',
+                'humorous': 'Respond with humor and wit. Include jokes or funny references when appropriate.'
+            };
+            return personalities[type] || type;
+        }
+
+        function extractHtmlCodeBlocks(content) {
+            const htmlBlockRegex = /```(?:html|htm)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+            const blocks = [];
+            let match;
+
+            while ((match = htmlBlockRegex.exec(content)) !== null) {
+                blocks.push(match[2]);
             }
 
-            function addHtmlPreviewMessage(htmlContent, saveToHistory = true) {
-                const previewId = 'preview_' + Date.now();
-                const iframeId = `html-preview-${previewId}`;
+            return blocks;
+        }
 
-                const safeHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <base target="_blank">
-                        <style>
-                            body { margin: 0; padding: 0; font-family: sans-serif; }
-                            * { max-width: 100%; box-sizing: border-box; }
-                        </style>
-                    </head>
-                    <body>${htmlContent}</body>
-                    </html>
-                `;
+        function addHtmlPreviewMessage(htmlContent, saveToHistory = true) {
+            const previewId = 'preview_' + Date.now();
+            const iframeId = `html-preview-${previewId}`;
 
-                const blob = new Blob([safeHtml], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
+            const safeHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <base target="_blank">
+                    <style>
+                        body { margin: 0; padding: 0; font-family: sans-serif; }
+                        * { max-width: 100%; box-sizing: border-box; }
+                    </style>
+                </head>
+                <body>${htmlContent}</body>
+                </html>
+            `;
 
-                const previewDiv = document.createElement('div');
-                previewDiv.className = 'chat-message flex mb-4';
-                previewDiv.dataset.messageId = previewId;
-                previewDiv.innerHTML = `
-                    <div class="flex-shrink-0 mr-3">
-                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                            <i class="fas fa-code text-indigo-600 dark:text-indigo-400"></i>
+            const blob = new Blob([safeHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'message fade-in';
+            previewDiv.dataset.messageId = previewId;
+            previewDiv.innerHTML = `
+                <div class="message-avatar bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="flex-1">
+                    <div class="html-preview">
+                        <div class="html-preview-header">
+                            <span>HTML Preview</span>
+                            <div class="flex gap-2">
+                                <button class="fullscreen-btn text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button class="close-btn text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="html-preview-content">
+                            <iframe id="${iframeId}" class="w-full h-64 border-0"></iframe>
                         </div>
                     </div>
-                    <div class="flex-1">
-                        <div class="html-preview-message">
-                            <div class="html-preview-header">
-                                <span>HTML Preview</span>
-                                <div class="html-preview-actions">
-                                    <button class="html-preview-action-btn fullscreen-btn" title="Fullscreen">
-                                        <i class="fas fa-expand"></i>
-                                    </button>
-                                    <button class="html-preview-action-btn close-btn" title="Close Preview">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="html-preview-content">
-                                <iframe id="${iframeId}" class="safe-html-preview" sandbox="allow-scripts allow-same-origin"></iframe>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                </div>
+            `;
 
-                elements.chatContainer.appendChild(previewDiv);
+            elements.chatMessages.appendChild(previewDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 
-                setTimeout(() => {
-                    const iframe = document.getElementById(iframeId);
-                    if (iframe) {
-                        iframe.src = url;
-                    }
-                }, 0);
+            setTimeout(() => {
+                const iframe = document.getElementById(iframeId);
+                if (iframe) {
+                    iframe.src = url;
+                }
+            }, 0);
 
-                const fullscreenBtn = previewDiv.querySelector('.fullscreen-btn');
-                fullscreenBtn.addEventListener('click', () => {
-                    previewDiv.querySelector('.html-preview-message').classList.toggle('html-preview-fullscreen');
-                    fullscreenBtn.innerHTML = previewDiv.querySelector('.html-preview-message').classList.contains('html-preview-fullscreen') ?
-                        '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
-                });
+            // Fullscreen toggle
+            const fullscreenBtn = previewDiv.querySelector('.fullscreen-btn');
+            fullscreenBtn.addEventListener('click', () => {
+                const preview = previewDiv.querySelector('.html-preview');
+                preview.classList.toggle('fixed inset-0 z-50 m-0 w-screen h-screen rounded-none');
+                const iframe = preview.querySelector('iframe');
+                iframe.classList.toggle('h-[calc(100vh-40px)]');
+                fullscreenBtn.innerHTML = preview.classList.contains('fixed') ? 
+                    '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
+            });
 
-                const closeBtn = previewDiv.querySelector('.close-btn');
-                closeBtn.addEventListener('click', () => {
-                    previewDiv.remove();
-                    if (saveToHistory) {
-                        const session = state.sessions.find(s => s.id === state.currentSessionId);
-                        if (session) {
-                            session.messages = session.messages.filter(m => m.id !== previewId);
-                            saveSessions();
-                        }
-                    }
-                });
-
-                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-
+            // Close button
+            const closeBtn = previewDiv.querySelector('.close-btn');
+            closeBtn.addEventListener('click', () => {
+                previewDiv.remove();
                 if (saveToHistory) {
                     const session = state.sessions.find(s => s.id === state.currentSessionId);
                     if (session) {
-                        session.messages.push({
-                            id: previewId,
-                            role: 'assistant',
-                            content: '[HTML PREVIEW]',
-                            timestamp: new Date().toISOString(),
-                            isHtmlPreview: true,
-                            htmlContent: htmlContent
-                        });
+                        session.messages = session.messages.filter(m => m.id !== previewId);
                         saveSessions();
-                        renderChatHistory();
                     }
+                }
+            });
+
+            if (saveToHistory) {
+                const session = state.sessions.find(s => s.id === state.currentSessionId);
+                if (session) {
+                    session.messages.push({
+                        id: previewId,
+                        role: 'assistant',
+                        content: '[HTML PREVIEW]',
+                        timestamp: new Date().toISOString(),
+                        isHtmlPreview: true,
+                        htmlContent: htmlContent
+                    });
+                    saveSessions();
+                    renderChatHistory();
                 }
             }
+        }
 
-            function addChatMessage(role, content, saveToHistory = true) {
-                const messageId = 'msg_' + Date.now();
-                const isUser = role === 'user';
+        function addChatMessage(role, content, saveToHistory = true) {
+            const messageId = 'msg_' + Date.now();
+            const isUser = role === 'user';
 
-                const formattedContent = formatMessageContent(content);
+            const formattedContent = formatMessageContent(content);
 
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `chat-message flex ${isUser ? 'justify-end' : ''} mb-4`;
-                messageDiv.dataset.messageId = messageId;
-                messageDiv.innerHTML = `
-                    <div class="flex-shrink-0 ${isUser ? 'ml-3' : 'mr-3'}">
-                        <div class="h-9 w-9 rounded-full ${isUser ? 'bg-indigo-600 text-white' : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'} flex items-center justify-center">
-                            <i class="fas ${isUser ? 'fa-user' : 'fa-robot'}"></i>
-                        </div>
-                    </div>
-                    <div class="relative ${isUser ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-gray-800'} p-4 rounded-xl shadow-xs max-w-[85%]">
-                        <button class="message-copy-btn" title="Copy message">
-                            <i class="far fa-copy"></i>
-                        </button>
-                        ${formattedContent}
-                    </div>
-                `;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message fade-in ${isUser ? 'message-user' : ''}`;
+            messageDiv.dataset.messageId = messageId;
+            messageDiv.innerHTML = `
+                <div class="message-avatar ${isUser ? 'bg-indigo-600 text-white' : 'bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400'}">
+                    <i class="fas ${isUser ? 'fa-user' : 'fa-robot'}"></i>
+                </div>
+                <div class="message-content ${isUser ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800'}">
+                    ${formattedContent}
+                    <button class="message-copy-btn absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity">
+                        <i class="far fa-copy"></i>
+                    </button>
+                </div>
+            `;
 
-                elements.chatContainer.appendChild(messageDiv);
+            elements.chatMessages.appendChild(messageDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 
-                const messageCopyBtn = messageDiv.querySelector('.message-copy-btn');
-                if (messageCopyBtn) {
-                    messageCopyBtn.addEventListener('click', () => {
-                        const messageContent = messageDiv.querySelector('.message-content') ||
-                            messageDiv.querySelector('p') ||
-                            messageDiv.querySelector('div > div:last-child');
-
-                        if (messageContent) {
-                            const textToCopy = messageContent.textContent || '';
-                            const originalText = messageCopyBtn.innerHTML;
-
-                            // Try modern Clipboard API first
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(textToCopy)
-                                    .then(() => {
-                                        showCopiedFeedback(messageCopyBtn, originalText);
-                                    })
-                                    .catch(() => {
-                                        // If Clipboard API fails, try fallback
-                                        useFallbackCopy(textToCopy, messageCopyBtn, originalText);
-                                    });
-                            } else {
-                                // If Clipboard API is not available, use fallback immediately
-                                useFallbackCopy(textToCopy, messageCopyBtn, originalText);
-                            }
-                        }
-                    });
-                }
-
-                // Fallback method (document.execCommand)
-                function useFallbackCopy(text, button, originalText) {
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed'; // Avoid scrolling
-                    textArea.style.opacity = '0'; // Hide element
-
-                    document.body.appendChild(textArea);
-                    textArea.select();
-
-                    try {
-                        const success = document.execCommand('copy');
-                        if (success) {
-                            showCopiedFeedback(button, originalText);
-                        } else {
-                            console.error('Fallback copy failed');
-                            button.innerHTML = '<i class="fas fa-times"></i> Failed!';
-                            setTimeout(() => { button.innerHTML = originalText; }, 2000);
-                        }
-                    } catch (err) {
-                        console.error('Fallback copy error:', err);
-                        button.innerHTML = '<i class="fas fa-times"></i> Error!';
-                        setTimeout(() => { button.innerHTML = originalText; }, 2000);
-                    } finally {
-                        document.body.removeChild(textArea);
-                    }
-                }
-
-                // Show "Copied!" feedback
-                function showCopiedFeedback(button, originalText) {
-                    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                    setTimeout(() => { button.innerHTML = originalText; }, 2000);
-                }
-
-                messageDiv.querySelectorAll('.code-container').forEach(container => {
-                    const codeBlock = container.querySelector('code');
-                    const copyBtn = container.querySelector('.code-copy-btn');
-
-                    if (copyBtn && codeBlock) {
-                        copyBtn.addEventListener('click', () => {
-                            const textToCopy = codeBlock.textContent || '';
-                            const originalText = copyBtn.innerHTML;
-
-                            // Try modern Clipboard API first
-                            if (navigator.clipboard && navigator.clipboard.writeText) {
-                                navigator.clipboard.writeText(textToCopy)
-                                    .then(() => {
-                                        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                                        setTimeout(() => {
-                                            copyBtn.innerHTML = originalText;
-                                        }, 2000);
-                                    })
-                                    .catch(() => {
-                                        // If Clipboard API fails, use fallback
-                                        useFallbackCopy(textToCopy, copyBtn, originalText);
-                                    });
-                            } else {
-                                // If Clipboard API not available, use fallback
-                                useFallbackCopy(textToCopy, copyBtn, originalText);
-                            }
-                        });
-                    }
+            // Copy button functionality
+            const copyBtn = messageDiv.querySelector('.message-copy-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', () => {
+                    const messageContent = messageDiv.querySelector('.message-content').textContent || '';
+                    copyToClipboard(messageContent, copyBtn);
                 });
-
-                messageDiv.querySelectorAll('pre code').forEach(block => {
-                    hljs.highlightElement(block);
-                });
-
-                const htmlBlocks = extractHtmlCodeBlocks(content);
-                if (htmlBlocks.length > 0) {
-                    htmlBlocks.forEach(htmlContent => {
-                        addHtmlPreviewMessage(htmlContent, saveToHistory);
-                    });
-                }
-
-                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-
-                if (saveToHistory) {
-                    const session = state.sessions.find(s => s.id === state.currentSessionId);
-                    if (session) {
-                        session.messages.push({
-                            id: messageId,
-                            role,
-                            content: content,
-                            timestamp: new Date().toISOString()
-                        });
-                        saveSessions();
-                        renderChatHistory();
-                    }
-                }
             }
 
-            function formatMessageContent(content) {
-                // First escape HTML in non-code parts
-                let formattedContent = escapeHtml(content);
+            // Highlight code blocks
+            messageDiv.querySelectorAll('pre code').forEach(block => {
+                hljs.highlightElement(block);
+            });
 
-                // Process code blocks more carefully
-                const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+            // Add copy buttons to code blocks
+            messageDiv.querySelectorAll('.code-container').forEach(container => {
+                const codeBlock = container.querySelector('code');
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'code-copy-btn';
+                copyBtn.innerHTML = '<i class="far fa-copy"></i>';
+                copyBtn.title = 'Copy code';
+                copyBtn.addEventListener('click', () => {
+                    const code = codeBlock.textContent || '';
+                    copyToClipboard(code, copyBtn);
+                });
+                container.appendChild(copyBtn);
+            });
 
-                formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
-                    const lang = language || 'plaintext';
-                    const displayFilename = filename ? filename.trim() : '';
+            // Handle HTML previews
+            const htmlBlocks = extractHtmlCodeBlocks(content);
+            if (htmlBlocks.length > 0) {
+                htmlBlocks.forEach(htmlContent => {
+                    addHtmlPreviewMessage(htmlContent, saveToHistory);
+                });
+            }
 
-                    // Preserve the original code exactly (don't escape HTML here)
-                    const rawCode = code;
+            if (saveToHistory) {
+                const session = state.sessions.find(s => s.id === state.currentSessionId);
+                if (session) {
+                    session.messages.push({
+                        id: messageId,
+                        role,
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    });
+                    saveSessions();
+                    renderChatHistory();
+                }
+            }
+        }
 
-                    return `
+        function formatMessageContent(content) {
+            // First escape HTML in non-code parts
+            let formattedContent = escapeHtml(content);
+
+            // Process code blocks
+            const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
+
+            formattedContent = formattedContent.replace(codeBlockRegex, (match, language, filename, code) => {
+                const lang = language || 'plaintext';
+                const displayFilename = filename ? filename.trim() : '';
+
+                // Preserve the original code (don't escape HTML here)
+                const rawCode = code;
+
+                return `
 <div class="code-container">
     <div class="code-header">
-        <div class="code-header-info">
+        <div class="flex items-center gap-2">
             <span class="code-language">${lang}</span>
             ${displayFilename ? `<span class="code-filename">${displayFilename}</span>` : ''}
         </div>
     </div>
     <div class="code-content">
-        <button class="code-copy-btn" title="Copy code">
-            <i class="far fa-copy"></i>
-        </button>
         <pre><code class="language-${lang}">${rawCode.trim()}</code></pre>
     </div>
 </div>`;
-                });
+            });
 
-                return `<div class="message-content">${formattedContent}</div>`;
-            }
+            return `<div class="whitespace-pre-wrap">${formattedContent}</div>`;
+        }
 
-            function showTypingIndicator() {
-                const typingDiv = document.createElement('div');
-                typingDiv.className = 'chat-message flex mb-4';
-                typingDiv.id = 'typingIndicator';
-                typingDiv.innerHTML = `
-                    <div class="flex-shrink-0 mr-3">
-                        <div class="h-9 w-9 rounded-full bg-indigo-100 dark:bg-gray-900 flex items-center justify-center">
-                            <i class="fas fa-robot text-indigo-600 dark:text-indigo-400"></i>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-xs max-w-[85%]">
-                        <div class="flex space-x-2 px-2 py-1">
-                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
-                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
-                            <div class="typing-dot w-2 h-2 rounded-full bg-gray-400"></div>
-                        </div>
-                    </div>
-                `;
-                elements.chatContainer.appendChild(typingDiv);
-                elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
-            }
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
 
-            function removeTypingIndicator() {
-                const indicator = document.getElementById('typingIndicator');
-                if (indicator) indicator.remove();
-            }
-
-            function updateModelDisplay() {
-                const modelName = state.settings.model.split('/').pop();
-                elements.currentModel.innerHTML = `<i class="fas fa-microchip mr-1"></i><span class="truncate">${modelName}</span>`;
-                elements.currentProvider.textContent = state.settings.provider === 'githubco' ? 'GitHubCo' : 'workers';
-                elements.providerSelect.value = state.settings.provider;
-
-                elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
-
-                if (state.models.includes(state.settings.model)) {
-                    elements.modelSelect.value = state.settings.model;
-                }
-            }
-
-            function updateUI() {
-                updateModelDisplay();
-
-                document.querySelectorAll('.personality-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.personality === state.settings.personality);
-                    if (btn.dataset.personality === 'custom' && btn.classList.contains('active')) {
-                        elements.customPersonalityContainer.classList.add('open');
-                        elements.customPersonality.value = state.settings.customInstructions || '';
-                    }
-                });
-
-                if (state.settings.max_tokens) {
-                    elements.maxTokens.value = state.settings.max_tokens;
-                    elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
-                } else {
-                    elements.maxTokens.value = 50;
-                    elements.tokenValue.textContent = 'Auto';
-                }
-            }
-
-            function showToast(message) {
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center z-50';
-                toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i><span>${message}</span>`;
-                document.body.appendChild(toast);
-
+        function copyToClipboard(text, button) {
+            const originalText = button.innerHTML;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.innerHTML = '<i class="fas fa-check"></i>';
                 setTimeout(() => {
-                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                    setTimeout(() => toast.remove(), 300);
+                    button.innerHTML = originalText;
                 }, 2000);
+            }).catch(() => {
+                // Fallback for browsers that don't support clipboard API
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                
+                button.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            });
+        }
+
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message fade-in';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="message-avatar bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content bg-gray-100 dark:bg-gray-800">
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                </div>
+            `;
+            elements.chatMessages.appendChild(typingDiv);
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        function updateModelDisplay() {
+            const modelName = state.settings.model.split('/').pop();
+            elements.currentModel.innerHTML = `<i class="fas fa-microchip mr-1"></i> ${modelName}`;
+            elements.currentProvider.textContent = state.settings.provider === 'githubco' ? 'GitHubCo' : 'Workers';
+            elements.providerSelect.value = state.settings.provider;
+            elements.tokenSettings.style.display = state.settings.provider === 'githubco' ? 'none' : 'block';
+
+            if (state.models.includes(state.settings.model)) {
+                elements.modelSelect.value = state.settings.model;
             }
-        });
+        }
+
+        function updateUI() {
+            updateModelDisplay();
+
+            elements.personalityBtns.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.personality === state.settings.personality);
+                if (btn.dataset.personality === 'custom' && btn.classList.contains('active')) {
+                    elements.customPersonalityContainer.classList.add('open');
+                    elements.customPersonality.value = state.settings.customInstructions || '';
+                }
+            });
+
+            if (state.settings.max_tokens) {
+                elements.maxTokens.value = state.settings.max_tokens;
+                elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
+            } else {
+                elements.maxTokens.value = 50;
+                elements.tokenValue.textContent = 'Auto';
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg flex items-center z-50';
+            toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i><span>${message}</span>`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
     </script>
 </body>
 
