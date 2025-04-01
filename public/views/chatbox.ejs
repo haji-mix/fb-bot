@@ -124,6 +124,7 @@
             padding: 0.75rem 1rem;
             border-radius: 0.75rem;
             max-width: calc(100% - 50px);
+            position: relative;
         }
 
         /* Code blocks */
@@ -215,6 +216,37 @@
             color: white;
         }
 
+        /* Message copy button */
+        .message-copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: currentColor;
+            cursor: pointer;
+            padding: 0.25rem;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            z-index: 10;
+            font-size: 12px;
+        }
+
+        .message:hover .message-copy-btn {
+            opacity: 1;
+        }
+
+        .dark .message-copy-btn {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -262,6 +294,35 @@
         @keyframes bounce {
             0%, 60%, 100% { transform: translateY(0); }
             30% { transform: translateY(-4px); }
+        }
+
+        /* Personality buttons */
+        .personality-btn {
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .personality-btn.active {
+            background-color: var(--color);
+            color: white;
+            border-color: var(--color);
+        }
+
+        .personality-btn:not(.active) {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: currentColor;
+        }
+
+        .custom-personality-container {
+            transition: all 0.3s ease;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .custom-personality-container.open {
+            max-height: 200px;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
@@ -382,6 +443,9 @@
                     </div>
                     <div class="message-content bg-gray-100 dark:bg-gray-800">
                         <p class="whitespace-pre-wrap">Hello! I'm your AI assistant. How can I help you today?</p>
+                        <button class="message-copy-btn" title="Copy message">
+                            <i class="far fa-copy"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -465,6 +529,11 @@
         });
 
         async function init() {
+            // Load theme preference first
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.documentElement.classList.add('dark');
+            }
+
             loadSettings();
             loadSessions();
             await fetchModels();
@@ -655,7 +724,9 @@
             const themeToggle = document.createElement('button');
             themeToggle.id = 'themeToggle';
             themeToggle.className = 'ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400';
-            themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
+            themeToggle.innerHTML = document.documentElement.classList.contains('dark') ? 
+                '<i class="fas fa-sun mr-1"></i> Light Mode' : 
+                '<i class="fas fa-moon mr-1"></i> Dark Mode';
             document.querySelector('.sidebar-header').appendChild(themeToggle);
 
             themeToggle.addEventListener('click', () => {
@@ -665,12 +736,6 @@
                     '<i class="fas fa-sun mr-1"></i> Light Mode' :
                     '<i class="fas fa-moon mr-1"></i> Dark Mode';
             });
-
-            // Check for saved theme preference
-            if (localStorage.getItem('darkMode') === 'true') {
-                document.documentElement.classList.add('dark');
-                themeToggle.innerHTML = '<i class="fas fa-sun mr-1"></i> Light Mode';
-            }
 
             // New session
             elements.newSessionBtn.addEventListener('click', () => createNewSession());
@@ -736,6 +801,7 @@
             elements.saveSettings.addEventListener('click', function() {
                 state.settings.provider = elements.providerSelect.value;
                 state.settings.model = elements.modelSelect.value;
+                state.settings.personality = document.querySelector('.personality-btn.active').getAttribute('data-personality');
                 state.settings.customInstructions = elements.customPersonality.value;
 
                 localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
@@ -974,7 +1040,7 @@
                 </div>
                 <div class="message-content ${isUser ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800'}">
                     ${formattedContent}
-                    <button class="message-copy-btn absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity">
+                    <button class="message-copy-btn" title="Copy message">
                         <i class="far fa-copy"></i>
                     </button>
                 </div>
@@ -1077,25 +1143,40 @@
         function copyToClipboard(text, button) {
             const originalText = button.innerHTML;
             
-            navigator.clipboard.writeText(text).then(() => {
-                button.innerHTML = '<i class="fas fa-check"></i>';
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                }, 2000);
-            }).catch(() => {
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                    }, 2000);
+                }).catch(() => {
+                    fallbackCopy(text, button, originalText);
+                });
+            } else {
                 // Fallback for browsers that don't support clipboard API
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                
-                button.innerHTML = '<i class="fas fa-check"></i>';
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                }, 2000);
-            });
+                fallbackCopy(text, button, originalText);
+            }
+        }
+
+        function fallbackCopy(text, button, originalText) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';  // Prevent scrolling to bottom
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                button.innerHTML = successful ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>';
+            } catch (err) {
+                button.innerHTML = '<i class="fas fa-times"></i>';
+            }
+            
+            document.body.removeChild(textarea);
+            setTimeout(() => {
+                button.innerHTML = originalText;
+            }, 2000);
         }
 
         function showTypingIndicator() {
@@ -1138,19 +1219,25 @@
         function updateUI() {
             updateModelDisplay();
 
+            // Set active personality button
             elements.personalityBtns.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.personality === state.settings.personality);
-                if (btn.dataset.personality === 'custom' && btn.classList.contains('active')) {
-                    elements.customPersonalityContainer.classList.add('open');
-                    elements.customPersonality.value = state.settings.customInstructions || '';
-                }
+                btn.classList.toggle('active', btn.getAttribute('data-personality') === state.settings.personality);
             });
 
+            // Show/hide custom personality textarea
+            if (state.settings.personality === 'custom') {
+                elements.customPersonalityContainer.classList.add('open');
+                elements.customPersonality.value = state.settings.customInstructions || '';
+            } else {
+                elements.customPersonalityContainer.classList.remove('open');
+            }
+
+            // Set token slider value
             if (state.settings.max_tokens) {
                 elements.maxTokens.value = state.settings.max_tokens;
                 elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
             } else {
-                elements.maxTokens.value = 50;
+                elements.maxTokens.value = null;
                 elements.tokenValue.textContent = 'Auto';
             }
         }
