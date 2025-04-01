@@ -919,24 +919,67 @@
                 elements.chatContainer.appendChild(messageDiv);
                 
                 const messageCopyBtn = messageDiv.querySelector('.message-copy-btn');
-                if (messageCopyBtn) {
-                    messageCopyBtn.addEventListener('click', () => {
-                        const messageContent = messageDiv.querySelector('.message-content') || 
-                                              messageDiv.querySelector('p') || 
-                                              messageDiv.querySelector('div > div:last-child');
-                        if (messageContent) {
-                            navigator.clipboard.writeText(messageContent.textContent || '')
-                                .then(() => {
-                                    const originalText = messageCopyBtn.innerHTML;
-                                    messageCopyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-                                    setTimeout(() => {
-                                        messageCopyBtn.innerHTML = originalText;
-                                    }, 2000);
-                                })
-                                .catch(err => console.error('Failed to copy text:', err));
-                        }
+if (messageCopyBtn) {
+    messageCopyBtn.addEventListener('click', () => {
+        const messageContent = messageDiv.querySelector('.message-content') || 
+                            messageDiv.querySelector('p') || 
+                            messageDiv.querySelector('div > div:last-child');
+        
+        if (messageContent) {
+            const textToCopy = messageContent.textContent || '';
+            const originalText = messageCopyBtn.innerHTML;
+            
+            // Try modern Clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        showCopiedFeedback(messageCopyBtn, originalText);
+                    })
+                    .catch(() => {
+                        // If Clipboard API fails, try fallback
+                        useFallbackCopy(textToCopy, messageCopyBtn, originalText);
                     });
-                }
+            } else {
+                // If Clipboard API is not available, use fallback immediately
+                useFallbackCopy(textToCopy, messageCopyBtn, originalText);
+            }
+        }
+    });
+}
+
+// Fallback method (document.execCommand)
+function useFallbackCopy(text, button, originalText) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed'; // Avoid scrolling
+    textArea.style.opacity = '0'; // Hide element
+    
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+        const success = document.execCommand('copy');
+        if (success) {
+            showCopiedFeedback(button, originalText);
+        } else {
+            console.error('Fallback copy failed');
+            button.innerHTML = '<i class="fas fa-times"></i> Failed!';
+            setTimeout(() => { button.innerHTML = originalText; }, 2000);
+        }
+    } catch (err) {
+        console.error('Fallback copy error:', err);
+        button.innerHTML = '<i class="fas fa-times"></i> Error!';
+        setTimeout(() => { button.innerHTML = originalText; }, 2000);
+    } finally {
+        document.body.removeChild(textArea);
+    }
+}
+
+// Show "Copied!" feedback
+function showCopiedFeedback(button, originalText) {
+    button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+    setTimeout(() => { button.innerHTML = originalText; }, 2000);
+}
                 
                 messageDiv.querySelectorAll('.code-container').forEach(container => {
                     const codeBlock = container.querySelector('code');
