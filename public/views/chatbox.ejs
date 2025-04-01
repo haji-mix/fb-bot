@@ -23,7 +23,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
         /* Layout */
@@ -32,6 +32,7 @@
             height: 100vh;
             width: 100vw;
             overflow: hidden;
+            position: relative;
         }
 
         /* Sidebar */
@@ -251,6 +252,8 @@
             .sidebar {
                 width: 85vw;
                 max-width: 300px;
+                z-index: 100;
+                /* Higher than input */
             }
 
             .chat-container {
@@ -265,7 +268,9 @@
                 right: 0;
                 padding: 12px;
                 background: white;
-                z-index: 100;
+                z-index: 50;
+                /* Lower than sidebar */
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
             }
 
             .chat-input-form {
@@ -286,10 +291,14 @@
             }
 
             .sidebar-footer {
-                padding: 12px;
                 position: sticky;
                 bottom: 0;
                 background: inherit;
+                z-index: 60;
+                padding-bottom: 20px;
+                padding-bottom: max(12px, env(safe-area-inset-bottom));
+                padding-bottom: max(12px, constant(safe-area-inset-bottom));
+                /* Older iOS */
             }
 
             .save-settings {
@@ -397,6 +406,13 @@
             input,
             textarea {
                 font-size: 16px !important;
+            }
+        }
+
+        /* iOS specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            .sidebar-footer {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
             }
         }
     </style>
@@ -511,20 +527,23 @@
 
         <!-- Main chat area -->
         <div class="chat-container">
-            <header class="chat-header bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                <button id="toggleSidebar"
-                    class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
-                    onclick="toggleSidebar()">
-                    <i class="fas fa-sliders-h"></i>
-                </button>
-                <h1 id="currentSessionName" class="text-lg font-semibold">New Session</h1>
-                <div class="ml-auto flex items-center gap-2">
-                    <span id="currentProvider" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">Haji
-                        Mix</span>
-                    <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                        <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
-                    </span>
-                </div>
+            <div class="chat-messages" id="chatMessages">
+                <header class="chat-header bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                    <button id="toggleSidebar"
+                        class="mr-4 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400"
+                        onclick="toggleSidebar()">
+                        <i class="fas fa-sliders-h"></i>
+                    </button>
+                    <h1 id="currentSessionName" class="text-lg font-semibold">New Session</h1>
+                    <div class="ml-auto flex items-center gap-2">
+                        <span id="currentProvider"
+                            class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">Haji
+                            Mix</span>
+                        <span id="currentModel" class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
+                            <i class="fas fa-circle-notch fa-spin mr-1"></i> Loading...
+                        </span>
+                    </div>
+            </div>
             </header>
 
             <div id="chatMessages" class="chat-messages bg-white dark:bg-gray-900">
@@ -1360,6 +1379,19 @@
 
         // Call this in your init function
         setupMobileViewport();
+        // Add this to your existing JavaScript
+        function adjustMobileLayout() {
+            if (window.innerWidth <= 768) {
+                const inputHeight = document.querySelector('.chat-input-container').offsetHeight;
+                const saveButtonHeight = document.querySelector('.sidebar-footer').offsetHeight;
+                document.querySelector('.chat-messages').style.paddingBottom = `${inputHeight + saveButtonHeight + 20}px`;
+            }
+        }
+
+        // Call these when needed
+        window.addEventListener('resize', adjustMobileLayout);
+        window.addEventListener('DOMContentLoaded', adjustMobileLayout);
+        window.addEventListener('orientationchange', adjustMobileLayout);
     </script>
 </body>
 
