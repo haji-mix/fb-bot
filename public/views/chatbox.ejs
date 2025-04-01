@@ -59,18 +59,20 @@
             border-bottom: 1px solid #e5e7eb;
         }
 
-        .sidebar-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1rem;
-        }
-
         .sidebar-footer {
             padding: 1rem;
             border-top: 1px solid #e5e7eb;
             position: sticky;
             bottom: 0;
             background: inherit;
+            margin-top: auto; /* Push footer to bottom */
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            padding-bottom: 70px; /* Add space for footer */
         }
 
         /* Chat area */
@@ -80,6 +82,7 @@
             flex-direction: column;
             height: 100vh;
             width: 100%;
+            margin-left: 0; /* Ensure chat container takes full width */
         }
 
         .chat-header {
@@ -99,12 +102,15 @@
             padding: 1rem;
             border-top: 1px solid #e5e7eb;
             background: inherit;
+            position: relative; /* Changed from fixed to relative for desktop */
+            width: 100%;
         }
 
         .chat-input-form {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            width: 100%;
         }
 
         /* Messages */
@@ -135,6 +141,7 @@
             border-radius: 0.75rem;
             max-width: calc(100% - 50px);
             position: relative;
+            word-wrap: break-word;
         }
 
         /* Code blocks */
@@ -183,9 +190,10 @@
         /* HTML preview */
         .html-preview {
             border: 1px solid #e5e7eb;
-            border-radius: 0.5rem;
+            border-radius: 0.75rem;
             overflow: hidden;
             margin: 1rem 0;
+            transition: all 0.3s ease;
         }
 
         .html-preview-header {
@@ -198,6 +206,32 @@
 
         .html-preview-content {
             padding: 1rem;
+        }
+
+        /* Fullscreen styles */
+        .html-preview.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+            margin: 0;
+            border-radius: 0;
+            border: none;
+        }
+
+        .html-preview.fullscreen .html-preview-content {
+            height: calc(100% - 40px);
+            padding: 0;
+        }
+
+        .html-preview.fullscreen iframe {
+            height: 100%;
+            width: 100%;
+            border: none;
         }
 
         /* Dark mode */
@@ -257,16 +291,6 @@
             border-color: rgba(255, 255, 255, 0.1);
         }
 
-        .fullscreen-mode {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            margin: 0;
-            width: 100vw;
-            height: 100vh;
-            border-radius: 0;
-        }
-
         /* Mobile styles */
         @media (max-width: 768px) {
             .sidebar {
@@ -275,15 +299,38 @@
             }
 
             .chat-container {
-                padding-bottom: 0;
+                padding-bottom: 80px;
             }
 
             .chat-input-container {
-                position: sticky;
+                position: fixed;
                 bottom: 0;
+                left: 0;
+                right: 0;
                 padding: 12px;
                 background: white;
                 z-index: 20;
+                border-top: 1px solid #e5e7eb;
+            }
+
+            .dark .chat-input-container {
+                background: #1f2937;
+                border-top-color: #374151;
+            }
+
+            .chat-input-form {
+                display: flex;
+                gap: 0.5rem;
+            }
+
+            .chat-input-form input {
+                flex: 1;
+                font-size: 16px !important;
+            }
+
+            .chat-input-form button {
+                padding: 0.75rem 1rem;
+                font-size: 16px;
             }
 
             .sidebar-footer {
@@ -294,98 +341,9 @@
                 max-width: 85vw;
             }
 
-            .chat-input-form {
-                gap: 0.5rem;
-            }
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        /* Typing indicator */
-        .typing-indicator {
-            display: flex;
-            gap: 0.25rem;
-            padding: 0.5rem;
-        }
-
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #9ca3af;
-            animation: bounce 1.4s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            60%,
-            100% {
-                transform: translateY(0);
-            }
-
-            30% {
-                transform: translateY(-4px);
-            }
-        }
-
-        /* Personality buttons */
-        .personality-btn {
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-            cursor: pointer;
-        }
-
-        .personality-btn.active {
-            background-color: var(--color);
-            color: white;
-            border-color: var(--color);
-        }
-
-        .personality-btn:not(.active) {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-color: currentColor;
-        }
-
-        .custom-personality-container {
-            transition: all 0.3s ease;
-            max-height: 0;
-            overflow: hidden;
-        }
-
-        .custom-personality-container.open {
-            max-height: 200px;
-            margin-top: 0.5rem;
-        }
-
-        @media screen and (max-width: 768px) {
-
-            input,
-            textarea {
-                font-size: 16px !important;
+            /* Add padding to the chat messages container */
+            .chat-messages {
+                padding-bottom: 80px; /* Adjust the padding to match the height of the chat input container */
             }
         }
     </style>
@@ -400,7 +358,7 @@
         <div id="sidebar" class="sidebar dark:bg-gray-800">
             <div class="sidebar-header dark:border-gray-700">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-xl font-bold">Chatbox Horizon</h2>
+                    <h2 class="text-xl font-bold">CHATBOX HORIZON</h2>
                     <button id="closeSidebar" class="md:hidden" onclick="toggleSidebar()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -422,14 +380,6 @@
                         <div class="text-center py-2 text-gray-500 dark:text-gray-400">
                             <i class="fas fa-spinner fa-spin"></i> Loading...
                         </div>
-                    </div>
-                </div>
-
-                <!-- Chat History -->
-                <div class="mb-6">
-                    <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Chat History</h3>
-                    <div id="chatHistory" class="space-y-1">
-                        <div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>
                     </div>
                 </div>
 
@@ -532,8 +482,8 @@
 
             <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                 <form id="chatForm" class="chat-input-form">
-                    <input type="text" id="userInput" placeholder="Type your message..."
-                        class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <textarea id="userInput" placeholder="Type your message..." rows="1"
+                        class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 resize-none overflow-y-auto"></textarea>
                     <button type="submit"
                         class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
                         <i class="fas fa-paper-plane"></i>
@@ -587,7 +537,6 @@
             closeSidebar: document.getElementById('closeSidebar'),
             newSessionBtn: document.getElementById('newSessionBtn'),
             sessionList: document.getElementById('sessionList'),
-            chatHistory: document.getElementById('chatHistory'),
             currentSessionName: document.getElementById('currentSessionName'),
             currentProvider: document.getElementById('currentProvider'),
             providerSelect: document.getElementById('providerSelect'),
@@ -680,7 +629,7 @@
                 messages: [{
                     id: 'welcome_' + Date.now(),
                     role: 'assistant',
-                    content: 'Hello! I\'m your AI assistant. How can I help you today?',
+                    content: 'Hello! I'm your AI assistant. How can I help you today?',
                     timestamp: new Date().toISOString()
                 }],
                 settings: { ...state.settings }
@@ -713,8 +662,6 @@
             document.querySelectorAll('.session-item').forEach(item => {
                 item.classList.toggle('active', item.dataset.sessionId === sessionId);
             });
-
-            renderChatHistory();
         }
 
         function renderSessionList() {
@@ -729,35 +676,6 @@
                     </button>
                 </div>
             `).join('');
-        }
-
-        function renderChatHistory() {
-            const session = state.sessions.find(s => s.id === state.currentSessionId);
-            if (!session) return;
-
-            const conversations = [];
-            let currentConversation = [];
-
-            session.messages.forEach(msg => {
-                if (msg.role === 'user' && currentConversation.length > 0) {
-                    conversations.push([...currentConversation]);
-                    currentConversation = [];
-                }
-                currentConversation.push(msg);
-            });
-
-            if (currentConversation.length > 0) conversations.push(currentConversation);
-
-            elements.chatHistory.innerHTML = conversations.length ?
-                conversations.map(convo => {
-                    const firstUserMessage = convo.find(m => m.role === 'user');
-                    if (!firstUserMessage) return '';
-                    const content = firstUserMessage.content.substring(0, 50);
-                    return `<div class="px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 truncate">
-                        ${content}${firstUserMessage.content.length > 50 ? '...' : ''}
-                    </div>`;
-                }).join('') :
-                '<div class="text-center py-2 text-gray-500 dark:text-gray-400">No history yet</div>';
         }
 
         async function fetchModels() {
@@ -802,23 +720,17 @@
         }
 
         function setupEventListeners() {
-            // Theme toggle
-            const themeToggle = document.createElement('button');
-            themeToggle.id = 'themeToggle';
-            themeToggle.className = 'ml-auto text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400';
-            themeToggle.innerHTML = document.documentElement.classList.contains('dark') ?
-                '<i class="fas fa-sun mr-1"></i> Light Mode' :
-                '<i class="fas fa-moon mr-1"></i> Dark Mode';
-            document.querySelector('.sidebar-header').appendChild(themeToggle);
-
-            themeToggle.addEventListener('click', () => {
-                const isDark = document.documentElement.classList.toggle('dark');
-                localStorage.setItem('darkMode', isDark);
-                themeToggle.innerHTML = isDark ?
-                    '<i class="fas fa-sun mr-1"></i> Light Mode' :
-                    '<i class="fas fa-moon mr-1"></i> Dark Mode';
+            // Auto-resize textarea
+            elements.userInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+                
+                // Limit to max-height
+                if (this.scrollHeight > 200) {
+                    this.style.overflowY = 'auto';
+                }
             });
-
+            
             // New session
             elements.newSessionBtn.addEventListener('click', () => createNewSession());
 
@@ -1070,11 +982,16 @@
             const fullscreenBtn = previewDiv.querySelector('.fullscreen-btn');
             fullscreenBtn.addEventListener('click', () => {
                 const preview = previewDiv.querySelector('.html-preview');
-                preview.classList.toggle('fixed inset-0 z-50 m-0 w-screen h-screen rounded-none');
+                preview.classList.toggle('fullscreen');
+                
                 const iframe = preview.querySelector('iframe');
-                iframe.classList.toggle('h-[calc(100vh-40px)]');
-                fullscreenBtn.innerHTML = preview.classList.contains('fixed') ?
-                    '<i class="fas fa-compress"></i>' : '<i class="fas fa-expand"></i>';
+                if (preview.classList.contains('fullscreen')) {
+                    iframe.style.height = '100%';
+                    iframe.style.width = '100%';
+                } else {
+                    iframe.style.height = '256px'; // 16rem = 256px (h-64)
+                    iframe.style.width = '100%';
+                }
             });
 
             // Close button
@@ -1102,7 +1019,6 @@
                         htmlContent: htmlContent
                     });
                     saveSessions();
-                    renderChatHistory();
                 }
             }
         }
@@ -1177,7 +1093,6 @@
                         timestamp: new Date().toISOString()
                     });
                     saveSessions();
-                    renderChatHistory();
                 }
             }
         }
@@ -1185,6 +1100,9 @@
         function formatMessageContent(content) {
             // First escape HTML in non-code parts
             let formattedContent = escapeHtml(content);
+            
+            // Convert **text** to bold
+            formattedContent = formattedContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
             // Process code blocks
             const codeBlockRegex = /```([\w-]*)(?:\s+name=([^\n]+))?\n([\s\S]*?)```/g;
