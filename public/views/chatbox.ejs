@@ -117,6 +117,31 @@
       width: 100%;
     }
 
+    .chat-input-form textarea {
+      flex: 1;
+      font-size: 16px;
+      padding: 0.75rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      resize: none;
+      overflow-y: auto;
+      max-height: 200px;
+    }
+
+    .chat-input-form button {
+      padding: 0.75rem 1rem;
+      font-size: 16px;
+      border: none;
+      border-radius: 0.5rem;
+      background-color: #3b82f6;
+      color: white;
+      cursor: pointer;
+    }
+
+    .chat-input-form button:hover {
+      background-color: #2563eb;
+    }
+
     /* Messages */
     .message {
       display: flex;
@@ -927,6 +952,7 @@
       });
 
       // Chat form submission
+      // Chat form submission
       elements.chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const message = elements.userInput.value.trim();
@@ -957,6 +983,12 @@
           addChatMessage('assistant', "Sorry, I couldn't process your request. Please try again.");
           console.error("API Error:", error);
         }
+      });
+      
+      // Auto resize the textarea
+      elements.userInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 200) + 'px'; // Set max height to 200px
       });
     }
 
