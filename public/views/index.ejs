@@ -2,192 +2,174 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="<%= keywords.join(', ') %>">
-    <meta name="description" content="<%= description %>">
-    <meta name="author" content="<%= author.join(', ') %>">
-    <meta property="og:site_name" content="<%= name %>">
-    <meta property="og:title" content="<%= name %>">
-    <meta property="og:description" content="<%= description %>">
-    <meta property="og:image" content="https://i.imgur.com/jTPXYc9.jpeg">
-    <meta name="twitter:title" content="<%= name %>">
-    <meta name="twitter:description" content="<%= description %>">
-    <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
-    <meta name="google-adsense-account" content="ca-pub-8366475952965401">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="<%= keywords.join(', ') %>">
+  <meta name="description" content="<%= description %>">
+  <meta name="author" content="<%= author.join(', ') %>">
+  <meta property="og:site_name" content="<%= name %>">
+  <meta property="og:title" content="<%= name %>">
+  <meta property="og:description" content="<%= description %>">
+  <meta property="og:image" content="https://i.imgur.com/jTPXYc9.jpeg">
+  <meta name="twitter:title" content="<%= name %>">
+  <meta name="twitter:description" content="<%= description %>">
+  <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
+  <meta name="google-adsense-account" content="ca-pub-8366475952965401">
 
-    <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
-    <% styleFiles.forEach(file=> { %>
-        <link rel="stylesheet" href="<%= file %>">
-        <% }) %>
-            <% cssFiles.forEach(file=> { %>
-                <link rel="stylesheet" href="<%= file %>">
-                <% }) %>
-                    <% jsFiles.forEach(file=> { %>
-                        <script src="<%= file %>"></script>
-                        <% }) %>
+  <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
+  <% styleFiles.forEach(file=> { %>
+  <link rel="stylesheet" href="<%= file %>">
+  <% }) %>
+  <% cssFiles.forEach(file=> { %>
+  <link rel="stylesheet" href="<%= file %>">
+  <% }) %>
+  <% jsFiles.forEach(file=> { %>
+  <script src="<%= file %>"></script>
+  <% }) %>
 
-                            <script
-                                src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
-                            <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
-                            <title>FB AUTOBOT</title>
+  <title>FB AUTOBOT</title>
 </head>
 
 <body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
 
-    <!-- Particles Background -->
-    <div id="particles-js"></div>
+  <!-- Particles Background -->
+  <div id="particles-js"></div>
 
-    <!-- Navigation Bar -->
-    <nav class="flex justify-between items-center bg-gray-800 p-4 shadow-lg">
-        <div class="w-10 h-10 bg-cover rounded-full" style="background-image: url('https://i.imgur.com/QPZ5AsX.jpeg')">
-        </div>
-        <h1 class="text-yellow-400 font-bold text-3xl glowing-red">FB AUTOBOT</h1>
-        <button class="text-white" onclick="toggleNav()">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-        </button>
-    </nav>
-
-    <!-- Popup Message -->
-    <div id="popup-message" class="popup">
-        <div class="popup-message">
-            <p id="popup-text">
-                <%= description %>
-            </p>
-        </div>
-        <button id="ok-button"
-            class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
+  <!-- Navigation Bar -->
+  <nav class="flex justify-between items-center bg-gray-800 p-4 shadow-lg">
+    <div class="w-10 h-10 bg-cover rounded-full" style="background-image: url('https://i.imgur.com/QPZ5AsX.jpeg')">
     </div>
+    <h1 class="text-yellow-400 font-bold text-3xl glowing-red">FB AUTOBOT</h1>
+    <button class="text-white" onclick="toggleNav()">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+  </nav>
 
-    <!-- Audio Player (hidden until music is played) -->
-    <audio id="audio-player" preload="auto" style="display:none;"></audio>
-
-    <!-- Overlay and Navigation Menu -->
-    <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="closeNav()"></div>
-    <div id="navMenu" class="hidden fixed top-0 right-0 bg-gray-800 w-64 h-full p-6 z-50 shadow-lg">
-        <ul class="space-y-4">
-            <!-- Contact Button with Icon -->
-            <li>
-                <a href="/" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
-                    <i class="fa-solid fa-user-tie"></i> About Me
-                </a>
-            </li>
-        </ul>
+  <!-- Popup Message -->
+  <div id="popup-message" class="popup">
+    <div class="popup-message">
+      <p id="popup-text">
+        <%= description %>
+      </p>
     </div>
+    <button id="ok-button" class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
+  </div>
 
-    <!-- Main Content -->
-    <main class="flex-grow container mx-auto p-6">
+  <!-- Audio Player (hidden until music is played) -->
+  <audio id="audio-player" preload="auto" style="display:none;"></audio>
 
-        <!-- Cookie Submission Form -->
-        <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
-            <h2 id="login-method-title" class="block text-sm font-bold text-yellow-400">APPSTATE METHOD</h2>
-            <form id="cookieForm" class="space-y-4">
-                <textarea
-                    class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                    placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
+  <!-- Overlay and Navigation Menu -->
+  <div id="overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40" onclick="closeNav()"></div>
+  <div id="navMenu" class="hidden fixed top-0 right-0 bg-gray-800 w-64 h-full p-6 z-50 shadow-lg">
+    <ul class="space-y-4">
+      <!-- Contact Button with Icon -->
+      <li>
+        <a href="/" class="block font-bold text-yellow-400 hover:text-yellow-300" onclick="closeNav()">
+          <i class="fa-solid fa-user-tie"></i> About Me
+        </a>
+      </li>
+    </ul>
+  </div>
 
-                <div id="email-password-fields" class="hidden grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="email" class="block text-sm font-bold text-yellow-400">EMAIL</label>
-                        <input type="email" id="email"
-                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                            placeholder="Email address">
-                    </div>
-                    <div>
-                        <label for="password" class="block text-sm font-bold text-yellow-400">PASSWORD</label>
-                        <input type="password" id="password"
-                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                            placeholder="Password">
-                    </div>
-                </div>
+  <!-- Main Content -->
+  <main class="flex-grow container mx-auto p-6">
 
-                <div class="grid md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-yellow-400">PREFIX:</label>
-                        <select
-                            class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                            id="symbolSelect">
-                            <option value="">(Default) Not Specified</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="inputOfAdmin" class="block text-sm font-bold text-yellow-400">OWNER/ADMIN</label>
-                        <input type="text" id="inputOfAdmin"
-                            class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400"
-                            placeholder="FB Profile link or UID">
-                    </div>
+    <!-- Cookie Submission Form -->
+    <section id="cookie-form" class="bg-gray-800 p-6 rounded-lg shadow-lg text-center space-y-6">
+      <h2 id="login-method-title" class="block text-sm font-bold text-yellow-400">APPSTATE METHOD</h2>
+      <form id="cookieForm" class="space-y-4">
+        <textarea class="w-full p-3 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="Paste your Facebook appstate cookie here!" rows="4" id="json-data"></textarea>
 
-                    <div id="container-b8289141a1a8ba79e3a485e3f8efbbc0"></div>
-                </div>
-
-                <div class="flex justify-center">
-                    <div class="g-recaptcha" data-sitekey="<%= sitekey %>" data-theme="dark" data-size="normal"
-                        data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
-                </div>
-
-                <button id="submit-button" type="submit"
-                    class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">SUBMIT</button>
-            </form>
-            <button id="switch-login-method"
-                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
-                SWITCH TO CREDENTIALS LOGIN
-            </button>
-        </section>
-
-        <!-- Active Users Section -->
-        <section id="active-users" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-            <h2 class="text-sm font-bold text-green-400 text-center">ACTIVE BOTS</h2>
-            <p class="text-center">
-                <i class="fa-solid fa-robot"></i>
-                <span id="onlineUsers" class="text-yellow-400">?</span>
-            </p>
-        </section>
-
-        <!-- Commands Section -->
-        <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
-            <h2 class="text-sm font-bold text-green-400 text-center"></h2>
-            <button id="showCommandsBtn"
-                class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">
-                <i class="fa-solid fa-list"></i> COMMANDS
-            </button>
-            <div id="availableCommands" class="hidden mt-4">
-                <div id="commandsList" class="p-4 bg-gray-700 rounded-lg max-h-40 overflow-y-auto text-left"></div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Footer -->
-    <footer id="footer" class="bg-gray-800 p-4 text-center text-sm text-gray-200">
-        <p>
-            Time: <span id="time"></span>
-        </p>
-        <p class="text-yellow-400">
-            Powered by <a href="" class="text-green-400 hover:text-green-300">Haji Mix</a>
-        </p>
-        <p>
-            &copy; 2024, All Rights Reserved
-        </p>
-        <div class="flex justify-center items-center gap-4 mt-2">
-            <a href="https://github.com/haji-mix"><i class="fab fa-github"></i></a>
-            <a href="https://www.facebook.com/haji.atomyc2727"><i class="fab fa-facebook"></i></a>
+        <div id="email-password-fields" class="hidden grid md:grid-cols-2 gap-4">
+          <div>
+            <label for="email" class="block text-sm font-bold text-yellow-400">EMAIL</label>
+            <input type="email" id="email" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="Email address">
+          </div>
+          <div>
+            <label for="password" class="block text-sm font-bold text-yellow-400">PASSWORD</label>
+            <input type="password" id="password" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="Password">
+          </div>
         </div>
-    </footer>
 
-    <!-- Scripts -->
-    <% scriptFiles.forEach(file=> { %>
-        <script src="<%= file %>"></script>
-        <% }) %>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-yellow-400">PREFIX:</label>
+            <select class="w-full p-2 rounded bg-gray-700 text-white border-gray-600 focus:ring-2 focus:ring-yellow-400" id="symbolSelect">
+              <option value="">(Default) Not Specified</option>
+            </select>
+          </div>
+          <div>
+            <label for="inputOfAdmin" class="block text-sm font-bold text-yellow-400">OWNER/ADMIN</label>
+            <input type="text" id="inputOfAdmin" class="w-full p-2 rounded-lg bg-gray-700 text-white border border-gray-600 focus:ring-2 focus:ring-yellow-400" placeholder="FB Profile link or UID">
+          </div>
 
-            <script>
-                eruda.init();
-            </script>
-            <script async
-                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8366475952965401"
-                crossorigin="anonymous">
-                </script>
+          <div id="container-b8289141a1a8ba79e3a485e3f8efbbc0"></div>
+        </div>
+
+        <div class="flex justify-center">
+          <div class="g-recaptcha" data-sitekey="<%= sitekey %>" data-theme="dark" data-size="normal" data-tabindex="0" data-callback="onRecaptchaSuccess"></div>
+        </div>
+
+        <button id="submit-button" type="submit" class="hidden w-full bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">SUBMIT</button>
+      </form>
+      <button id="switch-login-method" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition">
+        SWITCH TO CREDENTIALS LOGIN
+      </button>
+    </section>
+
+    <!-- Active Users Section -->
+    <section id="active-users" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
+      <h2 class="text-sm font-bold text-green-400 text-center">ACTIVE BOTS</h2>
+      <p class="text-center">
+        <i class="fa-solid fa-robot"></i>
+        <span id="onlineUsers" class="text-yellow-400">?</span>
+      </p>
+    </section>
+
+    <!-- Commands Section -->
+    <section id="commands" class="bg-gray-800 p-6 mt-6 rounded-lg shadow-lg">
+      <h2 class="text-sm font-bold text-green-400 text-center"></h2>
+      <button id="showCommandsBtn" class="w-full bg-green-500 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-600 transition mt-4">
+        <i class="fa-solid fa-list"></i> COMMANDS
+      </button>
+      <div id="availableCommands" class="hidden mt-4">
+        <div id="commandsList" class="p-4 bg-gray-700 rounded-lg max-h-40 overflow-y-auto text-left"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer id="footer" class="bg-gray-800 p-4 text-center text-sm text-gray-200">
+    <p>
+      Time: <span id="time"></span>
+    </p>
+    <p class="text-yellow-400">
+      Powered by <a href="" class="text-green-400 hover:text-green-300">Haji Mix</a>
+    </p>
+    <p>
+      &copy; 2024, All Rights Reserved
+    </p>
+    <div class="flex justify-center items-center gap-4 mt-2">
+      <a href="https://github.com/haji-mix"><i class="fab fa-github"></i></a>
+      <a href="https://www.facebook.com/haji.atomyc2727"><i class="fab fa-facebook"></i></a>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <% scriptFiles.forEach(file=> { %>
+  <script src="<%= file %>"></script>
+  <% }) %>
+
+  <script>
+    eruda.init();
+  </script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8366475952965401" crossorigin="anonymous">
+  </script>
+
 </html>
