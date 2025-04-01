@@ -984,7 +984,7 @@
           console.error("API Error:", error);
         }
       });
-      
+
       // Auto resize the textarea
       elements.userInput.addEventListener('input', function() {
         this.style.height = 'auto';
@@ -1015,7 +1015,7 @@
       };
 
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = message;
+      tempDiv.innerHTML = encodeURIComponent(message);
       const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
       const params = new URLSearchParams();
