@@ -12,10 +12,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-        :root {
-            --mobile-input-height: 80px;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
@@ -72,6 +68,9 @@
         .sidebar-footer {
             padding: 1rem;
             border-top: 1px solid #e5e7eb;
+            position: sticky;
+            bottom: 0;
+            background: inherit;
         }
 
         /* Chat area */
@@ -99,6 +98,13 @@
         .chat-input-container {
             padding: 1rem;
             border-top: 1px solid #e5e7eb;
+            background: inherit;
+        }
+
+        .chat-input-form {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         /* Messages */
@@ -251,68 +257,35 @@
             border-color: rgba(255, 255, 255, 0.1);
         }
 
+        /* Mobile styles */
         @media (max-width: 768px) {
-            .sidebar-footer {
-                padding: 12px;
-                position: sticky;
-                bottom: var(--mobile-input-height);
-                /* Add padding for the input */
-                background: inherit;
-                z-index: 110;
-                /* Higher than input's z-index */
+            .sidebar {
+                width: 85vw;
+                max-width: 300px;
             }
 
-
             .chat-container {
-                padding-bottom: 80px;
-                /* Space for input */
+                padding-bottom: 0;
             }
 
             .chat-input-container {
-                position: fixed;
+                position: sticky;
                 bottom: 0;
-                left: 0;
-                right: 0;
                 padding: 12px;
                 background: white;
-                z-index: 100;
-                /* Lower than sidebar footer */
-                padding-bottom: calc(12px + env(safe-area-inset-bottom));
-            }
-
-            .chat-input-form {
-                display: flex;
-                gap: 8px;
-            }
-
-            .chat-input {
-                flex: 1;
-                min-height: 48px;
-                padding: 12px;
-            }
-
-            .send-button {
-                width: 48px;
-                height: 48px;
-                min-width: 48px;
+                z-index: 20;
             }
 
             .sidebar-footer {
-                padding: 12px;
-                position: sticky;
-                bottom: 0;
-                background: inherit;
-            }
-
-            .save-settings {
-                padding: 12px;
-                font-size: 14px;
-                margin-bottom: env(safe-area-inset-bottom);
-                /* Account for iOS notch */
+                padding-bottom: calc(1rem + env(safe-area-inset-bottom));
             }
 
             .message-content {
                 max-width: 85vw;
+            }
+
+            .chat-input-form {
+                gap: 0.5rem;
             }
         }
 
@@ -396,18 +369,6 @@
         .custom-personality-container.open {
             max-height: 200px;
             margin-top: 0.5rem;
-        }
-
-        @supports (-webkit-touch-callout: none) {
-
-            /* iOS specific styles */
-            .chat-input-container {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
-
-            .sidebar-footer {
-                padding-bottom: calc(var(--mobile-input-height) + env(safe-area-inset-bottom));
-            }
         }
 
         @media screen and (max-width: 768px) {
@@ -518,10 +479,10 @@
                     </div>
                 </div>
             </div>
-            <div
-                class="sidebar-footer px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+
+            <div class="sidebar-footer dark:border-gray-700">
                 <button id="saveSettings"
-                    class="save-settings w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
+                    class="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg font-medium transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
                 </button>
             </div>
@@ -561,10 +522,9 @@
 
             <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                 <form id="chatForm" class="chat-input-form">
-                    <input type="text" id="userInput" placeholder="Type your message..."
-                        class="chat-input border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                    <button type="submit"
-                        class="send-button bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center justify-center">
+                    <input type="text" id="userInput" placeholder="Type your message..." 
+                           class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button type="submit" class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -1227,12 +1187,6 @@
 
                 return `
 <div class="code-container">
-    <div class="code-header">
-        <div class="flex items-center gap-2">
-            <span class="code-language">${lang}</span>
-            ${displayFilename ? `<span class="code-filename">${displayFilename}</span>` : ''}
-        </div>
-    </div>
     <div class="code-content">
         <pre><code class="language-${lang}">${rawCode.trim()}</code></pre>
     </div>
