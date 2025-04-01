@@ -522,9 +522,10 @@
 
             <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                 <form id="chatForm" class="chat-input-form">
-                    <input type="text" id="userInput" placeholder="Type your message..." 
-                           class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                    <button type="submit" class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
+                    <input type="text" id="userInput" placeholder="Type your message..."
+                        class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button type="submit"
+                        class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -839,13 +840,12 @@
                 });
             });
 
-            // Token slider
-            elements.maxTokens.addEventListener('input', function () {
-                const value = parseInt(this.value) || 50;
-                state.settings.max_tokens = value === 50 ? null : value;
-                elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
-            });
-
+        // Token slider
+elements.maxTokens.addEventListener('input', function() {
+    const value = parseInt(this.value.trim(), 10) || 50;
+    state.settings.max_tokens = value === 50 ? null : value;
+    elements.tokenValue.textContent = value === 50 ? 'Auto' : `${value} tokens`;
+});
             // Provider change
             elements.providerSelect.addEventListener('change', async function () {
                 state.settings.provider = this.value;
@@ -935,45 +935,66 @@
         function toggleSidebar() {
             elements.sidebar.classList.toggle('sidebar-open');
             elements.sidebarOverlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden', !elements.sidebarOverlay.classList.contains('hidden'));
         }
+
+        elements.toggleSidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+
+        elements.closeSidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSidebar();
+        });
+
+        elements.sidebar.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        elements.sidebarOverlay.addEventListener('click', toggleSidebar);
 
         async function sendChatMessage(message) {
-            const session = state.sessions.find(s => s.id === state.currentSessionId);
-            if (!session) return { error: "No active session" };
+    const session = state.sessions.find(s => s.id === state.currentSessionId);
+    if (!session) return { error: "No active session" };
 
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = message;
-            const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = message;
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
-            const params = new URLSearchParams();
-            params.append('ask', textContent);
-            params.append('uid', state.currentSessionId);
-            params.append('model', state.settings.model);
+    const params = new URLSearchParams();
+    params.append('ask', textContent.trim()); // Ensure trimmed content
+    params.append('uid', state.currentSessionId.trim()); // Ensure trimmed session ID
+    params.append('model', state.settings.model.trim()); // Ensure trimmed model name
 
-            let instructions = '';
-            if (state.settings.personality === 'custom' && state.settings.customInstructions) {
-                instructions = state.settings.customInstructions;
-            } else if (state.settings.personality !== 'default') {
-                instructions = getPersonalityInstructions(state.settings.personality);
-            }
+    let instructions = '';
+    if (state.settings.personality === 'custom' && state.settings.customInstructions) {
+        instructions = state.settings.customInstructions.trim();
+    } else if (state.settings.personality !== 'default') {
+        instructions = getPersonalityInstructions(state.settings.personality).trim();
+    }
 
-            if (instructions) params.append('roleplay', instructions);
+    if (instructions) params.append('roleplay', instructions);
 
-            if (state.settings.provider === 'workers' && state.settings.max_tokens) {
-                params.append('max_tokens', state.settings.max_tokens);
-            }
-
-            const apiUrl = `https://haji-mix.up.railway.app/api/${state.settings.provider}?${params.toString()}`;
-
-            try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
-                return await response.json();
-            } catch (error) {
-                console.error("API Error:", error);
-                return { error: error.message };
-            }
+    if (state.settings.provider === 'workers' && state.settings.max_tokens) {
+        // Ensure max_tokens is a number and has no whitespace
+        const maxTokens = parseInt(state.settings.max_tokens.toString().trim(), 10);
+        if (!isNaN(maxTokens)) {
+            params.append('max_tokens', maxTokens);
         }
+    }
+
+    const apiUrl = `https://haji-mix.up.railway.app/api/${state.settings.provider}?${params.toString()}`;
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("API Error:", error);
+        return { error: error.message };
+    }
+}
 
         function getPersonalityInstructions(type) {
             const personalities = {
@@ -1302,7 +1323,7 @@
                 elements.maxTokens.value = state.settings.max_tokens;
                 elements.tokenValue.textContent = `${state.settings.max_tokens} tokens`;
             } else {
-                elements.maxTokens.value = null;
+                elements.maxTokens.value = 50;
                 elements.tokenValue.textContent = 'Auto';
             }
         }
