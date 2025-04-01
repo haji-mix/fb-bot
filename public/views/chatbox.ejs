@@ -257,6 +257,16 @@
             border-color: rgba(255, 255, 255, 0.1);
         }
 
+        .fullscreen-mode {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+        }
+
         /* Mobile styles */
         @media (max-width: 768px) {
             .sidebar {
@@ -522,9 +532,10 @@
 
             <div class="chat-input-container bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
                 <form id="chatForm" class="chat-input-form">
-                    <input type="text" id="userInput" placeholder="Type your message..." 
-                           class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
-                    <button type="submit" class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
+                    <input type="text" id="userInput" placeholder="Type your message..."
+                        class="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button type="submit"
+                        class="px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
