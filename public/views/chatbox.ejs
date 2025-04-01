@@ -100,6 +100,9 @@
         .sidebar {
             transition: transform 0.3s ease;
             width: var(--sidebar-width);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         @media (max-width: 1024px) {
@@ -107,7 +110,6 @@
                 position: fixed;
                 top: 0;
                 left: 0;
-                height: 100vh;
                 z-index: 50;
                 transform: translateX(-100%);
             }
@@ -187,14 +189,9 @@
 
         /* Settings container */
         .settings-container {
-            max-height: calc(100vh - 400px);
             overflow-y: auto;
-        }
-
-        @media (max-width: 768px) {
-            .settings-container {
-                max-height: calc(100vh - var(--mobile-header-height) - var(--chat-input-height) - 60px);
-            }
+            flex: 1;
+            min-height: 200px; /* Ensure it doesn't collapse completely */
         }
 
         /* Code container - made fully responsive */
@@ -431,9 +428,8 @@
         }
 
         /* Main layout adjustments */
-        .chat-container {
+        .app-container {
             display: flex;
-            flex-direction: column;
             height: 100vh;
             width: 100%;
             overflow: hidden;
@@ -554,16 +550,26 @@
                 width: calc(100% + 2rem);
             }
         }
+
+        /* Sidebar sections */
+        .sidebar-section {
+            flex-shrink: 0;
+        }
+
+        .sidebar-scrollable {
+            flex: 1;
+            overflow-y: auto;
+        }
     </style>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
-    <div class="chat-container">
+    <div class="app-container">
         <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
         <div id="sidebar"
-            class="sidebar w-72 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
-            <div class="bg-primary-600 px-4 py-6">
+            class="sidebar bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col z-50">
+            <div class="sidebar-section bg-primary-600 px-4 py-6">
                 <div class="flex items-center justify-between">
                     <h2 class="text-xl font-bold text-white">Chatbox Horizon</h2>
                     <button id="closeSidebar" class="md:hidden text-white"><i class="fas fa-times"></i></button>
@@ -575,7 +581,7 @@
                 </div>
             </div>
 
-            <div class="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="sidebar-section px-4 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex justify-between items-center mb-3">
                     <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sessions
                     </h3>
@@ -590,7 +596,7 @@
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="sidebar-section flex-1 overflow-y-auto px-4 py-4 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Chat
                     History</h3>
                 <div class="space-y-1" id="chatHistory">
@@ -598,7 +604,7 @@
                 </div>
             </div>
 
-            <div class="px-4 py-4 settings-container">
+            <div class="sidebar-scrollable px-4 py-4">
                 <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                     Settings</h3>
 
@@ -655,7 +661,7 @@
                 </div>
             </div>
 
-            <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div class="sidebar-section px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
                 <button id="saveSettings"
                     class="w-full bg-primary-600 text-white py-2 rounded-lg font-medium hover:bg-primary-700 transition">
                     <i class="fas fa-save mr-2"></i> Save Settings
@@ -1038,11 +1044,15 @@
                     // Save the provider change immediately
                     localStorage.setItem('chatbox_settings', JSON.stringify(state.settings));
 
-                    // Update all sessions to use the new provider
-                    state.sessions.forEach(session => {
-                        session.settings.provider = state.settings.provider;
-                    });
-                    saveSessions();
+                    // Update current session settings
+                    const session = state.sessions.find(s => s.id === state.currentSessionId);
+                    if (session) {
+                        session.settings = { ...state.settings };
+                        saveSessions();
+                    }
+
+                    showToast('Settings saved!');
+                    updateModelDisplay();
                 });
 
                 elements.saveSettings.addEventListener('click', function () {
