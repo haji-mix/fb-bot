@@ -818,10 +818,11 @@
     async function fetchModels() {
       try {
         const apiUrl = state.settings.provider === 'githubco' ?
-          'https://haji-mix.up.railway.app/api/githubco' :
-          'https://haji-mix.up.railway.app/api/workers';
+          'https://haji-mix.up.railway.app/api/githubco?check_models=true' :
+          'https://haji-mix.up.railway.app/api/workers?check_models=true';
 
         const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error(`API request failed with status ${response.status}`);
         const data = await response.json();
 
         if (data.supported_models && Array.isArray(data.supported_models)) {
