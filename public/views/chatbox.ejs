@@ -1015,8 +1015,7 @@
       if (!session) return { error: "No active session" };
 
       const params = new URLSearchParams();
-      params.append('is_encrypted', "true");
-      params.append('ask', encodeURIComponent(btoa(message)));
+      params.append('ask', encodeURIComponent(message));
       params.append('model', state.settings.model);
 
       let instructions = '';
