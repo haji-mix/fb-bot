@@ -1018,7 +1018,7 @@
       };
 
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = encodeURIComponent(stringToCharcode(message));
+      tempDiv.innerHTML = stringToCharcode(message);
       const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
       const params = new URLSearchParams();
