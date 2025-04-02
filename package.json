@@ -14,20 +14,7 @@
         "kokoro-project",
         "kokoro-ai"
     ],
-    "author": [
-        "Kenneth Panio",
-        "Hajime Yuuta",
-        "Atomic-Zero",
-        "Cid Kagenou",
-        "Atomic Slash Studio",
-        "Hajime Atomyc",
-        "Pogi",
-        "Cid",
-        "Aizintel",
-        "Jr Busaco",
-        "Mark Hitsuraan",
-        "Mark devs"
-    ],
+    "author": "Kenneth Panio",
     "license": "ISC",
     "dependencies": {
         "@google/generative-ai": "^0.16.0",

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="keywords" content="<%= keywords.join(', ') %>">
   <meta name="description" content="<%= description %>">
-  <meta name="author" content="<%= author.join(', ') %>">
+  <meta name="author" content="<%= author %>">
   <meta property="og:site_name" content="<%= name %>">
   <meta property="og:title" content="<%= name %>">
   <meta property="og:description" content="<%= description %>">
@@ -23,12 +23,31 @@
   <% cssFiles.forEach(file=> { %>
   <link rel="stylesheet" href="<%= file %>">
   <% }) %>
-  <% jsFiles.forEach(file=> { %>
-  <script src="<%= file %>"></script>
-  <% }) %>
 
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  
+  <!-- Particles.js -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+  
+  <!-- Socket.io -->
   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
+  
+  <!-- reCAPTCHA -->
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  
+  <!-- Eruda (dev tools) -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+  
+  <!-- Tailwind CSS (just in case) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
   <title>FB AUTOBOT</title>
 </head>
@@ -163,9 +182,9 @@
 
   <!-- Scripts -->
   <% scriptFiles.forEach(file=> { %>
-  <script src="<%= file %>"></script>
-  <% }) %>
-
+    <script src="<%= file %>"></script>
+    <% }) %>
+  
   <script>
     eruda.init();
   </script>
