@@ -1016,7 +1016,7 @@
 
       const params = new URLSearchParams();
       params.append('is_encrypted', "true");
-      params.append('ask', btoa(message));
+      params.append('ask', encodeURIComponent(btoa(message)));
       params.append('model', state.settings.model);
 
       let instructions = '';
