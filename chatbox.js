@@ -175,9 +175,39 @@ app.use(cors({
     origin: "*"
 }));
 
-app.use(helmet({
-    contentSecurityPolicy: false
-}));
+app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'", "*"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "*"],
+          scriptSrcElem: ["'self'", "'unsafe-inline'", "*"],
+          styleSrc: ["'self'", "'unsafe-inline'", "*"],
+          styleSrcElem: ["'self'", "'unsafe-inline'", "*"],
+          fontSrc: ["'self'", "data:", "*"],
+          imgSrc: ["'self'", "data:", "blob:", "*"],
+          connectSrc: ["'self'", "*"],
+          mediaSrc: ["'self'", "blob:", "*"],
+          frameSrc: ["'self'"], // Only allow your domain to embed iframes
+          frameAncestors: ["'none'"], // BLOCK all iframe embedding
+          objectSrc: ["'none'"], // Block Flash/plugins
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+        },
+      },
+      crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin requests
+      crossOriginEmbedderPolicy: false, // Disable for API compatibility
+      crossOriginOpenerPolicy: false, // Disable for API compatibility
+      xFrameOptions: { action: "deny" }, // Extra iframe protection
+      referrerPolicy: { policy: "no-referrer-when-downgrade" },
+      // Disable unnecessary headers for APIs
+      xXssProtection: false,
+      xContentTypeOptions: false,
+      xDnsPrefetchControl: false,
+      xDownloadOptions: false,
+      xPermittedCrossDomainPolicies: false,
+    })
+  );
 
 app.use((req, res, next) => {
     res.setHeader('x-powered-by', 'Haji Mix');
