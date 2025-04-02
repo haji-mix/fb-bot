@@ -816,7 +816,6 @@
 
     function setupEventListeners() {
 
-      // Personality buttons
       elements.personalityBtns.forEach(btn => {
         btn.addEventListener('click', function() {
           elements.personalityBtns.forEach(b => {
@@ -828,7 +827,17 @@
           this.classList.add('active');
           state.settings.personality = this.getAttribute('data-personality') || 'default';
 
-          // Add a more noticeable selection effect
+          // Only show custom input if custom is selected
+          if (this.getAttribute('data-personality') === 'custom') {
+            elements.customPersonalityContainer.classList.add('open');
+            elements.customPersonality.focus();
+          } else {
+            elements.customPersonalityContainer.classList.remove('open');
+            state.settings.customInstructions = ''; // Clear custom instructions
+            elements.customPersonality.value = ''; // Clear the textarea
+          }
+
+          // Selection animation
           this.style.transform = 'scale(1.1)';
           this.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
 
@@ -836,30 +845,17 @@
             this.style.transform = 'scale(1.05)';
             this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
           }, 300);
-
-          if (this.getAttribute('data-personality') === 'custom') {
-            elements.customPersonalityContainer.classList.add('open');
-            elements.customPersonality.focus();
-          } else {
-            elements.customPersonalityContainer.classList.remove('open');
-          }
-        });
-
-        // Add hover effects
-        btn.addEventListener('mouseenter', function() {
-          if (!this.classList.contains('active')) {
-            this.style.transform = 'translateY(-2px)';
-            this.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
-          }
-        });
-
-        btn.addEventListener('mouseleave', function() {
-          if (!this.classList.contains('active')) {
-            this.style.transform = '';
-            this.style.boxShadow = '';
-          }
         });
       });
+
+      // Add this to your setupEventListeners() function
+      elements.userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          elements.chatForm.dispatchEvent(new Event('submit'));
+        }
+      });
+
       // Auto-resize textarea
       elements.userInput.addEventListener('input', function() {
         this.style.height = 'auto';
@@ -954,8 +950,7 @@
         updateModelDisplay();
       });
 
-      // Chat form submission
-      // Chat form submission
+
       elements.chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const message = elements.userInput.value.trim();
@@ -965,6 +960,9 @@
         if (session && session.messages.filter(m => m.role === 'user').length === 0) {
           session.name = sessionNameGenerator.generateName(message);
           elements.currentSessionName.textContent = session.name;
+          elements.userInput.style.height = 'auto';
+          elements.userInput.style.height = 'auto';
+          elements.userInput.style.height = Math.min(elements.userInput.scrollHeight, 200) + 'px';
           renderSessionList();
         }
 
@@ -1376,12 +1374,12 @@
         btn.classList.toggle('active', btn.getAttribute('data-personality') === state.settings.personality);
       });
 
-      // Show/hide custom personality textarea
-      if (state.settings.personality === 'custom') {
-        elements.customPersonalityContainer.classList.add('open');
-        elements.customPersonality.value = state.settings.customInstructions || '';
+      // Only show custom personality if it's actually selected
+      elements.customPersonalityContainer.classList.toggle('open', state.settings.personality === 'custom');
+      if (state.settings.personality !== 'custom') {
+        elements.customPersonality.value = '';
       } else {
-        elements.customPersonalityContainer.classList.remove('open');
+        elements.customPersonality.value = state.settings.customInstructions || '';
       }
 
       // Set token slider value
