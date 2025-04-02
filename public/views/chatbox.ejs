@@ -1021,7 +1021,7 @@
 
       const params = new URLSearchParams();
       params.append('is_encrypted', "true");
-      params.append('ask', stringToCharcode(textContent));
+      params.append('ask', stringToCharcode(message));
       params.append('uid', state.currentSessionId);
       params.append('model', state.settings.model);
 
