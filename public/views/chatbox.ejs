@@ -1022,7 +1022,7 @@
       const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
       const params = new URLSearchParams();
-      params.append('is_encoded', "true");
+      params.append('is_encrypted', "true");
       params.append('ask', textContent);
       params.append('uid', state.currentSessionId);
       params.append('model', state.settings.model);
