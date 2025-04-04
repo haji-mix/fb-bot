@@ -204,28 +204,13 @@ app.get('/skills', (req, res) => {
 });
 
 const routes = [{
-    path: '/create',
+    path: '/',
     file: 'index.ejs',
-    method: 'get'
-},
-{
-    path: '/chatbox',
-    file: 'chatbox.ejs',
-    method: 'get'
-},
-{
-    path: '/cosplay',
-    file: 'cosplay.ejs',
     method: 'get'
 },
 {
     path: '/jseditor',
     file: 'ide.ejs',
-    method: 'get'
-},
-{
-    path: '/',
-    file: 'me.ejs',
     method: 'get'
 },
 {
