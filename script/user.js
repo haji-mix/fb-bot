@@ -27,7 +27,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
 const input = args[1] ?? (event.messageReply ? event.messageReply.senderID : null);
 
 if (!action || !input) {
-    return chat.reply(font.thin("❓ incorrect syntax. use: user [ban/unban] [uid or facebook profile link]"), threadid);
+    return chat.reply(font.thin("❓ incorrect syntax. use: user [ban/unban] [uid or facebook profile link]"), threadID);
 }
 
   try {
