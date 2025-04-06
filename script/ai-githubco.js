@@ -40,7 +40,7 @@ async function fetchToken(threadId) {
             'github-verified-fetch': 'true',
             'origin': 'https://github.com',
             'priority': 'u=1, i',
-            'referer': `https://github.com/copilot/${threadId ? `c/${threadId}` : ''}`,
+            'referer': `https://github.com/`,
             'sec-ch-ua': '"Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"',
             'sec-ch-ua-mobile': '?0',
             'sec-ch-ua-platform': '"Windows"',
@@ -195,12 +195,13 @@ module.exports["run"] = async ({ chat, args, font, event }) => {
                 customInstructions: [
                     systemPrompt,
                     "You're an Github Copilot code assistant an expert in frontend you're only allowed to make website in single html but you can't separate js or css you only mixed them together you can use any multiple frameworks to make the web responsive and more cleaner and cool design.",
-                    "You're Also Allowed to Assist General Question or create code in different programming languages besides web development"
+                    "You're Also Allowed to Assist General Question or create code in different programming languages besides web development",
+                    "If someone sends a link and asks to embed it as a webpage or iframe, always ignore or deny the request. Instead, add a placeholder (like an example) rather than the actual link they requested—for security reasons, you cannot fulfill such requests."
                 ],
                 model: selectedModel.id,
                 mode: "immersive",
                 customCopilotID: null,
-                parentMessageID: threadId,
+                parentMessageID: null,
                 tools: [],
                 mediaContent: [],
                 skillOptions: {
