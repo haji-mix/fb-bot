@@ -5,7 +5,7 @@ module.exports["config"] = {
   credits: 'Kenneth Panio',
   isPrefix: false,
   version: "1.0.0",
-  role: 0,
+  role: 1,
   info: "Remove font formatting from replied message or arguments",
   usage: "(reply) unfont or provide text [text]",
   guide: "reply to a message with font formatting or provide text with font formatting"
