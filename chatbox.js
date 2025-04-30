@@ -28,7 +28,7 @@ const {
 } = require("./system/modules");
 
 const config = fs.existsSync("./data/config.json") ? JSON.parse(fs.readFileSync("./data/config.json", "utf8")) : createConfig();
-let kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
+let hajime_config = JSON.parse(fs.readFileSync('./hajime.json', 'utf-8'));
 let pkg_config = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 
 const Utils = {
@@ -63,7 +63,7 @@ const startServer = async (stealth_port) => {
         // Reload environment variables
         require('dotenv').config();
 
-        let PORT = stealth_port || process.env.PORT || kokoro_config.port || hajime?.host?.port || 10000;
+        let PORT = stealth_port || process.env.PORT || hajime_config.port || hajime?.host?.port || 10000;
         const lastTimestamp = process.env.PORT_TIMESTAMP ? parseInt(process.env.PORT_TIMESTAMP) : 0;
         const currentTime = Date.now();
 
@@ -71,12 +71,12 @@ const startServer = async (stealth_port) => {
         if (lastTimestamp && currentTime - lastTimestamp > 60 * 60 * 1000) {
             console.log("More than 1 hour passed, removing stored port.");
             removeEnvPort();
-            PORT = kokoro_config.port || hajime?.host?.port || 10000; // Fallback to default
+            PORT = hajime_config.port || hajime?.host?.port || 10000; // Fallback to default
         }
 
         const serverUrl =
-            (kokoro_config.weblink && kokoro_config.port ? `${kokoro_config.weblink}:${kokoro_config.port}` : null) ||
-            kokoro_config.weblink ||
+            (hajime_config.weblink && hajime_config.port ? `${hajime_config.weblink}:${hajime_config.port}` : null) ||
+            hajime_config.weblink ||
             (hajime?.host?.server?.[0] && hajime?.host?.port ? `${hajime.host.server[0]}:${hajime.host.port}` : null) ||
             hajime?.host?.server?.[0] ||
             `http://localhost:${PORT}`;
@@ -179,12 +179,6 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-app.use((req, res, next) => {
-    res.setHeader('x-powered-by', 'Haji Mix');
-    next();
-});
-
-
 app.use(limiter);
 
 app.set("json spaces", 2);
@@ -193,15 +187,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(express.static(path.join(__dirname, 'public')));
-
-
-app.get('/projects', (req, res) => {
-    res.sendFile(path.join(__dirname, 'projects.json'));
-});
-
-app.get('/skills', (req, res) => {
-    res.sendFile(path.join(__dirname, 'skills.json'));
-});
 
 const routes = [{
     path: '/',
@@ -247,8 +232,6 @@ const routes = [{
     handler: getLogin
 }];
 
-
-// Destructure values from pkg_config
 const {
     description, keywords, author, name
 } = pkg_config;
@@ -257,7 +240,7 @@ const scriptFiles = getFilesFromDir('public/views/extra/js', '.js').map(file => 
 const styleFiles = getFilesFromDir('public/views/extra/css', '.css').map(file => `./views/extra/css/${file}`);
 const jsFiles = getFilesFromDir('public/framework/js', '.js').map(file => `./framework/js/${file}`);
 
-const sitekey = process.env.sitekey || kokoro_config.sitekey;
+const sitekey = process.env.sitekey || hajime_config.sitekey;
 
 routes.forEach(route => {
     if (route.file) {

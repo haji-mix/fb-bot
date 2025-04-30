@@ -3,10 +3,10 @@ const path = require("path");
 
 async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, admin, global, prefix, userid }) {
     
-    const kokoro_config = JSON.parse(fs.readFileSync('./kokoro.json', 'utf-8'));
+    const hajime_config = JSON.parse(fs.readFileSync('./hajime.json', 'utf-8'));
 
 
-                    chat.testCo(kokoro_config.author, 2);
+                    chat.testCo(hajime_config.author, 2);
 
                     if (event && event.senderID && event?.body) {
                         const isGroup = event.isGroup || event.threadID !== event.senderID;
@@ -50,14 +50,14 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         const recentMessages = Utils.userActivity[userId].messages.map((msg) => msg.message);
                         const repeatedMessages = recentMessages.filter((msg) => msg === message);
 
-                        const configPath = path.join(__dirname, './kokoro.json');
-                        if (!kokoro_config.blacklist) kokoro_config.blacklist = [];
+                        const configPath = path.join(__dirname, './hajime.json');
+                        if (!hajime_config.blacklist) hajime_config.blacklist = [];
 
-                        if (kokoro_config.blacklist.includes(event.senderID)) return;
+                        if (hajime_config.blacklist.includes(event.senderID)) return;
 
                         if (repeatedMessages.length === 10) {
-                            kokoro_config.blacklist.push(event.senderID);
-                            fs.writeFile(configPath, JSON.stringify(kokoro_config, null, 2), 'utf-8', (err) => {
+                            hajime_config.blacklist.push(event.senderID);
+                            fs.writeFile(configPath, JSON.stringify(hajime_config, null, 2), 'utf-8', (err) => {
                                 if (err) console.error('Error writing file:', err);
                             });
                             reply(`UserID: ${userId}, You have been Banned for Spamming.`);
@@ -114,7 +114,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         return;
                     }
 
-                    const maintenanceEnabled = kokoro_config?.maintenance?.enabled ?? false;
+                    const maintenanceEnabled = hajime_config?.maintenance?.enabled ?? false;
 
                     if (
                         event &&
@@ -129,7 +129,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         const senderID = event.senderID;
 
                         const super_admin =
-                            kokoro_config?.admins.includes(
+                            hajime_config?.admins.includes(
                                 event.senderID
                             );
 
@@ -144,7 +144,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
 
                         const excludes_mod = super_admin || bot_owner;
 
-                        if (kokoro_config?.blacklist.includes(event.senderID)) {
+                        if (hajime_config?.blacklist.includes(event.senderID)) {
                             return;
                         }
 
@@ -200,7 +200,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                     // Check if the command requires a premium user
                     if (aliases(command)?.isPremium === true) {
                         // Check if the sender is a premium user or an admin
-                        const isAdmin = admin.includes(senderID) || (kokoro_config?.admins.includes(senderID));
+                        const isAdmin = admin.includes(senderID) || (hajime_config?.admins.includes(senderID));
                         const isPremiumUser = premium[senderID];
 
                         if (!isAdmin && !isPremiumUser) {
@@ -359,7 +359,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                     const error_msg = `Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${error.stack}`;
                                     reply(error_msg);
                                     logger.red(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: ` + error.stack);
-                                    for (const adminID of kokoro_config.admins) {
+                                    for (const adminID of hajime_config.admins) {
             await chat.send(error_msg, adminID);
         }
                                 }
