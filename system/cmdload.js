@@ -19,28 +19,28 @@ async function loadModule(modulePath, Utils, logger, count) {
         const config = module.config || module.meta || module.manifest || module.metadata || module;
 
         if (!config) {
-            logger.red(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
+            logger.error(`Module at ${modulePath} does not have a "config" or "meta" property. Skipping...`);
             return count;
         }
 
         const moduleName = config.name;
         if (!moduleName) {
-            logger.red(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
+            logger.error(`Module at ${modulePath} does not have a "name" property in its config or meta. Skipping...`);
             return count;
         }
 
         if (loadedModuleNames.has(moduleName)) {
-            logger.instagram(`Module [${moduleName}] in file [${modulePath}] is already loaded.`);
+            logger.kleurBlue(`Module [${moduleName}] in file [${modulePath}] is already loaded.`);
 
             if (autoDelete) {
                 try {
                     fs.unlinkSync(modulePath);
-                    logger.yellow(`Deleted already loaded module file: ${modulePath}`);
+                    logger.chalk.yellow(`Deleted already loaded module file: ${modulePath}`);
                 } catch (deleteError) {
-                    logger.red(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
+                    logger.error(`Failed to delete file: ${modulePath}. Error: ${deleteError.message}`);
                 }
             } else {
-                logger.yellow(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
+                logger.chalk.yellow(`Module [${moduleName}] is already loaded. Skipping file [${modulePath}] as auto-delete is disabled.`);
             }
 
             return count;
@@ -84,10 +84,10 @@ async function loadModule(modulePath, Utils, logger, count) {
             Utils.commands.set(moduleInfo.aliases, { ...moduleInfo, run: executeFunction });
         }
 
-        logger.rainbow(`LOADED MODULE [${moduleName.toUpperCase()}]`);
+        logger.success(`LOADED MODULE [${moduleName.toUpperCase()}]`);
         return count + 1;
     } catch (error) {
-        logger.red(`Error loading module at ${modulePath}: ${error.stack}`);
+        logger.error(`Error loading module at ${modulePath}: ${error.stack}`);
         return count;
     }
 }
@@ -109,14 +109,14 @@ async function loadFromDirectory(directory, Utils, logger, count) {
         const results = await Promise.all(modulePromises);
         return results.reduce((sum, value) => sum + (value || 0), count);
     } catch (error) {
-        logger.red(`Error reading directory: ${directory}. Error: ${error.message}`);
+        logger.error(`Error reading directory: ${directory}. Error: ${error.message}`);
         return count;
     }
 }
 
 async function loadModules(Utils, logger) {
     let count = await loadFromDirectory(scriptDir, Utils, logger, 0);
-    logger.rainbow(`TOTAL MODULES LOADED: [${count}]`);
+    logger.success(`TOTAL MODULES LOADED: [${count}]`);
 }
 
 module.exports = {

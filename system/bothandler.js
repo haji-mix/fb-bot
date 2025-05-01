@@ -12,7 +12,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
 
                         let logMessage = `[${idType}]: ${idValue}\n[SENDER ID]: ${event.senderID}\n[MESSAGE]: ${(event?.body || "").trim()}`;
 
-                        logger.rainbow(fonts.origin(logMessage));
+                        logger.success(fonts.origin(logMessage));
                     }
 
                     const reply = async (msg) => {
@@ -302,7 +302,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                     Utils
                                 });
                             } catch (error) {
-                                logger.red(`Something wen't wrong with the handleEvent '${name}' error: ` + error.stack);
+                                logger.error(`Something wen't wrong with the handleEvent '${name}' error: ` + error.stack);
                             }
                         }
                     }
@@ -315,7 +315,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                         case "message_reply":
                             if (aliases(command?.toLowerCase())?.name) {
                                 try {
-                                    logger.rainbow(`[${aliases(command?.toLowerCase())?.name.toUpperCase()}] [CMD] [EXECUTED ✓]`);
+                                    logger.success(`[${aliases(command?.toLowerCase())?.name.toUpperCase()}] [CMD] [EXECUTED ✓]`);
                                     Utils.handleReply.findIndex(
                                         reply => reply.author === event.senderID
                                     ) !== -1
@@ -355,7 +355,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                 } catch (error) {
                                     const error_msg = `Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${error.stack}`;
                                     reply(error_msg);
-                                    logger.red(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: ` + error.stack);
+                                    logger.error(`Something wen't wrong with the command '${aliases(command?.toLowerCase())?.name}' error: ` + error.stack);
                                     for (const adminID of hajime_config.admins) {
             await chat.send(error_msg, adminID);
         }
@@ -395,7 +395,7 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
                                         Utils,
                                     });
                                 } catch (error) {
-                                    logger.red(`Something wen't wrong with the handleReply error: ` + error.stack);
+                                    logger.error(`Something wen't wrong with the handleReply error: ` + error.stack);
                                 }
                                 }
                             }

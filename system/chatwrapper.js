@@ -469,11 +469,11 @@ class onChat {
     }
 
     log(txt) {
-        logger.instagram(txt);
+        logger.success(txt);
     }
 
     error(txt) {
-        console.error(txt);
+        logger.error(txt);
     }
 }
 

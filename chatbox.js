@@ -124,7 +124,7 @@ async function startServer(stealth_port) {
   }
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
   server = app.listen(PORT, () =>
-    logger.instagram(
+    logger.success(
       `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
     )
   );
@@ -355,7 +355,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
       try {
         api.listenMqtt((error, event) => {
           if (error || !event) {
-            console.warn(error?.stack);
+            logger.chalk.yellow(error?.stack || error);
             process.exit(0);
           }
           const chat = new onChat(api, event);
@@ -440,7 +440,7 @@ async function main() {
       await empty.emptyDir(cacheFile);
       fs.writeFileSync(configFile, JSON.stringify(history, null, 2));
     } catch (error) {
-      logger.red("Error executing task: " + error.stack);
+      logger.error("Error executing task: " + error.stack);
     }
   }, 60000);
 
@@ -448,7 +448,7 @@ async function main() {
     try {
       // Verify file exists before attempting to read
       if (!fs.existsSync(filePath)) {
-        logger.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
+        logger.chalk.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
         return;
       }
       const state = decryptSession(
@@ -465,7 +465,7 @@ async function main() {
       const ERROR = error?.message || error?.error;
       for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
         if (pattern.test(ERROR)) {
-          logger.yellow(`Login issue for user ${userId}: ${type}`);
+          logger.chalk.yellow(`Login issue for user ${userId}: ${type}`);
           await deleteThisUser(userId);
           break;
         }
@@ -478,7 +478,7 @@ async function main() {
   if (fs.existsSync(sessionFolder)) {
     files = fs.readdirSync(sessionFolder).filter(file => file.endsWith('.json'));
   } else {
-    logger.info(`Session folder does not exist: ${sessionFolder}. Skipping session loading.`);
+    logger.error(`Session folder does not exist: ${sessionFolder}. Skipping session loading.`);
   }
 
   for (const file of files) {
@@ -505,7 +505,7 @@ async function main() {
         if (validateJsonArrayOfObjects(c3c_json)) break;
         c3c_json = null;
       } catch (error) {
-        logger.red(`Error parsing ${file}: ${error.message}`);
+        logger.error(`Error parsing ${file}: ${error.message}`);
       }
     }
   }
@@ -519,7 +519,7 @@ async function main() {
         await accountLogin(envState, process.env.PREFIX || "#", admins); // Session won't be saved due to isExternalState
       }
     } catch (error) {
-      logger.red(error.stack);
+      logger.error(error.stack || error);
     }
   }
 
@@ -533,7 +533,7 @@ async function main() {
         process.env.PASSWORD
       ); // Session won't be saved due to isExternalState
     } catch (error) {
-      logger.red(error.stack);
+      logger.error(error.stack || error);
     }
   }
 }
@@ -542,7 +542,7 @@ main();
 startServer();
 
 process.on("unhandledRejection", (reason) => {
-  logger.red(
+  logger.error(
     reason instanceof Error
       ? `${reason.name}: ${reason.message}\n${reason.stack}`
       : JSON.stringify(reason)
