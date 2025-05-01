@@ -72,13 +72,12 @@ const TRUSTED_IPS = ["127.0.0.1", "::1"];
 let server,
   underAttack = false;
 
-// Initialize self IP as trusted
 let selfIP = null;
 getSelfIP().then(ip => {
   if (ip) {
     selfIP = ip;
     TRUSTED_IPS.push(ip);
-    logger.success(`Added self IP ${ip} to trusted IPs`);
+    logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
   }
 });
 
