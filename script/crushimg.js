@@ -48,6 +48,5 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
 
     } catch (error) {
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
-        console.error(error);
     }
 };
