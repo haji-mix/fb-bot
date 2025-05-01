@@ -20,7 +20,6 @@ const {
   loadModules,
   encryptSession,
   decryptSession,
-  generateUserAgent,
   getCommands,
   getInfo,
   processExit,

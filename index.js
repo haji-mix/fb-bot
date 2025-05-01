@@ -2,6 +2,8 @@ require("dotenv").config();
 const { spawn } = require("child_process");
 const path = require("path");
 
+const { logger } = require("./system/modules");
+
 const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const restartEnabled = process.env.PID !== "0";
@@ -12,7 +14,7 @@ process.removeAllListeners('warning'); // Remove default warning handler
 process.on('warning', (warning) => {
   // Filter out specific warnings you want to ignore
   if (!warning.message.includes('DeprecationWarning')) {
-    console.warn(warning.name, warning.message);
+    logger.chalk.yellow.bold(warning.name, warning.message);
   }
 });
 
@@ -41,7 +43,7 @@ function cleanup() {
             try {
                 mainProcess.kill('SIGTERM');
             } catch (e) {
-                console.error('Error killing process:', e.message);
+                logger.error('Error killing process:', e.message);
             }
         }
         
@@ -53,7 +55,7 @@ function scheduleRestart(delay = RESTART_DELAY) {
     if (isRestarting) return;
     
     isRestarting = true;
-    console.log(`Scheduling restart in ${delay}ms...`);
+    logger.success(`Scheduling restart in ${delay}ms...`);
     cleanup();
     
     // Only set timeout if delay is positive
@@ -70,7 +72,7 @@ function scheduleRestart(delay = RESTART_DELAY) {
 function start() {
     isRestarting = false;
     const port = process.env.PORT;
-    console.log(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
+    logger.success(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
 
     cleanup(); // Clean up any existing process first
 
@@ -103,7 +105,7 @@ function start() {
             if (restartEnabled) {
                 scheduleRestart();
             } else {
-                console.log("Shutdown complete.");
+                logger.success("Shutdown complete.");
                 process.exit(exitCode);
             }
         };
@@ -113,18 +115,18 @@ function start() {
         mainProcess.once("close", onExit);
 
     } catch (e) {
-        console.error("Error spawning process:", e.message);
+        logger.error("Error spawning process:", e.message);
         scheduleRestart();
     }
 }
 
 function restartProcess() {
-    console.log("Performing controlled restart...");
+    logger.success("Performing controlled restart...");
     start();
 }
 
 function shutdown(signal) {
-    console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+    logger.success(`\nReceived ${signal}. Shutting down gracefully...`);
     cleanup();
     process.exit(0);
 }
