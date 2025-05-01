@@ -6,7 +6,7 @@ module.exports.config = {
     version: "1.5.0",
     credits: "Kenneth Panio",
     type: "nsfw",
-    role: 3,
+    role: 1,
     description: "Search or Fetch Random NSFW Cosplay.",
     usage: "[character/series/coser]",
     cooldown: 15
