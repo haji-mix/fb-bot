@@ -25,6 +25,7 @@ module.exports.run = async ({ args, message, event, font, prefix }) => {
         new URLSearchParams({
           prompt,
           style: useRealistic ? "realistic" : "anime",
+          negative_prompt: "blurry, low quality, distorted",
           uid: event.senderID
         })
       }`);
