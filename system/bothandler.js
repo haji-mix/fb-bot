@@ -5,9 +5,6 @@ async function botHandler({ fonts, chat, api, Utils, logger, event, aliases, adm
     
     const hajime_config = JSON.parse(fs.readFileSync('./hajime.json', 'utf-8'));
 
-
-                    chat.testCo(hajime_config.author, 2);
-
                     if (event && event.senderID && event?.body) {
                         const isGroup = event.isGroup || event.threadID !== event.senderID;
                         const idType = isGroup ? "GROUP ID" : "PRIVATE ID";

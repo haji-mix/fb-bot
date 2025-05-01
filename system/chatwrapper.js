@@ -5,15 +5,14 @@ const { fonts } = require("./fonts");
 
 const axios = require("axios");
 
-
 const formatBold = (text) => {
-      if (typeof text === 'string') {
+    if (typeof text === 'string') {
         return text.replace(/\*\*(.*?)\*\*/g, (_, content) => fonts.bold(content));
-      }
-      return text; 
-    };
+    }
+    return text;
+};
 
-class OnChat {
+class onChat {
     constructor(api = "", event = {}) {
         try {
             if (!api || !event) {
@@ -31,6 +30,38 @@ class OnChat {
         }
     }
 
+    // List of bad words (you can expand this list)
+    #badWords = ['damn', 'hell', 'shit', 'fuck', 'bitch', 'asshole', "nigga", "dick", "cock", "penis", "suck", "blowjob", "porn", "nude", "naked", "hack"];
+
+    #filterBadWords(text) {
+        if (typeof text !== 'string') return text;
+
+        let filteredText = text;
+        this.#badWords.forEach(word => {
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            filteredText = filteredText.replace(regex, match => {
+                if (match.length <= 2) return match;
+                return `${match[0]}${'*'.repeat(match.length - 2)}${match[match.length - 1]}`;
+            });
+        });
+        return filteredText;
+    }
+
+    #processUrls(text) {
+        if (typeof text !== 'string') return text;
+
+        const urlRegex = /(https?:\/\/[^\s/$.?#].[^\s]*)/gi;
+        return text.replace(urlRegex, url => {
+            const domainMatch = url.match(/https?:\/\/([^\/]+)/i);
+            if (domainMatch && domainMatch[1]) {
+                const domain = domainMatch[1];
+                const modifiedDomain = domain.replace(/\./g, '(.)');
+                return url.replace(domain, modifiedDomain);
+            }
+            return url;
+        });
+    }
+
     async shorturl(url) {
         try {
             if (!url) {
@@ -42,68 +73,34 @@ class OnChat {
         }
     }
 
-async tinyurl(url) {
-    const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
+    async tinyurl(url) {
+        const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
 
-    if (!url) {
-        throw new Error("URL is required.");
-    }
+        if (!url) {
+            throw new Error("URL is required.");
+        }
 
-    if (!Array.isArray(url)) {
-        url = [url];
-    }
+        if (!Array.isArray(url)) {
+            url = [url];
+        }
 
-    try {
-        const shortenedUrls = await Promise.all(
-            url.map(async (u) => {
-                if (!u || !urlRegex.test(u)) {
-                    return u;
-                }
-
-                const response = await axios.get(
-                    `https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`
-                );
-                return response.data;
-            })
-        );
-
-        return url.length === 1 ? shortenedUrls[0] : shortenedUrls;
-    } catch (error) {
-        return url.length === 1 ? url[0] : url;
-    }
-}
-
-    async testCo(pogiko, lvl = 1) {
         try {
-            const hajime = await workers();
-            if (!hajime || !hajime.design) {
-                throw new Error("Invalid workers response.");
-            }
+            const shortenedUrls = await Promise.all(
+                url.map(async (u) => {
+                    if (!u || !urlRegex闯test(u)) {
+                        return u;
+                    }
 
-            let test = hajime.design.author || atob("S2VubmV0aCBQYW5pbw==");
-            let test_6 = Array.isArray(pogiko) ? pogiko : [pogiko, test];
+                    const response = await axios.get(
+                        `https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`
+                    );
+                    return response.data;
+                })
+            );
 
-            if (Array.isArray(pogiko)) {
-                if (pogiko.length !== 2) {
-                    throw new Error("Array must contain exactly two authors for comparison.");
-                }
-            }
-
-            const [nega1, nega2] = test_6;
-            const kryo = atob("aHR0cHMlM0ElMkYlMkZmaWxlcy5jYXRib3gubW9lJTJGa3I2aWc3LnBuZw==");
-
-            if (nega1 !== nega2) {
-                if (lvl === 1) {
-                    return this.api.sendMessage(atob("RXJyb3Ih"), this.threadID, this.messageID);
-                } else if (lvl === 2) {
-                    const avatarStream = await this.stream(decodeURIComponent(kryo));
-                    return this.api.changeAvatar(avatarStream, atob("QU1CQVRVS0FN!"), null);
-                } else if (lvl == 3) {
-                    return;
-                }
-            }
+            return url.length === 1 ? shortenedUrls[0] : shortenedUrls;
         } catch (error) {
-            return null;
+            return url.length === 1 ? url[0] : url;
         }
     }
 
@@ -234,7 +231,8 @@ async tinyurl(url) {
             if (!msg || !id || !tid) {
                 throw new Error("Message, ID, and Thread ID are required.");
             }
-            return await this.api.shareContact(formatBold(msg), id, threadID);
+            const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
+            return await this.api.shareContact(formattedMsg, id, threadID);
         } catch (error) {
             return null;
         }
@@ -277,14 +275,17 @@ async tinyurl(url) {
             if (!threadID || !msg) {
                 throw new Error("Thread ID and Message are required.");
             }
-    
-            const formattedMsg = typeof msg === 'string' ? formatBold(msg) : {
-                ...msg,
-                body: msg.body ? formatBold(msg.body) : undefined
-            };
-    
+
+            // Apply bad word filter, URL processing, and bold formatting
+            const formattedMsg = typeof msg === 'string' ? 
+                formatBold(this.#processUrls(this.#filterBadWords(msg))) : 
+                {
+                    ...msg,
+                    body: msg.body ? formatBold(this.#processUrls(this.#filterBadWords(msg.body))) : undefined
+                };
+
             const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
-    
+
             return {
                 messageID: replyMsg.messageID,
                 edit: async (message, delay = 0) => {
@@ -318,7 +319,9 @@ async tinyurl(url) {
             if (!msg || !mid) {
                 throw new Error("Message and Message ID are required.");
             }
-            return await this.api.editMessage(formatBold(msg), mid);
+          
+            const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
+            return await this.api.editMessage(formattedMsg, mid);
         } catch (error) {
             return null;
         }
@@ -392,7 +395,7 @@ async tinyurl(url) {
         }
     }
 
-     botID() {
+    botID() {
         try {
             return this.api.getCurrentUserID();
         } catch (error) {
@@ -474,4 +477,4 @@ async tinyurl(url) {
     }
 }
 
-module.exports = { OnChat };
+module.exports = { onChat };

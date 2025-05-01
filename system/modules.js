@@ -8,8 +8,8 @@ const {
     fonts
 } = require("./fonts");
 const {
-    OnChat
-} = require("./chatOop");
+    onChat
+} = require("./chatwrapper");
 const {
     loadModules
 } = require("./cmdload");
@@ -38,7 +38,7 @@ module.exports = {
     logger,
     download,
     fonts,
-    OnChat,
+    onChat,
     loadModules,
     encryptSession,
     decryptSession,

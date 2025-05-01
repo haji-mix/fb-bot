@@ -2,180 +2,104 @@ const fs = require("fs");
 const path = require("path");
 const configPath = path.join(__dirname, '../hajime.json');
 
-module.exports["config"] = {
+module.exports.config = {
     name: 'help',
     version: '1.0.0',
     role: 0,
     isPrefix: false,
     type: "guide",
-    aliases: ['info',
-        'menu'],
+    aliases: ['info', 'menu'],
     info: "Beginner's guide",
     usage: "[page-number/commandname/all]",
-    credits: 'Developer',
+    credits: 'Developer'
 };
 
-module.exports["run"] = async ({
-    api, event, Utils, prefix, args, chat, font, global
-}) => {
-
+module.exports.run = async ({ api, event, Utils, prefix, args, chat, font }) => {
     if (!fs.existsSync(configPath)) {
         return api.sendMessage('Configuration file not found!', event.threadID, event.messageID);
     }
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-
     const input = args.join(' ').trim()?.toLowerCase();
     const allCommands = [...Utils.commands.values()];
     const perPage = 50;
     const totalCommands = allCommands.length;
 
     if (!input) {
-        let helpMessage = font.bold(`📚 | CMD LIST: 〔${prefix || 'NO PREFIX'}〕\n`);
-        helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
-
-        const firstPageCommands = allCommands.slice(0, perPage);
-        firstPageCommands.forEach((command, index) => {
-            const {
-                name, info, usage
-            } = command;
-            helpMessage += `\t${index + 1}. ${font.bold(name)} ${usage ? `${usage}`: ''}\n`;
+        let helpMessage = `${font.bold(`📚 | CMD LIST: [${prefix || 'NO PREFIX'}]\n`)}`;
+        helpMessage += `${font.bold(`TOTAL: ${totalCommands}\n\n`)}`;
+        
+        allCommands.slice(0, perPage).forEach((cmd, i) => {
+            helpMessage += `\t${i + 1}. ${font.bold(cmd.name)} ${cmd.usage || ''}\n`;
         });
 
-        /*  helpMessage += `\n• To see all commands, use '${prefix || ''}HELP ALL'\n`;*/
-        helpMessage += `\n• To see another page, use "HELP" [page-number]'\n`;
-        helpMessage += `• For more information use "HELP" [cmd name]"\n\n`;
-        helpMessage += `NOTE: NOT FOR SALE!\n- This bot is intended to be provided free of charge.`;
-        helpMessage += `\nGCASH NO: 09468377615. If you'd like to support us and keep our server running 24/7, please consider donating.\n\n`;
+        helpMessage += `\n• Use 'HELP [page-number]' for more pages\n`;
+        helpMessage += `• Use 'HELP [cmd name]' for details\n\n`;
 
-        const ireply = await chat.reply(font.thin(helpMessage) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
+        const ireply = await chat.reply(font.thin(helpMessage));
         ireply.unsend(150000);
-        const url_array = [
-            "https://files.catbox.moe/b5csz8.gif",
-            "https://files.catbox.moe/3irbyb.gif",
-            "https://files.catbox.moe/sh85xf.gif",
-            "https://files.catbox.moe/0q7egf.gif",
-            "https://files.catbox.moe/s7c7ka.gif",
-            "https://files.catbox.moe/kfnbg5.gif",
-            "https://files.catbox.moe/u9cd8m.gif",
-            "https://files.catbox.moe/7qab3k.gif"
-        ];
-        const url = await chat.stream(url_array[Math.floor(Math.random() * url_array.length)]);
-        if (url) {
-            chat.reply({
-                attachment: url
-            });
-        }
-    } else /* if (input === 'all') {
-    let helpMessage = font.bold(`📚 | CMD LIST 〔${prefix || 'NO PREFIX'}〕\n`);
-    helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
-
-    allCommands.forEach((command, index) => {
-      const { name, info, usage } = command;
-      helpMessage += `\t${index + 1}. ${font.bold(name)} ${usage ? `${usage}` : ''}\n`;
-    });
-    helpMessage += `\n• For more information use "HELP [cmd name]"`;
-
-    const ireply = await chat.reply(helpMessage);
-    ireply.unsend(150000);
-  } else */ if (!isNaN(input)) {
+    } else if (!isNaN(input)) {
         const page = parseInt(input);
         const totalPages = Math.ceil(totalCommands / perPage);
 
         if (page < 1 || page > totalPages) {
-            let ireply = await chat.reply(`INVALID PAGE NUMBER. PLEASE SPECIFY PAGE 1 UP TO ${totalPages}.`);
+            let ireply = await chat.reply(`Invalid page. Use 1 to ${totalPages}.`);
             ireply.unsend(5000);
             return;
         }
 
-        const startIndex = (page - 1) * perPage;
-        const endIndex = Math.min(startIndex + perPage, totalCommands);
-        const commandsOnPage = allCommands.slice(startIndex, endIndex);
+        const start = (page - 1) * perPage;
+        const end = Math.min(start + perPage, totalCommands);
+        const commandsOnPage = allCommands.slice(start, end);
 
-        let helpMessage = font.bold(`📚 | CMD LIST ${page}-${totalPages}\n`);
-        helpMessage += font.bold(`TOTAL COMMANDS: ${totalCommands}\n\n`);
+        let helpMessage = `${font.bold(`📚 | CMD LIST ${page}/${totalPages}\n`)}`;
+        helpMessage += `${font.bold(`TOTAL: ${totalCommands}\n\n`)}`;
 
-        commandsOnPage.forEach((command, index) => {
-            const {
-                name, info, usage
-            } = command;
-            helpMessage += `\t${startIndex + index + 1}. ${font.bold(name)} ${usage ? `${usage}`: ''}\n`;
+        commandsOnPage.forEach((cmd, i) => {
+            helpMessage += `\t${start + i + 1}. ${font.bold(cmd.name)} ${cmd.usage || ''}\n`;
         });
 
-        helpMessage += `\n• To see another page, use 'HELP [page-number]'\n`;
-        helpMessage += `• For more information use "HELP [cmd name]"\n\n`;
+        helpMessage += `\n• Use 'HELP [page-number]' for more pages\n`;
+        helpMessage += `• Use 'HELP [cmd name]' for details\n`;
 
-        const ireply = await chat.reply(font.thin(helpMessage) + `• If Device Doesn't Support Fonts Reply this message with "unfont"`);
+        const ireply = await chat.reply(font.thin(helpMessage) + `• Reply 'unfont' if fonts unsupported`);
         ireply.unsend(150000);
     } else {
-        const selectedCommand = allCommands.find(command => {
-            const aliases = command?.aliases || [];
-            return command.name?.toLowerCase() === input || aliases?.includes(input);
-        });
+        const cmd = allCommands.find(c => c.name?.toLowerCase() === input || c.aliases?.includes(input));
+        
+        if (cmd) {
+            const { name, version, role, aliases = [], info, usage, isPrefix, guide, credits, cd } = cmd;
+            const messages = [
+                `COMMAND DETAILS\n\n`,
+                name ? `NAME: ${font.bold(name)}\n` : '',
+                version ? `VERSION: ${version}\n` : '',
+                role !== undefined ? `ROLE: ${role === 0 ? 'User' : role === 1 ? 'Bot-admin owner' : role === 2 ? 'Group admins' : 'Super admins/moderators'}\n` : '',
+                aliases.length ? `ALIASES: ${aliases.join(', ')}\n` : '',
+                `PREFIX: ${isPrefix && prefix ? `Required (${prefix})` : 'Not Required'}\n`,
+                info ? `INFO: ${info}\n` : '',
+                usage ? `USAGE: ${usage}\n` : '',
+                guide ? `GUIDE: ${guide}\n` : '',
+                credits ? `CREDITS: ${credits}\n` : '',
+                cd ? `COOLDOWN: ${cd} second(s)\n` : ''
+            ].filter(Boolean);
 
-        if (selectedCommand) {
-            const {
-                name,
-                version,
-                role,
-                aliases = [],
-                info,
-                usage,
-                isPrefix,
-                guide,
-                credits,
-                cd
-            } = selectedCommand;
-
-            const nameMessage = name ? `NAME: ${font.bold(name)}\n`: '';
-            const versionMessage = version ? `VERSION: ${version}\n`: '';
-            const roleMessage = role !== undefined ? (role === 0 ? 'ROLE: User': (role === 1 ? 'ROLE: Bot-admin owner': (role === 2 ? 'ROLE: Group admins': (role === 3 ? 'ROLE: Super admins/moderators': '')))): '';
-            const aliasesMessage = aliases.length ? `\nALIASES: ${aliases.join(', ')}\n`: '';
-            const prefixMessage = isPrefix && prefix 
-    ? `PREFIX: Required to use ${prefix}\n` 
-    : 'PREFIX: Not Required\n';
-
-            const descriptionMessage = info ? `INFO: ${info}\n`: '';
-            const usageMessage = usage ? `USAGE: ${usage}\n`: '';
-            const guideMessage = guide ? `GUIDE: ${guide}\n`: '';
-            const creditsMessage = credits ? `CREDITS: ${credits}\n`: '';
-            const cooldownMessage = cd ? `COOLDOWN: ${cd} second(s)\n`: '';
-
-            const message = `COMMAND DETAILS\n\n` + nameMessage + versionMessage + roleMessage + aliasesMessage + prefixMessage + descriptionMessage + usageMessage + guideMessage + creditsMessage + cooldownMessage;
-            const ireply = await chat.reply(font.thin(message));
+            const ireply = await chat.reply(font.thin(messages.join('')));
             ireply.unsend(40000);
         } else {
-            let ireply = await chat.reply(`COMMAND '${input}' NOT FOUND. USE 'HELP' TO SEE ALL COMMANDS`);
+            let ireply = await chat.reply(`Command '${input}' not found. Use 'HELP' for list.`);
             ireply.unsend(10000);
         }
     }
 };
 
-
-module.exports["handleEvent"] = async ({
-    api, event, prefix, chat, font
-}) => {
-    const {
-        threadID,
-        messageID,
-        body
-    } = event;
+module.exports.handleEvent = async ({ event, prefix, chat, font }) => {
+    const { body } = event;
     try {
-
-        const message = prefix ? `PREFIX > ["${prefix}"]`: `hajime AI SYSTEM > ["NO PREFIX"]`;
-
-        const url_array = [
-            "https://files.catbox.moe/gv8exy.gif",
-            "https://files.catbox.moe/7wtf0h.gif"
-        ];
-        const url = await chat.stream(url_array[Math.floor(Math.random() * url_array.length)]);
-
+        const message = prefix ? `PREFIX > ["${prefix}"]` : `hajime AI SYSTEM > ["NO PREFIX"]`;
         if (["prefix", "system"].includes(body?.toLowerCase())) {
-            let ireply = await chat.reply({
-                body: font.thin(message), attachment: url
-            });
+            await chat.reply(font.thin(message));
         }
     } catch (error) {
-        console.error(error.message);
-    };
-}
+        console.error(error.stack || error.message);
+    }
+};
