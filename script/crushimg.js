@@ -2,42 +2,52 @@ const axios = require("axios");
 
 module.exports.config = {
     name: "crushimg",
-    aliases: ["genimg", "hgen", "agen"],
-    version: "1.4.0",
+    aliases: ["genimg", "hgen", "agen", "animegen"],
+    version: "1.5.0",
+    type: "text2image",
     credits: "Kenneth Panio",
     role: 0,
     description: "Generate AI art.",
     usage: "[prompt] [--style anime/realistic]",
     cooldown: 15
-  };
+};
 
-module.exports.run = async ({ args, message, event, font, prefix }) => {
+module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
     try {
-      const fullText = args.join(" ");
-      const useRealistic = fullText.includes("--style realistic");
-      const prompt = fullText.replace(/--style\s+\w+/i, "").trim();
-      
-      if (!prompt) return message.reply(font.thin("Please provide image description.\nExample: " + (prefix || "") + module.exports.config.name + " " + module.exports.config.usage));
+        const fullText = args.join(" ");
+        const useRealistic = fullText.includes("--style realistic");
+        const prompt = fullText.replace(/--style\s+\w+/i, "").trim();
+        
+        if (!prompt) return message.reply(font.thin("Please provide image description.\nExample: " + (prefix || "") + module.exports.config.name + " " + module.exports.config.usage));
 
-      const generatingMsg = await message.reply(font.thin("🔄 Generating your image... Please wait..."));
+        const generatingMsg = await message.reply(font.thin("🔄 Generating your image... Please wait..."));
 
-      const response = await message.stream(`${global.api.hajime}/api/crushimg?${
-        new URLSearchParams({
-          prompt,
-          style: useRealistic ? "realistic" : "anime",
-          negative_prompt: "blurry, low quality, distorted",
-          uid: event.senderID
-        })
-      }`);
+        const isAdmin = admin.includes(String(event.senderID));
+        
+        let negativePrompt = "blurry, low quality, distorted";
+        
+        if (!isAdmin) {
+            negativePrompt += ", hentai, nsfw, nude, naked, sexual, porn";
+        }
 
-       generatingMsg.delete(); 
+        const apiUrl = `${global.api.hajime}/api/crushimg?${
+            new URLSearchParams({
+                prompt,
+                style: useRealistic ? "realistic" : "anime",
+                negative_prompt: negativePrompt
+            })
+        }`;
 
-      return message.reply({
-        body: font.bold(`🎨 Generated: ${prompt}`),
-        attachment: response
-      });
+        const response = await message.stream(apiUrl);
+        generatingMsg.delete();
+
+        return message.reply({
+            body: font.bold(`🎨 Generated: ${prompt}`),
+            attachment: response
+        });
 
     } catch (error) {
-      message.reply(font.thin(`${error.stack || error.message}`));
+        message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
+        console.error(error);
     }
-  }
+};

@@ -6,6 +6,7 @@ module.exports["config"] = {
     name: "apitest",
     isPrefix: false,
     aliases: ["test"],
+    type: "tools",
     info: "Test any API endpoint with GET or POST.",
     usage: "[url] [optional: post_data]",
     guide: "Usage:\n" +
