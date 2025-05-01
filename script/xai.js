@@ -7,7 +7,6 @@ const DEFAULT_MODEL = "scira-default";
 module.exports["config"] = {
   name: "xai",
   isPrefix: false,
-  aliases: ["ai", "xai-ai"],
   version: "1.0.4",
   credits: "Kenneth Panio",
   role: 0,
