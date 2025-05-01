@@ -21,7 +21,7 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get("https://haji-mix.up.railway.app/api/gemini", {
+    const modelRes = await axios.get(global.api.hajime + "/api/gemini", {
       params: { check_models: true },
     });
     if (modelRes.data && modelRes.data.supported_models) {
@@ -35,7 +35,7 @@ async function fetchSupportedModels() {
   return cachedSupportedModels;
 }
 
-module.exports["run"] = async ({ args, chat, event }) => {
+module.exports["run"] = async ({ args, chat, event, format }) => {
   let modelIndex = userModelMap[event.senderID] || 0;
   let ask = args.join(" ");
   let isModelSelection = false;
@@ -106,7 +106,7 @@ module.exports["run"] = async ({ args, chat, event }) => {
       );
     }
 
-    const apiRes = await axios.get("https://haji-mix.up.railway.app/api/gemini", {
+    const apiRes = await axios.get(global.api.hajime + "/api/gemini", {
       params: {
         ask: ask,
         uid: event.senderID || "default-user",
@@ -121,7 +121,7 @@ module.exports["run"] = async ({ args, chat, event }) => {
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = `${answer}\n\nModel used: ${model_used}`;
+    const responseMessage = format(model_used.toUpperCase(), answer);
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

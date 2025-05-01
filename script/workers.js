@@ -2,35 +2,33 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "scira-default";
+const DEFAULT_MODEL = "@az/atomic0/haji-instruct-turbo"; // Default model name
 
 module.exports["config"] = {
-  name: "xai",
+  name: "cf",
+  aliases: ["workers"],
   isPrefix: false,
-  version: "1.0.4",
+  version: "1.0.0",
   credits: "Kenneth Panio",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with the xAI API to get AI responses.",
+  info: "Interact with the Workers API to get AI responses.",
   usage: "[model <index>] or [ask]",
   guide:
-    "xai hello (uses selected or default model)\nxai model 1 (switches to model at index 1 for user)",
+    "cf hello (uses selected or default model)\ncf model 1 (switches to model at index 1 for user)",
   cd: 6,
 };
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + `/api/xai`);
-  } catch (error) {
-    if (
-      error.response &&
-      error.response.status === 400 &&
-      error.response.data.supported_models
-    ) {
-      cachedSupportedModels = error.response.data.supported_models || [DEFAULT_MODEL];
+    const modelRes = await axios.get(global.api.hajime + "/api/workers?check_models=true");
+    if (modelRes.data && modelRes.data.supported_models) {
+      cachedSupportedModels = modelRes.data.supported_models;
     } else {
-      cachedSupportedModels = [DEFAULT_MODEL];
+      cachedSupportedModels = [DEFAULT_MODEL]; 
     }
+  } catch (error) {
+    cachedSupportedModels = [DEFAULT_MODEL]; 
   }
   return cachedSupportedModels;
 }
@@ -66,7 +64,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       .join("\n");
     return chat.reply(
       font.thin(
-        `Please provide a message or select a model!\nAvailable models:\n${modelList}`
+        `Please provide a message or select a model!\nAvailable models:\n${modelList}\n\nCurrent default model: ${DEFAULT_MODEL}`
       )
     );
   }
@@ -98,7 +96,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
           .join("\n");
         return chat.reply(
           font.thin(
-            `Invalid model index ${modelIndex}. Available models:\n${modelList}`
+            `Invalid model index ${modelIndex}. Available models:\n${modelList}\n\nCurrent default model: ${DEFAULT_MODEL}`
           )
         );
       }
@@ -109,42 +107,24 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.get(global.api.hajime + `/api/xai`, {
-      params: {
-        ask: ask,
-        uid: event.senderID || "default-user",
-        model: modelToUse,
-        group: "web",
-        roleplay: "",
-      },
-    });
+    const apiRes = await axios.get(
+      global.api.hajime + "/api/workers",
+      {
+        params: {
+          ask: ask,
+          uid: event.senderID || "default-user",
+          model: modelToUse,
+          roleplay: "",
+          max_tokens: "",
+          stream: false,
+        },
+      }
+    );
 
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    let responseMessage = format(model_used.toUpperCase(), answer);
-
-    if (
-      apiRes.data.search_results &&
-      apiRes.data.search_results.some(
-        (result) => result.images && result.images.length > 0
-      )
-    ) {
-      const images = apiRes.data.search_results.flatMap(
-        (result) => result.images || []
-      );
-      const imageUrls = images.map((image) => image.url);
-      const imageDescriptions = images
-        .map((image, index) => `${index + 1}. ${image.description}`)
-        .join("\n\n");
-
-      const attachments = await Promise.all(
-        imageUrls.map((url) => chat.stream(url))
-      );
-      responseMessage += `\n\nImages:\n${imageDescriptions}`;
-      return chat.reply({ body: responseMessage, attachment: attachments });
-    }
-
+    const responseMessage = format(model_used.split('/').pop().toUpperCase(), answer);
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

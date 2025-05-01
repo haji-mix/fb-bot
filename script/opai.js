@@ -32,7 +32,7 @@ async function fetchSupportedModels() {
   return cachedSupportedModels;
 }
 
-module.exports["run"] = async ({ args, chat, font, event }) => {
+module.exports["run"] = async ({ args, chat, font, event, format }) => {
   let modelIndex = userModelMap[event.senderID] || 0;
   let ask = args.join(" ");
   let isModelSelection = false;
@@ -124,7 +124,7 @@ module.exports["run"] = async ({ args, chat, font, event }) => {
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = `${answer}\n\nModel used: ${model_used}`;
+    const responseMessage = format(model_used.split('/').pop().toUpperCase(), answer);
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

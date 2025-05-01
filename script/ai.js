@@ -1,53 +1,61 @@
 const axios = require("axios");
 
 module.exports["config"] = {
-    name: "gpt4o",
-    isPrefix: false,
-    aliases: ["gpt", "gpt4", "ai"],
-    version: "1.0.0",
-    credits: "Kenneth Panio",
-    role: 0,
-    type: "artificial-intelligence",
-    info: "Interact with the GPT4o AI.",
-    usage: "[prompt]",
-    guide: "gpt4o hello?",
-    cd: 6
+  name: "gpt4o",
+  isPrefix: false,
+  aliases: ["gpt", "gpt4", "ai"],
+  version: "1.0.0",
+  credits: "Kenneth Panio",
+  role: 0,
+  type: "artificial-intelligence",
+  info: "Interact with the GPT4o AI.",
+  usage: "[prompt]",
+  guide: "gpt4o hello?",
+  cd: 6,
 };
 
-module.exports["run"] = async ({ args, chat, font, event }) => {
-    let ask = args.join(" ");
+module.exports["run"] = async ({ args, chat, font, event, format }) => {
+  let ask = args.join(" ");
 
-    if (event.type === "message_reply" && event.messageReply.body) {
-        ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
+  
+
+  if (event.type === "message_reply" && event.messageReply.body) {
+    ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
+  }
+
+  if (event.messageReply && event.messageReply.attachments) {
+    const attachments = event.messageReply.attachments;
+    const recog_urls = attachments.map((attachment) => attachment.url);
+    ask += `\n\nUser also sent these attachments: ${recog_urls.join(", ")}`;
+  }
+
+  if (!ask) return chat.reply(font.thin("Please provide a message!"));
+
+  const answering = await chat.reply(font.thin("Generating response..."));
+
+  try {
+    const res = await axios.get(
+      global.api.hajime +
+        `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${event.senderID}`
+    );
+
+    answering.unsend();
+
+    if (res.data.images && res.data.images.length > 0) {
+      const imageUrls = res.data.images.map((image) => image.url);
+      const imageDescriptions = res.data.images
+        .map((image, index) => `${index + 1}. ${image.description}`)
+        .join("\n\n");
+
+      const attachments = await Promise.all(
+        imageUrls.map((url) => chat.stream(url))
+      );
+      return chat.reply({ body: imageDescriptions, attachment: attachments });
     }
 
-    if (event.messageReply && event.messageReply.attachments) {
-        const attachments = event.messageReply.attachments;
-        const recog_urls = attachments.map(attachment => attachment.url); 
-        ask += `\n\nUser also sent these attachments: ${recog_urls.join(", ")}`; 
-    }
-
-    if (!ask) return chat.reply(font.thin('Please provide a message!'));
-
-    const answering = await chat.reply(font.thin("Generating response..."));
-    
-    try {
-        const res = await axios.get(global.api.hajime + `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${event.senderID}`);
-        
-        answering.unsend();
-        
-        if (res.data.images && res.data.images.length > 0) {
-            const imageUrls = res.data.images.map(image => image.url);
-            const imageDescriptions = res.data.images.map((image, index) => `${index + 1}. ${image.description}`).join("\n\n");
-            
-            
-            const attachments = await Promise.all(imageUrls.map(url => chat.stream(url)));
-            return chat.reply({ body: imageDescriptions, attachment: attachments });
-        }
-
-        chat.reply(res.data.answer);
-    } catch (error) {
-        chat.reply(font.thin(error.stack || error.message));
-        answering.unsend();
-    }
+    chat.reply(format("GPT-4O FREE", res.data.answer));
+  } catch (error) {
+    chat.reply(font.thin(error.stack || error.message));
+    answering.unsend();
+  }
 };

@@ -14,7 +14,7 @@ module.exports["config"] = {
     role: 3,
 };
 
-module.exports["run"] = async ({ api, event, args, chat, box, message, font, fonts, blacklist, prefix, admin, Utils }) => {
+module.exports["run"] = async ({ api, event, args, chat, box, message, font, fonts, blacklist, prefix, admin, Utils, FontSystem, format, UNIRedux }) => {
     let code;
 
     if (event.type === "message_reply" && event.messageReply && (event.messageReply.attachments.length === 0 || /https?:\/\/[^\s]+/.test(event.messageReply.body))) {
@@ -29,8 +29,6 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
 
     const logMessages = [];
     const errorMessages = [];
-    const originalLog = console.log;
-    const originalError = console.error;
 
     console.log = (...args) => logMessages.push(args.join(' '));
     console.error = (...args) => errorMessages.push(args.join(' '));
@@ -52,8 +50,6 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
 
     try {
         const result = await evalPromise;
-        console.log = originalLog;
-        console.error = originalError;
 
         const response = {
             logs: logMessages,
@@ -83,8 +79,6 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
             if (responseText) chat.reply(font.monospace(responseText));
         }
     } catch (error) {
-        console.log = originalLog;
-        console.error = originalError;
         chat.reply(font.monospace(error.stack || error.message));
     }
 };
