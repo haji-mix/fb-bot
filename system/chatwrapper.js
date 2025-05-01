@@ -203,6 +203,10 @@ class onChat {
         }
     }
 
+    async reaction(emoji, mid, bool) {
+        return this.react(emoji, mid, bool);
+    }
+
     async nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
         try {
             if (!name || !id) {
@@ -297,6 +301,14 @@ class onChat {
                     }
                 },
                 unsend: async (delay = 0) => {
+                    try {
+                        await new Promise(res => setTimeout(res, delay));
+                        return await this.unsendmsg(replyMsg.messageID);
+                    } catch (error) {
+                        return null;
+                    }
+                },
+                delete: async (delay = 0) => {
                     try {
                         await new Promise(res => setTimeout(res, delay));
                         return await this.unsendmsg(replyMsg.messageID);
