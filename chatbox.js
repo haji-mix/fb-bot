@@ -46,7 +46,7 @@ const Utils = {
 loadModules(Utils, logger);
 
 const app = express();
-app.enable("trust proxy").set("json spaces", 2);
+app.set("json spaces", 2);
 app
   .set("view engine", "ejs")
   .set("views", path.join(__dirname, "public", "views"));
