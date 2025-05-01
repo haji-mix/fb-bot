@@ -72,7 +72,7 @@ function scheduleRestart(delay = RESTART_DELAY) {
 function start() {
     isRestarting = false;
     const port = process.env.PORT;
-    logger.success(port ? `Starting main process on PORT=${port}` : "Starting main process without a specific port.");
+    logger.success(port ? `PROCCESS STARTED WITH PORT=${port}` : "PROCESS STARTED WITH DEFAULT PORT.");
 
     cleanup(); // Clean up any existing process first
 
