@@ -9,7 +9,7 @@ require("dotenv").config();
 
 global.api = {
   hajime: "https://haji-mix-api.gleeze.com"
-}
+};
 
 const {
   workers,
@@ -301,7 +301,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
       const userid = await api.getCurrentUserID();
       const sessionFile = path.join("./data/session", `${userid}.json`);
 
-      // Check for existing session and compare
+
       if (fs.existsSync(sessionFile)) {
         const existingSession = JSON.parse(
           fs.readFileSync(sessionFile, "utf8")
@@ -319,7 +319,6 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
         admin_uid = await api.getUID(admin).catch(() => admin);
       }
 
-      // Only save session if not using external state
       if (!isExternalState) {
         await addThisUser(userid, appState, prefix, admin_uid);
       }
@@ -340,8 +339,6 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
       }, 1000);
 
       api.setOptions({
-        fcaOption: {
-        userAgent: generateUserAgent(),
         forceLogin: false,
         listenEvents: true,
         logLevel: "silent",
@@ -350,7 +347,6 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
         online: true,
         autoMarkDelivery: false,
         autoMarkRead: false,
-      },
         userAgent: atob(
           "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
         ),
@@ -368,7 +364,7 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
               (key) => typeof chat[key] === "function" && key !== "constructor"
             )
             .forEach((key) => {
-              global[key] = chat[key].bind(chat); 
+              global[key] = chat[key].bind(chat);
             });
           botHandler({
             fonts,
@@ -426,8 +422,9 @@ async function main() {
   const configFile = "./data/history.json";
   const cacheFile = "./script/cache";
 
+  // Create necessary directories if they don't exist
   [cacheFile, sessionFolder, path.dirname(configFile)].forEach((dir) => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   });
   if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
 
@@ -449,6 +446,11 @@ async function main() {
 
   const loadSession = async (filePath, userId, prefix, admin) => {
     try {
+      // Verify file exists before attempting to read
+      if (!fs.existsSync(filePath)) {
+        logger.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
+        return;
+      }
       const state = decryptSession(
         JSON.parse(fs.readFileSync(filePath, "utf-8"))
       );
@@ -472,9 +474,13 @@ async function main() {
   };
 
   const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
-  const files = fs.existsSync(sessionFolder)
-    ? fs.readdirSync(sessionFolder)
-    : [];
+  let files = [];
+  if (fs.existsSync(sessionFolder)) {
+    files = fs.readdirSync(sessionFolder).filter(file => file.endsWith('.json'));
+  } else {
+    logger.info(`Session folder does not exist: ${sessionFolder}. Skipping session loading.`);
+  }
+
   for (const file of files) {
     const userId = path.parse(file).name;
     const { prefix, admin } =
