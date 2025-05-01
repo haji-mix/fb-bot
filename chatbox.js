@@ -28,12 +28,16 @@ const {
   obfuscate,
 } = require("./system/modules");
 
-const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
+const hajime_config = fs.existsSync("./hajime.json")
+  ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
+  : {}; // Fallback to empty object if hajime.json is missing
 const admins = Array.isArray(hajime_config?.admins)
-? hajime_config.admins
-: [];
+  ? hajime_config.admins
+  : []; // Ensure admins is always an array
 
-const pkg_config = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
+const pkg_config = fs.existsSync("./package.json")
+  ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
+  : { description: "", keywords: [], author: "", name: "" }; // Fallback for package.json
 
 const Utils = {
   commands: new Map(),
@@ -76,7 +80,7 @@ let server,
   underAttack = false;
 
 let selfIP = null;
-getSelfIP().then(ip => {
+getSelfIP().then((ip) => {
   if (ip) {
     selfIP = ip;
     TRUSTED_IPS.push(ip);
@@ -162,8 +166,8 @@ async function startServer(stealth_port) {
   );
 }
 
-const { description, keywords, author, name } = pkg_config;
-const sitekey = process.env.sitekey || hajime_config.sitekey;
+const { description = "", keywords = [], author = "", name = "" } = pkg_config; // Provide defaults
+const sitekey = process.env.sitekey || hajime_config.sitekey || ""; // Fallback for sitekey
 const cssFiles = getFilesFromDir("public/framework/css", ".css").map(
   (file) => `./framework/css/${file}`
 );
@@ -253,13 +257,18 @@ app.use((req, res) =>
 
 function getFilesFromDir(directory, fileExtension) {
   const dirPath = path.join(__dirname, directory);
-  return fs.existsSync(dirPath)
-    ? fs.readdirSync(dirPath).filter((file) => file.endsWith(fileExtension))
-    : [];
+  try {
+    return fs.existsSync(dirPath)
+      ? fs.readdirSync(dirPath).filter((file) => file.endsWith(fileExtension))
+      : [];
+  } catch (error) {
+    logger.error(`Error reading directory ${directory}: ${error.message}`);
+    return []; // Return empty array on error
+  }
 }
 
 async function getLogin(req, res) {
-  const { email, password, prefix, admin } = req.query;
+  const { email, password, prefix = "", admin = "" } = req.query; // Provide defaults
   try {
     await accountLogin(null, prefix, [admin], email, password);
     res
@@ -273,7 +282,7 @@ async function getLogin(req, res) {
 }
 
 async function postLogin(req, res) {
-  const { state, prefix, admin } = req.body;
+  const { state, prefix = "", admin = "" } = req.body; // Provide defaults
   try {
     if (
       !state ||
@@ -310,7 +319,7 @@ async function postLogin(req, res) {
   }
 }
 
-async function accountLogin(state, prefix = "", admin = admins || [], email, password) {
+async function accountLogin(state, prefix = "", admin = [], email, password) {
   const loginOptions = state ? { appState: state } : { email, password };
   if (
     !loginOptions.appState &&
@@ -337,17 +346,18 @@ async function accountLogin(state, prefix = "", admin = admins || [], email, pas
         const existingSession = JSON.parse(
           fs.readFileSync(sessionFile, "utf8")
         );
+        const decryptedSession = decryptSession(existingSession);
         if (
-          JSON.stringify(decryptSession(existingSession)) ===
-          JSON.stringify(appState)
+          decryptedSession &&
+          JSON.stringify(decryptedSession) === JSON.stringify(appState)
         ) {
           return reject(new Error("Duplicate session detected"));
         }
       }
 
-      let admin_uid = admin;
-      if (/(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin)) {
-        admin_uid = await api.getUID(admin).catch(() => admin);
+      let admin_uid = admin.length ? admin[0] : null; // Handle empty admin array
+      if (admin_uid && /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)) {
+        admin_uid = await api.getUID(admin_uid).catch(() => admin_uid);
       }
 
       if (!isExternalState) {
@@ -405,7 +415,7 @@ async function accountLogin(state, prefix = "", admin = admins || [], email, pas
             logger,
             event,
             aliases,
-            admin,
+            admin: admin_uid, // Use resolved admin_uid
             prefix,
             userid,
           });
@@ -424,7 +434,9 @@ async function addThisUser(userid, state, prefix, admin) {
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
   if (fs.existsSync(sessionFile)) return;
-  const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+  const config = fs.existsSync(configFile)
+    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+    : []; // Fallback to empty array
   config.push({ userid, prefix: prefix || "", admin, time: 0 });
   fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
   fs.writeFileSync(sessionFile, JSON.stringify(encryptSession(state)));
@@ -433,7 +445,9 @@ async function addThisUser(userid, state, prefix, admin) {
 async function deleteThisUser(userid) {
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
-  const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+  const config = fs.existsSync(configFile)
+    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+    : []; // Fallback to empty array
   const index = config.findIndex((item) => item.userid === userid);
   if (index !== -1) config.splice(index, 1);
   fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
@@ -444,7 +458,7 @@ function aliases(command) {
   const entry = Array.from(Utils.commands.entries()).find(([commands]) =>
     commands?.includes(command?.toLowerCase())
   );
-  return entry ? entry[1] : null;
+  return entry ? entry[1] : null; // Return null if no entry found
 }
 
 async function main() {
@@ -461,7 +475,9 @@ async function main() {
 
   setInterval(async () => {
     try {
-      const history = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+      const history = fs.existsSync(configFile)
+        ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+        : []; // Fallback to empty array
       history.forEach((user) => {
         if (user?.userid) {
           const update = Utils.account.get(user.userid);
@@ -487,7 +503,11 @@ async function main() {
       const state = decryptSession(
         JSON.parse(fs.readFileSync(filePath, "utf-8"))
       );
-      await accountLogin(state, prefix, admin);
+      if (!state) {
+        logger.chalk.yellow(`Invalid session data for user ${userId}`);
+        return;
+      }
+      await accountLogin(state, prefix || "", admin ? [admin] : []); // Ensure admin is an array
     } catch (error) {
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
@@ -506,7 +526,9 @@ async function main() {
     }
   };
 
-  const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
+  const config = fs.existsSync(configFile)
+    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+    : []; // Fallback to empty array
   let files = [];
   if (fs.existsSync(sessionFolder)) {
     files = fs
@@ -520,17 +542,19 @@ async function main() {
 
   for (const file of files) {
     const userId = path.parse(file).name;
-    const { prefix, admin } =
-      config.find((item) => item.userid === userId) || {};
-    await loadSession(path.join(sessionFolder, file), userId, prefix, admin);
+    const userConfig = config.find((item) => item.userid === userId) || {};
+    await loadSession(
+      path.join(sessionFolder, file),
+      userId,
+      userConfig.prefix,
+      userConfig.admin
+    );
   }
 
   const validateJsonArrayOfObjects = (data) => {
     if (!Array.isArray(data) || data.length === 0) return false;
     return data.every((item) => typeof item === "object" && item !== null);
   };
-
-
 
   let c3c_json = null;
   for (const file of ["./appstate.json", "./fbstate.json"]) {
@@ -551,7 +575,7 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || "#", null); // Session won't be saved due to isExternalState
+        await accountLogin(envState, process.env.PREFIX || "#", []); // Session won't be saved due to isExternalState
       }
     } catch (error) {
       logger.error(error.stack || error);
@@ -563,7 +587,7 @@ async function main() {
       await accountLogin(
         null,
         process.env.PREFIX || "#",
-        null,
+        [],
         process.env.EMAIL,
         process.env.PASSWORD
       ); // Session won't be saved due to isExternalState
