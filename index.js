@@ -131,23 +131,8 @@ function shutdown(signal) {
     process.exit(0);
 }
 
-// Process signal handlers
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('exit', cleanup);
 
-// Error handling
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    cleanup();
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    cleanup();
-    process.exit(1);
-});
-
-// Start the application
 start();
