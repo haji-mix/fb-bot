@@ -5,10 +5,11 @@ const express = require("express");
 const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
-  hajime: "https://haji-mix-api.gleeze.com"
+  hajime: "https://haji-mix-api.gleeze.com",
 };
 
 const {
@@ -45,6 +46,7 @@ const Utils = {
 loadModules(Utils, logger);
 
 const app = express();
+app.enable("trust proxy").set("json spaces", 2);
 app
   .set("view engine", "ejs")
   .set("views", path.join(__dirname, "public", "views"));
@@ -55,30 +57,58 @@ app
   .use(express.urlencoded({ extended: false }))
   .use(express.static(path.join(__dirname, "public")));
 
+async function getSelfIP() {
+  try {
+    const response = await axios.get("https://api.ipify.org/?format=json");
+    return response.data.ip;
+  } catch (error) {
+    logger.error("Failed to get self IP:", error.message);
+    return null;
+  }
+}
+
 const blockedIPs = new Map();
-const TRUSTED_IPS = ["127.0.0.1"];
+const TRUSTED_IPS = ["127.0.0.1", "::1"];
 let server,
   underAttack = false;
+
+// Initialize self IP as trusted
+let selfIP = null;
+getSelfIP().then(ip => {
+  if (ip) {
+    selfIP = ip;
+    TRUSTED_IPS.push(ip);
+    logger.success(`Added self IP ${ip} to trusted IPs`);
+  }
+});
+
+const getClientIp = (req) => {
+  return (
+    req.headers["cf-connecting-ip"] ||
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.ip
+  );
+};
 
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 500,
   handler: (req, res) => {
-    const clientIP = req.headers["cf-connecting-ip"] || req.ip;
+    const clientIP = getClientIp(req);
     if (!TRUSTED_IPS.includes(clientIP)) {
       blockedIPs.set(clientIP, Date.now());
       switchPort();
-      res.redirect("https://google.com/");
+      res.redirect("https://" + clientIP);
     }
   },
 });
 
 app
   .use((req, res, next) => {
-    const clientIP = req.headers["cf-connecting-ip"] || req.ip;
+    const clientIP = getClientIp(req);
     if (blockedIPs.has(clientIP)) {
       switchPort();
-      return res.redirect("https://google.com/");
+      return res.redirect("https://" + clientIP);
     }
     next();
   })
@@ -301,7 +331,6 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
       const userid = await api.getCurrentUserID();
       const sessionFile = path.join("./data/session", `${userid}.json`);
 
-
       if (fs.existsSync(sessionFile)) {
         const existingSession = JSON.parse(
           fs.readFileSync(sessionFile, "utf8")
@@ -448,7 +477,9 @@ async function main() {
     try {
       // Verify file exists before attempting to read
       if (!fs.existsSync(filePath)) {
-        logger.chalk.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
+        logger.chalk.yellow(
+          `Session file for user ${userId} does not exist: ${filePath}`
+        );
         return;
       }
       const state = decryptSession(
@@ -476,9 +507,13 @@ async function main() {
   const config = JSON.parse(fs.readFileSync(configFile, "utf-8"));
   let files = [];
   if (fs.existsSync(sessionFolder)) {
-    files = fs.readdirSync(sessionFolder).filter(file => file.endsWith('.json'));
+    files = fs
+      .readdirSync(sessionFolder)
+      .filter((file) => file.endsWith(".json"));
   } else {
-    logger.error(`Session folder does not exist: ${sessionFolder}. Skipping session loading.`);
+    logger.error(
+      `Session folder does not exist: ${sessionFolder}. Skipping session loading.`
+    );
   }
 
   for (const file of files) {
@@ -493,9 +528,9 @@ async function main() {
     return data.every((item) => typeof item === "object" && item !== null);
   };
 
-  const admins = Array.isArray(hajime_config?.admins) 
-        ? hajime_config.admins 
-        : [];
+  const admins = Array.isArray(hajime_config?.admins)
+    ? hajime_config.admins
+    : [];
 
   let c3c_json = null;
   for (const file of ["./appstate.json", "./fbstate.json"]) {

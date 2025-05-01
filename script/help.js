@@ -142,9 +142,34 @@ module.exports.handleEvent = async ({ event, prefix, chat, font }) => {
     const { body } = event;
     try {
         const message = prefix ? `PREFIX > ["${prefix}"]` : `CHATBOX AI SYSTEM > ["NO PREFIX"]`;
-        if (["prefix", "system"].includes(body?.toLowerCase())) {
-            chat.reply({ body: font.thin(message), attachment: await chat.stream(global.api.hajime + "/api/crushimg?prompt=hutao+genshin+impact&style=anime&negative_prompt=") });
-        }
+if (["prefix", "system"].includes(body?.toLowerCase())) {
+    const randomPrompts = [
+        "lumine genshim impact",
+        "klee genshim impact",
+        "paimon shogun genshin impact",
+        "nahida shogun genshin impact",
+        "anime girl in cherry blossom garden",
+        "tsundere girl",
+        "yandere girl",
+        "highschool girl",
+        "cute anime cat girl",
+        "magical girl transformation sequence",
+        "kawaii chibi characters"
+    ];
+    
+    const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
+    
+    chat.reply({ 
+        body: font.thin(message), 
+        attachment: await chat.stream(
+            global.api.hajime + "/api/crushimg?" + new URLSearchParams({
+                prompt: randomPrompt,
+                style: "anime",
+                negative_prompt: "hentai, nsfw, nude, naked, sexual, porn, blurry, low, quality, distorted, sketch drawing, pencil drawing"
+            })
+        ) 
+    });
+}
     } catch (error) {
         console.error(error.stack || error.message);
     }
