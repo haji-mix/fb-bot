@@ -29,6 +29,10 @@ const {
 } = require("./system/modules");
 
 const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
+const admins = Array.isArray(hajime_config?.admins)
+? hajime_config.admins
+: [];
+
 const pkg_config = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
 
 const Utils = {
@@ -306,7 +310,7 @@ async function postLogin(req, res) {
   }
 }
 
-async function accountLogin(state, prefix = "", admin = [], email, password) {
+async function accountLogin(state, prefix = "", admin = admins || [], email, password) {
   const loginOptions = state ? { appState: state } : { email, password };
   if (
     !loginOptions.appState &&
@@ -526,9 +530,7 @@ async function main() {
     return data.every((item) => typeof item === "object" && item !== null);
   };
 
-  const admins = Array.isArray(hajime_config?.admins)
-    ? hajime_config.admins
-    : [];
+
 
   let c3c_json = null;
   for (const file of ["./appstate.json", "./fbstate.json"]) {
@@ -549,7 +551,7 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || "#", admins); // Session won't be saved due to isExternalState
+        await accountLogin(envState, process.env.PREFIX || "#", null); // Session won't be saved due to isExternalState
       }
     } catch (error) {
       logger.error(error.stack || error);
@@ -561,7 +563,7 @@ async function main() {
       await accountLogin(
         null,
         process.env.PREFIX || "#",
-        admins,
+        null,
         process.env.EMAIL,
         process.env.PASSWORD
       ); // Session won't be saved due to isExternalState

@@ -2,7 +2,7 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "@az/atomic0/haji-instruct-turbo"; // Default model name
+const DEFAULT_MODEL = "@az/atomic0/haji-instruct-turbo";
 
 module.exports["config"] = {
   name: "cf",

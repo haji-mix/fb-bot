@@ -4,7 +4,7 @@ const configPath = path.join(__dirname, '../hajime.json');
 
 module.exports.config = {
     name: 'help',
-    version: '1.3.0',
+    version: '1.3.1',
     role: 0,
     isPrefix: false,
     type: "guide",
@@ -14,19 +14,21 @@ module.exports.config = {
     credits: 'Developer'
 };
 
-module.exports.run = async ({ api, event, Utils, prefix, args, chat, font }) => {
+module.exports.run = async ({ api, event, Utils, prefix, args, chat, font, admin }) => {
     if (!fs.existsSync(configPath)) {
         return api.sendMessage('Configuration file not found!', event.threadID, event.messageID);
     }
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     const input = args.join(' ').trim()?.toLowerCase();
-    const allCommands = [...Utils.commands.values()];
+    const isAdmin = admin.includes(String(event.senderID)); 
+    const allCommands = [...Utils.commands.values()].filter(cmd => 
+        isAdmin || cmd.type !== "nsfw" 
+    );
     const perPage = 50;
     const totalCommands = allCommands.length;
-    const commandPrefix = prefix || ''; // Use empty string if no prefix
+    const commandPrefix = prefix || '';
 
-    // Group commands by type
     const categorizedCommands = allCommands.reduce((acc, cmd) => {
         const type = cmd.type || 'Uncategorized';
         if (!acc[type]) acc[type] = [];
@@ -34,18 +36,16 @@ module.exports.run = async ({ api, event, Utils, prefix, args, chat, font }) => 
         return acc;
     }, {});
 
-    // Sort categories alphabetically
     const sortedCategories = Object.keys(categorizedCommands).sort();
 
     if (!input || input === 'all') {
         let helpMessage = `${font.bold(`📚 | COMMAND LIST: [${prefix || 'NO PREFIX'}]\n`)}`;
         helpMessage += `${font.bold(`TOTAL: ${totalCommands}\n\n`)}`;
 
-        // Display first page of categorized commands
         let commandCount = 0;
         for (const category of sortedCategories) {
             const commands = categorizedCommands[category];
-            if (commandCount + commands.length > perPage) break; // Stop if exceeding perPage
+            if (commandCount + commands.length > perPage) break;
             helpMessage += `${font.bold(`[${category.toUpperCase()}]`)}\n`;
             commands.forEach((cmd, i) => {
                 if (commandCount < perPage) {
@@ -75,14 +75,12 @@ module.exports.run = async ({ api, event, Utils, prefix, args, chat, font }) => 
         const start = (page - 1) * perPage;
         const end = Math.min(start + perPage, totalCommands);
 
-        // Flatten commands for pagination
         const flatCommands = sortedCategories.flatMap(category => categorizedCommands[category]);
         const commandsOnPage = flatCommands.slice(start, end);
 
         let helpMessage = `${font.bold(`📚 | COMMAND LIST ${page}/${totalPages}\n`)}`;
         helpMessage += `${font.bold(`TOTAL: ${totalCommands}\n\n`)}`;
 
-        // Rebuild categorized display for the page
         let commandCount = start;
         let currentIndex = 0;
         for (const category of sortedCategories) {
@@ -142,34 +140,34 @@ module.exports.handleEvent = async ({ event, prefix, chat, font }) => {
     const { body } = event;
     try {
         const message = prefix ? `PREFIX > ["${prefix}"]` : `CHATBOX AI SYSTEM > ["NO PREFIX"]`;
-if (["prefix", "system"].includes(body?.toLowerCase())) {
-    const randomPrompts = [
-        "lumine genshim impact",
-        "klee genshim impact",
-        "paimon shogun genshin impact",
-        "nahida shogun genshin impact",
-        "anime girl in cherry blossom garden",
-        "tsundere girl",
-        "yandere girl",
-        "highschool girl",
-        "cute anime cat girl",
-        "magical girl transformation sequence",
-        "kawaii chibi characters"
-    ];
-    
-    const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
-    
-    chat.reply({ 
-        body: font.thin(message), 
-        attachment: await chat.stream(
-            global.api.hajime + "/api/crushimg?" + new URLSearchParams({
-                prompt: randomPrompt,
-                style: "anime",
-                negative_prompt: "hentai, nsfw, nude, naked, sexual, porn, blurry, low, quality, distorted, sketch drawing, pencil drawing"
-            })
-        ) 
-    });
-}
+        if (["prefix", "system"].includes(body?.toLowerCase())) {
+            const randomPrompts = [
+                "lumine genshim impact",
+                "klee genshim impact",
+                "paimon shogun genshin impact",
+                "nahida shogun genshin impact",
+                "anime girl in cherry blossom garden",
+                "tsundere girl",
+                "yandere girl",
+                "highschool girl",
+                "cute anime cat girl",
+                "magical girl transformation sequence",
+                "kawaii chibi characters"
+            ];
+            
+            const randomPrompt = randomPrompts[Math.floor(Math.random() * randomPrompts.length)];
+            
+            chat.reply({ 
+                body: font.thin(message), 
+                attachment: await chat.stream(
+                    global.api.hajime + "/api/crushimg?" + new URLSearchParams({
+                        prompt: randomPrompt,
+                        style: "anime",
+                        negative_prompt: "hentai, nsfw, nude, naked, sexual, porn, blurry, low, quality, distorted, sketch drawing, pencil drawing"
+                    })
+                ) 
+            });
+        }
     } catch (error) {
         console.error(error.stack || error.message);
     }
