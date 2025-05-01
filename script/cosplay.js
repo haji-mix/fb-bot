@@ -12,7 +12,7 @@ module.exports.config = {
     cooldown: 15
 };
 
-module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
+module.exports.run = async ({ args, message, font }) => {
     try {
         const search = args.join(" ") || "";
       
