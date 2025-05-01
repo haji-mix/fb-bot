@@ -9,10 +9,8 @@ const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const restartEnabled = process.env.PID !== "0";
 const RESTART_DELAY = 5000; // 5 seconds
 
-// Suppress specific warnings (optional)
-process.removeAllListeners('warning'); // Remove default warning handler
+process.removeAllListeners('warning'); 
 process.on('warning', (warning) => {
-  // Filter out specific warnings you want to ignore
   if (!warning.message.includes('DeprecationWarning')) {
     logger.chalk.yellow.bold(warning.name, warning.message);
   }
@@ -23,15 +21,12 @@ let restartTimeout = null;
 let isRestarting = false;
 
 function cleanup() {
-    // Clear any pending restart
     if (restartTimeout) {
         clearTimeout(restartTimeout);
         restartTimeout = null;
     }
 
-    // Clean up main process
     if (mainProcess) {
-        // Remove all listeners to prevent memory leaks
         if (mainProcess.stdout) mainProcess.stdout.removeAllListeners();
         if (mainProcess.stderr) mainProcess.stderr.removeAllListeners();
         if (mainProcess.stdin) mainProcess.stdin.removeAllListeners();
@@ -58,12 +53,11 @@ function scheduleRestart(delay = RESTART_DELAY) {
     logger.success(`Scheduling restart in ${delay}ms...`);
     cleanup();
     
-    // Only set timeout if delay is positive
     if (delay > 0) {
         restartTimeout = setTimeout(() => {
-            restartTimeout = null; // Clear reference
+            restartTimeout = null; 
             restartProcess();
-        }, delay).unref(); // Allow process to exit without waiting for this timeout
+        }, delay).unref();
     } else {
         restartProcess();
     }
@@ -74,8 +68,7 @@ function start() {
     const port = process.env.PORT;
     logger.success(port ? `PROCCESS STARTED WITH PORT=${port}` : "PROCESS STARTED WITH DEFAULT PORT.");
 
-    cleanup(); // Clean up any existing process first
-
+    cleanup();
     try {
         mainProcess = spawn(process.execPath, ['--no-warnings', '--no-deprecation', SCRIPT_PATH], {
             cwd: __dirname,
