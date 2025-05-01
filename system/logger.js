@@ -18,10 +18,15 @@ const {
 const util = require('util');
 
 // ===== BASE SETUP ===== //
-const format = (msg) => typeof msg === 'string' ? msg : util.inspect(msg, { 
-  colors: false, 
-  depth: 4 
-});
+const format = (msg) => {
+  if (typeof msg === 'string') return msg;
+  if (msg instanceof Error) return msg.stack || msg.message;
+  return util.inspect(msg, { 
+    colors: false, 
+    depth: 4,
+    showHidden: false
+  });
+};
 
 const supportsColor = chalk.supportsColor;
 let COLOR_ENABLED = supportsColor.hasBasic;
@@ -42,14 +47,16 @@ logger.enableColors = (enabled = true) => {
 // ===== CHALK INTEGRATION ===== //
 const chalkStyles = {
   modifiers: ['bold', 'dim', 'italic', 'underline', 'inverse', 'strikethrough'],
-  colors: ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white'],
-  backgrounds: ['bgBlack', 'bgRed', 'bgGreen', 'bgYellow', 'bgBlue', 'bgMagenta', 'bgCyan']
+  colors: ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray'],
+  backgrounds: ['bgBlack', 'bgRed', 'bgGreen', 'bgYellow', 'bgBlue', 'bgMagenta', 'bgCyan', 'bgWhite']
 };
 
 logger.chalk = {};
 Object.entries(chalkStyles).forEach(([type, styles]) => {
   styles.forEach(style => {
-    logger.chalk[style] = (msg) => logger(msg, chalk[style]);
+    if (chalk[style]) { // Check if style exists to be safe
+      logger.chalk[style] = (msg) => logger(msg, chalk[style]);
+    }
   });
 });
 
@@ -65,17 +72,21 @@ logger.chalk.rgb = (r, g, b) => ({
 });
 
 // ===== KLEUR INTEGRATION ===== //
-const kleurStyles = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan'];
+const kleurStyles = ['black', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'white', 'gray'];
 
 logger.kleur = {};
 kleurStyles.forEach(color => {
-  // Standard colors
-  logger.kleur[color] = (msg) => logger(msg, kleur[color]);
-  
-  // Modifier chains
-  ['bold', 'italic', 'underline'].forEach(mod => {
-    logger.kleur[`${color}.${mod}`] = (msg) => logger(msg, kleur[color][mod]);
-  });
+  if (kleur[color]) { // Check if color exists
+    // Standard colors
+    logger.kleur[color] = (msg) => logger(msg, kleur[color]);
+    
+    // Modifier chains
+    ['bold', 'italic', 'underline'].forEach(mod => {
+      if (kleur[color][mod]) {
+        logger.kleur[`${color}.${mod}`] = (msg) => logger(msg, kleur[color][mod]);
+      }
+    });
+  }
 });
 
 // ===== GRADIENT INTEGRATION ===== //
@@ -100,7 +111,7 @@ Object.entries(gradientPresets).forEach(([name, grad]) => {
   logger.gradient[name] = (msg) => 
     COLOR_ENABLED 
       ? logger(msg, typeof grad === 'function' ? grad : gradient(grad))
-      : logger(msg, kleur.cyan);
+      : logger(msg);
 });
 
 logger.createGradient = (colors) => ({
@@ -117,23 +128,33 @@ logger.error = (err) => {
 
 // Success logging
 logger.success = (msg) => {
-  const message = typeof msg === 'string' ? msg : util.inspect(msg, { 
-    colors: false, 
-    depth: 4 
-  });
-  logger(message, fruit);
+  logger(format(msg), fruit);
 };
 
+// Warning logging
+logger.warn = (msg) => {
+  logger(format(msg), chalk.yellow.bold);
+};
+
+// Info logging
+logger.info = (msg) => {
+  logger(format(msg), chalk.blue);
+};
 
 // JSON formatting
 logger.json = (obj) => {
-  logger(JSON.stringify(obj, null, 2), chalk.cyan);
+  try {
+    logger(JSON.stringify(obj, null, 2), chalk.cyan);
+  } catch (e) {
+    logger('Invalid JSON object', chalk.red);
+  }
 };
 
 // Progress bar
 logger.progress = (percent, width = 20) => {
-  const blocks = '█'.repeat(Math.round(percent * width)).padEnd(width, '░');
-  logger(`[${blocks}] ${Math.round(percent * 100)}%`, chalk.green);
+  const clamped = Math.min(1, Math.max(0, percent));
+  const blocks = '█'.repeat(Math.round(clamped * width)).padEnd(width, '░');
+  logger(`[${blocks}] ${Math.round(clamped * 100)}%`, chalk.green);
 };
 
 // ===== INIT ===== //

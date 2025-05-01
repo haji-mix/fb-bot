@@ -2,32 +2,18 @@ const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
 
-const targetPath = path.join(__dirname, "../script/cache");
+const targetPath = path.join(__dirname, "../cache");
 
-// Function to delete all files in the target directory
-const deleteDirectoryAndFiles = (dirPath) => {
+const ensureDirectory = (dirPath) => {
     try {
-        if (fs.existsSync(dirPath)) {
-            const files = fs.readdirSync(dirPath);
-            files.forEach((file) => {
-                const filePath = path.join(dirPath, file);
-                if (fs.statSync(filePath).isDirectory()) {
-                    deleteDirectoryAndFiles(filePath);
-                } else {
-                    fs.unlinkSync(filePath);
-                }
-            });
-            fs.rmdirSync(dirPath);
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
         }
     } catch (error) {
-        console.error("Error deleting directory:", error);
+        console.error("Error creating directory:", error);
     }
 };
 
-// Delete existing cache files before starting
-deleteDirectoryAndFiles(targetPath);
-
-// Function to get headers based on the URL
 const getHeadersForUrl = (url) => {
     const domainPatterns = [
         { domains: ["pixiv.net", "i.pximg.net"], headers: { Referer: "http://www.pixiv.net/" } },
@@ -42,26 +28,21 @@ const getHeadersForUrl = (url) => {
         const domain = domainPatterns.find((pattern) =>
             pattern.domains.some((d) => new RegExp(`(?:https?://)?(?:www\.)?(${d})`, "i").test(url))
         );
-
         return domain ? domain.headers : {};
     } catch (error) {
-        console.error("Error getting headers for URL:", error);
         return {};
     }
 };
 
-// Function to get the file extension from a URL
 const getExtensionFromUrl = (url) => {
     try {
         const match = url.match(/\.([a-zA-Z0-9]+)(?:\?|#|$)/);
         return match ? match[1].toLowerCase() : null;
     } catch (error) {
-        console.error("Error getting extension from URL:", error);
         return null;
     }
 };
 
-// Function to get the file extension from the Content-Type header
 const getExtensionFromContentType = (contentType) => {
     if (!contentType) return null;
     const typeMap = {
@@ -77,80 +58,48 @@ const getExtensionFromContentType = (contentType) => {
         "audio/flac": "mp3",
         "video/mp4": "mp4",
         "video/webm": "webm",
-        "video/ogg": "mp4"
+        "video/ogg": "mp4",
     };
     return typeMap[contentType.split(";")[0]] || null;
 };
 
-// Default fallback extension
 const FALLBACK_EXTENSION = "txt";
 
-// Main download function
-const download = async (inputs, responseType = "arraybuffer", extension = "") => {
-    inputs = Array.isArray(inputs) ? inputs : [inputs];
-
-    // Ensure the target path exists
-    try {
-        if (!fs.existsSync(targetPath)) {
-            fs.mkdirSync(targetPath, { recursive: true });
-        }
-    } catch (error) {
-        console.error("Error ensuring target path exists:", error);
-    }
+const download = async (urls, responseType = "stream", extension = "") => {
+    urls = Array.isArray(urls) ? urls : [urls];
+    if (responseType === "arraybuffer") ensureDirectory(targetPath);
 
     try {
         const files = await Promise.all(
-            inputs.map(async (input) => {
-                let filePath;
+            urls.map(async (url) => {
+                if (!/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(url)) {
+                    return null; 
+                }
 
                 try {
-                    // Handling base64 encoded strings
-                    if (typeof input === "string" && /^[A-Za-z0-9+/=]+$/.test(input)) {
-                        const buffer = Buffer.from(input, "base64");
-                        filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || FALLBACK_EXTENSION}`);
-                        fs.writeFileSync(filePath, buffer);
-                        setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
-                        return fs.createReadStream(filePath);
+                    let fileExtension = getExtensionFromUrl(url);
+                    const axiosConfig = {
+                        responseType: responseType === "stream" ? "stream" : "arraybuffer",
+                        headers: getHeadersForUrl(url),
+                    };
+
+                    const response = await axios.get(url, axiosConfig);
+
+                    if (!fileExtension) {
+                        fileExtension = getExtensionFromContentType(response.headers["content-type"]);
+                    }
+                    fileExtension = fileExtension || extension || FALLBACK_EXTENSION;
+
+                    if (responseType === "stream") {
+                        return response.data;
                     }
 
-                    // Handling Buffer inputs
-                    if (Buffer.isBuffer(input)) {
-                        filePath = path.join(targetPath, `${Date.now()}_media_file.${extension || FALLBACK_EXTENSION}`);
-                        fs.writeFileSync(filePath, input);
-                        setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
-                        return fs.createReadStream(filePath);
-                    }
+                    const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
+                    fs.writeFileSync(filePath, response.data);
 
-                    // Handling URL inputs
-                    if (/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(input)) {
-                        let fileExtension = getExtensionFromUrl(input); // Get extension from URL
+                    setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
 
-                        const response = await axios.get(input, {
-                            responseType: responseType === "base64" ? "arraybuffer" : responseType,
-                            headers: getHeadersForUrl(input),
-                        });
-
-                        if (!fileExtension) {
-                            fileExtension = getExtensionFromContentType(response.headers["content-type"]); // Get extension from headers
-                        }
-
-                        fileExtension = fileExtension || extension || FALLBACK_EXTENSION; // Ensure fallback
-
-                        filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
-
-                        if (responseType === "arraybuffer" || responseType === "binary") {
-                            fs.writeFileSync(filePath, response.data);
-                        } else if (responseType === "stream") {
-                            return response.data;
-                        } else if (responseType === "base64") {
-                            fs.writeFileSync(filePath, Buffer.from(response.data).toString("base64"), "utf8");
-                        } else {
-                            fs.writeFileSync(filePath, response.data);
-                        }
-
-                        setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
-                        return fs.createReadStream(filePath);
-                    }
+                    return fs.createReadStream(filePath);
                 } catch (error) {
                     return null;
                 }
