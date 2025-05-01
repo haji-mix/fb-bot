@@ -4,7 +4,7 @@
   "description": "FB Autobot is a free tool that helps you automate Facebook tasks without coding skills. Build your own bot today!",
   "main": "index.js",
   "scripts": {
-    "start": "node --no-deprecation index.js",
+    "start": "node --no-warnings --no-deprecation index.js",
     "dev": "nodemon index.js",
     "install:prod": "npm install --omit=dev"
   },

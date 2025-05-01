@@ -7,6 +7,15 @@ const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const restartEnabled = process.env.PID !== "0";
 const RESTART_DELAY = 5000; // 5 seconds
 
+// Suppress specific warnings (optional)
+process.removeAllListeners('warning'); // Remove default warning handler
+process.on('warning', (warning) => {
+  // Filter out specific warnings you want to ignore
+  if (!warning.message.includes('DeprecationWarning')) {
+    console.warn(warning.name, warning.message);
+  }
+});
+
 let mainProcess = null;
 let restartTimeout = null;
 let isRestarting = false;
@@ -66,11 +75,15 @@ function start() {
     cleanup(); // Clean up any existing process first
 
     try {
-        mainProcess = spawn(process.execPath, [SCRIPT_PATH], {
+        mainProcess = spawn(process.execPath, ['--no-warnings', '--no-deprecation', SCRIPT_PATH], {
             cwd: __dirname,
             stdio: "inherit",
             shell: true,
-            env: { ...process.env, PORT: port },
+            env: { 
+                ...process.env, 
+                PORT: port,
+                NODE_NO_WARNINGS: '1' // Suppress warnings in child process
+            },
         });
 
         // Explicitly track if we've attached error handlers
@@ -116,22 +129,23 @@ function shutdown(signal) {
     process.exit(0);
 }
 
+// Process signal handlers
 process.on('SIGINT', () => shutdown('SIGINT'));
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('exit', cleanup);
 
-// Handle uncaught exceptions to prevent memory leaks
+// Error handling
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
     cleanup();
     process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     cleanup();
     process.exit(1);
 });
 
+// Start the application
 start();
