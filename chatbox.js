@@ -28,9 +28,6 @@ const {
   obfuscate,
 } = require("./system/modules");
 
-const config = fs.existsSync("./data/config.json")
-  ? JSON.parse(fs.readFileSync("./data/config.json", "utf8"))
-  : createConfig();
 const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
 const pkg_config = JSON.parse(fs.readFileSync("./package.json", "utf-8"));
 
@@ -343,7 +340,17 @@ async function accountLogin(state, prefix = "", admin = [], email, password) {
       }, 1000);
 
       api.setOptions({
-        ...config[0].fcaOption,
+        fcaOption: {
+        userAgent: generateUserAgent(),
+        forceLogin: false,
+        listenEvents: true,
+        logLevel: "silent",
+        updatePresence: true,
+        selfListen: false,
+        online: true,
+        autoMarkDelivery: false,
+        autoMarkRead: false,
+      },
         userAgent: atob(
           "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
         ),
@@ -523,26 +530,6 @@ async function main() {
       logger.red(error.stack);
     }
   }
-}
-
-function createConfig() {
-  const config = [
-    {
-      fcaOption: {
-        userAgent: generateUserAgent(),
-        forceLogin: false,
-        listenEvents: true,
-        logLevel: "silent",
-        updatePresence: true,
-        selfListen: false,
-        online: true,
-        autoMarkDelivery: false,
-        autoMarkRead: false,
-      },
-    },
-  ];
-  fs.writeFileSync("./data/config.json", JSON.stringify(config, null, 2));
-  return config;
 }
 
 main();
