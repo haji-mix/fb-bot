@@ -7,10 +7,7 @@
     "admins": [
         "61564818644187"
     ],
-    "blacklist": [
-        "61566761027554",
-        "61569830555062"
-    ],
+    "blacklist": [],
     "timezone": "Asia/Manila",
     "cronJobs": {
         "morningGreetings": {

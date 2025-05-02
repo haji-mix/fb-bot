@@ -640,7 +640,7 @@ async function main() {
       
       try {
         if (!fs.existsSync(filePath)) {
-          logger.chalk.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
+          logger.warn(`Session file for user ${userId} does not exist: ${filePath}`);
           continue;
         }
         
