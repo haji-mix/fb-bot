@@ -8,11 +8,6 @@ const cors = require("cors");
 const axios = require("axios");
 require("dotenv").config();
 
-global.api = {
-  hajime: "https://haji-mix-api.gleeze.com",
-  prefix: "#"
-};
-
 const {
   logger,
   fonts,
@@ -54,7 +49,7 @@ const sessionStore = new MongoStore({
     logger.success("Connected to MongoDB for session storage");
   } catch (error) {
     logger.error("Failed to connect to MongoDB:", error.message);
-    process.exit(1); // Exit if MongoDB connection fails
+    process.exit(1);
   }
 })();
 
@@ -376,7 +371,8 @@ async function accountLogin(
           JSON.stringify(decryptedSession) === JSON.stringify(appState)
         ) {
           logger.info(`Session for user ${userid} already exists, reusing...`);
-          // Reuse existing session without rejecting
+          resolve(); // Reuse existing session
+          return;
         } else {
           return reject(new Error("Session conflict detected"));
         }
@@ -415,7 +411,7 @@ async function accountLogin(
         profile_url: `https://facebook.com/${userid}`,
         time: 0,
         online: true,
-        api, // Store API instance for later use
+        api,
       });
 
       setInterval(() => {
@@ -452,7 +448,6 @@ async function accountLogin(
       });
 
       try {
-        // Ensure only one MQTT listener per API instance
         api.listenMqtt((error, event) => {
           if (error || !event) {
             logger.warn(error?.stack || error);
@@ -585,21 +580,20 @@ async function main() {
 
       if (!encryptedSession || !userConfig) {
         logger.warn(`Session or config data for user ${userid} not found in MongoDB`);
-        await deleteThisUser(userid); // Clean up invalid entries
-        return;
+        await deleteThisUser(userid);
+        return false;
       }
 
       const state = decryptSession(encryptedSession);
       if (!state) {
         logger.warn(`Invalid session data for user ${userid}`);
         await deleteThisUser(userid);
-        return;
+        return false;
       }
 
-      // Check if the account is already logged in
       if (Utils.account.get(userid)?.online) {
-        logger.info(`User ${userid} is already logged in, skipping...`);
-        return;
+        logger.info(`User ${userid} is already logged in, skipping MongoDB session load`);
+        return true;
       }
 
       await accountLogin(
@@ -607,7 +601,8 @@ async function main() {
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
-      logger.success(`Successfully loaded session for user ${userid}`);
+      logger.success(`Successfully loaded session for user ${userid} from MongoDB`);
+      return true;
     } catch (error) {
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
@@ -623,11 +618,13 @@ async function main() {
           break;
         }
       }
-      logger.error(`Failed to load session for user ${userid}: ${error.message}`);
+      logger.error(`Failed to load session for user ${userid} from MongoDB: ${error.message}`);
+      return false;
     }
   };
 
   try {
+    // Load sessions from MongoDB first
     const sessions = await sessionStore.entries();
     const userIds = new Set();
 
@@ -638,16 +635,13 @@ async function main() {
       }
     }
 
-    // Load sessions sequentially to avoid overwhelming the server
     for (const userid of userIds) {
       await loadMongoSession(userid);
     }
 
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
-  } catch (error) {
-    logger.error(`Failed to load sessions from MongoDB: ${error.message}`);
 
-    logger.info("Falling back to file-based session loading");
+    // Fallback to file-based sessions only for users not in MongoDB
     const sessionFolder = path.join("./data/session");
     const configFile = "./data/history.json";
 
@@ -669,22 +663,37 @@ async function main() {
 
     for (const file of files) {
       const userId = path.parse(file).name;
+
+      // Skip if user is already logged in from MongoDB
+      if (Utils.account.get(userId)?.online) {
+        logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
+        // Optionally, remove the file to clean up
+        await deleteThisUser(userId);
+        continue;
+      }
+
       const userConfig = config.find((item) => item.userid === userId) || {};
       const filePath = path.join(sessionFolder, file);
 
       try {
         if (!fs.existsSync(filePath)) {
-          logger.warn(
-            `Session file for user ${userId} does not exist: ${filePath}`
-          );
+          logger.warn(`Session file for user ${userId} does not exist: ${filePath}`);
           continue;
         }
 
-        const state = decryptSession(
-          JSON.parse(fs.readFileSync(filePath, "utf-8"))
-        );
+        const encryptedSession = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        const state = decryptSession(encryptedSession);
         if (!state) {
-          logger.warn(`Invalid session data for user ${userId}`);
+          logger.warn(`Invalid session data for user ${userId} in file`);
+          await deleteThisUser(userId);
+          continue;
+        }
+
+        // Check if session already exists in MongoDB
+        const existingMongoSession = await sessionStore.get(`session_${userId}`);
+        if (existingMongoSession) {
+          logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+          await deleteThisUser(userId); // Clean up file-based session
           continue;
         }
 
@@ -694,10 +703,8 @@ async function main() {
           userConfig.admin ? [userConfig.admin] : admins
         );
 
-        await sessionStore.put(
-          `session_${userId}`,
-          JSON.parse(fs.readFileSync(filePath, "utf-8"))
-        );
+        // Migrate to MongoDB
+        await sessionStore.put(`session_${userId}`, encryptedSession);
         await sessionStore.put(`config_${userId}`, {
           userid: userId,
           prefix: userConfig.prefix || "",
@@ -705,10 +712,15 @@ async function main() {
           time: userConfig.time || 0,
           migratedAt: Date.now(),
         });
+
+        logger.success(`Migrated session for user ${userId} from file to MongoDB`);
+        await deleteThisUser(userId); // Remove file-based session after migration
       } catch (error) {
-        logger.error(`Error loading session for ${userId}: ${error.message}`);
+        logger.error(`Error loading session for ${userId} from file: ${error.message}`);
       }
     }
+  } catch (error) {
+    logger.error(`Failed to load sessions: ${error.message}`);
   }
 
   const validateJsonArrayOfObjects = (data) => {
