@@ -328,20 +328,46 @@ class onChat {
         attachments = [attachments].filter((a) => a); // Remove undefined/null
       }
 
+      // If body is empty and no attachments, send a single empty message
+      if (!formattedBody && attachments.length === 0) {
+        const replyMsg = await this.api.sendMessage({ body: "" }, threadID, mid);
+        return {
+          messageID: replyMsg.messageID,
+          edit: async (message, delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.editmsg(message, replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          unsend: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          delete: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+        };
+      }
+
       // If the body is within the character limit and attachments are within the limit, send as a single message
-      if (
-        formattedBody.length <= MAX_CHAR_LIMIT &&
-        attachments.length <= MAX_ATTACHMENT_LIMIT
-      ) {
+      if (formattedBody.length <= MAX_CHAR_LIMIT && attachments.length <= MAX_ATTACHMENT_LIMIT) {
         const formattedMsg =
           typeof msg === "string"
-            ? formattedBody
-            : { ...messageObj, body: formattedBody };
-        const replyMsg = await this.api.sendMessage(
-          formattedMsg,
-          threadID,
-          mid
-        );
+            ? { body: formattedBody, attachment: attachments.length > 0 ? attachments : undefined }
+            : { ...messageObj, body: formattedBody, attachment: attachments.length > 0 ? attachments : undefined };
+        // console.log("Sending single message:", formattedMsg); // Debug log
+        const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
 
         return {
           messageID: replyMsg.messageID,
@@ -402,52 +428,43 @@ class onChat {
 
       // Split attachments into chunks of MAX_ATTACHMENT_LIMIT
       const attachmentChunks = [];
-      if (attachments.length > 0) {
+      if (attachments.length > MAX_ATTACHMENT_LIMIT) {
         for (let i = 0; i < attachments.length; i += MAX_ATTACHMENT_LIMIT) {
           attachmentChunks.push(attachments.slice(i, i + MAX_ATTACHMENT_LIMIT));
         }
+      } else if (attachments.length > 0) {
+        attachmentChunks.push(attachments);
       }
 
-      // Combine text messages and attachment chunks
+      // Build messages to send
       const allMessages = [];
+      let textIndex = 0;
 
-      // If there are text messages, add them
-      if (messages.length > 0) {
-        // First message gets the first text chunk and first attachment chunk (if any)
+      // First message: include first text chunk (if any) and first attachment chunk (if any)
+      if (messages.length > 0 || attachmentChunks.length > 0) {
         allMessages.push({
-          body: messages[0],
-          attachment:
-            attachmentChunks.length > 0 ? attachmentChunks.shift() : undefined,
+          body: messages.length > 0 ? messages[textIndex++] : "",
+          attachment: attachmentChunks.length > 0 ? attachmentChunks.shift() : undefined,
         });
+      }
 
-        // Add remaining text messages
-        for (let i = 1; i < messages.length; i++) {
-          allMessages.push({
-            body: `... ${messages[i]}`,
-            attachment: undefined,
-          });
-        }
+      // Add remaining text messages
+      while (textIndex < messages.length) {
+        allMessages.push({
+          body: `... ${messages[textIndex++]}`,
+          attachment: undefined,
+        });
       }
 
       // Add remaining attachment chunks
       for (const chunk of attachmentChunks) {
         allMessages.push({
-          body: messages.length > 0 ? "... (Attachments)" : "",
+          body: "... (Attachments)",
           attachment: chunk,
         });
       }
 
-      // If no messages or attachments were added, ensure at least one empty message is sent
-      if (
-        allMessages.length === 0 &&
-        formattedBody === "" &&
-        attachments.length === 0
-      ) {
-        allMessages.push({
-          body: "",
-          attachment: undefined,
-        });
-      }
+      // console.log("Sending multiple messages:", allMessages); // Debug log
 
       // Send each message sequentially
       const sentMessages = [];
@@ -498,6 +515,7 @@ class onChat {
         },
       };
     } catch (error) {
+      // console.error("Reply error:", error); // Debug log
       return {
         messageID: null,
         edit: async () => null,
