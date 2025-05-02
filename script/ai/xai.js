@@ -122,7 +122,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    let responseMessage = answer;
+    let responseMessage = format(model_used.toUpperCase(), answer);
 
     if (
       apiRes.data.search_results &&
@@ -145,7 +145,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       return chat.reply({ body: responseMessage, attachment: attachments });
     }
 
-    chat.reply(format(model_used.toUpperCase(), responseMessage));
+    chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();
     chat.reply(font.thin(error.stack || error.message));
