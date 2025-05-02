@@ -127,7 +127,7 @@ logger.error = (err) => {
 };
 
 // Success logging
-logger.info = (msg) => {
+logger.success = (msg) => {
   logger(format(msg), fruit);
 };
 

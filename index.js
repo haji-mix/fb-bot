@@ -51,7 +51,7 @@ function scheduleRestart(delay = RESTART_DELAY) {
     if (isRestarting) return;
     
     isRestarting = true;
-    logger.info(`Scheduling restart in ${delay}ms...`);
+    logger.success(`Scheduling restart in ${delay}ms...`);
     cleanup();
     
     if (delay > 0) {
@@ -67,7 +67,7 @@ function scheduleRestart(delay = RESTART_DELAY) {
 function start() {
     isRestarting = false;
     const port = process.env.PORT;
-    logger.info(port ? `PROCCESS STARTED WITH PORT=${port}` : "PROCESS STARTED WITH DEFAULT PORT.");
+    logger.success(port ? `PROCCESS STARTED WITH PORT=${port}` : "PROCESS STARTED WITH DEFAULT PORT.");
 
     cleanup();
     try {
@@ -99,7 +99,7 @@ function start() {
             if (restartEnabled) {
                 scheduleRestart();
             } else {
-                logger.info("Shutdown complete.");
+                logger.success("Shutdown complete.");
                 process.exit(exitCode);
             }
         };
@@ -115,12 +115,12 @@ function start() {
 }
 
 function restartProcess() {
-    logger.info("Performing controlled restart...");
+    logger.success("Performing controlled restart...");
     start();
 }
 
 function shutdown(signal) {
-    logger.info(`\nReceived ${signal}. Shutting down gracefully...`);
+    logger.success(`\nReceived ${signal}. Shutting down gracefully...`);
     cleanup();
     process.exit(0);
 }

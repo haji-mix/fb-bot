@@ -574,7 +574,7 @@ class onChat {
     }
 
     log(txt) {
-        logger.info(txt);
+        logger.success(txt);
     }
 
     error(txt) {
