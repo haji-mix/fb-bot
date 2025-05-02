@@ -97,7 +97,7 @@ class onChat {
 
     if (!url) {
       throw new Error("URL is required.");
-      }
+    }
 
     if (!Array.isArray(url)) {
       url = [url];
@@ -329,12 +329,19 @@ class onChat {
       }
 
       // If the body is within the character limit and attachments are within the limit, send as a single message
-      if (formattedBody.length <= MAX_CHAR_LIMIT && attachments.length <= MAX_ATTACHMENT_LIMIT) {
+      if (
+        formattedBody.length <= MAX_CHAR_LIMIT &&
+        attachments.length <= MAX_ATTACHMENT_LIMIT
+      ) {
         const formattedMsg =
           typeof msg === "string"
             ? formattedBody
             : { ...messageObj, body: formattedBody };
-        const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
+        const replyMsg = await this.api.sendMessage(
+          formattedMsg,
+          threadID,
+          mid
+        );
 
         return {
           messageID: replyMsg.messageID,
@@ -367,26 +374,30 @@ class onChat {
 
       // If limits are exceeded, split the message and/or attachments
       const messages = [];
-      let currentMessage = "";
-      let charCount = 0;
+      if (formattedBody.length > MAX_CHAR_LIMIT) {
+        let currentMessage = "";
+        let charCount = 0;
 
-      // Split the body into words to preserve word boundaries
-      const words = formattedBody.split(" ");
-      for (const word of words) {
-        const wordLength = word.length + 1; // +1 for the space
-        if (charCount + wordLength > MAX_CHAR_LIMIT) {
-          messages.push(currentMessage.trim());
-          currentMessage = word + " ";
-          charCount = wordLength;
-        } else {
-          currentMessage += word + " ";
-          charCount += wordLength;
+        // Split the body into words to preserve word boundaries
+        const words = formattedBody.split(" ");
+        for (const word of words) {
+          const wordLength = word.length + 1; // +1 for the space
+          if (charCount + wordLength > MAX_CHAR_LIMIT) {
+            messages.push(currentMessage.trim());
+            currentMessage = word + " ";
+            charCount = wordLength;
+          } else {
+            currentMessage += word + " ";
+            charCount += wordLength;
+          }
         }
-      }
 
-      // Push the last chunk if it exists
-      if (currentMessage.trim()) {
-        messages.push(currentMessage.trim());
+        // Push the last chunk if it exists
+        if (currentMessage.trim()) {
+          messages.push(currentMessage.trim());
+        }
+      } else if (formattedBody) {
+        messages.push(formattedBody);
       }
 
       // Split attachments into chunks of MAX_ATTACHMENT_LIMIT
@@ -399,45 +410,42 @@ class onChat {
 
       // Combine text messages and attachment chunks
       const allMessages = [];
-      let hasText = messages.length > 0;
 
-      // Add the first text message with the first attachment chunk if both exist
-      if (hasText && attachmentChunks.length > 0) {
+      // If there are text messages, add them
+      if (messages.length > 0) {
+        // First message gets the first text chunk and first attachment chunk (if any)
         allMessages.push({
           body: messages[0],
-          attachment: attachmentChunks[0],
+          attachment:
+            attachmentChunks.length > 0 ? attachmentChunks.shift() : undefined,
         });
-        messages.shift(); // Remove the first text message
-        attachmentChunks.shift(); // Remove the first attachment chunk
-      } else if (hasText) {
-        // Add the first text message without attachments
-        allMessages.push({
-          body: messages[0],
-          attachment: undefined,
-        });
-        messages.shift();
-      } else if (attachmentChunks.length > 0) {
-        // Add the first attachment chunk without text
-        allMessages.push({
-          body: "",
-          attachment: attachmentChunks[0],
-        });
-        attachmentChunks.shift();
-      }
 
-      // Add remaining text messages
-      for (const message of messages) {
-        allMessages.push({
-          body: `... ${message}`,
-          attachment: undefined,
-        });
+        // Add remaining text messages
+        for (let i = 1; i < messages.length; i++) {
+          allMessages.push({
+            body: `... ${messages[i]}`,
+            attachment: undefined,
+          });
+        }
       }
 
       // Add remaining attachment chunks
       for (const chunk of attachmentChunks) {
         allMessages.push({
-          body: "... (Attachments)",
+          body: messages.length > 0 ? "... (Attachments)" : "",
           attachment: chunk,
+        });
+      }
+
+      // If no messages or attachments were added, ensure at least one empty message is sent
+      if (
+        allMessages.length === 0 &&
+        formattedBody === "" &&
+        attachments.length === 0
+      ) {
+        allMessages.push({
+          body: "",
+          attachment: undefined,
         });
       }
 
