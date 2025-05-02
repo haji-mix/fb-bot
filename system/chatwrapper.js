@@ -308,7 +308,7 @@ class onChat {
         throw new Error("Thread ID and Message are required.");
       }
 
-      // Determine the message body and attachments based on input type
+      // Determine the message body based on input type
       let messageBody = typeof msg === "string" ? msg : msg.body || "";
       let messageObj = typeof msg === "string" ? { body: msg } : { ...msg };
 
@@ -319,93 +319,16 @@ class onChat {
 
       // Maximum character limit for Facebook Messenger
       const MAX_CHAR_LIMIT = 5000;
-      // Maximum attachment limit
-      const MAX_ATTACHMENT_LIMIT = 10;
 
-      // Handle attachments
-      let attachments = messageObj.attachment || [];
-      if (!Array.isArray(attachments)) {
-        attachments = [attachments].filter((a) => a); // Remove undefined/null
-      }
-
-      // If body is empty and no attachments, send a single empty message
-      if (!formattedBody && attachments.length === 0) {
-        const replyMsg = await this.api.sendMessage({ body: "" }, threadID, mid);
-        return {
-          messageID: replyMsg.messageID,
-          edit: async (message, delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.editmsg(message, replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-          unsend: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-          delete: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-        };
-      }
-
-      // If the body is within the character limit and attachments are within the limit, send as a single message
-      if (formattedBody.length <= MAX_CHAR_LIMIT && attachments.length <= MAX_ATTACHMENT_LIMIT) {
-        const formattedMsg =
-          typeof msg === "string"
-            ? { body: formattedBody, attachment: attachments.length > 0 ? attachments : undefined }
-            : { ...messageObj, body: formattedBody, attachment: attachments.length > 0 ? attachments : undefined };
-        // console.log("Sending single message:", formattedMsg); // Debug log
-        const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
-
-        return {
-          messageID: replyMsg.messageID,
-          edit: async (message, delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.editmsg(message, replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-          unsend: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-          delete: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              return null;
-            }
-          },
-        };
-      }
-
-      // If limits are exceeded, split the message and/or attachments
-      const messages = [];
+      // If the body exceeds the character limit, split it
       if (formattedBody.length > MAX_CHAR_LIMIT) {
+        const messages = [];
         let currentMessage = "";
         let charCount = 0;
 
         // Split the body into words to preserve word boundaries
         const words = formattedBody.split(" ");
+
         for (const word of words) {
           const wordLength = word.length + 1; // +1 for the space
           if (charCount + wordLength > MAX_CHAR_LIMIT) {
@@ -422,100 +345,98 @@ class onChat {
         if (currentMessage.trim()) {
           messages.push(currentMessage.trim());
         }
-      } else if (formattedBody) {
-        messages.push(formattedBody);
-      }
 
-      // Split attachments into chunks of MAX_ATTACHMENT_LIMIT
-      const attachmentChunks = [];
-      if (attachments.length > MAX_ATTACHMENT_LIMIT) {
-        for (let i = 0; i < attachments.length; i += MAX_ATTACHMENT_LIMIT) {
-          attachmentChunks.push(attachments.slice(i, i + MAX_ATTACHMENT_LIMIT));
+        // Send each chunk as a separate message sequentially
+        const sentMessages = [];
+        for (let index = 0; index < messages.length; index++) {
+          const chunk = messages[index];
+          const chunkMsg = {
+            body: index === 0 ? chunk : `... ${chunk}`, // Add continuation indicator
+            ...messageObj, // Preserve other properties (e.g., sticker, mentions)
+            // Only include attachment in the last chunk
+            attachment:
+              index === messages.length - 1 ? messageObj.attachment : undefined,
+          };
+          // Add a 100ms delay before sending each chunk
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          const replyMsg = await this.api.sendMessage(
+            chunkMsg,
+            threadID,
+            index === 0 ? mid : null
+          );
+          sentMessages.push(replyMsg);
         }
-      } else if (attachments.length > 0) {
-        attachmentChunks.push(attachments);
-      }
 
-      // Build messages to send
-      const allMessages = [];
-      let textIndex = 0;
-
-      // First message: include first text chunk (if any) and first attachment chunk (if any)
-      if (messages.length > 0 || attachmentChunks.length > 0) {
-        allMessages.push({
-          body: messages.length > 0 ? messages[textIndex++] : "",
-          attachment: attachmentChunks.length > 0 ? attachmentChunks.shift() : undefined,
-        });
-      }
-
-      // Add remaining text messages
-      while (textIndex < messages.length) {
-        allMessages.push({
-          body: `... ${messages[textIndex++]}`,
-          attachment: undefined,
-        });
-      }
-
-      // Add remaining attachment chunks
-      for (const chunk of attachmentChunks) {
-        allMessages.push({
-          body: "... (Attachments)",
-          attachment: chunk,
-        });
-      }
-
-      // console.log("Sending multiple messages:", allMessages); // Debug log
-
-      // Send each message sequentially
-      const sentMessages = [];
-      for (let index = 0; index < allMessages.length; index++) {
-        const chunk = allMessages[index];
-        const chunkMsg = {
-          body: chunk.body,
-          ...messageObj, // Preserve other properties (e.g., sticker, mentions)
-          attachment: chunk.attachment,
+        // Return the last message's details with edit/unsend/delete methods
+        const lastReplyMsg = sentMessages[sentMessages.length - 1];
+        return {
+          messageID: lastReplyMsg.messageID,
+          edit: async (message, delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.editmsg(message, lastReplyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          unsend: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(lastReplyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          delete: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(lastReplyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
         };
-        // Add a 100ms delay before sending each chunk
-        await new Promise((resolve) => setTimeout(resolve, 100));
+      } else {
+        // If the body is within the limit, send the message as is
+        const formattedMsg =
+          typeof msg === "string"
+            ? formattedBody
+            : { ...messageObj, body: formattedBody };
         const replyMsg = await this.api.sendMessage(
-          chunkMsg,
+          formattedMsg,
           threadID,
-          index === 0 ? mid : null
+          mid
         );
-        sentMessages.push(replyMsg);
-      }
 
-      // Return the last message's details with edit/unsend/delete methods
-      const lastReplyMsg = sentMessages[sentMessages.length - 1];
-      return {
-        messageID: lastReplyMsg.messageID,
-        edit: async (message, delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.editmsg(message, lastReplyMsg.messageID);
-          } catch (error) {
-            return null;
-          }
-        },
-        unsend: async (delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.unsendmsg(lastReplyMsg.messageID);
-          } catch (error) {
-            return null;
-          }
-        },
-        delete: async (delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.unsendmsg(lastReplyMsg.messageID);
-          } catch (error) {
-            return null;
-          }
-        },
-      };
+        return {
+          messageID: replyMsg.messageID,
+          edit: async (message, delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.editmsg(message, replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          unsend: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          delete: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+        };
+      }
     } catch (error) {
-      // console.error("Reply error:", error); // Debug log
       return {
         messageID: null,
         edit: async () => null,
