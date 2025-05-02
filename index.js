@@ -19,7 +19,7 @@ global.api = {
 process.removeAllListeners('warning'); 
 process.on('warning', (warning) => {
   if (!warning.message.includes('DeprecationWarning')) {
-    logger.chalk.yellow.bold(warning.name, warning.message);
+    logger.warn.bold(warning.name, warning.message);
   }
 });
 
