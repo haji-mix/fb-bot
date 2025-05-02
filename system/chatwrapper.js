@@ -280,10 +280,10 @@ class onChat {
                 throw new Error("Thread ID and Message are required.");
             }
 
-            // Determine the message body based on input type
+           
             let messageBody = typeof msg === 'string' ? msg : msg.body || '';
             
-            // Apply bad word filter, URL processing, and bold formatting
+         
             const formattedMsg = typeof msg === 'string' 
                 ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
                 : {
@@ -292,19 +292,19 @@ class onChat {
                 };
 
             // Maximum character limit for Facebook Messenger
-            const MAX_CHAR_LIMIT = 20000;
+            const MAX_CHAR_LIMIT = 2000;
 
-            // If the message is a string and exceeds the character limit, split it
+          
             if (typeof formattedMsg === 'string' && formattedMsg.length > MAX_CHAR_LIMIT) {
                 const messages = [];
                 let currentMessage = '';
                 let charCount = 0;
 
-                // Split the message into words to preserve word boundaries
+             
                 const words = formattedMsg.split(' ');
 
                 for (const word of words) {
-                    const wordLength = word.length + 1; // +1 for the space
+                    const wordLength = word.length + 1; 
                     if (charCount + wordLength > MAX_CHAR_LIMIT) {
                         messages.push(currentMessage.trim());
                         currentMessage = word + ' ';
@@ -315,12 +315,12 @@ class onChat {
                     }
                 }
 
-                // Push the last chunk if it exists
+           
                 if (currentMessage.trim()) {
                     messages.push(currentMessage.trim());
                 }
 
-                // Send each chunk as a separate message
+           
                 const sentMessages = await Promise.all(
                     messages.map(async (chunk, index) => {
                         const chunkMsg = index === 0 ? chunk : `... ${chunk}`; // Add continuation indicator
@@ -329,7 +329,7 @@ class onChat {
                     })
                 );
 
-                // Return the last message's details with edit/unsend/delete methods
+                
                 const lastReplyMsg = sentMessages[sentMessages.length - 1];
                 return {
                     messageID: lastReplyMsg.messageID,
