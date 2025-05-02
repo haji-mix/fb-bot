@@ -308,7 +308,6 @@ async function postLogin(req, res) {
     }
     const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
     
-    // Use MongoDB to check if user exists and when they last logged in
     const existingUser = await sessionStore.get(`user_${user.value}`);
     const waitTime = 180000; 
     
@@ -329,7 +328,6 @@ async function postLogin(req, res) {
     
     await accountLogin(state, prefix, admin ? [admin] : admins);
     
-    // Store user login time in MongoDB
     await sessionStore.put(`user_${user.value}`, { 
       lastLoginTime: Date.now(),
       userId: user.value 
@@ -364,7 +362,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
       const appState = state || api.getAppState();
       const userid = await api.getCurrentUserID();
       
-      // Check if session already exists in MongoDB
+
       const existingSession = await sessionStore.get(`session_${userid}`);
       if (existingSession) {
         const decryptedSession = decryptSession(existingSession);
@@ -412,7 +410,6 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
         const newTime = account.time + 1;
         Utils.account.set(userid, { ...account, time: newTime });
         
-        // Update user time in MongoDB every minute
         if (newTime % 60 === 0) {
           sessionStore.put(`user_${userid}`, {
             ...account,
@@ -474,10 +471,8 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  // Store user info in MongoDB
   const encryptedState = encryptSession(state);
   
-  // Store both session and user config in MongoDB
   await sessionStore.put(`session_${userid}`, encryptedState);
   await sessionStore.put(`config_${userid}`, { 
     userid, 
@@ -487,7 +482,6 @@ async function addThisUser(userid, state, prefix, admin) {
     createdAt: Date.now()
   });
   
-  // Also maintain the file-based storage for backward compatibility
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
   if (!fs.existsSync(path.dirname(configFile))) {
@@ -506,12 +500,12 @@ async function addThisUser(userid, state, prefix, admin) {
 }
 
 async function deleteThisUser(userid) {
-  // Remove user data from MongoDB
+
   await sessionStore.remove(`session_${userid}`);
   await sessionStore.remove(`config_${userid}`);
   await sessionStore.remove(`user_${userid}`);
   
-  // Also remove from file system for backward compatibility
+
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
   const config = fs.existsSync(configFile)
@@ -534,19 +528,19 @@ async function main() {
   const empty = require("fs-extra");
   const cacheFile = "./script/cache";
 
-  // Create necessary directories
+
   if (!fs.existsSync(cacheFile)) {
     fs.mkdirSync(cacheFile, { recursive: true });
   }
 
-  // Periodically sync user data with MongoDB
+  
   setInterval(async () => {
     try {
-      // Get all user configs from MongoDB
+    
       const configs = await sessionStore.entries();
       const users = configs.filter(entry => entry.key.startsWith('config_'));
       
-      // Update time for each user if they exist in Utils.account
+     
       for (const { key, value } of users) {
         const userid = value.userid;
         if (userid) {
@@ -558,7 +552,6 @@ async function main() {
         }
       }
       
-      // Clean cache directory
       await empty.emptyDir(cacheFile);
       
     } catch (error) {
@@ -566,10 +559,8 @@ async function main() {
     }
   }, 60000);
 
-  // Load sessions from MongoDB
   const loadMongoSession = async (userid) => {
     try {
-      // Get session and config data from MongoDB
       const encryptedSession = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
       
@@ -607,13 +598,10 @@ async function main() {
     }
   };
 
-  // First try to load from MongoDB
   try {
-    // Get all sessions from MongoDB
     const sessions = await sessionStore.entries();
     const userIds = new Set();
     
-    // Filter session keys and extract user IDs
     for (const { key, value } of sessions) {
       if (key.startsWith('session_')) {
         const userid = key.replace('session_', '');
@@ -621,7 +609,6 @@ async function main() {
       }
     }
     
-    // Load each session
     for (const userid of userIds) {
       await loadMongoSession(userid);
     }
@@ -630,7 +617,6 @@ async function main() {
   } catch (error) {
     logger.error(`Failed to load sessions from MongoDB: ${error.message}`);
     
-    // Fallback to file-based session loading
     logger.info("Falling back to file-based session loading");
     const sessionFolder = path.join("./data/session");
     const configFile = "./data/history.json";
@@ -670,7 +656,6 @@ async function main() {
         
         await accountLogin(state, userConfig.prefix || "", userConfig.admin ? [userConfig.admin] : admins);
         
-        // Also store in MongoDB for future use
         await sessionStore.put(`session_${userId}`, JSON.parse(fs.readFileSync(filePath, "utf-8")));
         await sessionStore.put(`config_${userId}`, {
           userid: userId,
