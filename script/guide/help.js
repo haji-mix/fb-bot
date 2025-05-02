@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const configPath = path.join(__dirname, '../hajime.json');
+const configPath = path.join(__dirname, '../../hajime.json');
 
 module.exports.config = {
     name: 'help',
