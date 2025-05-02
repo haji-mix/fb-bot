@@ -404,7 +404,7 @@ async function accountLogin(
         resolve();
         return;
       } else if (existingSession) {
-        logger.warn(`Session conflict for user ${userid}, overwriting with new session`);
+      //  logger.warn(`Session conflict for user ${userid}, overwriting with new session`);
         await sessionStore.put(`session_${userid}`, appState);
       }
 
@@ -766,7 +766,7 @@ async function main() {
         // Check if session already exists in MongoDB
         const existingMongoSession = await sessionStore.get(`session_${userId}`);
         if (existingMongoSession) {
-          logger.success(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+         // logger.success(`Session for user ${userId} already in MongoDB, skipping file-based session`);
           continue;
         }
 
