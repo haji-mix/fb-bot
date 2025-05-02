@@ -39,8 +39,9 @@ const sessionStore = new MongoStore({
   allowClear: false,
 });
 
-// Track login attempts and active MQTT listeners
+// Track login attempts, listener setup, and active MQTT listeners
 const loginLocks = new Map();
+const listenerLock = new Map();
 const activeListeners = new Map();
 
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
@@ -276,16 +277,14 @@ async function postLogin(req, res) {
 
 async function cleanupUserSession(userid, saveToMongo = false) {
   logger.info(`Cleaning up session for user ${userid}`);
-  if (activeListeners.has(userid)) {
-    logger.info(`Stopping existing MQTT listener for user ${userid}`);
-    await stopListener(userid);
-  }
+  await stopListener(userid);
   Utils.account.delete(userid);
   if (saveToMongo) {
     await sessionStore.remove(`session_${userid}`);
     await sessionStore.remove(`config_${userid}`);
     await sessionStore.remove(`user_${userid}`);
   }
+  logger.info(`Session cleanup completed for user ${userid}`);
 }
 
 async function stopListener(userid) {
@@ -298,6 +297,56 @@ async function stopListener(userid) {
       logger.error(`Failed to stop MQTT listener for user ${userid}: ${error.message}`);
     }
     activeListeners.delete(userid);
+  }
+}
+
+async function manageListener(api, userid, fonts, admin_uid, prefix) {
+  if (listenerLock.has(userid)) {
+    logger.warn(`Listener setup in progress for user ${userid}, waiting...`);
+    return;
+  }
+  listenerLock.set(userid, setTimeout(() => listenerLock.delete(userid), 30000));
+
+  try {
+    await stopListener(userid);
+    const listener = api.listenMqtt((error, event) => {
+      if (error || !"type" in event) {
+        logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+        cleanupUserSession(userid, true);
+        return;
+      }
+      if (!activeListeners.has(userid)) {
+        logger.warn(`Received event for user ${userid} but listener is no longer active`);
+        return;
+      }
+      logger.success(`MQTT event received for user ${userid}: ${event.type}`);
+      const chat = new onChat(api, event);
+      Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
+        .filter((key) => typeof chat[key] === "function" && key !== "constructor")
+        .forEach((key) => {
+          global[key] = chat[key].bind(chat);
+        });
+      botHandler({
+        fonts,
+        chat,
+        api,
+        Utils,
+        logger,
+        event,
+        aliases,
+        admin: admin_uid,
+        prefix,
+        userid,
+      });
+    });
+    activeListeners.set(userid, listener);
+    logger.success(`MQTT listener set up for user ${userid}. Total listeners: ${activeListeners.size}`);
+  } catch (error) {
+    logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
+    throw error;
+  } finally {
+    clearTimeout(listenerLock.get(userid));
+    listenerLock.delete(userid);
   }
 }
 
@@ -326,9 +375,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
 
       try {
         const existingSession = await sessionStore.get(`session_${userid}`);
-        const existingAccount = Utils.account.get(userid);
-
-        if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState) && activeListeners.has(userid)) {
+        if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState) && activeListeners.has(userid)) {
           logger.success(`User ${userid} already online with matching session and active listener`);
           resolve();
           return;
@@ -392,34 +439,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
           userAgent: atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="),
         });
 
-        const listener = api.listenMqtt((error, event) => {
-          if (error || !"type" in event) {
-            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
-            cleanupUserSession(userid, saveToMongo);
-            return;
-          }
-          logger.success(`MQTT event received for user ${userid}: ${event.type}`);
-          const chat = new onChat(api, event);
-          Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
-            .filter((key) => typeof chat[key] === "function" && key !== "constructor")
-            .forEach((key) => {
-              global[key] = chat[key].bind(chat);
-            });
-          botHandler({
-            fonts,
-            chat,
-            api,
-            Utils,
-            logger,
-            event,
-            aliases,
-            admin: admin_uid,
-            prefix,
-            userid,
-          });
-        });
-        activeListeners.set(userid, listener);
-        logger.success(`MQTT listener set up for user ${userid}`);
+        await manageListener(api, userid, fonts, admin_uid, prefix);
         resolve();
       } catch (error) {
         logger.error(`Failed to set up user ${userid}: ${error.message}`);
@@ -452,6 +472,12 @@ async function main() {
   };
 
   const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
+    if (listenerLock.has(userid)) {
+      logger.warn(`Session load in progress for user ${userid}, skipping...`);
+      return false;
+    }
+    listenerLock.set(userid, setTimeout(() => listenerLock.delete(userid), 30000));
+
     try {
       const session = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
@@ -504,6 +530,9 @@ async function main() {
         }
       }
       return false;
+    } finally {
+      clearTimeout(listenerLock.get(userid));
+      listenerLock.delete(userid);
     }
   };
 
