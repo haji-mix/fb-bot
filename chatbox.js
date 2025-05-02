@@ -253,8 +253,9 @@ async function postLogin(req, res) {
       });
     }
 
-    loginLocks.set(userId, true);
+    loginLocks.set(userId, setTimeout(() => loginLocks.delete(userId), 30000));
     try {
+      await cleanupUserSession(userId, true);
       await accountLogin(state, prefix, admin ? [admin] : admins, null, null, true);
       await sessionStore.put(`user_${userId}`, {
         lastLoginTime: Date.now(),
@@ -262,12 +263,41 @@ async function postLogin(req, res) {
       });
       res.status(200).json({ success: true, message: "Authentication successful" });
     } finally {
+      clearTimeout(loginLocks.get(userId));
       loginLocks.delete(userId);
     }
   } catch (error) {
+    clearTimeout(loginLocks.get(user?.value));
     loginLocks.delete(user?.value);
     logger.error(`Post login failed: ${error.message}`);
     res.status(400).json({ error: true, message: error.message || "Invalid app state" });
+  }
+}
+
+async function cleanupUserSession(userid, saveToMongo = false) {
+  logger.info(`Cleaning up session for user ${userid}`);
+  if (activeListeners.has(userid)) {
+    logger.info(`Stopping existing MQTT listener for user ${userid}`);
+    await stopListener(userid);
+  }
+  Utils.account.delete(userid);
+  if (saveToMongo) {
+    await sessionStore.remove(`session_${userid}`);
+    await sessionStore.remove(`config_${userid}`);
+    await sessionStore.remove(`user_${userid}`);
+  }
+}
+
+async function stopListener(userid) {
+  const listener = activeListeners.get(userid);
+  if (listener) {
+    try {
+      await listener.stop();
+      logger.info(`MQTT listener stopped for user ${userid}`);
+    } catch (error) {
+      logger.error(`Failed to stop MQTT listener for user ${userid}: ${error.message}`);
+    }
+    activeListeners.delete(userid);
   }
 }
 
@@ -292,23 +322,19 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
         logger.warn(`Concurrent login detected for user ${userid}`);
         return reject(new Error("Concurrent login attempt detected"));
       }
-      loginLocks.set(userid, true);
+      loginLocks.set(userid, setTimeout(() => loginLocks.delete(userid), 30000));
 
       try {
         const existingSession = await sessionStore.get(`session_${userid}`);
         const existingAccount = Utils.account.get(userid);
 
-        if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-          logger.success(`User ${userid} already online with matching session`);
+        if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState) && activeListeners.has(userid)) {
+          logger.success(`User ${userid} already online with matching session and active listener`);
           resolve();
           return;
         }
 
-        if (activeListeners.has(userid)) {
-          logger.warn(`Existing MQTT listener found for user ${userid}, terminating...`);
-          activeListeners.get(userid).stop();
-          activeListeners.delete(userid);
-        }
+        await cleanupUserSession(userid, saveToMongo);
 
         if (saveToMongo) {
           await sessionStore.put(`session_${userid}`, appState);
@@ -366,54 +392,41 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
           userAgent: atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="),
         });
 
-        if (!existingAccount?.online) {
-          const listener = api.listenMqtt((error, event) => {
-            if (error || !"type" in event) {
-              logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
-              Utils.account.delete(userid);
-              activeListeners.delete(userid);
-              if (saveToMongo) {
-                sessionStore.remove(`session_${userid}`);
-                sessionStore.remove(`config_${userid}`);
-                sessionStore.remove(`user_${userid}`);
-              }
-              return;
-            }
-            logger.success(`MQTT event received for user ${userid}: ${event.type}`);
-            const chat = new onChat(api, event);
-            Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
-              .filter((key) => typeof chat[key] === "function" && key !== "constructor")
-              .forEach((key) => {
-                global[key] = chat[key].bind(chat);
-              });
-            botHandler({
-              fonts,
-              chat,
-              api,
-              Utils,
-              logger,
-              event,
-              aliases,
-              admin: admin_uid,
-              prefix,
-              userid,
+        const listener = api.listenMqtt((error, event) => {
+          if (error || !"type" in event) {
+            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+            cleanupUserSession(userid, saveToMongo);
+            return;
+          }
+          logger.success(`MQTT event received for user ${userid}: ${event.type}`);
+          const chat = new onChat(api, event);
+          Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
+            .filter((key) => typeof chat[key] === "function" && key !== "constructor")
+            .forEach((key) => {
+              global[key] = chat[key].bind(chat);
             });
+          botHandler({
+            fonts,
+            chat,
+            api,
+            Utils,
+            logger,
+            event,
+            aliases,
+            admin: admin_uid,
+            prefix,
+            userid,
           });
-          activeListeners.set(userid, listener);
-          logger.success(`MQTT listener set up for user ${userid}`);
-        }
+        });
+        activeListeners.set(userid, listener);
+        logger.success(`MQTT listener set up for user ${userid}`);
         resolve();
       } catch (error) {
         logger.error(`Failed to set up user ${userid}: ${error.message}`);
-        Utils.account.delete(userid);
-        activeListeners.delete(userid);
-        if (saveToMongo) {
-          await sessionStore.remove(`session_${userid}`);
-          await sessionStore.remove(`config_${userid}`);
-          await sessionStore.remove(`user_${userid}`);
-        }
+        await cleanupUserSession(userid, saveToMongo);
         reject(error);
       } finally {
+        clearTimeout(loginLocks.get(userid));
         loginLocks.delete(userid);
       }
     });
@@ -450,17 +463,16 @@ async function main() {
 
       if (!validateAppState(session)) {
         logger.warn(`Invalid app state for user ${userid} in MongoDB`);
-        await sessionStore.remove(`session_${userid}`);
-        await sessionStore.remove(`config_${userid}`);
-        await sessionStore.remove(`user_${userid}`);
+        await cleanupUserSession(userid, true);
         return false;
       }
 
-      if (Utils.account.get(userid)?.online || activeListeners.has(userid)) {
-        logger.success(`User ${userid} already logged in or has active listener`);
+      if (Utils.account.get(userid)?.online && activeListeners.has(userid)) {
+        logger.success(`User ${userid} already logged in with active listener`);
         return true;
       }
 
+      await cleanupUserSession(userid, false);
       await accountLogin(
         session,
         userConfig?.prefix || "",
@@ -487,9 +499,7 @@ async function main() {
       for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
         if (pattern.test(ERROR)) {
           logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
-          await sessionStore.remove(`session_${userid}`);
-          await sessionStore.remove(`config_${userid}`);
-          await sessionStore.remove(`user_${userid}`);
+          await cleanupUserSession(userid, true);
           break;
         }
       }
@@ -532,6 +542,7 @@ async function main() {
       try {
         const envState = process.env.APPSTATE ? JSON.parse(process.env.APPSTATE) : c3c_json;
         if (validateAppState(envState)) {
+          await cleanupUserSession("appstate_user", false);
           await accountLogin(
             envState,
             process.env.PREFIX || global.api.prefix,
@@ -548,6 +559,7 @@ async function main() {
 
     if (process.env.EMAIL && process.env.PASSWORD) {
       try {
+        await cleanupUserSession("email_user", false);
         await accountLogin(
           null,
           process.env.PREFIX || global.api.prefix,
