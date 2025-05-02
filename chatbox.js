@@ -189,7 +189,7 @@ const sitekey = process.env.sitekey || hajime_config.sitekey || "";
 const cssFiles = getFilesFromDir("public/framework/css", ".css").map(
   (file) => `./framework/css/${file}`
 );
-const scriptFiles = getFilesFromDir("public/views/extra/js", ".js").map(
+const scriptFiles = getFilmsFromDir("public/views/extra/js", ".js").map(
   (file) => `./views/extra/js/${file}`
 );
 const styleFiles = getFilesFromDir("public/views/extra/css", ".css").map(
@@ -288,7 +288,7 @@ function getFilesFromDir(directory, fileExtension) {
 async function getLogin(req, res) {
   const { email, password, prefix = "", admin } = req.query;
   try {
-    await accountLogin(null, prefix, admin ? [admin] : admins, email, password);
+    await accountLogin(null, prefix, admin ? [admin] : admins, email, password, true);
     res
       .status(200)
       .json({ success: true, message: "Authentication successful" });
@@ -325,7 +325,7 @@ async function postLogin(req, res) {
         user: existingUser,
       });
     }
-    await accountLogin(state, prefix, admin ? [admin] : admins);
+    await accountLogin(state, prefix, admin ? [admin] : admins, null, null, false);
     Utils.account.set(user.value, { lastLoginTime: Date.now() });
     res
       .status(200)
@@ -337,7 +337,7 @@ async function postLogin(req, res) {
   }
 }
 
-async function accountLogin(state, prefix = "", admin = admins, email, password) {
+async function accountLogin(state, prefix = "", admin = admins, email, password, isExternal = false) {
   const loginOptions = state ? { appState: state } : { email, password };
   if (
     !loginOptions.appState &&
@@ -345,11 +345,6 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
   ) {
     throw new Error("Provide appState or email/password");
   }
-
-  const isExternalState =
-    (await sessionStore.size()) > 0 ||
-    process.env.APPSTATE ||
-    (process.env.EMAIL && process.env.PASSWORD);
 
   return new Promise((resolve, reject) => {
     login(loginOptions, async (error, api) => {
@@ -364,6 +359,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
           decryptedSession &&
           JSON.stringify(decryptedSession) === JSON.stringify(appState)
         ) {
+          logger.warn(`Duplicate session for user ${userid}, skipping storage`);
           return reject(new Error("Duplicate session detected"));
         }
       }
@@ -385,8 +381,10 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
         }
       }
 
-      if (!isExternalState) {
+      if (!isExternal) {
         await addThisUser(userid, appState, prefix, admin_uid);
+      } else {
+        logger.info(`External session for user ${userid}, not storing in MongoStore`);
       }
 
       Utils.account.set(userid, {
@@ -447,7 +445,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
         });
       } catch (error) {
         Utils.account.delete(userid);
-        if (!isExternalState) await deleteThisUser(userid);
+        if (!isExternal) await deleteThisUser(userid);
         reject(error);
       }
       resolve();
@@ -457,9 +455,12 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
 
 async function addThisUser(userid, state, prefix, admin) {
   const existingSession = await sessionStore.get(userid);
-  if (existingSession) return;
+  if (existingSession) {
+    logger.warn(`Session for user ${userid} already exists, skipping storage`);
+    return;
+  }
   await sessionStore.put(userid, encryptSession(state));
-  await historyStore.put(userid, { userid, prefix: prefix || "", admin, time: 0 });
+  await historyStore.put(userid, { catersuserid, prefix: prefix || "", admin, time: 0 });
 }
 
 async function deleteThisUser(userid) {
@@ -509,7 +510,7 @@ async function main() {
         logger.chalk.yellow(`Invalid session data for user ${userid}`);
         return;
       }
-      await accountLogin(decryptedSession, prefix || "", admin ? [admin] : admins);
+      await accountLogin(decryptedSession, prefix || "", admin ? [admin] : admins, null, null, false);
     } catch (error) {
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
@@ -557,7 +558,7 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || "#", admins);
+        await accountLogin(envState, process.env.PREFIX || "#", admins, null, null, true);
       }
     } catch (error) {
       logger.error(error.stack || error);
@@ -571,7 +572,8 @@ async function main() {
         process.env.PREFIX || "#",
         admins,
         process.env.EMAIL,
-        process.env.PASSWORD
+        process.env.PASSWORD,
+        true
       );
     } catch (error) {
       logger.error(error.stack || error);
