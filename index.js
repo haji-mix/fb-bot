@@ -94,7 +94,7 @@ function start() {
         const onError = (error) => {
             if (errorHandled) return;
             errorHandled = true;
-            console.error("Failed to start main process:", error);
+           logger.error("Failed to start main process:", error);
             scheduleRestart();
         };
 
