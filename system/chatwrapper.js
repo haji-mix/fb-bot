@@ -87,7 +87,7 @@ class onChat {
         try {
             const shortenedUrls = await Promise.all(
                 url.map(async (u) => {
-                    if (!u || !urlRegex闯test(u)) {
+                    if (!u || !urlRegex.test(u)) {
                         return u;
                     }
 
@@ -280,48 +280,122 @@ class onChat {
                 throw new Error("Thread ID and Message are required.");
             }
 
+            // Determine the message body based on input type
+            let messageBody = typeof msg === 'string' ? msg : msg.body || '';
+            
             // Apply bad word filter, URL processing, and bold formatting
-            const formattedMsg = typeof msg === 'string' ? 
-                formatBold(this.#processUrls(this.#filterBadWords(msg))) : 
-                {
+            const formattedMsg = typeof msg === 'string' 
+                ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
+                : {
                     ...msg,
-                    body: msg.body ? formatBold(this.#processUrls(this.#filterBadWords(msg.body))) : undefined
+                    body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined
                 };
 
-            const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
+            // Maximum character limit for Facebook Messenger
+            const MAX_CHAR_LIMIT = 20000;
 
-            return {
-                messageID: replyMsg.messageID,
-                edit: async (message, delay = 0) => {
-                    try {
-                        await new Promise(res => setTimeout(res, delay));
-                        return await this.editmsg(message, replyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                unsend: async (delay = 0) => {
-                    try {
-                        await new Promise(res => setTimeout(res, delay));
-                        return await this.unsendmsg(replyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                delete: async (delay = 0) => {
-                    try {
-                        await new Promise(res => setTimeout(res, delay));
-                        return await this.unsendmsg(replyMsg.messageID);
-                    } catch (error) {
-                        return null;
+            // If the message is a string and exceeds the character limit, split it
+            if (typeof formattedMsg === 'string' && formattedMsg.length > MAX_CHAR_LIMIT) {
+                const messages = [];
+                let currentMessage = '';
+                let charCount = 0;
+
+                // Split the message into words to preserve word boundaries
+                const words = formattedMsg.split(' ');
+
+                for (const word of words) {
+                    const wordLength = word.length + 1; // +1 for the space
+                    if (charCount + wordLength > MAX_CHAR_LIMIT) {
+                        messages.push(currentMessage.trim());
+                        currentMessage = word + ' ';
+                        charCount = wordLength;
+                    } else {
+                        currentMessage += word + ' ';
+                        charCount += wordLength;
                     }
                 }
-            };
+
+                // Push the last chunk if it exists
+                if (currentMessage.trim()) {
+                    messages.push(currentMessage.trim());
+                }
+
+                // Send each chunk as a separate message
+                const sentMessages = await Promise.all(
+                    messages.map(async (chunk, index) => {
+                        const chunkMsg = index === 0 ? chunk : `... ${chunk}`; // Add continuation indicator
+                        const replyMsg = await this.api.sendMessage(chunkMsg, threadID, index === 0 ? mid : null);
+                        return replyMsg;
+                    })
+                );
+
+                // Return the last message's details with edit/unsend/delete methods
+                const lastReplyMsg = sentMessages[sentMessages.length - 1];
+                return {
+                    messageID: lastReplyMsg.messageID,
+                    edit: async (message, delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.editmsg(message, lastReplyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    },
+                    unsend: async (delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.unsendmsg(lastReplyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    },
+                    delete: async (delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.unsendmsg(lastReplyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    }
+                };
+            } else {
+                // If the message is within the limit, send it as is
+                const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
+
+                return {
+                    messageID: replyMsg.messageID,
+                    edit: async (message, delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.editmsg(message, replyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    },
+                    unsend: async (delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.unsendmsg(replyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    },
+                    delete: async (delay = 0) => {
+                        try {
+                            await new Promise(res => setTimeout(res, delay));
+                            return await this.unsendmsg(replyMsg.messageID);
+                        } catch (error) {
+                            return null;
+                        }
+                    }
+                };
+            }
         } catch (error) {
             return {
                 messageID: null,
                 edit: async () => null,
-                unsend: async () => null
+                unsend: async () => null,
+                delete: async () => null
             };
         }
     }
