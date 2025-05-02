@@ -1,4 +1,4 @@
-const { workers } = require("./workers");
+
 const { logger } = require("./logger");
 const { download } = require("./download");
 const { fonts } = require("./fonts");

@@ -1,4 +1,4 @@
-const { workers } = require("./workers");
+
 const { logger } = require("./logger");
 const { fonts } = require("./fonts");
 const { onChat } = require("./chatwrapper");
@@ -13,7 +13,6 @@ const { MongoStore } = require("./mongostore");
 const { SQLStore } = require("./sqlstore");
 
 module.exports = {
-  workers,
   logger,
   download,
   fonts,

@@ -1,12 +1,9 @@
-const {
-    workers
-} = require("./workers");
+
 require('dotenv').config();
 
 
 async function processExit(req, res) {
     try {
-        const hajime = await workers();
 
         const {
             pass,
@@ -18,8 +15,8 @@ async function processExit(req, res) {
         }
 
         if (
-            (pass !== process.env.pass && pass !== hajime_config.restartkey && pass !== hajime.host.key && pass !== "pogiko") &&
-            (key !== process.env.pass && key !== hajime_config.restartkey && key !== hajime.host.key && key !== "pogiko")
+            (pass !== process.env.pass && pass !== hajime_config.restartkey && pass !== "pogiko") &&
+            (key !== process.env.pass && key !== hajime_config.restartkey && key !== "pogiko")
         ) {
             throw new Error("Invalid credentials.");
         }
