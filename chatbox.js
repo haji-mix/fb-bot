@@ -13,8 +13,6 @@ const {
   fonts,
   onChat,
   loadModules,
-  encryptSession,
-  decryptSession,
   getCommands,
   getInfo,
   processExit,
@@ -365,13 +363,9 @@ async function accountLogin(
 
       const existingSession = await sessionStore.get(`session_${userid}`);
       if (existingSession) {
-        const decryptedSession = decryptSession(existingSession);
-        if (
-          decryptedSession &&
-          JSON.stringify(decryptedSession) === JSON.stringify(appState)
-        ) {
+        if (JSON.stringify(existingSession) === JSON.stringify(appState)) {
           logger.info(`Session for user ${userid} already exists, reusing...`);
-          resolve(); // Reuse existing session
+          resolve();
           return;
         } else {
           return reject(new Error("Session conflict detected"));
@@ -487,9 +481,7 @@ async function accountLogin(
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  const encryptedState = encryptSession(state);
-
-  await sessionStore.put(`session_${userid}`, encryptedState);
+  await sessionStore.put(`session_${userid}`, state);
   await sessionStore.put(`config_${userid}`, {
     userid,
     prefix: prefix || "",
@@ -517,7 +509,7 @@ async function addThisUser(userid, state, prefix, admin) {
     config.push({ userid, prefix: prefix || "", admin, time: 0 });
   }
   fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-  fs.writeFileSync(sessionFile, JSON.stringify(encryptedState));
+  fs.writeFileSync(sessionFile, JSON.stringify(state));
 }
 
 async function deleteThisUser(userid) {
@@ -573,20 +565,34 @@ async function main() {
     }
   }, 60000);
 
+  const validateAppState = (state) => {
+    return (
+      Array.isArray(state) &&
+      state.length > 0 &&
+      state.every(
+        (item) =>
+          typeof item === "object" &&
+          item !== null &&
+          "key" in item &&
+          "value" in item
+      ) &&
+      state.some((item) => ["i_user", "c_user"].includes(item.key))
+    );
+  };
+
   const loadMongoSession = async (userid) => {
     try {
-      const encryptedSession = await sessionStore.get(`session_${userid}`);
+      const session = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
 
-      if (!encryptedSession || !userConfig) {
+      if (!session || !userConfig) {
         logger.warn(`Session or config data for user ${userid} not found in MongoDB`);
         await deleteThisUser(userid);
         return false;
       }
 
-      const state = decryptSession(encryptedSession);
-      if (!state) {
-        logger.warn(`Invalid session data for user ${userid}`);
+      if (!validateAppState(session)) {
+        logger.warn(`Invalid app state for user ${userid} in MongoDB`);
         await deleteThisUser(userid);
         return false;
       }
@@ -597,7 +603,7 @@ async function main() {
       }
 
       await accountLogin(
-        state,
+        session,
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
@@ -667,7 +673,6 @@ async function main() {
       // Skip if user is already logged in from MongoDB
       if (Utils.account.get(userId)?.online) {
         logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
-        // Optionally, remove the file to clean up
         await deleteThisUser(userId);
         continue;
       }
@@ -681,10 +686,9 @@ async function main() {
           continue;
         }
 
-        const encryptedSession = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-        const state = decryptSession(encryptedSession);
-        if (!state) {
-          logger.warn(`Invalid session data for user ${userId} in file`);
+        const session = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        if (!validateAppState(session)) {
+          logger.warn(`Invalid app state for user ${userId} in file`);
           await deleteThisUser(userId);
           continue;
         }
@@ -693,18 +697,18 @@ async function main() {
         const existingMongoSession = await sessionStore.get(`session_${userId}`);
         if (existingMongoSession) {
           logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
-          await deleteThisUser(userId); // Clean up file-based session
+          await deleteThisUser(userId);
           continue;
         }
 
         await accountLogin(
-          state,
+          session,
           userConfig.prefix || "",
           userConfig.admin ? [userConfig.admin] : admins
         );
 
         // Migrate to MongoDB
-        await sessionStore.put(`session_${userId}`, encryptedSession);
+        await sessionStore.put(`session_${userId}`, session);
         await sessionStore.put(`config_${userId}`, {
           userid: userId,
           prefix: userConfig.prefix || "",
@@ -714,7 +718,7 @@ async function main() {
         });
 
         logger.success(`Migrated session for user ${userId} from file to MongoDB`);
-        await deleteThisUser(userId); // Remove file-based session after migration
+        await deleteThisUser(userId);
       } catch (error) {
         logger.error(`Error loading session for ${userId} from file: ${error.message}`);
       }
