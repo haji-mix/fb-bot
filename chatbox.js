@@ -496,7 +496,6 @@ async function accountLogin(
           });
         });
         logger.success(`MQTT listener set up for user ${userid}`);
-
         resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
@@ -604,17 +603,23 @@ async function main() {
   }, 60000);
 
   const validateAppState = (state) => {
-    return (
-      Array.isArray(state) &&
-      state.length > 0 &&
-      state.every(
-        (item) =>
-          typeof item === "object" &&
-          item !== null &&
-          "key" in item &&
-          "value" in item
-      ) &&
-      state.some((item) => ["i_user", "c_user"].includes(item.key))
+    if (!Array.isArray(state) || state.length === 0) {
+      logger.warn("Invalid app state: Empty or not an array");
+      return false;
+    }
+    const hasValidUser = state.some((item) =>
+      ["i_user", "c_user"].includes(item.key)
+    );
+    if (!hasValidUser) {
+      logger.warn("Invalid app state: No valid user key (i_user or c_user)");
+      return false;
+    }
+    return state.every(
+      (item) =>
+        typeof item === "object" &&
+        item !== null &&
+        "key" in item &&
+        "value" in item
     );
   };
 
@@ -626,7 +631,6 @@ async function main() {
 
       if (!session || !userConfig) {
         logger.warn(`No session or config found for user ${userid} in MongoDB`);
-        await deleteThisUser(userid);
         return false;
       }
 
@@ -718,7 +722,6 @@ async function main() {
       // Skip if user is already logged in from MongoDB
       if (Utils.account.get(userId)?.online) {
         logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
-        await deleteThisUser(userId);
         continue;
       }
 
@@ -734,7 +737,6 @@ async function main() {
         const session = JSON.parse(fs.readFileSync(filePath, "utf-8"));
         if (!validateAppState(session)) {
           logger.warn(`Invalid app state for user ${userId} in file`);
-          await deleteThisUser(userId);
           continue;
         }
 
@@ -742,7 +744,6 @@ async function main() {
         const existingMongoSession = await sessionStore.get(`session_${userId}`);
         if (existingMongoSession) {
           logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
-          await deleteThisUser(userId);
           continue;
         }
 
@@ -763,7 +764,7 @@ async function main() {
         });
 
         logger.success(`Migrated session for user ${userId} from file to MongoDB`);
-        await deleteThisUser(userId);
+        await deleteThisUser(userId); // Delete file-based session after successful migration
       } catch (error) {
         logger.error(`Error loading session for ${userId} from file: ${error.message}`);
       }
