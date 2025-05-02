@@ -39,8 +39,9 @@ const sessionStore = new MongoStore({
   allowClear: false,
 });
 
-// Track login attempts to prevent duplicates
+// Track login attempts and active MQTT listeners
 const loginLocks = new Map();
+const activeListeners = new Map();
 
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -303,6 +304,12 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
           return;
         }
 
+        if (activeListeners.has(userid)) {
+          logger.warn(`Existing MQTT listener found for user ${userid}, terminating...`);
+          activeListeners.get(userid).stop();
+          activeListeners.delete(userid);
+        }
+
         if (saveToMongo) {
           await sessionStore.put(`session_${userid}`, appState);
           await sessionStore.put(`config_${userid}`, {
@@ -360,10 +367,11 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
         });
 
         if (!existingAccount?.online) {
-          api.listenMqtt((error, event) => {
+          const listener = api.listenMqtt((error, event) => {
             if (error || !"type" in event) {
               logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
               Utils.account.delete(userid);
+              activeListeners.delete(userid);
               if (saveToMongo) {
                 sessionStore.remove(`session_${userid}`);
                 sessionStore.remove(`config_${userid}`);
@@ -391,12 +399,14 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
               userid,
             });
           });
+          activeListeners.set(userid, listener);
           logger.success(`MQTT listener set up for user ${userid}`);
         }
         resolve();
       } catch (error) {
         logger.error(`Failed to set up user ${userid}: ${error.message}`);
         Utils.account.delete(userid);
+        activeListeners.delete(userid);
         if (saveToMongo) {
           await sessionStore.remove(`session_${userid}`);
           await sessionStore.remove(`config_${userid}`);
@@ -446,8 +456,8 @@ async function main() {
         return false;
       }
 
-      if (Utils.account.get(userid)?.online) {
-        logger.success(`User ${userid} already logged in`);
+      if (Utils.account.get(userid)?.online || activeListeners.has(userid)) {
+        logger.success(`User ${userid} already logged in or has active listener`);
         return true;
       }
 
