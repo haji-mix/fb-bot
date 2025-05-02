@@ -21,7 +21,6 @@ const {
   botHandler,
   minifyHtml,
   obfuscate,
-  MongoStore
 } = require("./system/modules");
 
 const hajime_config = fs.existsSync("./hajime.json")
@@ -33,25 +32,6 @@ const admins = Array.isArray(hajime_config?.admins)
 const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" }; 
-
-
-const MONGO_URI = process.env.MONGO_URI || hajime_config.mongo_uri || "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-const sessionStore = new MongoStore({
-  uri: MONGO_URI,
-  collection: "sessions",
-  ignoreError: true,
-  allowClear: false
-});
-
-
-(async () => {
-  try {
-    await sessionStore.start();
-    logger.success("Connected to MongoDB for session storage");
-  } catch (error) {
-    logger.error("Failed to connect to MongoDB:", error.message);
-  }
-})();
 
 const Utils = {
   commands: new Map(),
@@ -83,6 +63,7 @@ async function getSelfIP() {
     const response = await axios.get("https://api.ipify.org/?format=json");
     return response.data.ip;
   } catch (error) {
+    logger.error("Failed to get self IP:", error.message);
     return null;
   }
 }
@@ -302,10 +283,8 @@ async function postLogin(req, res) {
       throw new Error("Invalid app state data");
     }
     const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
-    
-    const existingUser = await sessionStore.get(`user_${user.value}`);
+    const existingUser = Utils.account.get(user.value);
     const waitTime = 180000; 
-    
     if (
       existingUser &&
       Date.now() - (existingUser.lastLoginTime || 0) < waitTime
@@ -320,15 +299,11 @@ async function postLogin(req, res) {
         user: existingUser,
       });
     }
-    
     await accountLogin(state, prefix, admin ? [admin] : admins);
-    
-    await sessionStore.put(`user_${user.value}`, { 
-      lastLoginTime: Date.now(),
-      userId: user.value 
-    });
-    
-    res.status(200).json({ success: true, message: "Authentication successful" });
+    Utils.account.set(user.value, { lastLoginTime: Date.now() });
+    res
+      .status(200)
+      .json({ success: true, message: "Authentication successful" });
   } catch (error) {
     res
       .status(400)
@@ -356,10 +331,12 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
       if (error) return reject(error);
       const appState = state || api.getAppState();
       const userid = await api.getCurrentUserID();
-      
+      const sessionFile = path.join("./data/session", `${userid}.json`);
 
-      const existingSession = await sessionStore.get(`session_${userid}`);
-      if (existingSession) {
+      if (fs.existsSync(sessionFile)) {
+        const existingSession = JSON.parse(
+          fs.readFileSync(sessionFile, "utf8")
+        );
         const decryptedSession = decryptSession(existingSession);
         if (
           decryptedSession &&
@@ -402,16 +379,7 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
       setInterval(() => {
         const account = Utils.account.get(userid);
         if (!account) return;
-        const newTime = account.time + 1;
-        Utils.account.set(userid, { ...account, time: newTime });
-        
-        if (newTime % 60 === 0) {
-          sessionStore.put(`user_${userid}`, {
-            ...account,
-            time: newTime,
-            lastUpdate: Date.now()
-          }).catch(err => logger.error(`Failed to update user time: ${err.message}`));
-        }
+        Utils.account.set(userid, { ...account, time: account.time + 1 });
       }, 1000);
 
       api.setOptions({
@@ -466,41 +434,18 @@ async function accountLogin(state, prefix = "", admin = admins, email, password)
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  const encryptedState = encryptSession(state);
-  
-  await sessionStore.put(`session_${userid}`, encryptedState);
-  await sessionStore.put(`config_${userid}`, { 
-    userid, 
-    prefix: prefix || "", 
-    admin, 
-    time: 0,
-    createdAt: Date.now()
-  });
-  
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
-  if (!fs.existsSync(path.dirname(configFile))) {
-    fs.mkdirSync(path.dirname(configFile), { recursive: true });
-  }
-  if (!fs.existsSync(path.dirname(sessionFile))) {
-    fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
-  }
-  
+  if (fs.existsSync(sessionFile)) return;
   const config = fs.existsSync(configFile)
     ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
     : [];
   config.push({ userid, prefix: prefix || "", admin, time: 0 });
   fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-  fs.writeFileSync(sessionFile, JSON.stringify(encryptedState));
+  fs.writeFileSync(sessionFile, JSON.stringify(encryptSession(state)));
 }
 
 async function deleteThisUser(userid) {
-
-  await sessionStore.remove(`session_${userid}`);
-  await sessionStore.remove(`config_${userid}`);
-  await sessionStore.remove(`user_${userid}`);
-  
-
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
   const config = fs.existsSync(configFile)
@@ -521,60 +466,49 @@ function aliases(command) {
 
 async function main() {
   const empty = require("fs-extra");
+  const sessionFolder = path.join("./data/session");
+  const configFile = "./data/history.json";
   const cacheFile = "./script/cache";
 
+  [cacheFile, sessionFolder, path.dirname(configFile)].forEach((dir) => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+  if (!fs.existsSync(configFile)) fs.writeFileSync(configFile, "[]", "utf-8");
 
-  if (!fs.existsSync(cacheFile)) {
-    fs.mkdirSync(cacheFile, { recursive: true });
-  }
-
-  
   setInterval(async () => {
     try {
-    
-      const configs = await sessionStore.entries();
-      const users = configs.filter(entry => entry.key.startsWith('config_'));
-      
-     
-      for (const { key, value } of users) {
-        const userid = value.userid;
-        if (userid) {
-          const update = Utils.account.get(userid);
-          if (update) {
-            value.time = update.time;
-            await sessionStore.put(key, value);
-          }
+      const history = fs.existsSync(configFile)
+        ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+        : [];
+      history.forEach((user) => {
+        if (user?.userid) {
+          const update = Utils.account.get(user.userid);
+          if (update) user.time = update.time;
         }
-      }
-      
+      });
       await empty.emptyDir(cacheFile);
-      
+      fs.writeFileSync(configFile, JSON.stringify(history, null, 2));
     } catch (error) {
       logger.error("Error executing task: " + error.stack);
     }
   }, 60000);
 
-  const loadMongoSession = async (userid) => {
+  const loadSession = async (filePath, userId, prefix, admin) => {
     try {
-      const encryptedSession = await sessionStore.get(`session_${userid}`);
-      const userConfig = await sessionStore.get(`config_${userid}`);
-      
-      if (!encryptedSession) {
-        logger.chalk.yellow(`Session data for user ${userid} not found in MongoDB`);
+      if (!fs.existsSync(filePath)) {
+        logger.chalk.yellow(
+          `Session file for user ${userId} does not exist: ${filePath}`
+        );
         return;
       }
-      
-      const state = decryptSession(encryptedSession);
-      if (!state) {
-        logger.chalk.yellow(`Invalid session data for user ${userid}`);
-        return;
-      }
-      
-      await accountLogin(
-        state, 
-        userConfig?.prefix || "", 
-        userConfig?.admin ? [userConfig.admin] : admins
+      const state = decryptSession(
+        JSON.parse(fs.readFileSync(filePath, "utf-8"))
       );
+      if (!state) {
+        logger.chalk.yellow(`Invalid session data for user ${userId}`);
+        return;
+      }
+      await accountLogin(state, prefix || "", admin ? [admin] : admins);
     } catch (error) {
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
@@ -585,84 +519,37 @@ async function main() {
       const ERROR = error?.message || error?.error;
       for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
         if (pattern.test(ERROR)) {
-          logger.chalk.yellow(`Login issue for user ${userid}: ${type}`);
-          await deleteThisUser(userid);
+          logger.chalk.yellow(`Login issue for user ${userId}: ${type}`);
+          await deleteThisUser(userId);
           break;
         }
       }
     }
   };
 
-  try {
-    const sessions = await sessionStore.entries();
-    const userIds = new Set();
-    
-    for (const { key, value } of sessions) {
-      if (key.startsWith('session_')) {
-        const userid = key.replace('session_', '');
-        userIds.add(userid);
-      }
-    }
-    
-    for (const userid of userIds) {
-      await loadMongoSession(userid);
-    }
-    
-    logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
-  } catch (error) {
-    logger.error(`Failed to load sessions from MongoDB: ${error.message}`);
-    
-    logger.info("Falling back to file-based session loading");
-    const sessionFolder = path.join("./data/session");
-    const configFile = "./data/history.json";
-    
-    if (!fs.existsSync(sessionFolder)) {
-      fs.mkdirSync(sessionFolder, { recursive: true });
-    }
-    
-    if (!fs.existsSync(configFile)) {
-      fs.writeFileSync(configFile, "[]", "utf-8");
-    }
-    
-    const config = fs.existsSync(configFile)
-      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
-      : [];
-    
-    const files = fs.existsSync(sessionFolder)
-      ? fs.readdirSync(sessionFolder).filter(file => file.endsWith('.json'))
-      : [];
-    
-    for (const file of files) {
-      const userId = path.parse(file).name;
-      const userConfig = config.find(item => item.userid === userId) || {};
-      const filePath = path.join(sessionFolder, file);
-      
-      try {
-        if (!fs.existsSync(filePath)) {
-          logger.chalk.yellow(`Session file for user ${userId} does not exist: ${filePath}`);
-          continue;
-        }
-        
-        const state = decryptSession(JSON.parse(fs.readFileSync(filePath, "utf-8")));
-        if (!state) {
-          logger.chalk.yellow(`Invalid session data for user ${userId}`);
-          continue;
-        }
-        
-        await accountLogin(state, userConfig.prefix || "", userConfig.admin ? [userConfig.admin] : admins);
-        
-        await sessionStore.put(`session_${userId}`, JSON.parse(fs.readFileSync(filePath, "utf-8")));
-        await sessionStore.put(`config_${userId}`, {
-          userid: userId,
-          prefix: userConfig.prefix || "",
-          admin: userConfig.admin,
-          time: userConfig.time || 0,
-          migratedAt: Date.now()
-        });
-      } catch (error) {
-        logger.error(`Error loading session for ${userId}: ${error.message}`);
-      }
-    }
+  const config = fs.existsSync(configFile)
+    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+    : [];
+  let files = [];
+  if (fs.existsSync(sessionFolder)) {
+    files = fs
+      .readdirSync(sessionFolder)
+      .filter((file) => file.endsWith(".json"));
+  } else {
+    logger.error(
+      `Session folder does not exist: ${sessionFolder}. Skipping session loading.`
+    );
+  }
+
+  for (const file of files) {
+    const userId = path.parse(file).name;
+    const userConfig = config.find((item) => item.userid === userId) || {};
+    await loadSession(
+      path.join(sessionFolder, file),
+      userId,
+      userConfig.prefix,
+      userConfig.admin
+    );
   }
 
   const validateJsonArrayOfObjects = (data) => {
@@ -689,7 +576,7 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || global.prefix || "", admins);
+        await accountLogin(envState, process.env.PREFIX || global.prefix, admins);
       }
     } catch (error) {
       logger.error(error.stack || error);
@@ -700,7 +587,7 @@ async function main() {
     try {
       await accountLogin(
         null,
-        process.env.PREFIX || global.prefix || "",
+        process.env.PREFIX || global.prefix,
         admins,
         process.env.EMAIL,
         process.env.PASSWORD
@@ -721,4 +608,3 @@ process.on("unhandledRejection", (reason) => {
       : JSON.stringify(reason)
   );
 });
-
