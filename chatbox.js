@@ -46,6 +46,9 @@ const sessionStore = new MongoStore({
   allowClear: false,
 });
 
+// Track login attempts to prevent duplicates
+const loginLocks = new Map();
+
 // Retry MongoDB connection up to 3 times
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -377,22 +380,31 @@ async function accountLogin(
     login(loginOptions, async (error, api) => {
       if (error) {
         logger.error(`Login failed: ${error.message}`);
+        loginLocks.delete(userid); // Release lock on failure
         return reject(error);
       }
       const appState = state || api.getAppState();
       const userid = await api.getCurrentUserID();
+
+      // Check for login lock
+      if (loginLocks.has(userid)) {
+        logger.info(`Login attempt for user ${userid} blocked due to ongoing login`);
+        return resolve();
+      }
+      loginLocks.set(userid, true);
+
       logger.info(`Logged in user ${userid}`);
 
       const existingSession = await sessionStore.get(`session_${userid}`);
-      if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-        logger.info(`Session for user ${userid} exists in MongoDB`);
-        if (Utils.account.get(userid)?.online) {
-          logger.info(`User ${userid} is already online, reusing session`);
-          resolve();
-          return;
-        }
+      const existingAccount = Utils.account.get(userid);
+
+      if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        logger.info(`User ${userid} is already online with matching session, reusing session`);
+        loginLocks.delete(userid);
+        resolve();
+        return;
       } else if (existingSession) {
-        logger.warn(`Session conflict for user ${userid}, overwriting...`);
+        logger.warn(`Session conflict for user ${userid}, overwriting with new session`);
         await sessionStore.put(`session_${userid}`, appState);
       }
 
@@ -466,41 +478,49 @@ async function accountLogin(
       });
 
       try {
-        api.listenMqtt((error, event) => {
-          if (error || !"type" in event) {
-            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
-            Utils.account.delete(userid);
-            if (!isExternalState) deleteThisUser(userid);
-            return;
-          }
-          logger.info(`MQTT event received for user ${userid}: ${event.type}`);
-          const chat = new onChat(api, event);
-          Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
-            .filter(
-              (key) => typeof chat[key] === "function" && key !== "constructor"
-            )
-            .forEach((key) => {
-              global[key] = chat[key].bind(chat);
+        // Ensure only one MQTT listener per user
+        if (!existingAccount?.online) {
+          api.listenMqtt((error, event) => {
+            if (error || !"type" in event) {
+              logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+              Utils.account.delete(userid);
+              if (!isExternalState) deleteThisUser(userid);
+              loginLocks.delete(userid);
+              return;
+            }
+            logger.info(`MQTT event received for user ${userid}: ${event.type}`);
+            const chat = new onChat(api, event);
+            Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
+              .filter(
+                (key) => typeof chat[key] === "function" && key !== "constructor"
+              )
+              .forEach((key) => {
+                global[key] = chat[key].bind(chat);
+              });
+            botHandler({
+              fonts,
+              chat,
+              api,
+              Utils,
+              logger,
+              event,
+              aliases,
+              admin: admin_uid,
+              prefix,
+              userid,
             });
-          botHandler({
-            fonts,
-            chat,
-            api,
-            Utils,
-            logger,
-            event,
-            aliases,
-            admin: admin_uid,
-            prefix,
-            userid,
           });
-        });
-        logger.success(`MQTT listener set up for user ${userid}`);
+          logger.success(`MQTT listener set up for user ${userid}`);
+        } else {
+          logger.info(`MQTT listener already active for user ${userid}, skipping setup`);
+        }
+        loginLocks.delete(userid);
         resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
         Utils.account.delete(userid);
         if (!isExternalState) await deleteThisUser(userid);
+        loginLocks.delete(userid);
         reject(error);
       }
     });
@@ -546,6 +566,10 @@ async function addThisUser(userid, state, prefix, admin) {
 
 async function deleteThisUser(userid) {
   try {
+    if (Utils.account.get(userid)?.online) {
+      logger.info(`User ${userid} is still online, skipping session deletion`);
+      return;
+    }
     await sessionStore.remove(`session_${userid}`);
     await sessionStore.remove(`config_${userid}`);
     await sessionStore.remove(`user_${userid}`);
@@ -696,7 +720,7 @@ async function main() {
 
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
 
-    // Fallback to file-based sessions only for users not in MongoDB
+    // Fallback to file-based sessions only for users not in MongoDB or not online
     const sessionFolder = path.join("./data/session");
     const configFile = "./data/history.json";
 
@@ -719,9 +743,9 @@ async function main() {
     for (const file of files) {
       const userId = path.parse(file).name;
 
-      // Skip if user is already logged in from MongoDB
+      // Skip if user is already logged in
       if (Utils.account.get(userId)?.online) {
-        logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
+        logger.info(`User ${userId} already logged in, skipping file-based session`);
         continue;
       }
 
