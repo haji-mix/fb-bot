@@ -21,6 +21,7 @@ module.exports["config"] = {
 async function fetchSupportedModels() {
   try {
     const modelRes = await axios.get(global.api.hajime + `/api/xai`);
+    cachedSupportedModels = modelRes.data.supported_models || [DEFAULT_MODEL];
   } catch (error) {
     if (
       error.response &&
@@ -74,14 +75,12 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
   const answering = await chat.reply(font.thin("Generating response..."));
 
   try {
-    let modelToUse = DEFAULT_MODEL; // Start with default model
-    
-    // Only consider fetched models if user has explicitly selected one
+    let modelToUse = DEFAULT_MODEL;
+
     if (userModelMap[event.senderID] !== undefined) {
       if (!cachedSupportedModels) {
         await fetchSupportedModels();
       }
-      // If user has selected a model and it exists, use it
       if (userModelMap[event.senderID] < cachedSupportedModels.length) {
         modelToUse = cachedSupportedModels[userModelMap[event.senderID]];
       }
@@ -122,7 +121,8 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    let responseMessage = format(model_used.toUpperCase(), answer);
+    let responseMessage = answer;
+    const displayModel = (model_used || modelToUse).toUpperCase();
 
     if (
       apiRes.data.search_results &&
@@ -145,7 +145,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       return chat.reply({ body: responseMessage, attachment: attachments });
     }
 
-    chat.reply(responseMessage);
+    chat.reply(format(displayModel, responseMessage));
   } catch (error) {
     answering.unsend();
     chat.reply(font.thin(error.stack || error.message));
