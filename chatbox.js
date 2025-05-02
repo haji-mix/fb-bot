@@ -46,15 +46,25 @@ const sessionStore = new MongoStore({
   allowClear: false,
 });
 
-(async () => {
-  try {
-    await sessionStore.start();
-    logger.success("Connected to MongoDB for session storage");
-  } catch (error) {
-    logger.error("Failed to connect to MongoDB:", error.message);
-    process.exit(1);
+// Retry MongoDB connection up to 3 times
+async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await sessionStore.start();
+      logger.success("Connected to MongoDB for session storage");
+      return;
+    } catch (error) {
+      logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
+      if (attempt === maxRetries) {
+        logger.error("Max retries reached. Exiting...");
+        process.exit(1);
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
   }
-})();
+}
+
+connectMongoWithRetry();
 
 const Utils = {
   commands: new Map(),
@@ -287,6 +297,7 @@ async function getLogin(req, res) {
       .status(200)
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
+    logger.error(`Login failed for email/password: ${error.message}`);
     res
       .status(403)
       .json({ error: true, message: error.message || "Invalid credentials" });
@@ -333,6 +344,7 @@ async function postLogin(req, res) {
       .status(200)
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
+    logger.error(`Post login failed: ${error.message}`);
     res
       .status(400)
       .json({ error: true, message: error.message || "Invalid app state" });
@@ -361,7 +373,7 @@ async function accountLogin(
     (process.env.EMAIL && process.env.PASSWORD);
 
   return new Promise((resolve, reject) => {
-    logger.info(`Attempting login with ${state ? "appState" : "email/password"}`);
+    logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
     login(loginOptions, async (error, api) => {
       if (error) {
         logger.error(`Login failed: ${error.message}`);
@@ -381,8 +393,6 @@ async function accountLogin(
           logger.warn(`Session conflict for user ${userid}, overwriting...`);
           await sessionStore.put(`session_${userid}`, appState);
         }
-      } else {
-        await sessionStore.put(`session_${userid}`, appState);
       }
 
       let admin_uid = null;
@@ -455,15 +465,14 @@ async function accountLogin(
       });
 
       try {
-        logger.info(`Setting up MQTT listener for user ${userid}`);
         api.listenMqtt((error, event) => {
-          if (error || !event) {
-            logger.error(`MQTT error for user ${userid}: ${error?.stack || error}`);
+          if (error || !"type" in event) {
+            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
             Utils.account.delete(userid);
             if (!isExternalState) deleteThisUser(userid);
             return;
           }
-          logger.debug(`Received event for user ${userid}: ${event.type}`);
+          logger.info(`MQTT event received for user ${userid}: ${event.type}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
             .filter(
@@ -486,64 +495,73 @@ async function accountLogin(
           });
         });
         logger.success(`MQTT listener set up for user ${userid}`);
+        resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
         Utils.account.delete(userid);
-        if (!isExternalState) await deleteThisUser(userid);
+        if (!isExternalState) deleteThisUser(userid);
         reject(error);
-        return;
       }
-      resolve();
     });
   });
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  await sessionStore.put(`session_${userid}`, state);
-  await sessionStore.put(`config_${userid}`, {
-    userid,
-    prefix: prefix || "",
-    admin,
-    time: 0,
-    createdAt: Date.now(),
-  });
+  try {
+    await sessionStore.put(`session_${userid}`, state);
+    await sessionStore.put(`config_${userid}`, {
+      userid,
+      prefix: prefix || "",
+      admin,
+      time: 0,
+      createdAt: Date.now(),
+    });
 
-  const configFile = "./data/history.json";
-  const sessionFile = path.join("./data/session", `${userid}.json`);
-  if (!fs.existsSync(path.dirname(configFile))) {
-    fs.mkdirSync(path.dirname(configFile), { recursive: true });
-  }
-  if (!fs.existsSync(path.dirname(sessionFile))) {
-    fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
-  }
+    const configFile = "./data/history.json";
+    const sessionFile = path.join("./data/session", `${userid}.json`);
+    if (!fs.existsSync(path.dirname(configFile))) {
+      fs.mkdirSync(path.dirname(configFile), { recursive: true });
+    }
+    if (!fs.existsSync(path.dirname(sessionFile))) {
+      fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
+    }
 
-  const config = fs.existsSync(configFile)
-    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
-    : [];
-  const existingIndex = config.findIndex((item) => item.userid === userid);
-  if (existingIndex !== -1) {
-    config[existingIndex] = { userid, prefix: prefix || "", admin, time: 0 };
-  } else {
-    config.push({ userid, prefix: prefix || "", admin, time: 0 });
+    const config = fs.existsSync(configFile)
+      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+      : [];
+    const existingIndex = config.findIndex((item) => item.userid === userid);
+    if (existingIndex !== -1) {
+      config[existingIndex] = { userid, prefix: prefix || "", admin, time: 0 };
+    } else {
+      config.push({ userid, prefix: prefix || "", admin, time: 0 });
+    }
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    fs.writeFileSync(sessionFile, JSON.stringify(state));
+    logger.info(`Added user ${userid} to session store and file system`);
+  } catch (error) {
+    logger.error(`Failed to add user ${userid}: ${error.message}`);
   }
-  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-  fs.writeFileSync(sessionFile, JSON.stringify(state));
 }
 
 async function deleteThisUser(userid) {
-  await sessionStore.remove(`session_${userid}`);
-  await sessionStore.remove(`config_${userid}`);
-  await sessionStore.remove(`user_${userid}`);
+  try {
+    await sessionStore.remove(`session_${userid}`);
+    await sessionStore.remove(`config_${userid}`);
+    await sessionStore.remove(`user_${userid}`);
 
-  const configFile = "./data/history.json";
-  const sessionFile = path.join("./data/session", `${userid}.json`);
-  const config = fs.existsSync(configFile)
-    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
-    : [];
-  const index = config.findIndex((item) => item.userid === userid);
-  if (index !== -1) config.splice(index, 1);
-  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-  if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
+    const configFile = "./data/history.json";
+    const sessionFile = path.join("./data/session", `${userid}.json`);
+    const config = fs.existsSync(configFile)
+      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+      : [];
+    const index = config.findIndex((item) => item.userid === userid);
+    if (index !== -1) config.splice(index, 1);
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
+    logger.info(`Deleted user ${userid} from session store and file system`);
+  } catch (error) {
+    logger.error(`Failed to delete user ${userid}: ${error.message}`);
+  }
 }
 
 function aliases(command) {
@@ -584,46 +602,31 @@ async function main() {
   }, 60000);
 
   const validateAppState = (state) => {
-    if (!Array.isArray(state) || state.length === 0) {
-      logger.warn("App state is not an array or is empty");
-      return false;
-    }
-    const requiredKeys = ["i_user", "c_user", "fb_dtsg", "datr", "xs"];
-    const hasRequiredKeys = state.some((item) =>
-      requiredKeys.includes(item.key)
+    return (
+      Array.isArray(state) &&
+      state.length > 0 &&
+      state.every(
+        (item) =>
+          typeof item === "object" &&
+          item !== null &&
+          "key" in item &&
+          "value" in item
+      ) &&
+      state.some((item) => ["i_user", "c_user"].includes(item.key))
     );
-    const isValidStructure = state.every(
-      (item) =>
-        typeof item === "object" &&
-        item !== null &&
-        "key" in item &&
-        "value" in item &&
-        typeof item.key === "string" &&
-        item.value != null
-    );
-    if (!hasRequiredKeys) {
-      logger.warn("App state missing required keys: " + requiredKeys.join(", "));
-    }
-    if (!isValidStructure) {
-      logger.warn("App state contains invalid structure");
-    }
-    return hasRequiredKeys && isValidStructure;
   };
 
-  const loadMongoSession = async (userid) => {
+  const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
     try {
-      logger.info(`Attempting to load session for user ${userid} from MongoDB`);
+      logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
       const session = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
 
       if (!session || !userConfig) {
-        logger.warn(`Session or config data for user ${userid} not found in MongoDB`);
+        logger.warn(`No session or config found for user ${userid} in MongoDB`);
         await deleteThisUser(userid);
         return false;
       }
-
-      logger.debug(`Session data for ${userid}: ${JSON.stringify(session, null, 2)}`);
-      logger.debug(`Config data for ${userid}: ${JSON.stringify(userConfig, null, 2)}`);
 
       if (!validateAppState(session)) {
         logger.warn(`Invalid app state for user ${userid} in MongoDB`);
@@ -632,7 +635,7 @@ async function main() {
       }
 
       if (Utils.account.get(userid)?.online) {
-        logger.info(`User ${userid} is already logged in, skipping MongoDB session load`);
+        logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
         return true;
       }
 
@@ -641,9 +644,15 @@ async function main() {
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
-      logger.success(`Successfully loaded session for user ${userid} from MongoDB`);
+      logger.success(`Successfully loaded MongoDB session for user ${userid}`);
       return true;
     } catch (error) {
+      logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
+      if (retryCount < maxRetries) {
+        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return loadMongoSession(userid, retryCount + 1, maxRetries);
+      }
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
         errorRetrieving: /Error retrieving userID.*unknown location/,
@@ -658,13 +667,13 @@ async function main() {
           break;
         }
       }
-      logger.error(`Failed to load session for user ${userid} from MongoDB: ${error.stack || error.message}`);
       return false;
     }
   };
 
   try {
     // Load sessions from MongoDB first
+    logger.info("Loading sessions from MongoDB...");
     const sessions = await sessionStore.entries();
     const userIds = new Set();
 
@@ -792,7 +801,7 @@ async function main() {
         );
       }
     } catch (error) {
-      logger.error(error.stack || error);
+      logger.error(`Failed to login with APPSTATE: ${error.stack || error}`);
     }
   }
 
@@ -806,7 +815,7 @@ async function main() {
         process.env.PASSWORD
       );
     } catch (error) {
-      logger.error(error.stack || error);
+      logger.error(`Failed to login with EMAIL/PASSWORD: ${error.stack || error}`);
     }
   }
 }
