@@ -26,7 +26,7 @@ async function botHandler({
       event.senderID
     }\n[MESSAGE]: ${(event?.body || "").trim()}`;
 
-    logger.success(fonts.origin(logMessage));
+    logger.info(fonts.origin(logMessage));
   }
 
   const reply = async (msg) => {
@@ -354,7 +354,7 @@ async function botHandler({
     case "message_reply":
       if (aliases(command?.toLowerCase())?.name) {
         try {
-          logger.success(
+          logger.info(
             `[${aliases(
               command?.toLowerCase()
             )?.name.toUpperCase()}] [CMD] [EXECUTED ✓]`

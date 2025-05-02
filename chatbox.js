@@ -54,7 +54,7 @@ async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await sessionStore.start();
-      logger.success("Connected to MongoDB for session storage");
+      logger.info("Connected to MongoDB for session storage");
       return;
     } catch (error) {
       logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
@@ -114,7 +114,7 @@ getSelfIP().then((ip) => {
   if (ip) {
     selfIP = ip;
     TRUSTED_IPS.push(ip);
-    logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
+    logger.info(`TRUSTED SERVER SELF IP: ${selfIP}`);
   }
 });
 
@@ -185,7 +185,7 @@ async function startServer(stealth_port) {
   }
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
   server = app.listen(PORT, () =>
-    logger.success(
+    logger.info(
       `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
     )
   );
@@ -376,7 +376,7 @@ async function accountLogin(
     (process.env.EMAIL && process.env.PASSWORD);
 
   return new Promise((resolve, reject) => {
-    logger.success(`Initiating login with ${state ? "appState" : "email/password"}`);
+    logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
     login(loginOptions, async (error, api) => {
       if (error) {
         logger.error(`Login failed: ${error.message}`);
@@ -388,18 +388,18 @@ async function accountLogin(
 
       // Check for login lock
       if (loginLocks.has(userid)) {
-        logger.success(`Login attempt for user ${userid} blocked due to ongoing login`);
+        logger.info(`Login attempt for user ${userid} blocked due to ongoing login`);
         return resolve();
       }
       loginLocks.set(userid, true);
 
-      logger.success(`Logged in user ${userid}`);
+      logger.info(`Logged in user ${userid}`);
 
       const existingSession = await sessionStore.get(`session_${userid}`);
       const existingAccount = Utils.account.get(userid);
 
       if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-        logger.success(`User ${userid} is already online with matching session, reusing session`);
+        logger.info(`User ${userid} is already online with matching session, reusing session`);
         loginLocks.delete(userid);
         resolve();
         return;
@@ -488,7 +488,7 @@ async function accountLogin(
               loginLocks.delete(userid);
               return;
             }
-            logger.success(`MQTT event received for user ${userid}: ${event.type}`);
+            logger.info(`MQTT event received for user ${userid}: ${event.type}`);
             const chat = new onChat(api, event);
             Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
               .filter(
@@ -510,9 +510,9 @@ async function accountLogin(
               userid,
             });
           });
-          logger.success(`MQTT listener set up for user ${userid}`);
+          logger.info(`MQTT listener set up for user ${userid}`);
         } else {
-          logger.success(`MQTT listener already active for user ${userid}, skipping setup`);
+          logger.info(`MQTT listener already active for user ${userid}, skipping setup`);
         }
         loginLocks.delete(userid);
         resolve();
@@ -558,7 +558,7 @@ async function addThisUser(userid, state, prefix, admin) {
     }
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
     fs.writeFileSync(sessionFile, JSON.stringify(state));
-    logger.success(`Added user ${userid} to session store and file system`);
+    logger.info(`Added user ${userid} to session store and file system`);
   } catch (error) {
     logger.error(`Failed to add user ${userid}: ${error.message}`);
   }
@@ -567,7 +567,7 @@ async function addThisUser(userid, state, prefix, admin) {
 async function deleteThisUser(userid) {
   try {
     if (Utils.account.get(userid)?.online) {
-      logger.success(`User ${userid} is still online, skipping session deletion`);
+      logger.info(`User ${userid} is still online, skipping session deletion`);
       return;
     }
     await sessionStore.remove(`session_${userid}`);
@@ -583,7 +583,7 @@ async function deleteThisUser(userid) {
     if (index !== -1) config.splice(index, 1);
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
     if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
-   // logger.success(`Deleted user ${userid} from session store and file system`);
+   // logger.info(`Deleted user ${userid} from session store and file system`);
   } catch (error) {
     logger.error(`Failed to delete user ${userid}: ${error.message}`);
   }
@@ -649,7 +649,7 @@ async function main() {
 
   const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
     try {
-      // logger.success(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
+      // logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
       const session = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
 
@@ -665,7 +665,7 @@ async function main() {
       }
 
       if (Utils.account.get(userid)?.online) {
-      // logger.success(`User ${userid} already logged in, skipping MongoDB session load`);
+      // logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
         return true;
       }
 
@@ -674,12 +674,12 @@ async function main() {
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
-      logger.success(`Successfully loaded MongoDB session for user ${userid}`);
+      logger.info(`Successfully loaded MongoDB session for user ${userid}`);
       return true;
     } catch (error) {
       logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
       if (retryCount < maxRetries) {
-        logger.success(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return loadMongoSession(userid, retryCount + 1, maxRetries);
       }
@@ -703,7 +703,7 @@ async function main() {
 
   try {
     // Load sessions from MongoDB first
-    logger.success("Loading sessions from MongoDB...");
+    logger.info("Loading sessions from MongoDB...");
     const sessions = await sessionStore.entries();
     const userIds = new Set();
 
@@ -718,7 +718,7 @@ async function main() {
       await loadMongoSession(userid);
     }
 
-    logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
+    logger.info(`Loaded ${userIds.size} sessions from MongoDB`);
 
     // Fallback to file-based sessions only for users not in MongoDB or not online
     const sessionFolder = path.join("./data/session");
@@ -744,7 +744,7 @@ async function main() {
       const userId = path.parse(file).name;
 
       if (Utils.account.get(userId)?.online) {
-      // logger.success(`User ${userId} already logged in, skipping file-based session`);
+      // logger.info(`User ${userId} already logged in, skipping file-based session`);
         continue;
       }
 
@@ -766,7 +766,7 @@ async function main() {
         // Check if session already exists in MongoDB
         const existingMongoSession = await sessionStore.get(`session_${userId}`);
         if (existingMongoSession) {
-          logger.success(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+          logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
           continue;
         }
 
@@ -786,7 +786,7 @@ async function main() {
           migratedAt: Date.now(),
         });
 
-        logger.success(`Migrated session for user ${userId} from file to MongoDB`);
+        logger.info(`Migrated session for user ${userId} from file to MongoDB`);
         await deleteThisUser(userId); // Delete file-based session after successful migration
       } catch (error) {
         logger.error(`Error loading session for ${userId} from file: ${error.message}`);
