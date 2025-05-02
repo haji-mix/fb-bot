@@ -8,10 +8,6 @@ const cors = require("cors");
 const axios = require("axios");
 require("dotenv").config();
 
-global.api = {
-  hajime: "https://haji-mix-api.gleeze.com",
-};
-
 const {
   logger,
   fonts,
@@ -87,7 +83,6 @@ async function getSelfIP() {
     const response = await axios.get("https://api.ipify.org/?format=json");
     return response.data.ip;
   } catch (error) {
-    logger.error("Failed to get self IP:", error.message);
     return null;
   }
 }
@@ -694,7 +689,7 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || "#", admins);
+        await accountLogin(envState, process.env.PREFIX || global.prefix || "", admins);
       }
     } catch (error) {
       logger.error(error.stack || error);
@@ -705,7 +700,7 @@ async function main() {
     try {
       await accountLogin(
         null,
-        process.env.PREFIX || "#",
+        process.env.PREFIX || global.prefix || "",
         admins,
         process.env.EMAIL,
         process.env.PASSWORD

@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 const { spawn } = require("child_process");
 const path = require("path");
@@ -8,6 +9,12 @@ const SCRIPT_FILE = "chatbox.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const restartEnabled = process.env.PID !== "0";
 const RESTART_DELAY = 5000; // 5 seconds
+
+global.api = {
+    hajime: "https://haji-mix-api.gleeze.com",
+    prefix: "#"
+  };
+  
 
 process.removeAllListeners('warning'); 
 process.on('warning', (warning) => {
