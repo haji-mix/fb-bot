@@ -97,7 +97,7 @@ class onChat {
 
     if (!url) {
       throw new Error("URL is required.");
-    }
+      }
 
     if (!Array.isArray(url)) {
       url = [url];
@@ -302,187 +302,202 @@ class onChat {
 
   async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
     try {
-        const threadID = tid !== null && tid !== undefined ? String(tid) : null;
+      const threadID = tid !== null && tid !== undefined ? String(tid) : null;
 
-        if (!threadID || !msg) {
-            throw new Error("Thread ID and Message are required.");
-        }
+      if (!threadID || !msg) {
+        throw new Error("Thread ID and Message are required.");
+      }
 
-        // Determine the message body based on input type
-        let messageBody = typeof msg === "string" ? msg : msg.body || "";
-        let messageObj = typeof msg === "string" ? { body: msg } : { ...msg };
+      // Determine the message body and attachments based on input type
+      let messageBody = typeof msg === "string" ? msg : msg.body || "";
+      let messageObj = typeof msg === "string" ? { body: msg } : { ...msg };
 
-        // Apply bad word filter, URL processing, and bold formatting to the body
-        const formattedBody = formatBold(
-            this.#processUrls(this.#filterBadWords(messageBody))
-        );
+      // Apply bad word filter, URL processing, and bold formatting to the body
+      const formattedBody = formatBold(
+        this.#processUrls(this.#filterBadWords(messageBody))
+      );
 
-        // Maximum character limit for Facebook Messenger
-        const MAX_CHAR_LIMIT = 5000;
-        // Maximum attachment limit
-        const MAX_ATTACHMENT_LIMIT = 10;
+      // Maximum character limit for Facebook Messenger
+      const MAX_CHAR_LIMIT = 5000;
+      // Maximum attachment limit
+      const MAX_ATTACHMENT_LIMIT = 10;
 
-        // Handle attachments
-        let attachments = messageObj.attachment || [];
-        if (!Array.isArray(attachments)) {
-            attachments = [attachments];
-        }
+      // Handle attachments
+      let attachments = messageObj.attachment || [];
+      if (!Array.isArray(attachments)) {
+        attachments = [attachments].filter((a) => a); // Remove undefined/null
+      }
 
-        // If there are more than 10 attachments, split them into chunks
-        const attachmentChunks = [];
-        if (attachments.length > MAX_ATTACHMENT_LIMIT) {
-            for (let i = 0; i < attachments.length; i += MAX_ATTACHMENT_LIMIT) {
-                attachmentChunks.push(attachments.slice(i, i + MAX_ATTACHMENT_LIMIT));
-            }
-        } else if (attachments.length > 0) {
-            attachmentChunks.push(attachments);
-        }
+      // If the body is within the character limit and attachments are within the limit, send as a single message
+      if (formattedBody.length <= MAX_CHAR_LIMIT && attachments.length <= MAX_ATTACHMENT_LIMIT) {
+        const formattedMsg =
+          typeof msg === "string"
+            ? formattedBody
+            : { ...messageObj, body: formattedBody };
+        const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
 
-        // If the body exceeds the character limit or has attachments, handle accordingly
-        if (formattedBody.length > MAX_CHAR_LIMIT || attachmentChunks.length > 0) {
-            const messages = [];
-            let currentMessage = "";
-            let charCount = 0;
-
-            // Split the body into words to preserve word boundaries
-            const words = formattedBody.split(" ");
-
-            for (const word of words) {
-                const wordLength = word.length + 1; // +1 for the space
-                if (charCount + wordLength > MAX_CHAR_LIMIT) {
-                    messages.push(currentMessage.trim());
-                    currentMessage = word + " ";
-                    charCount = wordLength;
-                } else {
-                    currentMessage += word + " ";
-                    charCount += wordLength;
-                }
-            }
-
-            // Push the last chunk if it exists
-            if (currentMessage.trim()) {
-                messages.push(currentMessage.trim());
-            }
-
-            // Combine messages with attachments
-            const allMessages = [];
-            let messageIndex = 0;
-
-            // Add text messages
-            for (let index = 0; index < messages.length; index++) {
-                allMessages.push({
-                    body: index === 0 ? messages[index] : `... ${messages[index]}`,
-                    attachment: undefined,
-                });
-                messageIndex++;
-            }
-
-            // Add attachment chunks as separate messages
-            for (let index = 0; index < attachmentChunks.length; index++) {
-                allMessages.push({
-                    body: messageIndex === 0 ? "" : "... (Attachments)",
-                    attachment: attachmentChunks[index],
-                });
-                messageIndex++;
-            }
-
-            // Send each message sequentially
-            const sentMessages = [];
-            for (let index = 0; index < allMessages.length; index++) {
-                const chunk = allMessages[index];
-                const chunkMsg = {
-                    body: chunk.body,
-                    ...messageObj, // Preserve other properties (e.g., sticker, mentions)
-                    attachment: chunk.attachment,
-                };
-                // Add a 100ms delay before sending each chunk
-                await new Promise((resolve) => setTimeout(resolve, 100));
-                const replyMsg = await this.api.sendMessage(
-                    chunkMsg,
-                    threadID,
-                    index === 0 ? mid : null
-                );
-                sentMessages.push(replyMsg);
-            }
-
-            // Return the last message's details with edit/unsend/delete methods
-            const lastReplyMsg = sentMessages[sentMessages.length - 1];
-            return {
-                messageID: lastReplyMsg.messageID,
-                edit: async (message, delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.editmsg(message, lastReplyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                unsend: async (delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.unsendmsg(lastReplyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                delete: async (delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.unsendmsg(lastReplyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-            };
-        } else {
-            // If the body is within the limit and no attachments need splitting, send as is
-            const formattedMsg =
-                typeof msg === "string"
-                    ? formattedBody
-                    : { ...messageObj, body: formattedBody };
-            const replyMsg = await this.api.sendMessage(
-                formattedMsg,
-                threadID,
-                mid
-            );
-
-            return {
-                messageID: replyMsg.messageID,
-                edit: async (message, delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.editmsg(message, replyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                unsend: async (delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.unsendmsg(replyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-                delete: async (delay = 0) => {
-                    try {
-                        await new Promise((res) => setTimeout(res, delay));
-                        return await this.unsendmsg(replyMsg.messageID);
-                    } catch (error) {
-                        return null;
-                    }
-                },
-            };
-        }
-    } catch (error) {
         return {
-            messageID: null,
-            edit: async () => null,
-            unsend: async () => null,
-            delete: async () => null,
+          messageID: replyMsg.messageID,
+          edit: async (message, delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.editmsg(message, replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          unsend: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
+          delete: async (delay = 0) => {
+            try {
+              await new Promise((res) => setTimeout(res, delay));
+              return await this.unsendmsg(replyMsg.messageID);
+            } catch (error) {
+              return null;
+            }
+          },
         };
+      }
+
+      // If limits are exceeded, split the message and/or attachments
+      const messages = [];
+      let currentMessage = "";
+      let charCount = 0;
+
+      // Split the body into words to preserve word boundaries
+      const words = formattedBody.split(" ");
+      for (const word of words) {
+        const wordLength = word.length + 1; // +1 for the space
+        if (charCount + wordLength > MAX_CHAR_LIMIT) {
+          messages.push(currentMessage.trim());
+          currentMessage = word + " ";
+          charCount = wordLength;
+        } else {
+          currentMessage += word + " ";
+          charCount += wordLength;
+        }
+      }
+
+      // Push the last chunk if it exists
+      if (currentMessage.trim()) {
+        messages.push(currentMessage.trim());
+      }
+
+      // Split attachments into chunks of MAX_ATTACHMENT_LIMIT
+      const attachmentChunks = [];
+      if (attachments.length > 0) {
+        for (let i = 0; i < attachments.length; i += MAX_ATTACHMENT_LIMIT) {
+          attachmentChunks.push(attachments.slice(i, i + MAX_ATTACHMENT_LIMIT));
+        }
+      }
+
+      // Combine text messages and attachment chunks
+      const allMessages = [];
+      let hasText = messages.length > 0;
+
+      // Add the first text message with the first attachment chunk if both exist
+      if (hasText && attachmentChunks.length > 0) {
+        allMessages.push({
+          body: messages[0],
+          attachment: attachmentChunks[0],
+        });
+        messages.shift(); // Remove the first text message
+        attachmentChunks.shift(); // Remove the first attachment chunk
+      } else if (hasText) {
+        // Add the first text message without attachments
+        allMessages.push({
+          body: messages[0],
+          attachment: undefined,
+        });
+        messages.shift();
+      } else if (attachmentChunks.length > 0) {
+        // Add the first attachment chunk without text
+        allMessages.push({
+          body: "",
+          attachment: attachmentChunks[0],
+        });
+        attachmentChunks.shift();
+      }
+
+      // Add remaining text messages
+      for (const message of messages) {
+        allMessages.push({
+          body: `... ${message}`,
+          attachment: undefined,
+        });
+      }
+
+      // Add remaining attachment chunks
+      for (const chunk of attachmentChunks) {
+        allMessages.push({
+          body: "... (Attachments)",
+          attachment: chunk,
+        });
+      }
+
+      // Send each message sequentially
+      const sentMessages = [];
+      for (let index = 0; index < allMessages.length; index++) {
+        const chunk = allMessages[index];
+        const chunkMsg = {
+          body: chunk.body,
+          ...messageObj, // Preserve other properties (e.g., sticker, mentions)
+          attachment: chunk.attachment,
+        };
+        // Add a 100ms delay before sending each chunk
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        const replyMsg = await this.api.sendMessage(
+          chunkMsg,
+          threadID,
+          index === 0 ? mid : null
+        );
+        sentMessages.push(replyMsg);
+      }
+
+      // Return the last message's details with edit/unsend/delete methods
+      const lastReplyMsg = sentMessages[sentMessages.length - 1];
+      return {
+        messageID: lastReplyMsg.messageID,
+        edit: async (message, delay = 0) => {
+          try {
+            await new Promise((res) => setTimeout(res, delay));
+            return await this.editmsg(message, lastReplyMsg.messageID);
+          } catch (error) {
+            return null;
+          }
+        },
+        unsend: async (delay = 0) => {
+          try {
+            await new Promise((res) => setTimeout(res, delay));
+            return await this.unsendmsg(lastReplyMsg.messageID);
+          } catch (error) {
+            return null;
+          }
+        },
+        delete: async (delay = 0) => {
+          try {
+            await new Promise((res) => setTimeout(res, delay));
+            return await this.unsendmsg(lastReplyMsg.messageID);
+          } catch (error) {
+            return null;
+          }
+        },
+      };
+    } catch (error) {
+      return {
+        messageID: null,
+        edit: async () => null,
+        unsend: async () => null,
+        delete: async () => null,
+      };
     }
-}
+  }
 
   async editmsg(msg, mid) {
     try {
