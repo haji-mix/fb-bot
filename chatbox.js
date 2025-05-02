@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const cors = require("cors");
 const axios = require("axios");
+const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
 global.api = {
@@ -24,7 +25,6 @@ const {
   botHandler,
   minifyHtml,
   obfuscate,
-  MongoStore,
 } = require("./system/modules");
 
 const hajime_config = fs.existsSync("./hajime.json")
@@ -39,17 +39,18 @@ const MONGO_URI =
   process.env.MONGO_URI ||
   hajime_config.mongo_uri ||
   "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-const sessionStore = new MongoStore({
-  uri: MONGO_URI,
-  collection: "sessions",
-  ignoreError: true,
-  allowClear: false,
-});
+const DB_NAME = "hajime_db";
+const SESSION_COLLECTION = "sessions";
+const CONFIG_COLLECTION = "configs";
+const USER_COLLECTION = "users";
+
+let mongoClient;
 
 (async () => {
   try {
-    await sessionStore.start();
-    logger.success("Connected to MongoDB for session storage");
+    mongoClient = new MongoClient(MONGO_URI);
+    await mongoClient.connect();
+    logger.success("Connected to MongoDB");
   } catch (error) {
     logger.error("Failed to connect to MongoDB:", error.message);
     process.exit(1);
@@ -304,7 +305,9 @@ async function postLogin(req, res) {
     }
     const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
 
-    const existingUser = await sessionStore.get(`user_${user.value}`);
+    const db = mongoClient.db(DB_NAME);
+    const userCollection = db.collection(USER_COLLECTION);
+    const existingUser = await userCollection.findOne({ userId: user.value });
     const waitTime = 180000;
 
     if (
@@ -324,10 +327,16 @@ async function postLogin(req, res) {
 
     await accountLogin(state, prefix, admin ? [admin] : admins);
 
-    await sessionStore.put(`user_${user.value}`, {
-      lastLoginTime: Date.now(),
-      userId: user.value,
-    });
+    await userCollection.updateOne(
+      { userId: user.value },
+      {
+        $set: {
+          lastLoginTime: Date.now(),
+          userId: user.value,
+        },
+      },
+      { upsert: true }
+    );
 
     res
       .status(200)
@@ -366,9 +375,14 @@ async function accountLogin(
       const appState = state || api.getAppState();
       const userid = await api.getCurrentUserID();
 
-      const existingSession = await sessionStore.get(`session_${userid}`);
+      const db = mongoClient.db(DB_NAME);
+      const sessionCollection = db.collection(SESSION_COLLECTION);
+      const existingSession = await sessionCollection.findOne({
+        _id: `session_${userid}`,
+      });
+
       if (existingSession) {
-        if (JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        if (JSON.stringify(existingSession.state) === JSON.stringify(appState)) {
           logger.info(`Session for user ${userid} already exists, reusing...`);
           resolve();
           return;
@@ -404,6 +418,7 @@ async function accountLogin(
       }
 
       Utils.account.set(userid, {
+        name_ONLINE_ = true;
         name: "ANONYMOUS",
         userid,
         profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
@@ -413,22 +428,29 @@ async function accountLogin(
         api,
       });
 
-      setInterval(() => {
+      setInterval(async () => {
         const account = Utils.account.get(userid);
         if (!account) return;
         const newTime = account.time + 1;
         Utils.account.set(userid, { ...account, time: newTime });
 
         if (newTime % 60 === 0) {
-          sessionStore
-            .put(`user_${userid}`, {
-              ...account,
-              time: newTime,
-              lastUpdate: Date.now(),
-            })
-            .catch((err) =>
-              logger.error(`Failed to update user time: ${err.message}`)
+          try {
+            const db = mongoClient.db(DB_NAME);
+            const userCollection = db.collection(USER_COLLECTION);
+            await userCollection.updateOne(
+              { userId: userid },
+              {
+                $set: {
+                  time: newTime,
+                  lastUpdate: Date.now(),
+                },
+              },
+              { upsert: true }
             );
+          } catch (err) {
+            logger.error(`Failed to update user time: ${err.message}`);
+          }
         }
       }, 1000);
 
@@ -486,8 +508,17 @@ async function accountLogin(
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  await sessionStore.put(`session_${userid}`, state);
-  await sessionStore.put(`config_${userid}`, {
+  const db = mongoClient.db(DB_NAME);
+  const sessionCollection = db.collection(SESSION_COLLECTION);
+  const configCollection = db.collection(CONFIG_COLLECTION);
+
+  await sessionCollection.insertOne({
+    _id: `session_${userid}`,
+    state,
+  });
+
+  await configCollection.insertOne({
+    _id: `config_${userid}`,
     userid,
     prefix: prefix || "",
     admin,
@@ -518,9 +549,14 @@ async function addThisUser(userid, state, prefix, admin) {
 }
 
 async function deleteThisUser(userid) {
-  await sessionStore.remove(`session_${userid}`);
-  await sessionStore.remove(`config_${userid}`);
-  await sessionStore.remove(`user_${userid}`);
+  const db = mongoClient.db(DB_NAME);
+  const sessionCollection = db.collection(SESSION_COLLECTION);
+  const configCollection = db.collection(CONFIG_COLLECTION);
+  const userCollection = db.collection(USER_COLLECTION);
+
+  await sessionCollection.deleteOne({ _id: `session_${userid}` });
+  await configCollection.deleteOne({ _id: `config_${userid}` });
+  await userCollection.deleteOne({ userId: userid });
 
   const configFile = "./data/history.json";
   const sessionFile = path.join("./data/session", `${userid}.json`);
@@ -550,16 +586,23 @@ async function main() {
 
   setInterval(async () => {
     try {
-      const configs = await sessionStore.entries();
-      const users = configs.filter((entry) => entry.key.startsWith("config_"));
+      const db = mongoClient.db(DB_NAME);
+      const configCollection = db.collection(CONFIG_COLLECTION);
+      const configs = await configCollection.find({}).toArray();
 
-      for (const { key, value } of users) {
-        const userid = value.userid;
+      for (const config of configs) {
+        const userid = config.userid;
         if (userid) {
           const update = Utils.account.get(userid);
           if (update) {
-            value.time = update.time;
-            await sessionStore.put(key, value);
+            await configCollection.updateOne(
+              { _id: `config_${userid}` },
+              {
+                $set: {
+                  time: update.time,
+                },
+              }
+            );
           }
         }
       }
@@ -587,32 +630,46 @@ async function main() {
 
   const loadMongoSession = async (userid) => {
     try {
-      const session = await sessionStore.get(`session_${userid}`);
-      const userConfig = await sessionStore.get(`config_${userid}`);
+      const db = mongoClient.db(DB_NAME);
+      const sessionCollection = db.collection(SESSION_COLLECTION);
+      const configCollection = db.collection(CONFIG_COLLECTION);
+
+      const session = await sessionCollection.findOne({
+        _id: `session_${userid}`,
+      });
+      const userConfig = await configCollection.findOne({
+        _id: `config_${userid}`,
+      });
 
       if (!session || !userConfig) {
-        logger.warn(`Session or config data for user ${userid} not found in MongoDB`);
+        logger.warn(
+          `Session or config data for user ${userid} not found in MongoDB`
+        );
         await deleteThisUser(userid);
         return false;
       }
 
-      if (!validateAppState(session)) {
+      if (!validateAppState(session.state)) {
         logger.warn(`Invalid app state for user ${userid} in MongoDB`);
         await deleteThisUser(userid);
         return false;
       }
 
       if (Utils.account.get(userid)?.online) {
-        logger.info(`User ${userid} is already logged in, skipping MongoDB session load`);
+        logger.info(
+          `User ${userid} is already logged in, skipping MongoDB session load`
+        );
         return true;
       }
 
       await accountLogin(
-        session,
+        session.state,
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
-      logger.success(`Successfully loaded session for user ${userid} from MongoDB`);
+      logger.success(
+        `Successfully loaded session for user ${userid} from MongoDB`
+      );
       return true;
     } catch (error) {
       const ERROR_PATTERNS = {
@@ -629,22 +686,20 @@ async function main() {
           break;
         }
       }
-      logger.error(`Failed to load session for user ${userid} from MongoDB: ${error.message}`);
+      logger.error(
+        `Failed to load session for user ${userid} from MongoDB: ${error.message}`
+      );
       return false;
     }
   };
 
   try {
-    // Load sessions from MongoDB first
-    const sessions = await sessionStore.entries();
-    const userIds = new Set();
-
-    for (const { key } of sessions) {
-      if (key.startsWith("session_")) {
-        const userid = key.replace("session_", "");
-        userIds.add(userid);
-      }
-    }
+    const db = mongoClient.db(DB_NAME);
+    const sessionCollection = db.collection(SESSION_COLLECTION);
+    const sessions = await sessionCollection
+      .find({ _id: { $regex: "^session_" } })
+      .toArray();
+    const userIds = new Set(sessions.map((s) => s._id.replace("session_", "")));
 
     for (const userid of userIds) {
       await loadMongoSession(userid);
@@ -652,7 +707,6 @@ async function main() {
 
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
 
-    // Fallback to file-based sessions only for users not in MongoDB
     const sessionFolder = path.join("./data/session");
     const configFile = "./data/history.json";
 
@@ -675,9 +729,10 @@ async function main() {
     for (const file of files) {
       const userId = path.parse(file).name;
 
-      // Skip if user is already logged in from MongoDB
       if (Utils.account.get(userId)?.online) {
-        logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
+        logger.info(
+          `User ${userId} already logged in from MongoDB, skipping file-based session`
+        );
         await deleteThisUser(userId);
         continue;
       }
@@ -687,7 +742,9 @@ async function main() {
 
       try {
         if (!fs.existsSync(filePath)) {
-          logger.warn(`Session file for user ${userId} does not exist: ${filePath}`);
+          logger.warn(
+            `Session file for user ${userId} does not exist: ${filePath}`
+          );
           continue;
         }
 
@@ -698,10 +755,13 @@ async function main() {
           continue;
         }
 
-        // Check if session already exists in MongoDB
-        const existingMongoSession = await sessionStore.get(`session_${userId}`);
+        const existingMongoSession = await sessionCollection.findOne({
+          _id: `session_${userId}`,
+        });
         if (existingMongoSession) {
-          logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+          logger.info(
+            `Session for user ${userId} already in MongoDB, skipping file-based session`
+          );
           await deleteThisUser(userId);
           continue;
         }
@@ -712,9 +772,12 @@ async function main() {
           userConfig.admin ? [userConfig.admin] : admins
         );
 
-        // Migrate to MongoDB
-        await sessionStore.put(`session_${userId}`, session);
-        await sessionStore.put(`config_${userId}`, {
+        await sessionCollection.insertOne({
+          _id: `session_${userId}`,
+          state: session,
+        });
+        await db.collection(CONFIG_COLLECTION).insertOne({
+          _id: `config_${userId}`,
           userid: userId,
           prefix: userConfig.prefix || "",
           admin: userConfig.admin,
@@ -722,7 +785,9 @@ async function main() {
           migratedAt: Date.now(),
         });
 
-        logger.success(`Migrated session for user ${userId} from file to MongoDB`);
+        logger.success(
+          `Migrated session for user ${userId} from file to MongoDB`
+        );
         await deleteThisUser(userId);
       } catch (error) {
         logger.error(`Error loading session for ${userId} from file: ${error.message}`);
@@ -758,7 +823,7 @@ async function main() {
       if (validateJsonArrayOfObjects(envState)) {
         await accountLogin(
           envState,
-          process.env.PREFIX || global.prefix,
+          process.env.PREFIX || global.api.prefix,
           admins
         );
       }
@@ -771,7 +836,7 @@ async function main() {
     try {
       await accountLogin(
         null,
-        process.env.PREFIX || global.prefix,
+        process.env.PREFIX || global.api.prefix,
         admins,
         process.env.EMAIL,
         process.env.PASSWORD
