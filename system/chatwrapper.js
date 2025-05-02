@@ -318,7 +318,7 @@ class onChat {
       );
 
       // Maximum character limit for Facebook Messenger
-      const MAX_CHAR_LIMIT = 20000;
+      const MAX_CHAR_LIMIT = 5000;
 
       // If the body exceeds the character limit, split it
       if (formattedBody.length > MAX_CHAR_LIMIT) {
