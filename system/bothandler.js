@@ -11,7 +11,6 @@ async function botHandler({
   event,
   aliases,
   admin,
-  global,
   prefix,
   userid,
 }) {
@@ -30,7 +29,7 @@ async function botHandler({
   }
 
   const reply = async (msg) => {
-    const msgInfo = await chat.reply(fonts.thin(msg));
+    chat.reply(fonts.thin(msg));
   };
 
   const SPAM_THRESHOLD = 6;
