@@ -646,7 +646,7 @@ async function main() {
         
         const state = decryptSession(JSON.parse(fs.readFileSync(filePath, "utf-8")));
         if (!state) {
-          logger.chalk.yellow(`Invalid session data for user ${userId}`);
+          logger.warn(`Invalid session data for user ${userId}`);
           continue;
         }
         
