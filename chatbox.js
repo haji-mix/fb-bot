@@ -49,6 +49,7 @@ const sessionStore = new MongoStore({
     logger.success("Connected to MongoDB for session storage");
   } catch (error) {
     logger.error("Failed to connect to MongoDB:", error.message);
+    process.exit(1); // Exit if MongoDB connection fails
   }
 })();
 
@@ -359,102 +360,101 @@ async function accountLogin(
   return new Promise((resolve, reject) => {
     login(loginOptions, async (error, api) => {
       if (error) return reject(error);
-      
-      try {
-        const appState = state || api.getAppState();
-        const userid = await api.getCurrentUserID();
+      const appState = state || api.getAppState();
+      const userid = await api.getCurrentUserID();
 
-        const existingSession = await sessionStore.get(`session_${userid}`);
-        if (existingSession) {
-          const decryptedSession = decryptSession(existingSession);
-          if (
-            decryptedSession &&
-            JSON.stringify(decryptedSession) === JSON.stringify(appState)
-          ) {
-            return reject(new Error("Duplicate session detected"));
-          }
-        }
-
-        let admin_uid = null;
-        if (Array.isArray(admin) && admin.length > 0) {
-          admin_uid = admin[0];
-        } else if (typeof admin === "string" && admin) {
-          admin_uid = admin;
-        } else if (admins.length > 0) {
-          admin_uid = admins[0];
-        }
-
+      const existingSession = await sessionStore.get(`session_${userid}`);
+      if (existingSession) {
+        const decryptedSession = decryptSession(existingSession);
         if (
-          admin_uid &&
-          /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
+          decryptedSession &&
+          JSON.stringify(decryptedSession) === JSON.stringify(appState)
         ) {
-          try {
-            admin_uid = await api.getUID(admin_uid);
-          } catch (err) {
-            logger.warn(
-              `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+          logger.info(`Session for user ${userid} already exists, reusing...`);
+          // Reuse existing session without rejecting
+        } else {
+          return reject(new Error("Session conflict detected"));
+        }
+      }
+
+      let admin_uid = null;
+      if (Array.isArray(admin) && admin.length > 0) {
+        admin_uid = admin[0];
+      } else if (typeof admin === "string" && admin) {
+        admin_uid = admin;
+      } else if (admins.length > 0) {
+        admin_uid = admins[0];
+      }
+
+      if (
+        admin_uid &&
+        /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
+      ) {
+        try {
+          admin_uid = await api.getUID(admin_uid);
+        } catch (err) {
+          logger.warn(
+            `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+          );
+        }
+      }
+
+      if (!isExternalState) {
+        await addThisUser(userid, appState, prefix, admin_uid);
+      }
+
+      Utils.account.set(userid, {
+        name: "ANONYMOUS",
+        userid,
+        profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+        profile_url: `https://facebook.com/${userid}`,
+        time: 0,
+        online: true,
+        api, // Store API instance for later use
+      });
+
+      setInterval(() => {
+        const account = Utils.account.get(userid);
+        if (!account) return;
+        const newTime = account.time + 1;
+        Utils.account.set(userid, { ...account, time: newTime });
+
+        if (newTime % 60 === 0) {
+          sessionStore
+            .put(`user_${userid}`, {
+              ...account,
+              time: newTime,
+              lastUpdate: Date.now(),
+            })
+            .catch((err) =>
+              logger.error(`Failed to update user time: ${err.message}`)
             );
-          }
         }
+      }, 1000);
 
-        if (!isExternalState) {
-          await addThisUser(userid, appState, prefix, admin_uid);
-        }
+      api.setOptions({
+        forceLogin: false,
+        listenEvents: true,
+        logLevel: "silent",
+        updatePresence: true,
+        selfListen: false,
+        online: true,
+        autoMarkDelivery: false,
+        autoMarkRead: false,
+        userAgent: atob(
+          "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
+        ),
+      });
 
-        Utils.account.set(userid, {
-          name: "ANONYMOUS",
-          userid,
-          profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
-          profile_url: `https://facebook.com/${userid}`,
-          time: 0,
-          online: true,
-        });
-
-        const updateInterval = setInterval(() => {
-          const account = Utils.account.get(userid);
-          if (!account) {
-            clearInterval(updateInterval);
-            return;
-          }
-          const newTime = account.time + 1;
-          Utils.account.set(userid, { ...account, time: newTime });
-
-          if (newTime % 60 === 0) {
-            sessionStore
-              .put(`user_${userid}`, {
-                ...account,
-                time: newTime,
-                lastUpdate: Date.now(),
-              })
-              .catch((err) =>
-                logger.error(`Failed to update user time: ${err.message}`)
-              );
-          }
-        }, 1000);
-
-        api.setOptions({
-          forceLogin: false,
-          listenEvents: true,
-          logLevel: "silent",
-          updatePresence: true,
-          selfListen: false,
-          online: true,
-          autoMarkDelivery: false,
-          autoMarkRead: false,
-          userAgent: atob(
-            "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
-          ),
-        });
-
+      try {
+        // Ensure only one MQTT listener per API instance
         api.listenMqtt((error, event) => {
           if (error || !event) {
             logger.warn(error?.stack || error);
             Utils.account.delete(userid);
-            if (!isExternalState) deleteThisUser(userid).catch(() => {});
-            clearInterval(updateInterval);
+            if (!isExternalState) deleteThisUser(userid);
             return;
           }
-          
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
             .filter(
@@ -476,25 +476,12 @@ async function accountLogin(
             userid,
           });
         });
-
-        // Add cleanup handlers
-        api.on("disconnect", () => {
-          clearInterval(updateInterval);
-          Utils.account.delete(userid);
-          if (!isExternalState) deleteThisUser(userid).catch(() => {});
-        });
-
-        api.on("error", (err) => {
-          logger.error("API Error:", err);
-          clearInterval(updateInterval);
-          Utils.account.delete(userid);
-          if (!isExternalState) deleteThisUser(userid).catch(() => {});
-        });
-
-        resolve();
-      } catch (err) {
-        reject(err);
+      } catch (error) {
+        Utils.account.delete(userid);
+        if (!isExternalState) await deleteThisUser(userid);
+        reject(error);
       }
+      resolve();
     });
   });
 }
@@ -523,29 +510,30 @@ async function addThisUser(userid, state, prefix, admin) {
   const config = fs.existsSync(configFile)
     ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
     : [];
-  config.push({ userid, prefix: prefix || "", admin, time: 0 });
+  const existingIndex = config.findIndex((item) => item.userid === userid);
+  if (existingIndex !== -1) {
+    config[existingIndex] = { userid, prefix: prefix || "", admin, time: 0 };
+  } else {
+    config.push({ userid, prefix: prefix || "", admin, time: 0 });
+  }
   fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
   fs.writeFileSync(sessionFile, JSON.stringify(encryptedState));
 }
 
 async function deleteThisUser(userid) {
-  try {
-    await sessionStore.remove(`session_${userid}`);
-    await sessionStore.remove(`config_${userid}`);
-    await sessionStore.remove(`user_${userid}`);
+  await sessionStore.remove(`session_${userid}`);
+  await sessionStore.remove(`config_${userid}`);
+  await sessionStore.remove(`user_${userid}`);
 
-    const configFile = "./data/history.json";
-    const sessionFile = path.join("./data/session", `${userid}.json`);
-    const config = fs.existsSync(configFile)
-      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
-      : [];
-    const index = config.findIndex((item) => item.userid === userid);
-    if (index !== -1) config.splice(index, 1);
-    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
-    if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
-  } catch (error) {
-    logger.error(`Error deleting user ${userid}:`, error.message);
-  }
+  const configFile = "./data/history.json";
+  const sessionFile = path.join("./data/session", `${userid}.json`);
+  const config = fs.existsSync(configFile)
+    ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+    : [];
+  const index = config.findIndex((item) => item.userid === userid);
+  if (index !== -1) config.splice(index, 1);
+  fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+  if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
 }
 
 function aliases(command) {
@@ -590,14 +578,22 @@ async function main() {
       const encryptedSession = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
 
-      if (!encryptedSession) {
-        logger.warn(`Session data for user ${userid} not found in MongoDB`);
+      if (!encryptedSession || !userConfig) {
+        logger.warn(`Session or config data for user ${userid} not found in MongoDB`);
+        await deleteThisUser(userid); // Clean up invalid entries
         return;
       }
 
       const state = decryptSession(encryptedSession);
       if (!state) {
         logger.warn(`Invalid session data for user ${userid}`);
+        await deleteThisUser(userid);
+        return;
+      }
+
+      // Check if the account is already logged in
+      if (Utils.account.get(userid)?.online) {
+        logger.info(`User ${userid} is already logged in, skipping...`);
         return;
       }
 
@@ -606,6 +602,7 @@ async function main() {
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
       );
+      logger.success(`Successfully loaded session for user ${userid}`);
     } catch (error) {
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
@@ -621,6 +618,7 @@ async function main() {
           break;
         }
       }
+      logger.error(`Failed to load session for user ${userid}: ${error.message}`);
     }
   };
 
@@ -628,18 +626,16 @@ async function main() {
     const sessions = await sessionStore.entries();
     const userIds = new Set();
 
-    for (const { key, value } of sessions) {
+    for (const { key } of sessions) {
       if (key.startsWith("session_")) {
         const userid = key.replace("session_", "");
         userIds.add(userid);
       }
     }
 
-    // Load sessions sequentially to avoid overwhelming the system
+    // Load sessions sequentially to avoid overwhelming the server
     for (const userid of userIds) {
       await loadMongoSession(userid);
-      // Add a small delay between logins
-      await new Promise(resolve => setTimeout(resolve, 2000));
     }
 
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
