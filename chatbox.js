@@ -376,7 +376,7 @@ async function accountLogin(
     (process.env.EMAIL && process.env.PASSWORD);
 
   return new Promise((resolve, reject) => {
-    logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
+    logger.success(`Initiating login with ${state ? "appState" : "email/password"}`);
     login(loginOptions, async (error, api) => {
       if (error) {
         logger.error(`Login failed: ${error.message}`);
@@ -388,18 +388,18 @@ async function accountLogin(
 
       // Check for login lock
       if (loginLocks.has(userid)) {
-        logger.info(`Login attempt for user ${userid} blocked due to ongoing login`);
+        logger.success(`Login attempt for user ${userid} blocked due to ongoing login`);
         return resolve();
       }
       loginLocks.set(userid, true);
 
-      logger.info(`Logged in user ${userid}`);
+      logger.success(`Logged in user ${userid}`);
 
       const existingSession = await sessionStore.get(`session_${userid}`);
       const existingAccount = Utils.account.get(userid);
 
       if (existingAccount?.online && existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-        logger.info(`User ${userid} is already online with matching session, reusing session`);
+        logger.success(`User ${userid} is already online with matching session, reusing session`);
         loginLocks.delete(userid);
         resolve();
         return;
@@ -488,7 +488,7 @@ async function accountLogin(
               loginLocks.delete(userid);
               return;
             }
-            logger.info(`MQTT event received for user ${userid}: ${event.type}`);
+            logger.success(`MQTT event received for user ${userid}: ${event.type}`);
             const chat = new onChat(api, event);
             Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
               .filter(
@@ -512,7 +512,7 @@ async function accountLogin(
           });
           logger.success(`MQTT listener set up for user ${userid}`);
         } else {
-          logger.info(`MQTT listener already active for user ${userid}, skipping setup`);
+          logger.success(`MQTT listener already active for user ${userid}, skipping setup`);
         }
         loginLocks.delete(userid);
         resolve();
@@ -558,7 +558,7 @@ async function addThisUser(userid, state, prefix, admin) {
     }
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
     fs.writeFileSync(sessionFile, JSON.stringify(state));
-    logger.info(`Added user ${userid} to session store and file system`);
+    logger.success(`Added user ${userid} to session store and file system`);
   } catch (error) {
     logger.error(`Failed to add user ${userid}: ${error.message}`);
   }
@@ -567,7 +567,7 @@ async function addThisUser(userid, state, prefix, admin) {
 async function deleteThisUser(userid) {
   try {
     if (Utils.account.get(userid)?.online) {
-      logger.info(`User ${userid} is still online, skipping session deletion`);
+      logger.success(`User ${userid} is still online, skipping session deletion`);
       return;
     }
     await sessionStore.remove(`session_${userid}`);
@@ -583,7 +583,7 @@ async function deleteThisUser(userid) {
     if (index !== -1) config.splice(index, 1);
     fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
     if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
-    logger.info(`Deleted user ${userid} from session store and file system`);
+   // logger.success(`Deleted user ${userid} from session store and file system`);
   } catch (error) {
     logger.error(`Failed to delete user ${userid}: ${error.message}`);
   }
@@ -649,7 +649,7 @@ async function main() {
 
   const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
     try {
-      logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
+      // logger.success(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
       const session = await sessionStore.get(`session_${userid}`);
       const userConfig = await sessionStore.get(`config_${userid}`);
 
@@ -665,7 +665,7 @@ async function main() {
       }
 
       if (Utils.account.get(userid)?.online) {
-        logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
+      // logger.success(`User ${userid} already logged in, skipping MongoDB session load`);
         return true;
       }
 
@@ -679,7 +679,7 @@ async function main() {
     } catch (error) {
       logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
       if (retryCount < maxRetries) {
-        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        logger.success(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return loadMongoSession(userid, retryCount + 1, maxRetries);
       }
@@ -703,7 +703,7 @@ async function main() {
 
   try {
     // Load sessions from MongoDB first
-    logger.info("Loading sessions from MongoDB...");
+    logger.success("Loading sessions from MongoDB...");
     const sessions = await sessionStore.entries();
     const userIds = new Set();
 
@@ -743,9 +743,8 @@ async function main() {
     for (const file of files) {
       const userId = path.parse(file).name;
 
-      // Skip if user is already logged in
       if (Utils.account.get(userId)?.online) {
-        logger.info(`User ${userId} already logged in, skipping file-based session`);
+      // logger.success(`User ${userId} already logged in, skipping file-based session`);
         continue;
       }
 
@@ -767,7 +766,7 @@ async function main() {
         // Check if session already exists in MongoDB
         const existingMongoSession = await sessionStore.get(`session_${userId}`);
         if (existingMongoSession) {
-          logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+          logger.success(`Session for user ${userId} already in MongoDB, skipping file-based session`);
           continue;
         }
 

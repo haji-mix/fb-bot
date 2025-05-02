@@ -137,7 +137,7 @@ logger.warn = (msg) => {
 };
 
 // Info logging
-logger.info = (msg) => {
+logger.success = (msg) => {
   logger(format(msg), chalk.blue);
 };
 
