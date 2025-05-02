@@ -331,7 +331,6 @@ async function botHandler({
           fonts,
           font: fonts,
           admin,
-          global,
           prefix,
           Utils,
           FontSystem,
@@ -387,7 +386,6 @@ async function botHandler({
             fonts,
             font: fonts,
             admin,
-            global,
             prefix,
             Utils,
             FontSystem,
@@ -429,7 +427,6 @@ async function botHandler({
               message: chat,
               fonts,
               font: fonts,
-              global,
               admin,
 
               prefix,

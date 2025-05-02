@@ -8,6 +8,11 @@ const cors = require("cors");
 const axios = require("axios");
 require("dotenv").config();
 
+global.api = {
+  hajime: "https://haji-mix-api.gleeze.com",
+  prefix: "#"
+};
+
 const {
   logger,
   fonts,
