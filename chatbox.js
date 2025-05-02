@@ -9,7 +9,7 @@ const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
-  hajime: "https://haji-mix-api.gleeze.com",
+  hajime: "https://hajiMix-api.gleeze.com",
   prefix: "#"
 };
 
@@ -384,15 +384,16 @@ async function accountLogin(
       logger.info(`Logged in user ${userid}`);
 
       const existingSession = await sessionStore.get(`session_${userid}`);
-      if (existingSession) {
-        if (JSON.stringify(existingSession) === JSON.stringify(appState)) {
-          logger.info(`Session for user ${userid} already exists, reusing...`);
+      if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        logger.info(`Session for user ${userid} exists in MongoDB`);
+        if (Utils.account.get(userid)?.online) {
+          logger.info(`User ${userid} is already online, reusing session`);
           resolve();
           return;
-        } else {
-          logger.warn(`Session conflict for user ${userid}, overwriting...`);
-          await sessionStore.put(`session_${userid}`, appState);
         }
+      } else if (existingSession) {
+        logger.warn(`Session conflict for user ${userid}, overwriting...`);
+        await sessionStore.put(`session_${userid}`, appState);
       }
 
       let admin_uid = null;
@@ -495,11 +496,12 @@ async function accountLogin(
           });
         });
         logger.success(`MQTT listener set up for user ${userid}`);
+
         resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
         Utils.account.delete(userid);
-        if (!isExternalState) deleteThisUser(userid);
+        if (!isExternalState) await deleteThisUser(userid);
         reject(error);
       }
     });
