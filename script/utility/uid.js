@@ -15,6 +15,11 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
   const link = args.join(" ");
 
   try {
+
+    if (event.type === "message_reply" && !link) {
+      return chat.reply(event.messageReply.senderID);
+    }
+
     if (!link) {
       chat.contact(`${senderID}`, senderID);
       return;
