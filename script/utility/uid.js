@@ -3,6 +3,7 @@ module.exports["config"] = {
   version: "1.3.0",
   isPrefix: false,
   role: 0,
+  type: "bot-utility",
   aliases: ["id", "userid", "fbid"],
   info: "Get your id or from facebook users",
   usage: "[mention/fbplink]",
@@ -47,6 +48,6 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
       font.thin(`❓ | Please provide a valid Facebook link or mention a user.`)
     );
   } catch (error) {
-    chat.reply(font.thin(error.message));
+    chat.reply(font.thin(error.stack || error.message));
   }
 };

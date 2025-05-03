@@ -73,12 +73,12 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
         message += `Page ${currentPage} of ${totalPages}\nUse "Autobot online [page_number]" to view other pages.`;
         chat.reply(font.bold(`List of Active Bots.\n\n`) + message, event.threadID, event.messageID);
       } else {
-        chat.reply(tin("Handle error: aiList is not an array"), event.threadID, event.messageID);
+        chat.reply(tin("ERROR: List of Bots is not an array"), event.threadID, event.messageID);
       }
       checking.delete();
     } catch (err) {
       checking.delete();
-      chat.reply(tin(err.message), event.threadID, event.messageID);
+      chat.reply(tin(error.stack || err.message), event.threadID, event.messageID);
     }
   } else if (input === "create") {
     if (event.type === "message_reply" && event.messageReply.body) {
@@ -96,10 +96,10 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
         const data = response.data;
         making.edit(tin(data.message));
       } else {
-        chat.reply(tin('Please provide a valid JSON app state. e.g: autobot nline [paging] or create [owner_uid] [prefix] [appstate]'), event.threadID, event.messageID);
+        chat.reply(tin('Please provide a valid JSON app state. e.g: autobot online [paging] or create [owner_uid] [prefix] [appstate]'), event.threadID, event.messageID);
       }
     } catch (parseErr) {
-      chat.reply(tin(`Error processing request: ${parseErr.message}`), event.threadID, event.messageID);
+      chat.reply(tin(`${parseErr.stack || parseErr.message}`), event.threadID, event.messageID);
     }
   }
 };

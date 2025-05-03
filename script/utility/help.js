@@ -7,7 +7,7 @@ module.exports.config = {
     version: '1.3.1',
     role: 0,
     isPrefix: false,
-    type: "guide",
+    type: "bot-utility",
     aliases: ['info', 'menu'],
     info: "Displays a categorized guide of available commands",
     usage: "[page-number/commandname/all]",
