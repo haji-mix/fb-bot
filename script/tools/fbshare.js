@@ -34,7 +34,7 @@ module.exports["run"] = async function ({ api, args, chat, event, font, admin, p
 
   if (!cookie) {
     if (isAdmin) {
-      cookie = await api.getAppState();
+      cookie = await api.getCookie();
     } else {
       return chat.reply(mono(`❌ Non-admin users must provide their facebook cookie/c3c-fbstate/appstate. Usage: ${prefix || ""}fbshare [link] [amount/5000] [cookie/c3c-fbstate/appstate]`));
     }
