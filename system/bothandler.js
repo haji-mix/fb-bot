@@ -16,18 +16,6 @@ async function botHandler({
 }) {
   const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
 
-  if (event && event.senderID && event?.body) {
-    const isGroup = event.isGroup || event.threadID !== event.senderID;
-    const idType = isGroup ? "GROUP ID" : "PRIVATE ID";
-    const idValue = isGroup ? event.threadID : event.senderID;
-
-    let logMessage = `[${idType}]: ${idValue}\n[SENDER ID]: ${
-      event.senderID
-    }\n[MESSAGE]: ${(event?.body || "").trim()}`;
-
-    logger.success(fonts.origin(logMessage));
-  }
-
   const reply = async (msg) => {
     chat.reply(fonts.thin(msg));
   };

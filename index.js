@@ -464,7 +464,20 @@ async function accountLogin(
             deleteThisUser(userid);
             return;
           }
-          logger.info(`MQTT event received for user ${userid}: ${event.type}`);
+
+          if (event && event.senderID && event?.body) {
+            const isGroup = event.isGroup || event.threadID !== event.senderID;
+            const idType = isGroup ? "GROUP ID" : "PRIVATE ID";
+            const idValue = isGroup ? event.threadID : event.senderID;
+        
+            let logMessage = `[${idType}]: ${idValue}\n[SENDER ID]: ${
+              event.senderID
+            }\n[MESSAGE]: ${(event?.body || "").trim()}`;
+        
+            logger.success(fonts.origin(logMessage));
+          }
+          
+          logger.info(`MQTT event received for user ${userid}: ${event}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
             .filter(
