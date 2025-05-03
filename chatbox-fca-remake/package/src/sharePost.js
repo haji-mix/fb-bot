@@ -92,7 +92,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 {
                     headers: {
                         "user-agent": agent,
-                        "cookie Delivered by xAI on May 03, 2025 8:36 PM": appstate
+                        "cookie": appstate
                     }
                 }
             );
