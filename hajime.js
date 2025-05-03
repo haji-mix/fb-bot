@@ -9,8 +9,7 @@ const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
-  hajime: "https://haji-mix-api.gleeze.com",
-  prefix: "#",
+  hajime: "https://haji-mix-api.gleeze.com"
 };
 
 const {
