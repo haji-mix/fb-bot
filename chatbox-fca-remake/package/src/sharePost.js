@@ -18,8 +18,8 @@ function cookieToString(cookieInput) {
     try {
         if (Array.isArray(cookieInput)) {
             return cookieInput
-                .filter(cookie => cookie.name && cookie.value)
-                .map(cookie => `${cookie.name}=${cookie.value}`)
+                .filter(cookie => (cookie.name || cookie.key) && cookie.value)
+                .map(cookie => `${cookie.name || cookie.key}=${cookie.value}`)
                 .join('; ');
         } else if (typeof cookieInput === 'object' && cookieInput !== null) {
             return Object.entries(cookieInput)
@@ -60,7 +60,7 @@ function cookieToString(cookieInput) {
  *
  * @example
  * // Share a post using a JSON array cookie
- * sharePost('https://example.com', [{name: 'cookie1', value: 'value1'}, {name: 'cookie2', value: 'value2'}]);
+ * sharePost('https://example.com', [{key: 'cookie1', value: 'value1'}, {key: 'cookie2', value: 'value2'}]);
  *
  * @example
  * // Share a post 5 times with a 2-second interval using a token (visible to friends)
