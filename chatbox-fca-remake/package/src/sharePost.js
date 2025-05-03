@@ -17,9 +17,27 @@ const agent = atob("ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29r
 function cookieToString(cookieInput) {
     try {
         if (Array.isArray(cookieInput)) {
+            const importantKeys = new Set([
+                "datr",
+                "sb",
+                "ps_l",
+                "ps_n",
+                "m_pixel_ratio",
+                "c_user",
+                "fr",
+                "xs",
+                "i_user",
+                "locale",
+                "fbl_st",
+                "vpd",
+                "wl_cbv"
+            ]);
+
             return cookieInput
-                .filter(cookie => (cookie.name || cookie.key) && cookie.value)
-                .map(cookie => `${cookie.name || cookie.key}=${cookie.value}`)
+                .map((val) => val.cookieString ? val.cookieString() : `${val.key || val.name}=${val.value}`)
+                .map((cookie) => cookie.split(";")[0])
+                .filter(Boolean)
+                .filter((cookie) => importantKeys.has(cookie.split("=")[0]))
                 .join('; ');
         } else if (typeof cookieInput === 'object' && cookieInput !== null) {
             return Object.entries(cookieInput)
