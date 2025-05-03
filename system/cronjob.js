@@ -20,7 +20,7 @@ module.exports = async ({ api, font, logger }) => {
         config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
         if (!config || typeof config !== 'object') throw new Error("Invalid configuration file.");
     } catch (error) {
-        logger.red("Error reading config file: ", error.stack);
+        logger.error("Error reading config file: ", error.stack);
         return;
     }
 
@@ -45,7 +45,7 @@ module.exports = async ({ api, font, logger }) => {
 
             const msg = greetRandom(timeOfDay);
             for (const thread of threads) {
-                logger.instagram("Successfully Sent Greetings to ThreadID: " + thread.threadID);
+                logger.success("Successfully Sent Greetings to ThreadID: " + thread.threadID);
                 if (thread.isGroup) {
                     try {
                         await api.sendMessage(msg, thread.threadID);
@@ -55,7 +55,7 @@ module.exports = async ({ api, font, logger }) => {
                 }
             }
         } catch (error) {
-            logger.red(error.stack);
+            logger.error(error.stack);
         }
     };
 
@@ -69,11 +69,11 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of threads) {
                 if (!thread.isGroup) {
                     await api.deleteThread(thread.threadID);
-                    logger.instagram(`Successfully Delete Group Chat History: ${thread.threadID}`);
+                    logger.success(`Successfully Delete Group Chat History: ${thread.threadID}`);
                 }
             }
         } catch (error) {
-            logger.red(error.stack);
+            logger.error(error.stack);
         }
     };
 
@@ -85,13 +85,13 @@ module.exports = async ({ api, font, logger }) => {
             for (const thread of pendingThreads) {
                 try {
                     await api.sendMessage(thin('📨 Automatically approved by our system.'), thread.threadID);
-                    logger.instagram("Successfully Approved ThreadID: " + thread.threadID);
+                    logger.success("Successfully Approved ThreadID: " + thread.threadID);
                 } catch (error) {
                     await api.deleteThread(thread.threadID);
                 }
             }
         } catch (error) {
-            logger.red(error.stack);
+            logger.error(error.stack);
         }
     };
 
@@ -103,9 +103,9 @@ module.exports = async ({ api, font, logger }) => {
             const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
             const quote = `"${randomQuote.quoteText}"\n\n— ${randomQuote.quoteAuthor || "Anonymous"}`;
             await api.createPost(thin(quote));
-            logger.instagram("Successfully Posted Motivational Quotes of BotID: " + api.getCurrentUserID());
+            logger.success("Successfully Posted Motivational Quotes of BotID: " + api.getCurrentUserID());
         } catch (error) {
-            logger.red(error.stack);
+            logger.error(error.stack);
         }
     };
 
@@ -161,9 +161,9 @@ module.exports = async ({ api, font, logger }) => {
         try {
             const caption = captions[Math.floor(Math.random() * captions.length)];
             await api.createPost(caption);
-            logger.instagram("Successfully Posted Github Promotion of BotID: " + api.getCurrentUserID());
+            logger.success("Successfully Posted Github Promotion of BotID: " + api.getCurrentUserID());
         } catch (error) {
-            logger.red('Error creating post:', error.stack);
+            logger.error('Error creating post:', error.stack);
         }
     };
     
@@ -180,7 +180,7 @@ module.exports = async ({ api, font, logger }) => {
 
     const scheduleGreetings = (timeOfDay, hours) => {
         if (!greetings[timeOfDay]) {
-            logger.red(`Invalid time of day: ${timeOfDay}`);
+            logger.error(`Invalid time of day: ${timeOfDay}`);
             return;
         }
 
@@ -190,7 +190,7 @@ module.exports = async ({ api, font, logger }) => {
     };
 
     if (!config.cronJobs || typeof config.cronJobs !== 'object') {
-        logger.red("Invalid or missing cron jobs configuration.");
+        logger.error("Invalid or missing cron jobs configuration.");
         return;
     }
 
@@ -211,7 +211,7 @@ module.exports = async ({ api, font, logger }) => {
             if (task) {
                 cron.schedule(job.cronExpression, task, { timezone });
             } else {
-                logger.red(`Unknown task: ${key}`);
+                logger.error(`Unknown task: ${key}`);
             }
         }
     });
