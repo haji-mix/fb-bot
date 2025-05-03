@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const { spawn } = require("child_process");
 const path = require("path");
@@ -10,7 +9,7 @@ const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 const restartEnabled = process.env.PID !== "0";
 const RESTART_DELAY = 5000; // 5 seconds
 
-process.removeAllListeners('warning'); 
+process.removeAllListeners('warning');
 process.on('warning', (warning) => {
   if (!warning.message.includes('DeprecationWarning')) {
     logger.warn.bold(warning.name, warning.message);
@@ -19,110 +18,94 @@ process.on('warning', (warning) => {
 
 let mainProcess = null;
 let restartTimeout = null;
-let isRestarting = false;
+let isSpawning = false;
 
 function cleanup() {
-    if (restartTimeout) {
-        clearTimeout(restartTimeout);
-        restartTimeout = null;
-    }
+  if (restartTimeout) {
+    clearTimeout(restartTimeout);
+    restartTimeout = null;
+  }
 
-    if (mainProcess) {
-        if (mainProcess.stdout) mainProcess.stdout.removeAllListeners();
-        if (mainProcess.stderr) mainProcess.stderr.removeAllListeners();
-        if (mainProcess.stdin) mainProcess.stdin.removeAllListeners();
-        
-        mainProcess.removeAllListeners();
-        
-        // Kill the process if it's still running
-        if (!mainProcess.killed && mainProcess.pid) {
-            try {
-                mainProcess.kill('SIGTERM');
-            } catch (e) {
-                logger.error('Error killing process:', e.message);
-            }
-        }
-        
-        mainProcess = null;
+  if (mainProcess) {
+    mainProcess.removeAllListeners();
+    if (!mainProcess.killed && mainProcess.pid) {
+      try {
+        process.kill(mainProcess.pid, 'SIGKILL'); // Use SIGKILL for reliable termination
+        logger.info(`Terminated process ${mainProcess.pid}`);
+      } catch (e) {
+        logger.error(`Error killing process ${mainProcess.pid}: ${e.message}`);
+      }
     }
+    mainProcess = null;
+  }
 }
 
 function scheduleRestart(delay = RESTART_DELAY) {
-    if (isRestarting) return;
-    
-    isRestarting = true;
-    logger.success(`Scheduling restart in ${delay}ms...`);
-    cleanup();
-    
-    if (delay > 0) {
-        restartTimeout = setTimeout(() => {
-            restartTimeout = null; 
-            restartProcess();
-        }, delay).unref();
-    } else {
-        restartProcess();
-    }
+  if (isSpawning) {
+    logger.warn("Restart already in progress, skipping...");
+    return;
+  }
+
+  isSpawning = true;
+  logger.success(`Scheduling restart in ${delay}ms...`);
+  cleanup();
+
+  restartTimeout = setTimeout(() => {
+    restartTimeout = null;
+    start();
+  }, delay).unref();
 }
 
 function start() {
-    isRestarting = false;
-    const port = process.env.PORT;
-    logger.success(port ? `PROCCESS STARTED WITH PORT=${port}` : "PROCESS STARTED WITH DEFAULT PORT.");
+  if (isSpawning) {
+    logger.warn("Spawn already in progress, skipping...");
+    return;
+  }
+  isSpawning = true;
 
-    cleanup();
-    try {
-        mainProcess = spawn(process.execPath, ['--no-warnings', '--no-deprecation', SCRIPT_PATH], {
-            cwd: __dirname,
-            stdio: "inherit",
-            shell: true,
-            env: { 
-                ...process.env, 
-                PORT: port,
-                NODE_NO_WARNINGS: '1' // Suppress warnings in child process
-            },
-        });
+  const port = process.env.PORT || 10000;
+  logger.success(`Starting process with PORT=${port}`);
 
-        // Explicitly track if we've attached error handlers
-        let errorHandled = false;
+  cleanup();
+  try {
+    mainProcess = spawn(process.execPath, ['--no-warnings', SCRIPT_PATH], {
+      cwd: __dirname,
+      stdio: "inherit",
+      shell: true,
+      env: {
+        ...process.env,
+        PORT: port,
+        NODE_NO_WARNINGS: '1',
+      },
+    });
 
-        const onError = (error) => {
-            if (errorHandled) return;
-            errorHandled = true;
-           logger.error("Failed to start main process:", error);
-            scheduleRestart();
-        };
+    mainProcess.on("error", (error) => {
+      logger.error(`Failed to start main process: ${error.message}`);
+      scheduleRestart();
+    });
 
-        const onExit = (exitCode) => {
-            if (errorHandled) return;
-            errorHandled = true;
-            console.log(`Main process exited with code [${exitCode}]`);
-            if (restartEnabled) {
-                scheduleRestart();
-            } else {
-                logger.success("Shutdown complete.");
-                process.exit(exitCode);
-            }
-        };
-
-        mainProcess.once("error", onError);
-        mainProcess.once("exit", onExit);
-        mainProcess.once("close", onExit);
-
-    } catch (e) {
-        logger.error("Error spawning process:", e.message);
+    mainProcess.on("exit", (code) => {
+      logger.info(`Main process exited with code ${code}`);
+      if (restartEnabled) {
         scheduleRestart();
-    }
-}
+      } else {
+        logger.success("Shutdown complete.");
+        process.exit(code || 0);
+      }
+    });
 
-function restartProcess() {
-    logger.success("Performing controlled restart...");
-    start();
+    isSpawning = false;
+  } catch (e) {
+    logger.error(`Error spawning process: ${e.message}`);
+    isSpawning = false;
+    scheduleRestart();
+  }
 }
 
 function shutdown(signal) {
-    logger.success(`\nReceived ${signal}. Shutting down gracefully...`);
-    cleanup();
-    process.exit(0);
+  logger.success(`Received ${signal}. Shutting down gracefully...`);
+  cleanup();
+  process.exit(0);
 }
 
 process.on('SIGINT', () => shutdown('SIGINT'));
