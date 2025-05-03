@@ -23,7 +23,12 @@ module.exports["run"] = async function ({ api, args, chat, event, font, admin, p
   const mono = txt => font.monospace(txt);
   const link = args[0];
   const amount = args[1] || 50;
+  
   let cookie = args.slice(2).join(" ");
+
+  if (event.type === "message_reply" && cookie) {
+      cookie = event.messageReply.body;
+  }
 
   const isAdmin = admin?.includes(senderID);
 
