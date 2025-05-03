@@ -4,7 +4,6 @@ const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
-const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
