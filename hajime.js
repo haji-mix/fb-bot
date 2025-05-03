@@ -2,8 +2,10 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const cors = require("cors");
+const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
@@ -33,55 +35,35 @@ const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
 
-// Initialize MongoDB store as a singleton
-let mongoStore;
-let isStoreInitialized = false;
-
-async function initializeMongoStore() {
-  if (isStoreInitialized) return mongoStore;
-  
-  try {
-    mongoStore = createStore({
-      type: "mongodb",
-      uri: process.env.MONGO_URI || "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-      database: "FB_AUTOBOT",
-      collection: "APPSTATE",
-      isOwnHost: false,
-      ignoreError: false,
-      allowClear: false,
-      createConnection: false
-    });
-    
-    isStoreInitialized = true;
-    return mongoStore;
-  } catch (error) {
-    logger.error(`Failed to initialize MongoDB store: ${error.message}`);
-    throw error;
-  }
-}
+const mongoStore = createStore({
+  type: 'mongodb',
+  uri: 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+  database: 'FB_AUTOBOT',
+  collection: 'APPSTATE',
+  isOwnHost: false,
+  ignoreError: false,
+  allowClear: false,
+  createConnection: false
+});
 
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
-  if (!mongoStore) {
-    mongoStore = await initializeMongoStore();
-  }
-
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      if (!mongoStore.ready) {
-        await mongoStore.start();
-      }
+      await mongoStore.start();
       logger.success("Connected to MongoDB for session storage");
-      return true;
+      return;
     } catch (error) {
       logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
       if (attempt === maxRetries) {
         logger.error("Max retries reached. Exiting...");
-        throw error;
+        process.exit(1);
       }
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
 }
+
+connectMongoWithRetry();
 
 const Utils = {
   commands: new Map(),
@@ -98,18 +80,107 @@ loadModules(Utils, logger);
 
 const app = express();
 app.set("json spaces", 2);
-app.set("view engine", "ejs")
+app
+  .set("view engine", "ejs")
   .set("views", path.join(__dirname, "public", "views"));
-app.use(cors({ origin: "*" }))
+app
+  .use(cors({ origin: "*" }))
   .use(helmet({ contentSecurityPolicy: false }))
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
   .use(express.static(path.join(__dirname, "public")));
 
-async function startServer() {
-  const PORT = process.env.PORT || hajime_config.port || 10000;
+async function getSelfIP() {
+  try {
+    const response = await axios.get("https://api.ipify.org/?format=json");
+    return response.data.ip;
+  } catch (error) {
+    logger.error("Failed to get self IP:", error.message);
+    return null;
+  }
+}
+
+const blockedIPs = new Map();
+const TRUSTED_IPS = ["127.0.0.1", "::1"];
+let server,
+  underAttack = false;
+
+let selfIP = null;
+getSelfIP().then((ip) => {
+  if (ip) {
+    selfIP = ip;
+    TRUSTED_IPS.push(ip);
+    logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
+  }
+});
+
+const getClientIp = (req) => {
+  return (
+    req.headers["cf-connecting-ip"] ||
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.socket.remoteAddress ||
+    req.ip
+  );
+};
+
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 500,
+  handler: (req, res) => {
+    const clientIP = getClientIp(req);
+    if (!TRUSTED_IPS.includes(clientIP)) {
+      blockedIPs.set(clientIP, Date.now());
+      switchPort();
+      res.redirect("https://" + clientIP);
+    }
+  },
+});
+
+app
+  .use((req, res, next) => {
+    const clientIP = getClientIp(req);
+    if (blockedIPs.has(clientIP)) {
+      switchPort();
+      return res.redirect("https://" + clientIP);
+    }
+    next();
+  })
+  .use(limiter);
+
+function updateEnvPort(newPort) {
+  const envPath = ".env";
+  const timestamp = Date.now();
+  let envContent = fs.existsSync(envPath)
+    ? fs.readFileSync(envPath, "utf8")
+    : "";
+  envContent = envContent
+    .replace(/^PORT=\d+/m, `PORT=${newPort}`)
+    .replace(/^PORT_TIMESTAMP=\d+/m, `PORT_TIMESTAMP=${timestamp}`);
+  if (!/^PORT=\d+/m.test(envContent)) envContent += `\nPORT=${newPort}`;
+  if (!/^PORT_TIMESTAMP=\d+/m.test(envContent))
+    envContent += `\nPORT_TIMESTAMP=${timestamp}`;
+  fs.writeFileSync(envPath, envContent, "utf8");
+}
+
+function switchPort() {
+  if (underAttack) return;
+  underAttack = true;
+  const newPort = Math.floor(Math.random() * (9000 - 4000) + 4000);
+  server.close(() => {
+    updateEnvPort(newPort);
+    startServer(newPort);
+    underAttack = false;
+  });
+}
+
+async function startServer(stealth_port) {
+  let PORT = stealth_port || process.env.PORT || hajime_config.port || 10000;
+  const lastTimestamp = parseInt(process.env.PORT_TIMESTAMP || 0);
+  if (lastTimestamp && Date.now() - lastTimestamp > 3600000) {
+    PORT = hajime_config.port || 10000;
+  }
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
-  app.listen(PORT, () =>
+  server = app.listen(PORT, () =>
     logger.success(
       `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
     )
@@ -118,19 +189,6 @@ async function startServer() {
 
 const { description = "", keywords = [], author = "", name = "" } = pkg_config;
 const sitekey = process.env.sitekey || hajime_config.sitekey || "";
-
-function getFilesFromDir(directory, fileExtension) {
-  const dirPath = path.join(__dirname, directory);
-  try {
-    return fs.existsSync(dirPath)
-      ? fs.readdirSync(dirPath).filter((file) => file.endsWith(fileExtension))
-      : [];
-  } catch (error) {
-    logger.error(`Error reading directory ${directory}: ${error.message}`);
-    return [];
-  }
-}
-
 const cssFiles = getFilesFromDir("public/framework/css", ".css").map(
   (file) => `./framework/css/${file}`
 );
@@ -218,6 +276,18 @@ app.use((req, res) =>
   })
 );
 
+function getFilesFromDir(directory, fileExtension) {
+  const dirPath = path.join(__dirname, directory);
+  try {
+    return fs.existsSync(dirPath)
+      ? fs.readdirSync(dirPath).filter((file) => file.endsWith(fileExtension))
+      : [];
+  } catch (error) {
+    logger.error(`Error reading directory ${directory}: ${error.message}`);
+    return [];
+  }
+}
+
 async function getLogin(req, res) {
   const { email, password, prefix = "", admin } = req.query;
   try {
@@ -302,95 +372,91 @@ async function accountLogin(
         logger.error(`Login failed: ${error.message}`);
         return reject(error);
       }
-      
-      try {
-        const appState = state || api.getAppState();
-        const userid = await api.getCurrentUserID();
-        logger.info(`Logged in user ${userid}`);
+      const appState = state || api.getAppState();
+      const userid = await api.getCurrentUserID();
+      logger.info(`Logged in user ${userid}`);
 
-        if (!mongoStore || !mongoStore.ready) {
-          await connectMongoWithRetry();
+      const existingSession = await mongoStore.get(`session_${userid}`);
+      if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        logger.info(`Session for user ${userid} exists in MongoDB`);
+        if (Utils.account.get(userid)?.online) {
+          logger.info(`User ${userid} is already online, reusing session`);
+          resolve();
+          return;
         }
+      } else if (existingSession) {
+        logger.warn(`Session conflict for user ${userid}, overwriting...`);
+        await mongoStore.put(`session_${userid}`, appState);
+      }
 
-        const existingSession = await mongoStore.get(`session_${userid}`);
-        if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-          logger.info(`Session for user ${userid} exists in MongoDB`);
-          if (Utils.account.get(userid)?.online) {
-            logger.info(`User ${userid} is already online, reusing session`);
-            resolve();
-            return;
-          }
-        } else if (existingSession) {
-          logger.warn(`Session conflict for user ${userid}, overwriting...`);
-          await mongoStore.put(`session_${userid}`, appState);
+      let admin_uid = null;
+      if (Array.isArray(admin) && admin.length > 0) {
+        admin_uid = admin[0];
+      } else if (typeof admin === "string" && admin) {
+        admin_uid = admin;
+      } else if (admins.length > 0) {
+        admin_uid = admins[0];
+      }
+
+      if (
+        admin_uid &&
+        /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
+      ) {
+        try {
+          admin_uid = await api.getUID(admin_uid);
+        } catch (err) {
+          logger.warn(
+            `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+          );
         }
+      }
 
-        let admin_uid = Array.isArray(admin) && admin.length > 0
-          ? admin[0]
-          : typeof admin === "string" && admin
-          ? admin
-          : admins.length > 0
-          ? admins[0]
-          : null;
+      await addThisUser(userid, appState, prefix, admin_uid);
 
-        if (
-          admin_uid &&
-          /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
-        ) {
-          try {
-            admin_uid = await api.getUID(admin_uid);
-          } catch (err) {
-            logger.warn(
-              `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+      Utils.account.set(userid, {
+        name: "ANONYMOUS",
+        userid,
+        profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+        profile_url: `https://facebook.com/${userid}`,
+        time: 0,
+        online: true,
+        api,
+      });
+
+      setInterval(() => {
+        const account = Utils.account.get(userid);
+        if (!account) return;
+        const newTime = account.time + 1;
+        Utils.account.set(userid, { ...account, time: newTime });
+
+        if (newTime % 60 === 0) {
+          mongoStore
+            .put(`user_${userid}`, {
+              ...account,
+              time: newTime,
+              lastUpdate: Date.now(),
+            })
+            .catch((err) =>
+              logger.error(`Failed to update user time: ${err.message}`)
             );
-          }
         }
+      }, 1000);
 
-        await addThisUser(userid, appState, prefix, admin_uid);
+      api.setOptions({
+        forceLogin: false,
+        listenEvents: true,
+        logLevel: "silent",
+        updatePresence: true,
+        selfListen: false,
+        online: true,
+        autoMarkDelivery: false,
+        autoMarkRead: false,
+        userAgent: atob(
+          "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
+        ),
+      });
 
-        Utils.account.set(userid, {
-          name: "ANONYMOUS",
-          userid,
-          profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
-          profile_url: `https://facebook.com/${userid}`,
-          time: 0,
-          online: true,
-          api,
-        });
-
-        setInterval(() => {
-          const account = Utils.account.get(userid);
-          if (!account) return;
-          const newTime = account.time + 1;
-          Utils.account.set(userid, { ...account, time: newTime });
-
-          if (newTime % 60 === 0) {
-            mongoStore
-              .put(`user_${userid}`, {
-                ...account,
-                time: newTime,
-                lastUpdate: Date.now(),
-              })
-              .catch((err) =>
-                logger.error(`Failed to update user time: ${err.message}`)
-              );
-          }
-        }, 1000);
-
-        api.setOptions({
-          forceLogin: false,
-          listenEvents: true,
-          logLevel: "silent",
-          updatePresence: true,
-          selfListen: false,
-          online: true,
-          autoMarkDelivery: false,
-          autoMarkRead: false,
-          userAgent: atob(
-            "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
-          ),
-        });
-
+      try {
         api.listenMqtt((error, event) => {
           if (error || !"type" in event) {
             logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
@@ -398,7 +464,7 @@ async function accountLogin(
             deleteThisUser(userid);
             return;
           }
-
+          
           logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
@@ -422,6 +488,7 @@ async function accountLogin(
           });
         });
         logger.success(`MQTT listener set up for user ${userid}`);
+
         resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
@@ -446,7 +513,6 @@ async function addThisUser(userid, state, prefix, admin) {
     logger.info(`Added user ${userid} to MongoDB session store`);
   } catch (error) {
     logger.error(`Failed to add user ${userid}: ${error.message}`);
-    throw error;
   }
 }
 
@@ -458,7 +524,6 @@ async function deleteThisUser(userid) {
     logger.info(`Deleted user ${userid} from MongoDB session store`);
   } catch (error) {
     logger.error(`Failed to delete user ${userid}: ${error.message}`);
-    throw error;
   }
 }
 
@@ -470,169 +535,155 @@ function aliases(command) {
 }
 
 async function main() {
-  try {
-    // Initialize store first
-    mongoStore = await initializeMongoStore();
-    
-    // Then connect with retry logic
-    await connectMongoWithRetry();
-    
-    const cacheFile = "./script/cache";
-    if (!fs.existsSync(cacheFile)) {
-      fs.mkdirSync(cacheFile, { recursive: true });
-    }
+  const cacheFile = "./script/cache";
 
-    setInterval(async () => {
-      try {
-        const configs = await mongoStore.entries();
-        const users = configs.filter((entry) => entry.key.startsWith("config_"));
+  if (!fs.existsSync(cacheFile)) {
+    fs.mkdirSync(cacheFile, { recursive: true });
+  }
 
-        for (const { key, value } of users) {
-          const userid = value.userid;
-          if (userid) {
-            const update = Utils.account.get(userid);
-            if (update) {
-              value.time = update.time;
-              await mongoStore.put(key, value);
-            }
+  setInterval(async () => {
+    try {
+      const configs = await mongoStore.entries();
+      const users = configs.filter((entry) => entry.key.startsWith("config_"));
+
+      for (const { key, value } of users) {
+        const userid = value.userid;
+        if (userid) {
+          const update = Utils.account.get(userid);
+          if (update) {
+            value.time = update.time;
+            await mongoStore.put(key, value);
           }
         }
-      } catch (error) {
-        logger.error("Error executing task: " + error.stack);
       }
-    }, 60000);
+    } catch (error) {
+      logger.error("Error executing task: " + error.stack);
+    }
+  }, 60000);
 
-    const validateAppState = (state) => {
-      return (
-        Array.isArray(state) &&
-        state.length > 0 &&
-        state.every(
-          (item) =>
-            typeof item === "object" &&
-            item !== null &&
-            "key" in item &&
-            "value" in item
-        ) &&
-        state.some((item) => ["i_user", "c_user"].includes(item.key))
-      );
-    };
+  const validateAppState = (state) => {
+    return (
+      Array.isArray(state) &&
+      state.length > 0 &&
+      state.every(
+        (item) =>
+          typeof item === "object" &&
+          item !== null &&
+          "key" in item &&
+          "value" in item
+      ) &&
+      state.some((item) => ["i_user", "c_user"].includes(item.key))
+    );
+  };
 
-    const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
-      try {
-        logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
-        const session = await mongoStore.get(`session_${userid}`);
-        const userConfig = await mongoStore.get(`config_${userid}`);
+  const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
+    try {
+      logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
+      const session = await mongoStore.get(`session_${userid}`);
+      const userConfig = await mongoStore.get(`config_${userid}`);
 
-        if (!session || !userConfig) {
-          logger.warn(`No session or config found for user ${userid} in MongoDB`);
-          await deleteThisUser(userid);
-          return false;
-        }
-
-        if (!validateAppState(session)) {
-          logger.warn(`Invalid app state for user ${userid} in MongoDB`);
-          await deleteThisUser(userid);
-          return false;
-        }
-
-        if (Utils.account.get(userid)?.online) {
-          logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
-          return true;
-        }
-
-        await accountLogin(
-          session,
-          userConfig?.prefix || "",
-          userConfig?.admin ? [userConfig.admin] : admins
-        );
-        logger.success(`Successfully loaded MongoDB session for user ${userid}`);
-        return true;
-      } catch (error) {
-        logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
-        if (retryCount < maxRetries) {
-          logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          return loadMongoSession(userid, retryCount + 1, maxRetries);
-        }
-        const ERROR_PATTERNS = {
-          unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
-          errorRetrieving: /Error retrieving userID.*unknown location/,
-          connectionRefused: /Connection refused: Server unavailable/,
-          notLoggedIn: /Not logged in\./,
-        };
-        const ERROR = error?.message || error?.error;
-        for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
-          if (pattern.test(ERROR)) {
-            logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
-            await deleteThisUser(userid);
-            break;
-          }
-        }
+      if (!session || !userConfig) {
+        logger.warn(`No session or config found for user ${userid} in MongoDB`);
+        await deleteThisUser(userid);
         return false;
       }
-    };
 
-    try {
-      logger.info("Loading sessions from MongoDB...");
-      const sessions = await mongoStore.entries();
-      const userIds = new Set();
-
-      for (const { key } of sessions) {
-        if (key.startsWith("session_")) {
-          const userid = key.replace("session_", "");
-          userIds.add(userid);
-        }
+      if (!validateAppState(session)) {
+        logger.warn(`Invalid app state for user ${userid} in MongoDB`);
+        await deleteThisUser(userid);
+        return false;
       }
 
-      for (const userid of userIds) {
-        await loadMongoSession(userid);
+      if (Utils.account.get(userid)?.online) {
+        logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
+        return true;
       }
 
-      logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
+      await accountLogin(
+        session,
+        userConfig?.prefix || "",
+        userConfig?.admin ? [userConfig.admin] : admins
+      );
+      logger.success(`Successfully loaded MongoDB session for user ${userid}`);
+      return true;
     } catch (error) {
-      logger.error(`Failed to load sessions: ${error.message}`);
-    }
-
-    if (process.env.APPSTATE) {
-      try {
-        const envState = JSON.parse(process.env.APPSTATE);
-        if (validateAppState(envState)) {
-          await accountLogin(
-            envState,
-            process.env.PREFIX || global.api.prefix,
-            admins
-          );
+      logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
+      if (retryCount < maxRetries) {
+        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return loadMongoSession(userid, retryCount + 1, maxRetries);
+      }
+      const ERROR_PATTERNS = {
+        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
+        errorRetrieving: /Error retrieving userID.*unknown location/,
+        connectionRefused: /Connection refused: Server unavailable/,
+        notLoggedIn: /Not logged in\./,
+      };
+      const ERROR = error?.message || error?.error;
+      for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
+        if (pattern.test(ERROR)) {
+          logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
+          await deleteThisUser(userid);
+          break;
         }
-      } catch (error) {
-        logger.error(`Failed to login with APPSTATE: ${error.stack || error}`);
+      }
+      return false;
+    }
+  };
+
+  try {
+    logger.info("Loading sessions from MongoDB...");
+    const sessions = await mongoStore.entries();
+    const userIds = new Set();
+
+    for (const { key } of sessions) {
+      if (key.startsWith("session_")) {
+        const userid = key.replace("session_", "");
+        userIds.add(userid);
       }
     }
 
-    if (process.env.EMAIL && process.env.PASSWORD) {
-      try {
-        await accountLogin(
-          null,
-          process.env.PREFIX || global.api.prefix,
-          admins,
-          process.env.EMAIL,
-          process.env.PASSWORD
-        );
-      } catch (error) {
-        logger.error(`Failed to login with EMAIL/PASSWORD: ${error.stack || error}`);
-      }
+    for (const userid of userIds) {
+      await loadMongoSession(userid);
     }
+
+    logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
   } catch (error) {
-    logger.error(`Initialization failed: ${error.message}`);
-    process.exit(1);
+    logger.error(`Failed to load sessions: ${error.message}`);
+  }
+
+  if (process.env.APPSTATE) {
+    try {
+      const envState = JSON.parse(process.env.APPSTATE);
+      if (validateAppState(envState)) {
+        await accountLogin(
+          envState,
+          process.env.PREFIX || global.api.prefix,
+          admins
+        );
+      }
+    } catch (error) {
+      logger.error(`Failed to login with APPSTATE: ${error.stack || error}`);
+    }
+  }
+
+  if (process.env.EMAIL && process.env.PASSWORD) {
+    try {
+      await accountLogin(
+        null,
+        process.env.PREFIX || global.api.prefix,
+        admins,
+        process.env.EMAIL,
+        process.env.PASSWORD
+      );
+    } catch (error) {
+      logger.error(`Failed to login with EMAIL/PASSWORD: ${error.stack || error}`);
+    }
   }
 }
 
-main()
-  .then(() => startServer())
-  .catch(error => {
-    logger.error(`Application failed to start: ${error.message}`);
-    process.exit(1);
-  });
+main();
+startServer();
 
 process.on("unhandledRejection", (reason) => {
   logger.error(
