@@ -764,11 +764,27 @@ async function main() {
     await connectMongoWithRetry();
     await main();
     startServer();
+    startHealthCheck();
   } catch (error) {
     logger.error(`Failed to initialize: ${error.message}`);
     process.exit(1);
   }
 })();
+
+function startHealthCheck() {
+  setInterval(async () => {
+    try {
+      for (const [userid, account] of Utils.account.entries()) {
+        if (!account.api) continue;
+        await account.api.getCurrentUserID();
+        logger.info(`Health check passed for user ${userid}`);
+      }
+    } catch (error) {
+      logger.error(`Health check failed: ${error.message}. Restarting...`);
+      process.exit(1); 
+    }
+  }, 300000); 
+}
 
 process.on("unhandledRejection", (reason) => {
   logger.error(
