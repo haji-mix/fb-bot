@@ -477,7 +477,7 @@ async function accountLogin(
             logger.success(fonts.origin(logMessage));
           }
           
-          logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event), null, 2}`);
+          logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
             .filter(
