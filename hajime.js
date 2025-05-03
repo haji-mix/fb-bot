@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
-const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const cors = require("cors");
 const axios = require("axios");
@@ -36,10 +35,10 @@ const pkg_config = fs.existsSync("./package.json")
   : { description: "", keywords: [], author: "", name: "" };
 
 const mongoStore = createStore({
-  type: 'mongodb',
-  uri: 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
-  database: 'FB_AUTOBOT',
-  collection: 'APPSTATE',
+  type: "mongodb",
+  uri: process.env.MONGO_URI || "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+  database: "FB_AUTOBOT",
+  collection: "APPSTATE",
   isOwnHost: false,
   ignoreError: false,
   allowClear: false,
@@ -63,8 +62,6 @@ async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   }
 }
 
-connectMongoWithRetry();
-
 const Utils = {
   commands: new Map(),
   handleEvent: new Map(),
@@ -80,107 +77,18 @@ loadModules(Utils, logger);
 
 const app = express();
 app.set("json spaces", 2);
-app
-  .set("view engine", "ejs")
+app.set("view engine", "ejs")
   .set("views", path.join(__dirname, "public", "views"));
-app
-  .use(cors({ origin: "*" }))
+app.use(cors({ origin: "*" }))
   .use(helmet({ contentSecurityPolicy: false }))
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
   .use(express.static(path.join(__dirname, "public")));
 
-async function getSelfIP() {
-  try {
-    const response = await axios.get("https://api.ipify.org/?format=json");
-    return response.data.ip;
-  } catch (error) {
-    logger.error("Failed to get self IP:", error.message);
-    return null;
-  }
-}
-
-const blockedIPs = new Map();
-const TRUSTED_IPS = ["127.0.0.1", "::1"];
-let server,
-  underAttack = false;
-
-let selfIP = null;
-getSelfIP().then((ip) => {
-  if (ip) {
-    selfIP = ip;
-    TRUSTED_IPS.push(ip);
-    logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
-  }
-});
-
-const getClientIp = (req) => {
-  return (
-    req.headers["cf-connecting-ip"] ||
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket.remoteAddress ||
-    req.ip
-  );
-};
-
-const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 500,
-  handler: (req, res) => {
-    const clientIP = getClientIp(req);
-    if (!TRUSTED_IPS.includes(clientIP)) {
-      blockedIPs.set(clientIP, Date.now());
-      switchPort();
-      res.redirect("https://" + clientIP);
-    }
-  },
-});
-
-app
-  .use((req, res, next) => {
-    const clientIP = getClientIp(req);
-    if (blockedIPs.has(clientIP)) {
-      switchPort();
-      return res.redirect("https://" + clientIP);
-    }
-    next();
-  })
-  .use(limiter);
-
-function updateEnvPort(newPort) {
-  const envPath = ".env";
-  const timestamp = Date.now();
-  let envContent = fs.existsSync(envPath)
-    ? fs.readFileSync(envPath, "utf8")
-    : "";
-  envContent = envContent
-    .replace(/^PORT=\d+/m, `PORT=${newPort}`)
-    .replace(/^PORT_TIMESTAMP=\d+/m, `PORT_TIMESTAMP=${timestamp}`);
-  if (!/^PORT=\d+/m.test(envContent)) envContent += `\nPORT=${newPort}`;
-  if (!/^PORT_TIMESTAMP=\d+/m.test(envContent))
-    envContent += `\nPORT_TIMESTAMP=${timestamp}`;
-  fs.writeFileSync(envPath, envContent, "utf8");
-}
-
-function switchPort() {
-  if (underAttack) return;
-  underAttack = true;
-  const newPort = Math.floor(Math.random() * (9000 - 4000) + 4000);
-  server.close(() => {
-    updateEnvPort(newPort);
-    startServer(newPort);
-    underAttack = false;
-  });
-}
-
-async function startServer(stealth_port) {
-  let PORT = stealth_port || process.env.PORT || hajime_config.port || 10000;
-  const lastTimestamp = parseInt(process.env.PORT_TIMESTAMP || 0);
-  if (lastTimestamp && Date.now() - lastTimestamp > 3600000) {
-    PORT = hajime_config.port || 10000;
-  }
+async function startServer() {
+  const PORT = process.env.PORT || hajime_config.port || 10000;
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
-  server = app.listen(PORT, () =>
+  app.listen(PORT, () =>
     logger.success(
       `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
     )
@@ -389,14 +297,13 @@ async function accountLogin(
         await mongoStore.put(`session_${userid}`, appState);
       }
 
-      let admin_uid = null;
-      if (Array.isArray(admin) && admin.length > 0) {
-        admin_uid = admin[0];
-      } else if (typeof admin === "string" && admin) {
-        admin_uid = admin;
-      } else if (admins.length > 0) {
-        admin_uid = admins[0];
-      }
+      let admin_uid = Array.isArray(admin) && admin.length > 0
+        ? admin[0]
+        : typeof admin === "string" && admin
+        ? admin
+        : admins.length > 0
+        ? admins[0]
+        : null;
 
       if (
         admin_uid &&
@@ -464,7 +371,7 @@ async function accountLogin(
             deleteThisUser(userid);
             return;
           }
-          
+
           logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
@@ -488,7 +395,6 @@ async function accountLogin(
           });
         });
         logger.success(`MQTT listener set up for user ${userid}`);
-
         resolve();
       } catch (error) {
         logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
@@ -536,7 +442,6 @@ function aliases(command) {
 
 async function main() {
   const cacheFile = "./script/cache";
-
   if (!fs.existsSync(cacheFile)) {
     fs.mkdirSync(cacheFile, { recursive: true });
   }
@@ -682,6 +587,7 @@ async function main() {
   }
 }
 
+connectMongoWithRetry();
 main();
 startServer();
 
