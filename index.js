@@ -10,16 +10,14 @@ require("dotenv").config();
 
 global.api = {
   hajime: "https://haji-mix-api.gleeze.com",
+  prefix: "#"
 };
 
 const {
-  workers,
   logger,
   fonts,
   onChat,
   loadModules,
-  encryptSession,
-  decryptSession,
   getCommands,
   getInfo,
   processExit,
@@ -32,17 +30,41 @@ const {
 const hajime_config = fs.existsSync("./hajime.json")
   ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
   : {};
-const admins = Array.isArray(hajime_config?.admins)
-  ? hajime_config.admins
-  : [];
-const mongodbUri =
-  process.env.MONGODB_URI ||
-  hajime_config.mongodbUri ||
-  "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
+const admins = Array.isArray(hajime_config?.admins) ? hajime_config.admins : [];
 const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
+
+const MONGO_URI =
+  process.env.MONGO_URI ||
+  hajime_config.mongo_uri ||
+  "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const sessionStore = new MongoStore({
+  uri: MONGO_URI,
+  collection: "sessions",
+  ignoreError: true,
+  allowClear: false,
+});
+
+// Retry MongoDB connection up to 3 times
+async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await sessionStore.start();
+      logger.success("Connected to MongoDB for session storage");
+      return;
+    } catch (error) {
+      logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
+      if (attempt === maxRetries) {
+        logger.error("Max retries reached. Exiting...");
+        process.exit(1);
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
+}
+
+connectMongoWithRetry();
 
 const Utils = {
   commands: new Map(),
@@ -56,20 +78,6 @@ const Utils = {
 };
 
 loadModules(Utils, logger);
-
-const sessionStore = new MongoStore({
-  uri: mongodbUri,
-  collection: "sessions",
-  ignoreError: true,
-  allowClear: false,
-});
-
-const historyStore = new MongoStore({
-  uri: mongodbUri,
-  collection: "autobot",
-  ignoreError: true,
-  allowClear: false,
-});
 
 const app = express();
 app.set("json spaces", 2);
@@ -111,6 +119,7 @@ const getClientIp = (req) => {
   return (
     req.headers["cf-connecting-ip"] ||
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.socket.remoteAddress ||
     req.ip
   );
 };
@@ -166,16 +175,10 @@ function switchPort() {
 }
 
 async function startServer(stealth_port) {
-  const hajime = await workers();
-  let PORT =
-    stealth_port ||
-    process.env.PORT ||
-    hajime_config.port ||
-    hajime?.host?.port ||
-    10000;
+  let PORT = stealth_port || process.env.PORT || hajime_config.port || 10000;
   const lastTimestamp = parseInt(process.env.PORT_TIMESTAMP || 0);
   if (lastTimestamp && Date.now() - lastTimestamp > 3600000) {
-    PORT = hajime_config.port || hajime?.host?.port || 10000;
+    PORT = hajime_config.port || 10000;
   }
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
   server = app.listen(PORT, () =>
@@ -190,7 +193,7 @@ const sitekey = process.env.sitekey || hajime_config.sitekey || "";
 const cssFiles = getFilesFromDir("public/framework/css", ".css").map(
   (file) => `./framework/css/${file}`
 );
-const scriptFiles = getFilmsFromDir("public/views/extra/js", ".js").map(
+const scriptFiles = getFilesFromDir("public/views/extra/js", ".js").map(
   (file) => `./views/extra/js/${file}`
 );
 const styleFiles = getFilesFromDir("public/views/extra/css", ".css").map(
@@ -289,11 +292,12 @@ function getFilesFromDir(directory, fileExtension) {
 async function getLogin(req, res) {
   const { email, password, prefix = "", admin } = req.query;
   try {
-    await accountLogin(null, prefix, admin ? [admin] : admins, email, password, true);
+    await accountLogin(null, prefix, admin ? [admin] : admins, email, password);
     res
       .status(200)
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
+    logger.error(`Login failed for email/password: ${error.message}`);
     res
       .status(403)
       .json({ error: true, message: error.message || "Invalid credentials" });
@@ -310,8 +314,10 @@ async function postLogin(req, res) {
       throw new Error("Invalid app state data");
     }
     const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
-    const existingUser = Utils.account.get(user.value);
+
+    const existingUser = await sessionStore.get(`user_${user.value}`);
     const waitTime = 180000;
+
     if (
       existingUser &&
       Date.now() - (existingUser.lastLoginTime || 0) < waitTime
@@ -326,19 +332,32 @@ async function postLogin(req, res) {
         user: existingUser,
       });
     }
-    await accountLogin(state, prefix, admin ? [admin] : admins, null, null, false);
-    Utils.account.set(user.value, { lastLoginTime: Date.now() });
+
+    await accountLogin(state, prefix, admin ? [admin] : admins);
+
+    await sessionStore.put(`user_${user.value}`, {
+      lastLoginTime: Date.now(),
+      userId: user.value,
+    });
+
     res
       .status(200)
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
+    logger.error(`Post login failed: ${error.message}`);
     res
       .status(400)
       .json({ error: true, message: error.message || "Invalid app state" });
   }
 }
 
-async function accountLogin(state, prefix = "", admin = admins, email, password, isExternal = false) {
+async function accountLogin(
+  state,
+  prefix = "",
+  admin = admins,
+  email,
+  password
+) {
   const loginOptions = state ? { appState: state } : { email, password };
   if (
     !loginOptions.appState &&
@@ -347,22 +366,34 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
     throw new Error("Provide appState or email/password");
   }
 
+  const isExternalState =
+    fs.existsSync("./appstate.json") ||
+    fs.existsSync("./fbstate.json") ||
+    process.env.APPSTATE ||
+    (process.env.EMAIL && process.env.PASSWORD);
+
   return new Promise((resolve, reject) => {
+    logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
     login(loginOptions, async (error, api) => {
-      if (error) return reject(error);
+      if (error) {
+        logger.error(`Login failed: ${error.message}`);
+        return reject(error);
+      }
       const appState = state || api.getAppState();
       const userid = await api.getCurrentUserID();
+      logger.info(`Logged in user ${userid}`);
 
-      const existingSession = await sessionStore.get(userid);
-      if (existingSession) {
-        const decryptedSession = decryptSession(existingSession);
-        if (
-          decryptedSession &&
-          JSON.stringify(decryptedSession) === JSON.stringify(appState)
-        ) {
-          logger.warn(`Duplicate session for user ${userid}, skipping storage`);
-          return reject(new Error("Duplicate session detected"));
+      const existingSession = await sessionStore.get(`session_${userid}`);
+      if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        logger.info(`Session for user ${userid} exists in MongoDB`);
+        if (Utils.account.get(userid)?.online) {
+          logger.info(`User ${userid} is already online, reusing session`);
+          resolve();
+          return;
         }
+      } else if (existingSession) {
+        logger.warn(`Session conflict for user ${userid}, overwriting...`);
+        await sessionStore.put(`session_${userid}`, appState);
       }
 
       let admin_uid = null;
@@ -374,18 +405,21 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
         admin_uid = admins[0];
       }
 
-      if (admin_uid && /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)) {
+      if (
+        admin_uid &&
+        /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
+      ) {
         try {
           admin_uid = await api.getUID(admin_uid);
         } catch (err) {
-          logger.warn(`Failed to resolve Facebook URL: ${admin_uid}, keeping original`);
+          logger.warn(
+            `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+          );
         }
       }
 
-      if (!isExternal) {
+      if (!isExternalState) {
         await addThisUser(userid, appState, prefix, admin_uid);
-      } else {
-        logger.info(`External session for user ${userid}, not storing in MongoStore`);
       }
 
       Utils.account.set(userid, {
@@ -395,12 +429,26 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
         profile_url: `https://facebook.com/${userid}`,
         time: 0,
         online: true,
+        api,
       });
 
       setInterval(() => {
         const account = Utils.account.get(userid);
         if (!account) return;
-        Utils.account.set(userid, { ...account, time: account.time + 1 });
+        const newTime = account.time + 1;
+        Utils.account.set(userid, { ...account, time: newTime });
+
+        if (newTime % 60 === 0) {
+          sessionStore
+            .put(`user_${userid}`, {
+              ...account,
+              time: newTime,
+              lastUpdate: Date.now(),
+            })
+            .catch((err) =>
+              logger.error(`Failed to update user time: ${err.message}`)
+            );
+        }
       }, 1000);
 
       api.setOptions({
@@ -419,10 +467,13 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
 
       try {
         api.listenMqtt((error, event) => {
-          if (error || !event) {
-            logger.chalk.yellow(error?.stack || error);
-            process.exit(0);
+          if (error || !"type" in event) {
+            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+            Utils.account.delete(userid);
+            if (!isExternalState) deleteThisUser(userid);
+            return;
           }
+          logger.info(`MQTT event received for user ${userid}: ${event.type}`);
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
             .filter(
@@ -444,29 +495,75 @@ async function accountLogin(state, prefix = "", admin = admins, email, password,
             userid,
           });
         });
+        logger.success(`MQTT listener set up for user ${userid}`);
+
+        resolve();
       } catch (error) {
+        logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
         Utils.account.delete(userid);
-        if (!isExternal) await deleteThisUser(userid);
+        if (!isExternalState) await deleteThisUser(userid);
         reject(error);
       }
-      resolve();
     });
   });
 }
 
 async function addThisUser(userid, state, prefix, admin) {
-  const existingSession = await sessionStore.get(userid);
-  if (existingSession) {
-    logger.warn(`Session for user ${userid} already exists, skipping storage`);
-    return;
+  try {
+    await sessionStore.put(`session_${userid}`, state);
+    await sessionStore.put(`config_${userid}`, {
+      userid,
+      prefix: prefix || "",
+      admin,
+      time: 0,
+      createdAt: Date.now(),
+    });
+
+    const configFile = "./data/history.json";
+    const sessionFile = path.join("./data/session", `${userid}.json`);
+    if (!fs.existsSync(path.dirname(configFile))) {
+      fs.mkdirSync(path.dirname(configFile), { recursive: true });
+    }
+    if (!fs.existsSync(path.dirname(sessionFile))) {
+      fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
+    }
+
+    const config = fs.existsSync(configFile)
+      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+      : [];
+    const existingIndex = config.findIndex((item) => item.userid === userid);
+    if (existingIndex !== -1) {
+      config[existingIndex] = { userid, prefix: prefix || "", admin, time: 0 };
+    } else {
+      config.push({ userid, prefix: prefix || "", admin, time: 0 });
+    }
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    fs.writeFileSync(sessionFile, JSON.stringify(state));
+    logger.info(`Added user ${userid} to session store and file system`);
+  } catch (error) {
+    logger.error(`Failed to add user ${userid}: ${error.message}`);
   }
-  await sessionStore.put(userid, encryptSession(state));
-  await historyStore.put(userid, { catersuserid, prefix: prefix || "", admin, time: 0 });
 }
 
 async function deleteThisUser(userid) {
-  await sessionStore.remove(userid);
-  await historyStore.remove(userid);
+  try {
+    await sessionStore.remove(`session_${userid}`);
+    await sessionStore.remove(`config_${userid}`);
+    await sessionStore.remove(`user_${userid}`);
+
+    const configFile = "./data/history.json";
+    const sessionFile = path.join("./data/session", `${userid}.json`);
+    const config = fs.existsSync(configFile)
+      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+      : [];
+    const index = config.findIndex((item) => item.userid === userid);
+    if (index !== -1) config.splice(index, 1);
+    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    if (fs.existsSync(sessionFile)) fs.unlinkSync(sessionFile);
+    logger.info(`Deleted user ${userid} from session store and file system`);
+  } catch (error) {
+    logger.error(`Failed to delete user ${userid}: ${error.message}`);
+  }
 }
 
 function aliases(command) {
@@ -477,42 +574,87 @@ function aliases(command) {
 }
 
 async function main() {
-  await sessionStore.start();
-  await historyStore.start();
-
   const empty = require("fs-extra");
   const cacheFile = "./script/cache";
-  if (!fs.existsSync(cacheFile)) fs.mkdirSync(cacheFile, { recursive: true });
+
+  if (!fs.existsSync(cacheFile)) {
+    fs.mkdirSync(cacheFile, { recursive: true });
+  }
 
   setInterval(async () => {
     try {
-      const historyEntries = await historyStore.entries();
-      for (const { key: userid, value: user } of historyEntries) {
-        const update = Utils.account.get(userid);
-        if (update) {
-          await historyStore.put(userid, { ...user, time: update.time });
+      const configs = await sessionStore.entries();
+      const users = configs.filter((entry) => entry.key.startsWith("config_"));
+
+      for (const { key, value } of users) {
+        const userid = value.userid;
+        if (userid) {
+          const update = Utils.account.get(userid);
+          if (update) {
+            value.time = update.time;
+            await sessionStore.put(key, value);
+          }
         }
       }
+
       await empty.emptyDir(cacheFile);
     } catch (error) {
       logger.error("Error executing task: " + error.stack);
     }
   }, 60000);
 
-  const loadSession = async (userid, prefix, admin) => {
+  const validateAppState = (state) => {
+    return (
+      Array.isArray(state) &&
+      state.length > 0 &&
+      state.every(
+        (item) =>
+          typeof item === "object" &&
+          item !== null &&
+          "key" in item &&
+          "value" in item
+      ) &&
+      state.some((item) => ["i_user", "c_user"].includes(item.key))
+    );
+  };
+
+  const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
     try {
-      const state = await sessionStore.get(userid);
-      if (!state) {
-        logger.chalk.yellow(`Session for user ${userid} does not exist`);
-        return;
+      logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
+      const session = await sessionStore.get(`session_${userid}`);
+      const userConfig = await sessionStore.get(`config_${userid}`);
+
+      if (!session || !userConfig) {
+        logger.warn(`No session or config found for user ${userid} in MongoDB`);
+        await deleteThisUser(userid);
+        return false;
       }
-      const decryptedSession = decryptSession(state);
-      if (!decryptedSession) {
-        logger.chalk.yellow(`Invalid session data for user ${userid}`);
-        return;
+
+      if (!validateAppState(session)) {
+        logger.warn(`Invalid app state for user ${userid} in MongoDB`);
+        await deleteThisUser(userid);
+        return false;
       }
-      await accountLogin(decryptedSession, prefix || "", admin ? [admin] : admins, null, null, false);
+
+      if (Utils.account.get(userid)?.online) {
+        logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
+        return true;
+      }
+
+      await accountLogin(
+        session,
+        userConfig?.prefix || "",
+        userConfig?.admin ? [userConfig.admin] : admins
+      );
+      logger.success(`Successfully loaded MongoDB session for user ${userid}`);
+      return true;
     } catch (error) {
+      logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
+      if (retryCount < maxRetries) {
+        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return loadMongoSession(userid, retryCount + 1, maxRetries);
+      }
       const ERROR_PATTERNS = {
         unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
         errorRetrieving: /Error retrieving userID.*unknown location/,
@@ -522,17 +664,112 @@ async function main() {
       const ERROR = error?.message || error?.error;
       for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
         if (pattern.test(ERROR)) {
-          logger.chalk.yellow(`Login issue for user ${userid}: ${type}`);
+          logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
           await deleteThisUser(userid);
           break;
         }
       }
+      return false;
     }
   };
 
-  const historyEntries = await historyStore.entries();
-  for (const { key: userid, value: userConfig } of historyEntries) {
-    await loadSession(userid, userConfig.prefix, userConfig.admin);
+  try {
+    // Load sessions from MongoDB first
+    logger.info("Loading sessions from MongoDB...");
+    const sessions = await sessionStore.entries();
+    const userIds = new Set();
+
+    for (const { key } of sessions) {
+      if (key.startsWith("session_")) {
+        const userid = key.replace("session_", "");
+        userIds.add(userid);
+      }
+    }
+
+    for (const userid of userIds) {
+      await loadMongoSession(userid);
+    }
+
+    logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
+
+    // Fallback to file-based sessions only for users not in MongoDB
+    const sessionFolder = path.join("./data/session");
+    const configFile = "./data/history.json";
+
+    if (!fs.existsSync(sessionFolder)) {
+      fs.mkdirSync(sessionFolder, { recursive: true });
+    }
+
+    if (!fs.existsSync(configFile)) {
+      fs.writeFileSync(configFile, "[]", "utf-8");
+    }
+
+    const config = fs.existsSync(configFile)
+      ? JSON.parse(fs.readFileSync(configFile, "utf-8")) || []
+      : [];
+
+    const files = fs.existsSync(sessionFolder)
+      ? fs.readdirSync(sessionFolder).filter((file) => file.endsWith(".json"))
+      : [];
+
+    for (const file of files) {
+      const userId = path.parse(file).name;
+
+      // Skip if user is already logged in from MongoDB
+      if (Utils.account.get(userId)?.online) {
+        logger.info(`User ${userId} already logged in from MongoDB, skipping file-based session`);
+        await deleteThisUser(userId);
+        continue;
+      }
+
+      const userConfig = config.find((item) => item.userid === userId) || {};
+      const filePath = path.join(sessionFolder, file);
+
+      try {
+        if (!fs.existsSync(filePath)) {
+          logger.warn(`Session file for user ${userId} does not exist: ${filePath}`);
+          continue;
+        }
+
+        const session = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        if (!validateAppState(session)) {
+          logger.warn(`Invalid app state for user ${userId} in file`);
+          await deleteThisUser(userId);
+          continue;
+        }
+
+        // Check if session already exists in MongoDB
+        const existingMongoSession = await sessionStore.get(`session_${userId}`);
+        if (existingMongoSession) {
+          logger.info(`Session for user ${userId} already in MongoDB, skipping file-based session`);
+          await deleteThisUser(userId);
+          continue;
+        }
+
+        await accountLogin(
+          session,
+          userConfig.prefix || "",
+          userConfig.admin ? [userConfig.admin] : admins
+        );
+
+        // Migrate to MongoDB
+        await sessionStore.put(`session_${userId}`, session);
+        await sessionStore.put(`config_${userId}`, {
+          userid: userId,
+          prefix: userConfig.prefix || "",
+          admin: userConfig.admin,
+          time: userConfig.time || 0,
+          migratedAt: Date.now(),
+        });
+
+        logger.success(`Migrated session for user ${userId} from file to MongoDB`);
+        await deleteThisUser(userId);
+      } catch (error) {
+        logger.error(`Error loading session for ${userId} from file: ${error.message}`);
+      }
+    }
+  } catch (error) {
+    logger.error(`Failed to load sessions: ${error.message}`);
   }
 
   const validateJsonArrayOfObjects = (data) => {
@@ -559,10 +796,14 @@ async function main() {
         ? JSON.parse(process.env.APPSTATE)
         : c3c_json;
       if (validateJsonArrayOfObjects(envState)) {
-        await accountLogin(envState, process.env.PREFIX || "#", admins, null, null, true);
+        await accountLogin(
+          envState,
+          process.env.PREFIX || global.api.prefix,
+          admins
+        );
       }
     } catch (error) {
-      logger.error(error.stack || error);
+      logger.error(`Failed to login with APPSTATE: ${error.stack || error}`);
     }
   }
 
@@ -570,14 +811,13 @@ async function main() {
     try {
       await accountLogin(
         null,
-        process.env.PREFIX || "#",
+        process.env.PREFIX || global.api.prefix,
         admins,
         process.env.EMAIL,
-        process.env.PASSWORD,
-        true
+        process.env.PASSWORD
       );
     } catch (error) {
-      logger.error(error.stack || error);
+      logger.error(`Failed to login with EMAIL/PASSWORD: ${error.stack || error}`);
     }
   }
 }
