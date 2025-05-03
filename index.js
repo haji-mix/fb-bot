@@ -28,6 +28,7 @@ const {
   createStore,
 } = require("./system/modules");
 
+// Load configs
 const hajime_config = fs.existsSync("./hajime.json")
   ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
   : {};
@@ -36,10 +37,10 @@ const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
 
-// Session Store Configuration
+// MongoDB Session Store
 const sessionStore = createStore({
   type: 'mongodb',
-  uri: 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+  uri: process.env.MONGODB_URI || 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
   database: 'FB_AUTOBOT',
   collection: 'APPSTATE',
   isOwnHost: false,
@@ -53,28 +54,12 @@ const ERROR_PATTERNS = {
   unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/i,
   errorRetrieving: /Error retrieving userID.*unknown location/i,
   connectionRefused: /Connection refused: Server unavailable/i,
-  notLoggedIn: /Not logged in\./i
+  notLoggedIn: /Not logged in\./i,
+  invalidCookies: /invalid cookies?|missing cookies?/i,
+  accountLocked: /account locked|temporarily unavailable/i,
+  rateLimited: /rate limit|too many requests/i,
+  sessionExpired: /session expired|login expired/i
 };
-
-// MongoDB Connection
-async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      await sessionStore.start();
-      logger.success("Connected to MongoDB for session storage");
-      return true;
-    } catch (error) {
-      logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
-      if (attempt === maxRetries) {
-        logger.error("Max retries reached. Using file-based sessions only...");
-        return false;
-      }
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
-    }
-  }
-}
-
-const isMongoConnected = await connectMongoWithRetry();
 
 // Initialize Utils
 const Utils = {
@@ -256,6 +241,24 @@ function isPermanentError(error) {
   return Object.values(ERROR_PATTERNS).some(pattern => 
     pattern.test(errorStr)
   );
+}
+
+// Connect to MongoDB with retry
+async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await sessionStore.start();
+      logger.success("Connected to MongoDB for session storage");
+      return true;
+    } catch (error) {
+      logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
+      if (attempt === maxRetries) {
+        logger.error("Max retries reached. Using file-based sessions only...");
+        return false;
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
 }
 
 async function loadMongoSession(userid, retryCount = 0, maxRetries = 3) {
@@ -516,6 +519,9 @@ async function deleteThisUser(userid) {
 // Main Application
 async function main() {
   try {
+    // Connect to MongoDB
+    const isMongoConnected = await connectMongoWithRetry();
+
     // Load sessions from MongoDB first
     if (isMongoConnected) {
       logger.info("Loading sessions from MongoDB...");
