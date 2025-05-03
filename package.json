@@ -59,6 +59,7 @@
     "querystring": "^0.2.1",
     "random-useragent": "^0.5.0",
     "request": "^2.88.2",
+    "sequelize": "^6.37.7",
     "socks-proxy-agent": "^8.0.4",
     "soundcloud-scraper": "^5.0.3",
     "sqlite3": "^5.1.7",

@@ -24,7 +24,7 @@ const {
   botHandler,
   minifyHtml,
   obfuscate,
-  MongoStore,
+  createStore,
 } = require("./system/modules");
 
 const hajime_config = fs.existsSync("./hajime.json")
@@ -35,18 +35,18 @@ const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
 
-const MONGO_URI =
-  process.env.MONGO_URI ||
-  hajime_config.mongo_uri ||
-  "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-const sessionStore = new MongoStore({
-  uri: MONGO_URI,
-  collection: "sessions",
-  ignoreError: true,
-  allowClear: false,
+// Fixed: Changed variable name from mongoStore to sessionStore for consistency
+const sessionStore = createStore({
+  type: 'mongodb',
+  uri: 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+  database: 'FB_AUTOBOT', 
+  collection: 'APPSTATE',
+  isOwnHost: false,
+  ignoreError: false, 
+  allowClear: false, 
+  createConnection: false 
 });
 
-// Retry MongoDB connection up to 3 times
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
@@ -64,7 +64,11 @@ async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   }
 }
 
-connectMongoWithRetry();
+// Fixed: Added error handling for MongoDB connection
+connectMongoWithRetry().catch(err => {
+  logger.error("Failed to connect to MongoDB:", err);
+  process.exit(1);
+});
 
 const Utils = {
   commands: new Map(),
@@ -822,7 +826,11 @@ async function main() {
   }
 }
 
-main();
+main().catch(err => {
+  logger.error("Error in main execution:", err);
+  process.exit(1);
+});
+
 startServer();
 
 process.on("unhandledRejection", (reason) => {

@@ -9,7 +9,7 @@ const { getCommands, getInfo, processExit } = require("./routehandler");
 const { download } = require("./download");
 const { botHandler } = require("./bothandler");
 const { minifyHtml, obfuscate } = require("./htmlLib");
-const { MongoStore } = require("./mongostore");
+const { createStore } = require("./dbStore");
 
 module.exports = {
   logger,
@@ -26,5 +26,5 @@ module.exports = {
   botHandler,
   minifyHtml,
   obfuscate,
-  MongoStore
+  createStore
 };
