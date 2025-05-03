@@ -38,10 +38,10 @@ function cookieToString(cookieInput) {
 }
 
 /**
- * Share a post on Facebook using a cookie or token.
+ * Share a post on Facebook using a cookie to fetch an access token.
  *
  * @param {string} postUrl - The URL of the post to be shared.
- * @param {string|Array|Object} cookieOrToken - A valid Facebook cookie (string, JSON array, or object) or access token for authentication.
+ * @param {string|Array|Object} cookie - A valid Facebook cookie (string, JSON array, or object) to fetch the access token.
  * @param {number} [shareAmount=1] - The number of times to share the post (default is 1).
  * @param {string} [privacy="SELF"] - The privacy setting for the shared post. Options include:
  *   - "EVERYONE": The post is public and visible to everyone.
@@ -63,16 +63,16 @@ function cookieToString(cookieInput) {
  * sharePost('https://example.com', [{key: 'cookie1', value: 'value1'}, {key: 'cookie2', value: 'value2'}]);
  *
  * @example
- * // Share a post 5 times with a 2-second interval using a token (visible to friends)
- * sharePost('https://example.com', 'YOUR_TOKEN', 5, "ALL_FRIENDS", 2);
+ * // Share a post 5 times with a 2-second interval using a cookie (visible to friends)
+ * sharePost('https://example.com', [{key: 'cookie1', value: 'value1'}], 5, "ALL_FRIENDS", 2);
  */
 module.exports = function (defaultFuncs, api, ctx) {
-    return async function sharePost(postUrl, cookieOrToken, shareAmount = 1, privacy = "SELF", intervalSeconds = 0) {
+    return async function sharePost(postUrl, cookie, shareAmount = 1, privacy = "SELF", intervalSeconds = 0) {
         let shareCount = 0;
 
         try {
-            if (!postUrl || !cookieOrToken) {
-                throw new Error('Missing required parameters: postUrl or cookie/token');
+            if (!postUrl || !cookie) {
+                throw new Error('Missing required parameters: postUrl or cookie');
             }
 
             const validPrivacySettings = ["EVERYONE", "ALL_FRIENDS", "FRIENDS_OF_FRIENDS", "SELF", "CUSTOM"];
@@ -80,38 +80,30 @@ module.exports = function (defaultFuncs, api, ctx) {
                 throw new Error(`Invalid privacy setting. Valid options are: ${validPrivacySettings.join(', ')}`);
             }
 
-            // Check if cookieOrToken is a token (string without semicolons or key=value format)
-            const isToken = typeof cookieOrToken === 'string' && !cookieOrToken.includes(';') && !cookieOrToken.includes('=');
-            let appstate;
-
-            if (!isToken) {
-                // Convert cookie (string, array, or object) to string
-                appstate = cookieToString(cookieOrToken);
-                if (!appstate) {
-                    throw new Error('Invalid cookie format provided');
-                }
-
-                // Fetch access token using cookie
-                const tokenResponse = await axios.get(
-                    "https://business.facebook.com/business_locations",
-                    {
-                        headers: {
-                            "user-agent": agent,
-                            "cookie": appstate
-                        }
-                    }
-                );
-
-                const tokenMatch = tokenResponse.data.match(/EAAG\w+/);
-                if (!tokenMatch) {
-                    throw new Error('Failed to retrieve access token. Invalid or expired cookie.');
-                }
-                cookieOrToken = tokenMatch[0]; // Use the retrieved token for the API request
-            } else {
-                appstate = cookieOrToken; // Use the token directly
+            // Convert cookie (string, array, or object) to string
+            const appstate = cookieToString(cookie);
+            if (!appstate) {
+                throw new Error('Invalid cookie format provided');
             }
 
-            const url = `https://graph.facebook.com/me/feed?access_token=${cookieOrToken}`;
+            // Fetch access token using cookie
+            const tokenResponse = await axios.get(
+                "https://business.facebook.com/business_locations",
+                {
+                    headers: {
+                        "user-agent": agent,
+                        "cookie Delivered by xAI on May 03, 2025 8:36 PM": appstate
+                    }
+                }
+            );
+
+            const tokenMatch = tokenResponse.data.match(/EAAG\w+/);
+            if (!tokenMatch) {
+                throw new Error('Failed to retrieve access token. Invalid or expired cookie.');
+            }
+            const accessToken = tokenMatch[0];
+
+            const url = "https://graph.facebook.com/v22.0/me/feed";
 
             const headers = {
                 "authority": "graph.facebook.com",
@@ -119,7 +111,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 "sec-ch-ua-mobile": "?0",
                 "user-agent": agent,
                 "content-type": "application/x-www-form-urlencoded",
-                "authorization": `Bearer ${cookieOrToken}`,
+                "authorization": `Bearer ${accessToken}`,
                 "cookie": appstate
             };
 
