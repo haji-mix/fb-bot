@@ -1,5 +1,6 @@
 const { spawn } = require("child_process");
 const path = require("path");
+const { logger } = require("./system/logger");
 
 const SCRIPT_FILE = "hajime.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
@@ -9,7 +10,7 @@ const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 
 function start() {
-    console.log("Starting main process...");
+    logger.success("Starting main process...");
 
     mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
@@ -18,13 +19,13 @@ function start() {
     });
 
     mainProcess.on("error", (err) => {
-        console.error("Error occurred while starting the process:", err);
+        logger.error("Error occurred while starting the process:", err);
     });
 
     mainProcess.on("close", (exitCode) => {
         console.log(`Process exited with code [${exitCode}]`);
         if (restartEnabled) {
-            console.log("Restarting process...");
+            logger.success("Restarting process...");
             restartProcess();
         } else {
             console.log("Shutdown initiated...");
@@ -36,7 +37,7 @@ function start() {
 function restartProcess() {
     if (mainProcess && mainProcess.pid) {
         mainProcess.kill("SIGKILL");
-        console.log("Main process killed. Restarting...");
+        logger.success("Main process killed. Restarting...");
     }
     start();
 }

@@ -138,7 +138,7 @@ logger.warn = (msg) => {
 
 // Info logging
 logger.info = (msg) => {
-  logger(format(msg), gradient.rainbow);
+  logger(format(msg), gradient.instagram);
 };
 
 // JSON formatting
