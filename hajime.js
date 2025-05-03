@@ -46,12 +46,37 @@ const mongoStore = createStore({
   createConnection: false
 });
 
+// Add this function to ensure MongoDB is connected before operations
+async function ensureMongoConnection() {
+  let isConnected = false;
+  let retries = 0;
+  const maxRetries = 5;
+  const delay = 2000;
+  
+  while (!isConnected && retries < maxRetries) {
+    try {
+      // Check if we're connected by attempting a simple operation
+      await mongoStore.get('connection_test');
+      isConnected = true;
+      logger.success("MongoDB connection verified");
+      return true;
+    } catch (error) {
+      retries++;
+      logger.warn(`Waiting for MongoDB connection... Attempt ${retries}/${maxRetries}`);
+      if (retries >= maxRetries) {
+        throw new Error("Failed to establish MongoDB connection after multiple attempts");
+      }
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+}
+
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await mongoStore.start();
       logger.success("Connected to MongoDB for session storage");
-      return;
+      return true;
     } catch (error) {
       logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
       if (attempt === maxRetries) {
@@ -61,9 +86,8 @@ async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
   }
+  return false;
 }
-
-connectMongoWithRetry();
 
 const Utils = {
   commands: new Map(),
@@ -101,7 +125,7 @@ async function getSelfIP() {
 }
 
 const blockedIPs = new Map();
-const TRUSTED_IPS = ["127.0.0.1", "::1"];
+const TRUSTED_IPs = ["127.0.0.1", "::1"];
 let server,
   underAttack = false;
 
@@ -109,7 +133,7 @@ let selfIP = null;
 getSelfIP().then((ip) => {
   if (ip) {
     selfIP = ip;
-    TRUSTED_IPS.push(ip);
+    TRUSTED_IPs.push(ip);
     logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
   }
 });
@@ -128,7 +152,7 @@ const limiter = rateLimit({
   max: 500,
   handler: (req, res) => {
     const clientIP = getClientIp(req);
-    if (!TRUSTED_IPS.includes(clientIP)) {
+    if (!TRUSTED_IPs.includes(clientIP)) {
       blockedIPs.set(clientIP, Date.now());
       switchPort();
       res.redirect("https://" + clientIP);
@@ -368,133 +392,146 @@ async function accountLogin(
   return new Promise((resolve, reject) => {
     logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
     login(loginOptions, async (error, api) => {
-      if (error) {
-        logger.error(`Login failed: ${error.message}`);
-        return reject(error);
+      if (error || !api) {
+        const errorMsg = error?.message || "API object is null";
+        logger.error(`Login failed: ${errorMsg}`);
+        return reject(error || new Error("API object is null"));
       }
-      const appState = state || api.getAppState();
-      const userid = await api.getCurrentUserID();
-      logger.info(`Logged in user ${userid}`);
-
-      const existingSession = await mongoStore.get(`session_${userid}`);
-      if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
-        logger.info(`Session for user ${userid} exists in MongoDB`);
-        if (Utils.account.get(userid)?.online) {
-          logger.info(`User ${userid} is already online, reusing session`);
-          resolve();
-          return;
-        }
-      } else if (existingSession) {
-        logger.warn(`Session conflict for user ${userid}, overwriting...`);
-        await mongoStore.put(`session_${userid}`, appState);
-      }
-
-      let admin_uid = null;
-      if (Array.isArray(admin) && admin.length > 0) {
-        admin_uid = admin[0];
-      } else if (typeof admin === "string" && admin) {
-        admin_uid = admin;
-      } else if (admins.length > 0) {
-        admin_uid = admins[0];
-      }
-
-      if (
-        admin_uid &&
-        /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
-      ) {
-        try {
-          admin_uid = await api.getUID(admin_uid);
-        } catch (err) {
-          logger.warn(
-            `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
-          );
-        }
-      }
-
-      await addThisUser(userid, appState, prefix, admin_uid);
-
-      Utils.account.set(userid, {
-        name: "ANONYMOUS",
-        userid,
-        profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
-        profile_url: `https://facebook.com/${userid}`,
-        time: 0,
-        online: true,
-        api,
-      });
-
-      setInterval(() => {
-        const account = Utils.account.get(userid);
-        if (!account) return;
-        const newTime = account.time + 1;
-        Utils.account.set(userid, { ...account, time: newTime });
-
-        if (newTime % 60 === 0) {
-          mongoStore
-            .put(`user_${userid}`, {
-              ...account,
-              time: newTime,
-              lastUpdate: Date.now(),
-            })
-            .catch((err) =>
-              logger.error(`Failed to update user time: ${err.message}`)
-            );
-        }
-      }, 1000);
-
-      api.setOptions({
-        forceLogin: false,
-        listenEvents: true,
-        logLevel: "silent",
-        updatePresence: true,
-        selfListen: false,
-        online: true,
-        autoMarkDelivery: false,
-        autoMarkRead: false,
-        userAgent: atob(
-          "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
-        ),
-      });
-
+      
       try {
-        api.listenMqtt((error, event) => {
-          if (error || !"type" in event) {
-            logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
-            Utils.account.delete(userid);
-            deleteThisUser(userid);
+        const appState = state || api.getAppState();
+        const userid = await api.getCurrentUserID();
+        
+        if (!userid) {
+          logger.error("Failed to get user ID from API");
+          return reject(new Error("Failed to get user ID"));
+        }
+        
+        logger.info(`Logged in user ${userid}`);
+
+        const existingSession = await mongoStore.get(`session_${userid}`);
+        if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+          logger.info(`Session for user ${userid} exists in MongoDB`);
+          if (Utils.account.get(userid)?.online) {
+            logger.info(`User ${userid} is already online, reusing session`);
+            resolve();
             return;
           }
-          
-          logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
-          const chat = new onChat(api, event);
-          Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
-            .filter(
-              (key) => typeof chat[key] === "function" && key !== "constructor"
-            )
-            .forEach((key) => {
-              global[key] = chat[key].bind(chat);
-            });
-          botHandler({
-            fonts,
-            chat,
-            api,
-            Utils,
-            logger,
-            event,
-            aliases,
-            admin: admin_uid,
-            prefix,
-            userid,
-          });
-        });
-        logger.success(`MQTT listener set up for user ${userid}`);
+        } else if (existingSession) {
+          logger.warn(`Session conflict for user ${userid}, overwriting...`);
+          await mongoStore.put(`session_${userid}`, appState);
+        }
 
-        resolve();
-      } catch (error) {
-        logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
-        Utils.account.delete(userid);
-        await deleteThisUser(userid);
-        reject(error);
+        let admin_uid = null;
+        if (Array.isArray(admin) && admin.length > 0) {
+          admin_uid = admin[0];
+        } else if (typeof admin === "string" && admin) {
+          admin_uid = admin;
+        } else if (admins.length > 0) {
+          admin_uid = admins[0];
+        }
+
+        if (
+          admin_uid &&
+          /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
+        ) {
+          try {
+            admin_uid = await api.getUID(admin_uid);
+          } catch (err) {
+            logger.warn(
+              `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
+            );
+          }
+        }
+
+        await addThisUser(userid, appState, prefix, admin_uid);
+
+        Utils.account.set(userid, {
+          name: "ANONYMOUS",
+          userid,
+          profile_img: `https://graph.facebook.com/${userid}/picture?width=1500&height=1500&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`,
+          profile_url: `https://facebook.com/${userid}`,
+          time: 0,
+          online: true,
+          api,
+        });
+
+        setInterval(() => {
+          const account = Utils.account.get(userid);
+          if (!account) return;
+          const newTime = account.time + 1;
+          Utils.account.set(userid, { ...account, time: newTime });
+
+          if (newTime % 60 === 0) {
+            mongoStore
+              .put(`user_${userid}`, {
+                ...account,
+                time: newTime,
+                lastUpdate: Date.now(),
+              })
+              .catch((err) =>
+                logger.error(`Failed to update user time: ${err.message}`)
+              );
+          }
+        }, 1000);
+
+        api.setOptions({
+          forceLogin: false,
+          listenEvents: true,
+          logLevel: "silent",
+          updatePresence: true,
+          selfListen: false,
+          online: true,
+          autoMarkDelivery: false,
+          autoMarkRead: false,
+          userAgent: atob(
+            "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
+          ),
+        });
+
+        try {
+          api.listenMqtt((error, event) => {
+            if (error || !"type" in event) {
+              logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+              Utils.account.delete(userid);
+              deleteThisUser(userid);
+              return;
+            }
+            
+            logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
+            const chat = new onChat(api, event);
+            Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
+              .filter(
+                (key) => typeof chat[key] === "function" && key !== "constructor"
+              )
+              .forEach((key) => {
+                global[key] = chat[key].bind(chat);
+              });
+            botHandler({
+              fonts,
+              chat,
+              api,
+              Utils,
+              logger,
+              event,
+              aliases,
+              admin: admin_uid,
+              prefix,
+              userid,
+            });
+          });
+          logger.success(`MQTT listener set up for user ${userid}`);
+
+          resolve();
+        } catch (error) {
+          logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
+          Utils.account.delete(userid);
+          await deleteThisUser(userid);
+          reject(error);
+        }
+      } catch (innerError) {
+        logger.error(`Error in accountLogin: ${innerError.message}`);
+        return reject(innerError);
       }
     });
   });
@@ -543,12 +580,13 @@ async function main() {
 
   setInterval(async () => {
     try {
-      const configs = await mongoStore.entries();
-      const users = configs.filter((entry) => entry.key.startsWith("config_"));
+      // Add null check for entries
+      const configs = await mongoStore.entries() || [];
+      const users = configs.filter((entry) => entry && entry.key && entry.key.startsWith("config_"));
 
       for (const { key, value } of users) {
-        const userid = value.userid;
-        if (userid) {
+        if (key && value && value.userid) {
+          const userid = value.userid;
           const update = Utils.account.get(userid);
           if (update) {
             value.time = update.time;
@@ -577,6 +615,11 @@ async function main() {
   };
 
   const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
+    if (!userid) {
+      logger.warn("Attempted to load session with invalid userid");
+      return false;
+    }
+    
     try {
       logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
       const session = await mongoStore.get(`session_${userid}`);
@@ -621,7 +664,7 @@ async function main() {
       };
       const ERROR = error?.message || error?.error;
       for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
-        if (pattern.test(ERROR)) {
+        if (pattern && ERROR && pattern.test(ERROR)) {
           logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
           await deleteThisUser(userid);
           break;
@@ -632,58 +675,46 @@ async function main() {
   };
 
   try {
+    // Ensure MongoDB connection is fully established before proceeding
+    await ensureMongoConnection();
+    
     logger.info("Loading sessions from MongoDB...");
-    const sessions = await mongoStore.entries();
+    // Add null check and default value
+    const sessions = await mongoStore.entries() || [];
     const userIds = new Set();
 
-    for (const { key } of sessions) {
-      if (key.startsWith("session_")) {
-        const userid = key.replace("session_", "");
-        userIds.add(userid);
+    // Safe iteration with null checks
+    for (const entry of sessions) {
+      if (entry && entry.key && typeof entry.key === 'string' && entry.key.startsWith("session_")) {
+        const userid = entry.key.replace("session_", "");
+        if (userid) userIds.add(userid);
       }
     }
 
+    // Load sessions for each valid userId
+    const loadPromises = [];
     for (const userid of userIds) {
-      await loadMongoSession(userid);
+      loadPromises.push(loadMongoSession(userid));
     }
-
+    
+    await Promise.allSettled(loadPromises);
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
   } catch (error) {
     logger.error(`Failed to load sessions: ${error.message}`);
   }
-
-  if (process.env.APPSTATE) {
-    try {
-      const envState = JSON.parse(process.env.APPSTATE);
-      if (validateAppState(envState)) {
-        await accountLogin(
-          envState,
-          process.env.PREFIX || global.api.prefix,
-          admins
-        );
-      }
-    } catch (error) {
-      logger.error(`Failed to login with APPSTATE: ${error.stack || error}`);
-    }
-  }
-
-  if (process.env.EMAIL && process.env.PASSWORD) {
-    try {
-      await accountLogin(
-        null,
-        process.env.PREFIX || global.api.prefix,
-        admins,
-        process.env.EMAIL,
-        process.env.PASSWORD
-      );
-    } catch (error) {
-      logger.error(`Failed to login with EMAIL/PASSWORD: ${error.stack || error}`);
-    }
-  }
 }
 
-main();
-startServer();
+// Start MongoDB connection before anything else
+(async () => {
+  try {
+    await connectMongoWithRetry();
+    await main();
+    startServer();
+  } catch (error) {
+    logger.error(`Failed to initialize: ${error.message}`);
+    process.exit(1);
+  }
+})();
 
 process.on("unhandledRejection", (reason) => {
   logger.error(

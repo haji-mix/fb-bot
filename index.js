@@ -12,7 +12,7 @@ let mainProcess;
 function start() {
     logger.success("Starting main process...");
 
-    mainProcess = spawn("node", ["--no-warnings", SCRIPT_PATH], {
+    mainProcess = spawn("node", ["--no-deprecation", "--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
         shell: true,
