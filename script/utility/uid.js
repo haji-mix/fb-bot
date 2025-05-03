@@ -17,7 +17,7 @@ module.exports["run"] = async ({ event, args, chat, font }) => {
   try {
 
     if (event.type === "message_reply" && !link) {
-      return chat.reply(event.messageReply.senderID);
+      return chat.contact(event.messageReply.senderID, event.messageReply.senderID);
     }
 
     if (!link) {
