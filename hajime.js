@@ -33,35 +33,50 @@ const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
 
-// Initialize MongoDB store
+// Initialize MongoDB store as a singleton
 let mongoStore;
-try {
-  mongoStore = createStore({
-    type: "mongodb",
-    uri: process.env.MONGO_URI || "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
-    database: "FB_AUTOBOT",
-    collection: "APPSTATE",
-    isOwnHost: false,
-    ignoreError: false,
-    allowClear: false,
-    createConnection: false
-  });
-} catch (error) {
-  logger.error(`Failed to initialize MongoDB store: ${error.message}`);
-  process.exit(1);
+let isStoreInitialized = false;
+
+async function initializeMongoStore() {
+  if (isStoreInitialized) return mongoStore;
+  
+  try {
+    mongoStore = createStore({
+      type: "mongodb",
+      uri: process.env.MONGO_URI || "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+      database: "FB_AUTOBOT",
+      collection: "APPSTATE",
+      isOwnHost: false,
+      ignoreError: false,
+      allowClear: false,
+      createConnection: false
+    });
+    
+    isStoreInitialized = true;
+    return mongoStore;
+  } catch (error) {
+    logger.error(`Failed to initialize MongoDB store: ${error.message}`);
+    throw error;
+  }
 }
 
 async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
+  if (!mongoStore) {
+    mongoStore = await initializeMongoStore();
+  }
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await mongoStore.start();
+      if (!mongoStore.ready) {
+        await mongoStore.start();
+      }
       logger.success("Connected to MongoDB for session storage");
       return true;
     } catch (error) {
       logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
       if (attempt === maxRetries) {
         logger.error("Max retries reached. Exiting...");
-        process.exit(1);
+        throw error;
       }
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
@@ -293,7 +308,6 @@ async function accountLogin(
         const userid = await api.getCurrentUserID();
         logger.info(`Logged in user ${userid}`);
 
-        // Ensure mongoStore is ready
         if (!mongoStore || !mongoStore.ready) {
           await connectMongoWithRetry();
         }
@@ -457,7 +471,10 @@ function aliases(command) {
 
 async function main() {
   try {
-    // Ensure MongoDB is connected first
+    // Initialize store first
+    mongoStore = await initializeMongoStore();
+    
+    // Then connect with retry logic
     await connectMongoWithRetry();
     
     const cacheFile = "./script/cache";
