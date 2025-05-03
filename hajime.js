@@ -10,7 +10,7 @@ require("dotenv").config();
 
 global.api = {
   hajime: "https://haji-mix-api.gleeze.com",
-  prefix: "#"
+  prefix: "#",
 };
 
 const {
@@ -36,14 +36,15 @@ const pkg_config = fs.existsSync("./package.json")
   : { description: "", keywords: [], author: "", name: "" };
 
 const mongoStore = createStore({
-  type: 'mongodb',
-  uri: 'mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
-  database: 'FB_AUTOBOT',
-  collection: 'APPSTATE',
+  type: "mongodb",
+  uri:
+    "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+  database: "FB_AUTOBOT",
+  collection: "APPSTATE",
   isOwnHost: false,
   ignoreError: false,
   allowClear: false,
-  createConnection: false
+  createConnection: false,
 });
 
 // Add this function to ensure MongoDB is connected before operations
@@ -52,21 +53,25 @@ async function ensureMongoConnection() {
   let retries = 0;
   const maxRetries = 5;
   const delay = 2000;
-  
+
   while (!isConnected && retries < maxRetries) {
     try {
       // Check if we're connected by attempting a simple operation
-      await mongoStore.get('connection_test');
+      await mongoStore.get("connection_test");
       isConnected = true;
       logger.success("MongoDB connection verified");
       return true;
     } catch (error) {
       retries++;
-      logger.warn(`Waiting for MongoDB connection... Attempt ${retries}/${maxRetries}`);
+      logger.warn(
+        `Waiting for MongoDB connection... Attempt ${retries}/${maxRetries}`
+      );
       if (retries >= maxRetries) {
-        throw new Error("Failed to establish MongoDB connection after multiple attempts");
+        throw new Error(
+          "Failed to establish MongoDB connection after multiple attempts"
+        );
       }
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
@@ -78,7 +83,9 @@ async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
       logger.success("Connected to MongoDB for session storage");
       return true;
     } catch (error) {
-      logger.error(`MongoDB connection attempt ${attempt} failed: ${error.message}`);
+      logger.error(
+        `MongoDB connection attempt ${attempt} failed: ${error.message}`
+      );
       if (attempt === maxRetries) {
         logger.error("Max retries reached. Exiting...");
         process.exit(1);
@@ -390,27 +397,32 @@ async function accountLogin(
   }
 
   return new Promise((resolve, reject) => {
-    logger.info(`Initiating login with ${state ? "appState" : "email/password"}`);
+    logger.info(
+      `Initiating login with ${state ? "appState" : "email/password"}`
+    );
     login(loginOptions, async (error, api) => {
       if (error || !api) {
         const errorMsg = error?.message || "API object is null";
         logger.error(`Login failed: ${errorMsg}`);
         return reject(error || new Error("API object is null"));
       }
-      
+
       try {
         const appState = state || api.getAppState();
         const userid = await api.getCurrentUserID();
-        
+
         if (!userid) {
           logger.error("Failed to get user ID from API");
           return reject(new Error("Failed to get user ID"));
         }
-        
+
         logger.info(`Logged in user ${userid}`);
 
         const existingSession = await mongoStore.get(`session_${userid}`);
-        if (existingSession && JSON.stringify(existingSession) === JSON.stringify(appState)) {
+        if (
+          existingSession &&
+          JSON.stringify(existingSession) === JSON.stringify(appState)
+        ) {
           logger.info(`Session for user ${userid} exists in MongoDB`);
           if (Utils.account.get(userid)?.online) {
             logger.info(`User ${userid} is already online, reusing session`);
@@ -492,17 +504,26 @@ async function accountLogin(
         try {
           api.listenMqtt((error, event) => {
             if (error || !"type" in event) {
-              logger.warn(`MQTT error for user ${userid}: ${error?.stack || error}`);
+              logger.warn(
+                `MQTT error for user ${userid}: ${error?.stack || error}`
+              );
               Utils.account.delete(userid);
               deleteThisUser(userid);
               return;
             }
-            
-            logger.info(`MQTT event received for user ${userid}: ${JSON.stringify(event, null, 2)}`);
+
+            logger.info(
+              `MQTT event received for user ${userid}: ${JSON.stringify(
+                event,
+                null,
+                2
+              )}`
+            );
             const chat = new onChat(api, event);
             Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
               .filter(
-                (key) => typeof chat[key] === "function" && key !== "constructor"
+                (key) =>
+                  typeof chat[key] === "function" && key !== "constructor"
               )
               .forEach((key) => {
                 global[key] = chat[key].bind(chat);
@@ -524,7 +545,9 @@ async function accountLogin(
 
           resolve();
         } catch (error) {
-          logger.error(`Failed to set up MQTT listener for user ${userid}: ${error.message}`);
+          logger.error(
+            `Failed to set up MQTT listener for user ${userid}: ${error.message}`
+          );
           Utils.account.delete(userid);
           await deleteThisUser(userid);
           reject(error);
@@ -581,8 +604,10 @@ async function main() {
   setInterval(async () => {
     try {
       // Add null check for entries
-      const configs = await mongoStore.entries() || [];
-      const users = configs.filter((entry) => entry && entry.key && entry.key.startsWith("config_"));
+      const configs = (await mongoStore.entries()) || [];
+      const users = configs.filter(
+        (entry) => entry && entry.key && entry.key.startsWith("config_")
+      );
 
       for (const { key, value } of users) {
         if (key && value && value.userid) {
@@ -619,9 +644,11 @@ async function main() {
       logger.warn("Attempted to load session with invalid userid");
       return false;
     }
-    
+
     try {
-      logger.info(`Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`);
+      logger.info(
+        `Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`
+      );
       const session = await mongoStore.get(`session_${userid}`);
       const userConfig = await mongoStore.get(`config_${userid}`);
 
@@ -638,7 +665,9 @@ async function main() {
       }
 
       if (Utils.account.get(userid)?.online) {
-        logger.info(`User ${userid} already logged in, skipping MongoDB session load`);
+        logger.info(
+          `User ${userid} already logged in, skipping MongoDB session load`
+        );
         return true;
       }
 
@@ -650,9 +679,14 @@ async function main() {
       logger.success(`Successfully loaded MongoDB session for user ${userid}`);
       return true;
     } catch (error) {
-      logger.error(`Failed to load MongoDB session for user ${userid}: ${error.message}`);
+      logger.error(
+        `Failed to load MongoDB session for user ${userid}: ${error.message}`
+      );
       if (retryCount < maxRetries) {
-        logger.info(`Retrying MongoDB session load for user ${userid} (${retryCount + 1}/${maxRetries})`);
+        logger.info(
+          `Retrying MongoDB session load for user ${userid} (${retryCount +
+            1}/${maxRetries})`
+        );
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return loadMongoSession(userid, retryCount + 1, maxRetries);
       }
@@ -677,30 +711,36 @@ async function main() {
   try {
     // Ensure MongoDB connection is fully established before proceeding
     await ensureMongoConnection();
-    
+
     logger.info("Loading sessions from MongoDB...");
-    // Add null check and default value
-    const sessions = await mongoStore.entries() || [];
+
+    // Safely get session entries with null fallback
+    const sessions = (await mongoStore.entries()) || [];
+
     const userIds = new Set();
 
-    // Safe iteration with null checks
+    // Iterate safely through each session entry
     for (const entry of sessions) {
-      if (entry && entry.key && typeof entry.key === 'string' && entry.key.startsWith("session_")) {
-        const userid = entry.key.replace("session_", "");
+      if (
+        entry &&
+        typeof entry.key === "string" &&
+        entry.key.startsWith("session_")
+      ) {
+        const userid = entry.key.substring("session_".length).trim();
         if (userid) userIds.add(userid);
       }
     }
 
-    // Load sessions for each valid userId
-    const loadPromises = [];
-    for (const userid of userIds) {
-      loadPromises.push(loadMongoSession(userid));
-    }
-    
+    // Load sessions concurrently and safely
+    const loadPromises = Array.from(userIds).map((userid) =>
+      loadMongoSession(userid)
+    );
+
     await Promise.allSettled(loadPromises);
+
     logger.success(`Loaded ${userIds.size} sessions from MongoDB`);
   } catch (error) {
-    logger.error(`Failed to load sessions: ${error.message}`);
+    logger.error(`Failed to load sessions: ${error?.message || error}`);
   }
 }
 
