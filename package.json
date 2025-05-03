@@ -24,7 +24,7 @@
     "canvas": "^3.1.0",
     "cassidy-styler": "^1.2.3",
     "chalk": "^3.0.0",
-    "chatbox-fca-remake": "^4.3.5",
+    "chatbox-fca-remake": "^4.3.8",
     "child_process": "^1.0.2",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",

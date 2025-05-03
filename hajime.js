@@ -500,6 +500,21 @@ async function accountLogin(
           ),
         });
 
+      require('./system/cronjob')({
+          logger,
+          api,
+          fonts,
+          font: fonts,
+      });
+
+      require('./system/notevent')({
+          logger,
+          api,
+          fonts,
+          font: fonts,
+          prefix
+      });
+
         try {
           api.listenMqtt((error, event) => {
             if (error || !"type" in event) {
