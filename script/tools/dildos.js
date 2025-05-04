@@ -4,7 +4,7 @@ const apiEndpoints = [
    "http://sgp1.hmvhostings.com:25694/stresser"
 ];
 
-module.exports.ddos = {
+module.exports.config = {
   name: 'dildos',
   type: 'pentest',
   role: 0,
