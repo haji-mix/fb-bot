@@ -13,7 +13,7 @@ module.exports.config = {
   author: 'Kenneth Panio',
   cd: 10,
   guide: 'dildos http://example.com',
-  usage: 'dildos [url]'
+  usage: '[url]'
 };
 
 module.exports.run = async ({ args, chat, font }) => {

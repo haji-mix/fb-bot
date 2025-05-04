@@ -574,6 +574,8 @@ async function accountLogin(
   });
 }
 
+Utils.accountLogin = accountLogin;
+
 async function addThisUser(userid, state, prefix, admin) {
   try {
     await mongoStore.put(`session_${userid}`, state);

@@ -1,4 +1,3 @@
-const axios = require('axios');
 const fs = require("fs");
 const path = require("path");
 const configPath = path.join(__dirname, '../../hajime.json');
@@ -14,18 +13,31 @@ module.exports["config"] = {
   role: 0,
 };
 
-module.exports["run"] = async ({ chat, event, args, font  }) => {
+module.exports["run"] = async ({ chat, event, args, font, Utils }) => {
   const tin = txt => font.thin(txt);
-  
+
+  // Validate app state
+  const validateAppState = (state) => {
+    return (
+      Array.isArray(state) &&
+      state.length > 0 &&
+      state.every(
+        (item) =>
+          typeof item === "object" &&
+          item !== null &&
+          ("key" in item || "name" in item) &&
+          typeof (item.key || item.name) === "string" &&
+          typeof item.value === "string"
+      ) &&
+      state.some((item) => ["i_user", "c_user"].includes(item.key || item.name))
+    );
+  };
+
   if (!fs.existsSync(configPath)) {
     return chat.reply(tin('Configuration file not found!'), event.threadID, event.messageID);
   }
 
   const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-
-  const server = 
-    (config.weblink && config.port ? `${config.weblink}:${config.port}` : null) ||
-    config.weblink;
 
   const input = args[0];
   let inputState = args.slice(3).join(" ");
@@ -35,6 +47,9 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
   const pageSize = 10;
 
   if (!input) {
+    const server = 
+      (config.weblink && config.port ? `${config.weblink}:${config.port}` : null) ||
+      config.weblink;
     chat.reply(tin(`Autobot usage:\n\nTo create bot use "Autobot create [owner or admin-uid] [prefix] [appstate]"\n\nTo see active list "Autobot [online] [page_number]\n\n`) + server, event.threadID, event.messageID);
     return;
   }
@@ -42,9 +57,7 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
   if (input === "online") {
     const checking = await chat.reply(tin("⏳ Checking active session, please wait..."));
     try {
-      const url = `${server}/info`;
-      const response = await axios.get(url);
-      const aiList = response.data;
+      const aiList = Array.from(Utils.account.values()).filter(account => account.online);
 
       if (Array.isArray(aiList)) {
         const totalPages = Math.ceil(aiList.length / pageSize);
@@ -78,7 +91,7 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
       checking.delete();
     } catch (err) {
       checking.delete();
-      chat.reply(tin(error.stack || err.message), event.threadID, event.messageID);
+      chat.reply(tin(err.stack || err.message), event.threadID, event.messageID);
     }
   } else if (input === "create") {
     if (event.type === "message_reply" && event.messageReply.body) {
@@ -86,17 +99,16 @@ module.exports["run"] = async ({ chat, event, args, font  }) => {
     }
     try {
       const states = JSON.parse(inputState);
-      if (states && typeof states === 'object') {
+      if (validateAppState(states)) {
         const making = await chat.reply(tin("⏳ Setting up your account as a bot, please wait..."));
-        const response = await axios.post(`${server}/login`, {
-          state: states,
-          prefix: inputPrefix,
-          admin: inputAdmin,
-        });
-        const data = response.data;
-        making.edit(tin(data.message));
+        try {
+          await Utils.accountLogin(states, inputPrefix, inputAdmin ? [inputAdmin] : config.admins);
+          making.edit(tin("Authentication successful"));
+        } catch (loginErr) {
+          making.edit(tin(`Login failed: ${loginErr.message}`));
+        }
       } else {
-        chat.reply(tin('Please provide a valid JSON app state. e.g: autobot online [paging] or create [owner_uid] [prefix] [appstate]'), event.threadID, event.messageID);
+        chat.reply(tin('Please provide a valid JSON app state. e.g: autobot create [owner_uid] [prefix] [{"key":"c_user","value":"..."},...]'), event.threadID, event.messageID);
       }
     } catch (parseErr) {
       chat.reply(tin(`${parseErr.stack || parseErr.message}`), event.threadID, event.messageID);
