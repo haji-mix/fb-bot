@@ -43,7 +43,6 @@ module.exports.run = async ({ args, chat, font }) => {
       const attackInterval = setInterval(async () => {
         try {
           await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0], {
-            timeout: 120000 // Timeout for checking target URL
           });
         } catch (error) {
           if (error.response && !errorMessageSent) {
