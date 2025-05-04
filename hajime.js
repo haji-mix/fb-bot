@@ -2,10 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
-const rateLimit = require("express-rate-limit");
 const helmet = require("helmet");
 const cors = require("cors");
-const axios = require("axios");
 require("dotenv").config();
 
 global.api = {
@@ -46,7 +44,7 @@ const mongoStore = createStore({
   createConnection: false,
 });
 
-// Add this function to ensure MongoDB is connected before operations
+// Function to ensure MongoDB is connected before operations
 async function ensureMongoConnection() {
   let isConnected = false;
   let retries = 0;
@@ -55,7 +53,6 @@ async function ensureMongoConnection() {
 
   while (!isConnected && retries < maxRetries) {
     try {
-      // Check if we're connected by attempting a simple operation
       await mongoStore.get("connection_test");
       isConnected = true;
       logger.success("MongoDB connection verified");
@@ -120,97 +117,10 @@ app
   .use(express.urlencoded({ extended: false }))
   .use(express.static(path.join(__dirname, "public")));
 
-async function getSelfIP() {
-  try {
-    const response = await axios.get("https://api.ipify.org/?format=json");
-    return response.data.ip;
-  } catch (error) {
-    logger.error("Failed to get self IP:", error.message);
-    return null;
-  }
-}
-
-const blockedIPs = new Map();
-const TRUSTED_IPs = ["127.0.0.1", "::1"];
-let server,
-  underAttack = false;
-
-let selfIP = null;
-getSelfIP().then((ip) => {
-  if (ip) {
-    selfIP = ip;
-    TRUSTED_IPs.push(ip);
-    logger.success(`TRUSTED SERVER SELF IP: ${selfIP}`);
-  }
-});
-
-const getClientIp = (req) => {
-  return (
-    req.headers["cf-connecting-ip"] ||
-    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
-    req.socket.remoteAddress ||
-    req.ip
-  );
-};
-
-const limiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 500,
-  handler: (req, res) => {
-    const clientIP = getClientIp(req);
-    if (!TRUSTED_IPs.includes(clientIP)) {
-      blockedIPs.set(clientIP, Date.now());
-      switchPort();
-      res.redirect("https://" + clientIP);
-    }
-  },
-});
-
-app
-  .use((req, res, next) => {
-    const clientIP = getClientIp(req);
-    if (blockedIPs.has(clientIP)) {
-      switchPort();
-      return res.redirect("https://" + clientIP);
-    }
-    next();
-  })
-  .use(limiter);
-
-function updateEnvPort(newPort) {
-  const envPath = ".env";
-  const timestamp = Date.now();
-  let envContent = fs.existsSync(envPath)
-    ? fs.readFileSync(envPath, "utf8")
-    : "";
-  envContent = envContent
-    .replace(/^PORT=\d+/m, `PORT=${newPort}`)
-    .replace(/^PORT_TIMESTAMP=\d+/m, `PORT_TIMESTAMP=${timestamp}`);
-  if (!/^PORT=\d+/m.test(envContent)) envContent += `\nPORT=${newPort}`;
-  if (!/^PORT_TIMESTAMP=\d+/m.test(envContent))
-    envContent += `\nPORT_TIMESTAMP=${timestamp}`;
-  fs.writeFileSync(envPath, envContent, "utf8");
-}
-
-function switchPort() {
-  if (underAttack) return;
-  underAttack = true;
-  const newPort = Math.floor(Math.random() * (9000 - 4000) + 4000);
-  server.close(() => {
-    updateEnvPort(newPort);
-    startServer(newPort);
-    underAttack = false;
-  });
-}
-
-async function startServer(stealth_port) {
-  let PORT = stealth_port || process.env.PORT || hajime_config.port || 10000;
-  const lastTimestamp = parseInt(process.env.PORT_TIMESTAMP || 0);
-  if (lastTimestamp && Date.now() - lastTimestamp > 3600000) {
-    PORT = hajime_config.port || 10000;
-  }
+async function startServer() {
+  const PORT = process.env.PORT || hajime_config.port || 10000;
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
-  server = app.listen(PORT, () =>
+  app.listen(PORT, () =>
     logger.success(
       `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
     )
@@ -321,7 +231,7 @@ function getFilesFromDir(directory, fileExtension) {
 async function getLogin(req, res) {
   const { email, password, prefix = "", admin } = req.query;
   try {
-    await accountLogin(null, prefix, admin ? [admin] : admins, email, password);
+    await Utils.accountLogin(null, prefix, admin ? [admin] : admins, email, password);
     res
       .status(200)
       .json({ success: true, message: "Authentication successful" });
@@ -362,7 +272,7 @@ async function postLogin(req, res) {
       });
     }
 
-    await accountLogin(state, prefix, admin ? [admin] : admins);
+    await Utils.accountLogin(state, prefix, admin ? [admin] : admins);
 
     await mongoStore.put(`user_${user.value}`, {
       lastLoginTime: Date.now(),
@@ -500,20 +410,20 @@ async function accountLogin(
           ),
         });
 
-      require('./system/cronjob')({
+        require('./system/cronjob')({
           logger,
           api,
           fonts,
           font: fonts,
-      });
+        });
 
-      require('./system/notevent')({
+        require('./system/notevent')({
           logger,
           api,
           fonts,
           font: fonts,
           prefix
-      });
+        });
 
         try {
           api.listenMqtt((error, event) => {
@@ -574,6 +484,7 @@ async function accountLogin(
   });
 }
 
+// Attach accountLogin to Utils
 Utils.accountLogin = accountLogin;
 
 async function addThisUser(userid, state, prefix, admin) {
@@ -619,7 +530,6 @@ async function main() {
 
   setInterval(async () => {
     try {
-      // Add null check for entries
       const configs = (await mongoStore.entries()) || [];
       const users = configs.filter(
         (entry) => entry && entry.key && entry.key.startsWith("config_")
@@ -687,7 +597,7 @@ async function main() {
         return true;
       }
 
-      await accountLogin(
+      await Utils.accountLogin(
         session,
         userConfig?.prefix || "",
         userConfig?.admin ? [userConfig.admin] : admins
@@ -725,17 +635,13 @@ async function main() {
   };
 
   try {
-    // Ensure MongoDB connection is fully established before proceeding
     await ensureMongoConnection();
 
     logger.info("Loading sessions from MongoDB...");
 
-    // Safely get session entries with null fallback
     const sessions = (await mongoStore.entries()) || [];
-
     const userIds = new Set();
 
-    // Iterate safely through each session entry
     for (const entry of sessions) {
       if (
         entry &&
@@ -747,7 +653,6 @@ async function main() {
       }
     }
 
-    // Load sessions concurrently and safely
     const loadPromises = Array.from(userIds).map((userid) =>
       loadMongoSession(userid)
     );
@@ -760,12 +665,12 @@ async function main() {
   }
 }
 
-// Start MongoDB connection before anything else
+// Start MongoDB connection and server
 (async () => {
   try {
     await connectMongoWithRetry();
     await main();
-    startServer();
+    await startServer();
     startHealthCheck();
   } catch (error) {
     logger.error(`Failed to initialize: ${error.message}`);
@@ -783,9 +688,9 @@ function startHealthCheck() {
       }
     } catch (error) {
       logger.error(`Health check failed: ${error.message}. Restarting...`);
-      process.exit(1); 
+      process.exit(1);
     }
-  }, 300000); 
+  }, 300000);
 }
 
 process.on("unhandledRejection", (reason) => {

@@ -16,7 +16,6 @@ module.exports["config"] = {
 module.exports["run"] = async ({ chat, event, args, font, Utils }) => {
   const tin = txt => font.thin(txt);
 
-  // Validate app state
   const validateAppState = (state) => {
     return (
       Array.isArray(state) &&
