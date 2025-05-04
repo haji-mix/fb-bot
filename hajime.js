@@ -44,52 +44,16 @@ const mongoStore = createStore({
   createConnection: false,
 });
 
-// Function to ensure MongoDB is connected before operations
+// Function to ensure MongoDB is connected
 async function ensureMongoConnection() {
-  let isConnected = false;
-  let retries = 0;
-  const maxRetries = 5;
-  const delay = 2000;
-
-  while (!isConnected && retries < maxRetries) {
-    try {
-      await mongoStore.get("connection_test");
-      isConnected = true;
-      logger.success("MongoDB connection verified");
-      return true;
-    } catch (error) {
-      retries++;
-      logger.warn(
-        `Waiting for MongoDB connection... Attempt ${retries}/${maxRetries}`
-      );
-      if (retries >= maxRetries) {
-        throw new Error(
-          "Failed to establish MongoDB connection after multiple attempts"
-        );
-      }
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
+  try {
+    await mongoStore.get("connection_test");
+    logger.success("MongoDB connection verified");
+    return true;
+  } catch (error) {
+    logger.error("Failed to connect to MongoDB: " + error.message);
+    throw error;
   }
-}
-
-async function connectMongoWithRetry(maxRetries = 3, retryDelay = 5000) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      await mongoStore.start();
-      logger.success("Connected to MongoDB for session storage");
-      return true;
-    } catch (error) {
-      logger.error(
-        `MongoDB connection attempt ${attempt} failed: ${error.message}`
-      );
-      if (attempt === maxRetries) {
-        logger.error("Max retries reached. Exiting...");
-        process.exit(1);
-      }
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
-    }
-  }
-  return false;
 }
 
 const Utils = {
@@ -284,6 +248,13 @@ async function postLogin(req, res) {
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
     logger.error(`Post login failed: ${error.message}`);
+    // Remove the appstate if login fails
+    if (state) {
+      const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
+      if (user) {
+        await deleteThisUser(user.value);
+      }
+    }
     res
       .status(400)
       .json({ error: true, message: error.message || "Invalid app state" });
@@ -313,6 +284,15 @@ async function accountLogin(
       if (error || !api) {
         const errorMsg = error?.message || "API object is null";
         logger.error(`Login failed: ${errorMsg}`);
+        
+        // Remove the appstate if login fails
+        if (state) {
+          const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
+          if (user) {
+            await deleteThisUser(user.value);
+          }
+        }
+        
         return reject(error || new Error("API object is null"));
       }
 
@@ -322,6 +302,7 @@ async function accountLogin(
 
         if (!userid) {
           logger.error("Failed to get user ID from API");
+          await deleteThisUser(userid);
           return reject(new Error("Failed to get user ID"));
         }
 
@@ -425,59 +406,59 @@ async function accountLogin(
           prefix
         });
 
-        try {
-          api.listenMqtt((error, event) => {
-            if (error || !"type" in event) {
-              logger.warn(
-                `MQTT error for user ${userid}: ${error?.stack || error}`
-              );
-              Utils.account.delete(userid);
-              deleteThisUser(userid);
-              return;
-            }
-
-            logger.info(
-              `MQTT event received for user ${userid}: ${JSON.stringify(
-                event,
-                null,
-                2
-              )}`
+        api.listenMqtt((error, event) => {
+          if (error || !"type" in event) {
+            logger.warn(
+              `MQTT error for user ${userid}: ${error?.stack || error}`
             );
-            const chat = new onChat(api, event);
-            Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
-              .filter(
-                (key) =>
-                  typeof chat[key] === "function" && key !== "constructor"
-              )
-              .forEach((key) => {
-                global[key] = chat[key].bind(chat);
-              });
-            botHandler({
-              fonts,
-              chat,
-              api,
-              Utils,
-              logger,
-              event,
-              aliases,
-              admin: admin_uid,
-              prefix,
-              userid,
-            });
-          });
-          logger.success(`MQTT listener set up for user ${userid}`);
+            Utils.account.delete(userid);
+            deleteThisUser(userid);
+            return;
+          }
 
-          resolve();
-        } catch (error) {
-          logger.error(
-            `Failed to set up MQTT listener for user ${userid}: ${error.message}`
+          logger.info(
+            `MQTT event received for user ${userid}: ${JSON.stringify(
+              event,
+              null,
+              2
+            )}`
           );
-          Utils.account.delete(userid);
-          await deleteThisUser(userid);
-          reject(error);
-        }
+          const chat = new onChat(api, event);
+          Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
+            .filter(
+              (key) =>
+                typeof chat[key] === "function" && key !== "constructor"
+            )
+            .forEach((key) => {
+              global[key] = chat[key].bind(chat);
+            });
+          botHandler({
+            fonts,
+            chat,
+            api,
+            Utils,
+            logger,
+            event,
+            aliases,
+            admin: admin_uid,
+            prefix,
+            userid,
+          });
+        });
+        logger.success(`MQTT listener set up for user ${userid}`);
+
+        resolve();
       } catch (innerError) {
         logger.error(`Error in accountLogin: ${innerError.message}`);
+        // Remove the appstate if any error occurs during login process
+        try {
+          const userid = await api?.getCurrentUserID();
+          if (userid) {
+            await deleteThisUser(userid);
+          }
+        } catch (e) {
+          logger.error(`Error while cleaning up failed login: ${e.message}`);
+        }
         return reject(innerError);
       }
     });
@@ -500,17 +481,21 @@ async function addThisUser(userid, state, prefix, admin) {
     logger.info(`Added user ${userid} to MongoDB session store`);
   } catch (error) {
     logger.error(`Failed to add user ${userid}: ${error.message}`);
+    throw error;
   }
 }
 
 async function deleteThisUser(userid) {
   try {
+    if (!userid) return;
+    
     await mongoStore.remove(`session_${userid}`);
     await mongoStore.remove(`config_${userid}`);
     await mongoStore.remove(`user_${userid}`);
     logger.info(`Deleted user ${userid} from MongoDB session store`);
   } catch (error) {
     logger.error(`Failed to delete user ${userid}: ${error.message}`);
+    throw error;
   }
 }
 
@@ -565,16 +550,14 @@ async function main() {
     );
   };
 
-  const loadMongoSession = async (userid, retryCount = 0, maxRetries = 2) => {
+  const loadMongoSession = async (userid) => {
     if (!userid) {
       logger.warn("Attempted to load session with invalid userid");
       return false;
     }
 
     try {
-      logger.info(
-        `Loading MongoDB session for user ${userid} (Attempt ${retryCount + 1})`
-      );
+      logger.info(`Loading MongoDB session for user ${userid}`);
       const session = await mongoStore.get(`session_${userid}`);
       const userConfig = await mongoStore.get(`config_${userid}`);
 
@@ -608,16 +591,21 @@ async function main() {
       logger.error(
         `Failed to load MongoDB session for user ${userid}: ${error.message}`
       );
-      if (retryCount < maxRetries) {
-        logger.info(
-          `Retrying MongoDB session load for user ${userid} (${retryCount +
-            1}/${maxRetries})`
-        );
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        return loadMongoSession(userid, retryCount + 1, maxRetries);
+      
+      const ERROR_PATTERNS = {
+        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
+        errorRetrieving: /Error retrieving userID.*unknown location/,
+        connectionRefused: /Connection refused: Server unavailable/,
+        notLoggedIn: /Not logged in\./,
+      };
+      const ERROR = error?.message || error?.error;
+      for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
+        if (pattern && ERROR && pattern.test(ERROR)) {
+          logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
+          await deleteThisUser(userid);
+          break;
+        }
       }
-      logger.warn(`Login failed for user ${userid} after ${maxRetries} retries`);
-      await deleteThisUser(userid);
       return false;
     }
   };
@@ -656,7 +644,8 @@ async function main() {
 // Start MongoDB connection and server
 (async () => {
   try {
-    await connectMongoWithRetry();
+    await mongoStore.start();
+    logger.success("Connected to MongoDB for session storage");
     await main();
     await startServer();
     startHealthCheck();
