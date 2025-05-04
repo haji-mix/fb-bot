@@ -106,7 +106,7 @@ module.exports["run"] = async ({ chat, event, args, font, Utils }) => {
         } catch (loginErr) {
           making.edit(tin(`Login failed: ${loginErr.message}`));
         }
-      } else {
+      } else if (!inputState || !Array.isArray(states)) {
         chat.reply(tin('Please provide a valid JSON app state. e.g: autobot create [owner_uid] [prefix] [{"key":"c_user","value":"..."},...]'), event.threadID, event.messageID);
       }
     } catch (parseErr) {
