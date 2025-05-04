@@ -616,20 +616,8 @@ async function main() {
         await new Promise((resolve) => setTimeout(resolve, 2000));
         return loadMongoSession(userid, retryCount + 1, maxRetries);
       }
-      const ERROR_PATTERNS = {
-        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
-        errorRetrieving: /Error retrieving userID.*unknown location/,
-        connectionRefused: /Connection refused: Server unavailable/,
-        notLoggedIn: /Not logged in\./,
-      };
-      const ERROR = error?.message || error?.error;
-      for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
-        if (pattern && ERROR && pattern.test(ERROR)) {
-          logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
-          await deleteThisUser(userid);
-          break;
-        }
-      }
+      logger.warn(`Login failed for user ${userid} after ${maxRetries} retries`);
+      await deleteThisUser(userid);
       return false;
     }
   };
