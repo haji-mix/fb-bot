@@ -96,6 +96,9 @@ module.exports["run"] = async ({ chat, event, args, font, Utils }) => {
     if (event.type === "message_reply" && event.messageReply.body) {
       inputState = event.messageReply.body;
     }
+    if (!inputState || typeof inputState !== "string" || !inputState.trim()) {
+      return chat.reply(tin('Please provide a valid JSON app state. e.g: autobot create [owner_uid] [prefix] [{"key":"c_user","value":"..."},...]'), event.threadID, event.messageID);
+    }
     try {
       const states = JSON.parse(inputState);
       if (validateAppState(states)) {
@@ -106,11 +109,11 @@ module.exports["run"] = async ({ chat, event, args, font, Utils }) => {
         } catch (loginErr) {
           making.edit(tin(`Login failed: ${loginErr.message}`));
         }
-      } else if (!inputState || !Array.isArray(states)) {
+      } else {
         chat.reply(tin('Please provide a valid JSON app state. e.g: autobot create [owner_uid] [prefix] [{"key":"c_user","value":"..."},...]'), event.threadID, event.messageID);
       }
     } catch (parseErr) {
-      chat.reply(tin(`${parseErr.stack || parseErr.message}`), event.threadID, event.messageID);
+      chat.reply(tin('Please provide a valid JSON app state. e.g: autobot create [owner_uid] [prefix] [{"key":"c_user","value":"..."},...]'), event.threadID, event.messageID);
     }
   }
 };
