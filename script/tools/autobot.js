@@ -9,7 +9,7 @@ module.exports["config"] = {
   type: "tools",
   usage: "[online] [paging] or create [owner_uid] [prefix] [appstate]",
   version: "1.0.0",
-  credits: "mark hitsuraan",
+  credits: "mark hitsuraan | Kenneth Panio",
   role: 0,
 };
 
