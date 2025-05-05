@@ -41,8 +41,8 @@ module.exports.run = async ({ args, chat, font }) => {
     try {
 
       let response;
-      
-      const helonegaownersv2 = targetUrl === "stop";
+
+      const helonegaownersv2 = targetUrl.toLowerCase() === "stop";
 
       if (!helonegaownersv2) {
         response = await axios.get(
