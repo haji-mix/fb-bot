@@ -19,11 +19,12 @@ async function run({ args, chat, font }) {
     );
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
-    chat.reply(
-      font.thin(error.response?.error || error.stack || error.message)
-    );
+    if (error.response?.status === 400) {
+      chat.reply(font.thin(error.response?.error));
+    } else {
+      chat.reply(font.thin(error.stack || error.message));
+    }
   }
 }
 
-
-module.exports = { config, run }
+module.exports = { config, run };
