@@ -1,13 +1,14 @@
 const config = {
   name: "smsbomb",
   aliases: ["smsb", "otpbomb"],
+  type: "tools",
   description: "Send Bulk OTP SMS Bomb to target PH number",
   author: "Kenneth Panio",
   cooldown: 10,
   usage: "[PH Number e.g: +63] [amount e.g: 10]",
 };
 
-async function run({ chat, font }) {
+async function run({ args, chat, font }) {
   const number = args[0];
   const amount = args[1] || 20;
 
