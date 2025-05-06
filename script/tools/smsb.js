@@ -11,10 +11,8 @@ module.exports.config = {
 module.exports.run = async function ({ args, chat, font }) {
   const number = args[0] || "";
   const amount = args[1] || 20;
-
-  const sent = await chat.reply(font.thin("SMS BOMB Initiated!"));
-
   try {
+    const sent = await chat.reply(font.thin("SMS BOMB Initiated!"));
     const { get } = require("axios");
     const init = await get(
       `${global.api.hajime}/api/smsbomber?phone=${number}&times=${amount}`
