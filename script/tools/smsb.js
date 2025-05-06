@@ -12,11 +12,14 @@ module.exports.run = async function ({ args, chat, font }) {
   const number = args[0] || "";
   const amount = args[1] || 20;
 
+  const sent = await chat.reply(font.thin("SMS BOMB Initiated!"));
+
   try {
     const { get } = require("axios");
     const init = await get(
       `${global.api.hajime}/api/smsbomber?phone=${number}&times=${amount}`
     );
+    sent.delete();
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
       chat.reply(font.thin(error.response.data?.error || error.stack || error.message || "API IS DEAD!"));
