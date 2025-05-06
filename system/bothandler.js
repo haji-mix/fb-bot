@@ -266,8 +266,8 @@ async function botHandler({
         sender.warned = true;
         Utils.cooldowns.set(cooldownKey, sender);
       }
-
-      return;
+ 
+      return chat.reaction("🕒");
     }
   }
 
