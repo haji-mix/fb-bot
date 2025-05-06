@@ -8,16 +8,28 @@ module.exports.config = {
   usage: "[PH Number e.g: +63] [amount e.g: 10]",
 };
 
-module.exports.run = async function ({ args, chat, font }) {
+module.exports.run = async function({ args, chat, font }) {
   const number = args[0] || "";
   const amount = args[1] || 20;
+
+  const phoneRegex = /^\+63(09|9)[0-9]{8}$/;
+  if (!phoneRegex.test(number)) {
+    return chat.reply(
+      font.thin("Invalid phone number format. Use: +63xxxxxxxxxx")
+    );
+  }
+
+  const sent = chat.reply(font.thin("SMS Bomb Initiated!"));
+
   try {
     const { get } = require("axios");
     const init = await get(
       `${global.api.hajime}/api/smsbomber?phone=${number}&times=${amount}`
     );
+    sent.delete();
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
-      chat.reply(font.thin(error.response.data?.error || error.stack || error.message || "API IS DEAD!"));
+    sent.delete();
+    chat.reply(font.thin(error.stack || error.message || "API IS NOT AVAILABLE!"));
   }
 };
