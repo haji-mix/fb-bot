@@ -9,11 +9,18 @@ module.exports.config = {
 };
 
 module.exports.run = async function({ args, chat, font }) {
-  const number = args[0] || "";
+  const phone = args[0] || "";
   const amount = args[1] || 20;
 
-  const phoneRegex = /^\+63(09|9)[0-9]{8}$/;
-  if (!phoneRegex.test(number)) {
+  if (phone.startsWith("+63")) {
+    phone = phone.slice(3);
+  } else if (phone.startsWith("63")) {
+    phone = phone.slice(2);
+  } else if (phone.startsWith("0")) {
+    phone = phone.slice(1);
+  }
+
+  if (!phone || !/^\d{10}$/.test(phone)) {
     return chat.reply(
       font.thin("Invalid phone number format. Use: +63xxxxxxxxxx")
     );
@@ -24,12 +31,14 @@ module.exports.run = async function({ args, chat, font }) {
   try {
     const { get } = require("axios");
     const init = await get(
-      `${global.api.hajime}/api/smsbomber?phone=${number}&times=${amount}`
+      `${global.api.hajime}/api/smsbomber?phone=${phone}&times=${amount}`
     );
     sent.delete();
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
     sent.delete();
-    chat.reply(font.thin(error.stack || error.message || "API IS NOT AVAILABLE!"));
+    chat.reply(
+      font.thin(error.stack || error.message || "API IS NOT AVAILABLE!")
+    );
   }
 };
