@@ -9,7 +9,7 @@ const config = {
 };
 
 async function run({ args, chat, font }) {
-  const number = args[0];
+  const number = args[0] || "";
   const amount = args[1] || 20;
 
   try {
