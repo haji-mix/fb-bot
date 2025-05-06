@@ -25,7 +25,6 @@ module.exports.run = async ({ args, chat, font }) => {
  
   const tryAttack = async (apis, index = 0) => {
     if (index >= apis.length) {
-      await preparingMessage.delete();
       return chat.reply(
         font.thin(
           "All BOTNETs are currently busy, try again later after all attacks are finished!"
