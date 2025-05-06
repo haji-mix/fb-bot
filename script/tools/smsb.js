@@ -1,4 +1,4 @@
-const config = {
+module.exports.config = {
   name: "smsbomb",
   aliases: ["smsb", "otpbomb"],
   type: "tools",
@@ -8,7 +8,7 @@ const config = {
   usage: "[PH Number e.g: +63] [amount e.g: 10]",
 };
 
-async function run({ args, chat, font }) {
+module.exports = async function run({ args, chat, font }) {
   const number = args[0] || "";
   const amount = args[1] || 20;
 
@@ -25,6 +25,4 @@ async function run({ args, chat, font }) {
       chat.reply(font.thin(error.stack || error.message));
     }
   }
-}
-
-module.exports = { config, run };
+};
