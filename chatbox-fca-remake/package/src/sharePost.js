@@ -93,7 +93,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                 throw new Error('Missing required parameters: postUrl or cookie');
             }
 
-            const validPrivacySettings = ["EVERYONE", "ALL_FRIENDS", "FRIENDS_OF_FRIENDS", "SELF", "CUSTOM"];
+            const validPrivacySettings = ["EVERYONE", "ALL_FRIENDS", "FRIENDS_OF_FRIENDS", "SELF"];
             if (!validPrivacySettings.includes(privacy)) {
                 throw new Error(`Invalid privacy setting. Valid options are: ${validPrivacySettings.join(', ')}`);
             }
