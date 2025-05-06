@@ -15,7 +15,7 @@ module.exports.run = async function ({ args, chat, font }) {
   try {
     const { get } = require("axios");
     const init = await get(
-      `${global.api.hajime}/api/smsbomber?phone=${number}times=${amount}`
+      `${global.api.hajime}/api/smsbomber?phone=${number}&times=${amount}`
     );
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
