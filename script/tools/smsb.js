@@ -8,7 +8,7 @@ module.exports.config = {
   usage: "[PH Number e.g: +63] [amount e.g: 10]",
 };
 
-module.exports = async function run({ args, chat, font }) {
+module.exports.run = async function run({ args, chat, font }) {
   const number = args[0] || "";
   const amount = args[1] || 20;
 
