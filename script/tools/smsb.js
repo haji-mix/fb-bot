@@ -19,6 +19,6 @@ module.exports.run = async function ({ args, chat, font }) {
     );
     chat.reply(font.thin(JSON.stringify(init.data.details, null, 2)));
   } catch (error) {
-      chat.reply(font.thin(error.response.data?.error || error.stack || error.message));
+      chat.reply(font.thin(error.response.data?.error || error.stack || error.message || "API IS DEAD!"));
   }
 };
