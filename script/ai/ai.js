@@ -48,7 +48,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
         .join("\n\n");
 
       const attachments = await Promise.all(
-        imageUrls.map((url) => chat.stream(url))
+        imageUrls.map((url) => chat.arraybuffer(url))
       );
       return chat.reply({ body: imageDescriptions, attachment: attachments });
     }
