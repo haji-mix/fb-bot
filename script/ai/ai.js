@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { randomUUID } = require('crypto');
 
 module.exports["config"] = {
   name: "gpt4o",
@@ -15,13 +16,16 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
+    
+  let uuid = event.senderID;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   let ask = args.join(" ").replace(urlRegex, "Kamusta Negrong May Ari Bersyong Pangalawa!").trim();
 
-  const isAdmin = admin?.includes(event.senderID);
+  const isAdmin = admin?.includes(uuid);
 
   if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) {
+      uuid = randomUUID();
     return chat.reply(font.thin("I'm Sorry, but I can only send modified images to admins!"));
   }
 
@@ -42,7 +46,7 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
   try {
     const res = await axios.get(
       global.api.hajime +
-        `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${event.senderID}`
+        `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${uuid}`
     );
 
     answering.unsend();
