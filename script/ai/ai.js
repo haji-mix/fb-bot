@@ -15,9 +15,15 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
-  let ask = args.join(" ");
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  
+  let ask = args.join(" ").replace(urlRegex, "Kamusta Negrong May Ari Bersyong Pangalawa!").trim();
+
+  const isAdmin = admin?.includes(event.senderID);
+
+  if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) {
+    return chat.reply(font.thin("I'm Sorry, but I can only send modified images to admins!"));
+  }
 
   if (event.type === "message_reply" && event.messageReply.body) {
     ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
@@ -46,10 +52,6 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
       const imageDescriptions = res.data.images
         .map((image, index) => `${index + 1}. ${image.description}`)
         .join("\n\n");
-        
-        const isAdmin = admin?.includes(event.senderID);
-        
-        if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) return chat.reply(font.thin("Sorry, i can only send modified image to admins!"));
 
       const attachments = await Promise.all(
         imageUrls.map((url) => chat.arraybuffer(url))
