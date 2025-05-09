@@ -20,7 +20,7 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
   let uuid = event.senderID;
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  let ask = args.join(" ").replace(urlRegex, "Kamusta Negrong May Ari Bersyong Pangalawa!").trim();
+  let ask = args.join(" ").replace(urlRegex, "").trim();
 
   const isAdmin = admin?.includes(uuid);
 
