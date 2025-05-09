@@ -47,7 +47,7 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
         .map((image, index) => `${index + 1}. ${image.description}`)
         .join("\n\n");
         
-        const isAdmin = admin?.includes(senderID);
+        const isAdmin = admin?.includes(event.senderID);
         
         if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) return chat.reply(font.thin("Sorry, i can only send modified image to admins!"));
 
