@@ -14,7 +14,7 @@ module.exports["config"] = {
   cd: 6,
 };
 
-module.exports["run"] = async ({ args, chat, font, event, format }) => {
+module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
   let ask = args.join(" ");
 
   
@@ -46,6 +46,10 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       const imageDescriptions = res.data.images
         .map((image, index) => `${index + 1}. ${image.description}`)
         .join("\n\n");
+        
+        const isAdmin = admin?.includes(senderID);
+        
+        if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) return chat.reply(font.thin("Sorry, i can only send modified image to admins!"));
 
       const attachments = await Promise.all(
         imageUrls.map((url) => chat.arraybuffer(url))
