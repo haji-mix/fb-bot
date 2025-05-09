@@ -25,8 +25,9 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
   const isAdmin = admin?.includes(uuid);
 
   if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments && !isAdmin) {
-      uuid = randomUUID();
     return chat.reply(font.thin("I'm Sorry, but I can only send modified images to admins!"));
+  } else if (event.type === "message_reply" && event.messageReply && event.messageReply.attachments) {
+      uuid = randomUUID();
   }
 
   if (event.type === "message_reply" && event.messageReply.body) {
