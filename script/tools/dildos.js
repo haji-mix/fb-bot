@@ -54,8 +54,9 @@ module.exports.run = async ({ args, chat, font }) => {
 
         preparingMessage.delete();
 
-        if (!response.data || response.data.status !== "success") {
-          throw new Error("Attack initiation failed");
+        // Validate response: Assume success if HTTP status is 200 and no error
+        if (response.status !== 200) {
+          throw new Error("Attack initiation failed: Invalid response status");
         }
       } else {
         response = await axios.get(`${apis[index]}/stop`, { timeout: 10000 });
@@ -67,8 +68,9 @@ module.exports.run = async ({ args, chat, font }) => {
         }
       }
 
+      // Use response.data.message if available, otherwise a default message
       await chat.reply(
-        font.thin(response.data.message || "Attack initiated successfully!")
+        font.thin(response.data.message || (isStopCommand ? "Attack stopped!" : "Attack initiated successfully!"))
       );
 
       // Only start monitoring if it's not a stop command
@@ -97,13 +99,9 @@ module.exports.run = async ({ args, chat, font }) => {
 
             if (error.response) {
               if (error.response.status === 503) {
-                await chat.reply(
-                  font.thin("Service Unavailable (503).")
-                );
+                await chat.reply(font.thin("Service Unavailable (503)."));
               } else if (error.response.status === 502) {
-                await chat.reply(
-                  font.thin("Bad Gateway (502).")
-                );
+                await chat.reply(font.thin("Bad Gateway (502)."));
               }
             }
           }
@@ -111,9 +109,10 @@ module.exports.run = async ({ args, chat, font }) => {
       }
     } catch (error) {
       if (error.code === "ENOTFOUND" || error.code === "ECONNABORTED") {
-        // Retry with the next API
+        // Retry with the next API for network errors
         return tryAttack(apis, index + 1);
       } else {
+        // Report other errors without retrying
         await chat.reply(
           font.thin(`Failed to initiate attack: ${error.message}`)
         );
