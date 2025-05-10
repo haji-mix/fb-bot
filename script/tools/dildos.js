@@ -15,8 +15,8 @@ module.exports.config = {
   info: "Perform DILDOS ATTACK on a target URL for pentest or testing purposes.",
   author: "Kenneth Panio",
   cd: 10,
-  guide: "ddos http://example.com [--all] | ddos stop",
-  usage: "[url] [--all] or [stop]",
+  guide: "ddos http://example.com | ddos stop",
+  usage: "[url] or [stop]",
 };
 
 module.exports.run = async ({ args, chat, font }) => {
