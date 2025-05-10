@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const apiEndpoints = ["http://sgp1.hmvhostings.com:25694"];
+const apiEndpoints = ["http://sgp1.hmvhostings.com:25694", "https://ddos-g01l.onrender.com"];
 
 module.exports.config = {
   name: "dildos",
@@ -90,7 +90,7 @@ module.exports.run = async ({ args, chat, font }) => {
           if (error.response) {
             if (error.response.status === 503) {
               await chat.reply(
-                font.thin("Ako importante? putah! Service Unavailable (503).")
+                font.thin("Ako importante? putah! dildos saksispuli! Service Unavailable (503).")
               );
             } else if (error.response.status === 502) {
               await chat.reply(
