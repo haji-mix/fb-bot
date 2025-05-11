@@ -1,15 +1,34 @@
+/**
+ * MongoDB Store Implementation
+ * 
+ * @author Original Author: Liane Cagara
+ * @modifier Kenneth Panio (i love you liane! : >)
+ * @description A MongoDB-based key-value store implementation with connection management.
+ * @license MIT
+ * @version 1.0.0
+ */
+
 const mongoose = require("mongoose");
 
+/**
+ * Manages MongoDB connections to prevent duplicate connections and handle connection lifecycle.
+ */
 class MongoConnectionManager {
   static connections = new Map();
 
+  /**
+   * Retrieves or creates a MongoDB connection for the given URI.
+   * @param {string} uri - MongoDB connection URI.
+   * @param {Object} [options={}] - Mongoose connection options.
+   * @returns {Promise<mongoose.Connection>} The MongoDB connection.
+   * @throws {Error} If connection fails.
+   */
   static async getConnection(uri, options = {}) {
     if (this.connections.has(uri)) {
       const connection = this.connections.get(uri);
       if (connection.readyState === 1 || connection.readyState === 2) {
         return connection;
       }
-
       this.connections.delete(uri);
     }
 
@@ -27,6 +46,10 @@ class MongoConnectionManager {
     }
   }
 
+  /**
+   * Closes a MongoDB connection for the given URI.
+   * @param {string} uri - MongoDB connection URI.
+   */
   static async closeConnection(uri) {
     if (this.connections.has(uri)) {
       const connection = this.connections.get(uri);
@@ -35,6 +58,9 @@ class MongoConnectionManager {
     }
   }
 
+  /**
+   * Closes all active MongoDB connections.
+   */
   static async closeAllConnections() {
     for (const [uri, connection] of this.connections) {
       await connection.close();
@@ -43,6 +69,9 @@ class MongoConnectionManager {
   }
 }
 
+/**
+ * Abstract base class for key-value store implementations.
+ */
 class Store {
   async start() {}
   async get(key) {}
@@ -64,7 +93,20 @@ class Store {
   async *iValues() {}
 }
 
+/**
+ * MongoDB-based key-value store implementation.
+ * @extends Store
+ */
 class MongoStore extends Store {
+  /**
+   * Creates a new MongoStore instance.
+   * @param {Object} options - Configuration options.
+   * @param {string} options.uri - MongoDB connection URI.
+   * @param {string} [options.database] - Database name.
+   * @param {string} options.collection - Collection name.
+   * @param {boolean} [options.ignoreError=false] - Ignore errors if true.
+   * @param {boolean} [options.allowClear=false] - Allow clearing the collection if true.
+   */
   constructor({
     uri,
     database,
@@ -81,18 +123,17 @@ class MongoStore extends Store {
     this.KeyValue = null;
   }
 
+  /**
+   * Initializes the MongoDB connection and schema.
+   * @throws {Error} If connection or schema setup fails and ignoreError is false.
+   */
   async start() {
     try {
-      // Get or reuse connection
       this.connection = await MongoConnectionManager.getConnection(this.uri);
-
-      // Define schema and model
       const keyValueSchema = new mongoose.Schema({
         key: { type: String, required: true, unique: true },
         value: { type: mongoose.Schema.Types.Mixed, required: true },
       });
-
-      // Use the connection-specific model to avoid model conflicts
       this.KeyValue = this.connection.model(this.collectionName, keyValueSchema);
     } catch (error) {
       if (this.ignoreError) {
@@ -103,6 +144,11 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Retrieves a value by key.
+   * @param {string} key - The key to query.
+   * @returns {Promise<any|null>} The value or null if not found.
+   */
   async get(key) {
     try {
       const result = await this.KeyValue.findOne({ key: String(key) });
@@ -113,6 +159,11 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Stores a key-value pair.
+   * @param {string} key - The key.
+   * @param {any} value - The value.
+   */
   async put(key, value) {
     try {
       await this.KeyValue.findOneAndUpdate(
@@ -125,6 +176,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Stores multiple key-value pairs in bulk.
+   * @param {Object} pairs - Object containing key-value pairs.
+   */
   async bulkPut(pairs) {
     try {
       const operations = Object.entries(pairs).map(([key, value]) => ({
@@ -140,6 +195,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Removes a key-value pair.
+   * @param {string} key - The key to remove.
+   */
   async remove(key) {
     try {
       await this.KeyValue.deleteOne({ key: String(key) });
@@ -148,6 +207,11 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Checks if a key exists.
+   * @param {string} key - The key to check.
+   * @returns {Promise<boolean>} True if the key exists, false otherwise.
+   */
   async containsKey(key) {
     try {
       const count = await this.KeyValue.countDocuments({ key: String(key) });
@@ -158,6 +222,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Gets the total number of key-value pairs.
+   * @returns {Promise<number>} The number of documents.
+   */
   async size() {
     try {
       return await this.KeyValue.countDocuments();
@@ -167,6 +235,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Retrieves all keys.
+   * @returns {Promise<string[]>} Array of keys.
+   */
   async keys() {
     try {
       const results = await this.KeyValue.find({}, "key");
@@ -177,6 +249,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Retrieves all values.
+   * @returns {Promise<any[]>} Array of values.
+   */
   async values() {
     try {
       const results = await this.KeyValue.find({}, "value");
@@ -187,6 +263,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Retrieves all key-value pairs.
+   * @returns {Promise<{key: string, value: any}[]>} Array of key-value objects.
+   */
   async entries() {
     try {
       const results = await this.KeyValue.find({}, "key value");
@@ -197,10 +277,19 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Pre-processes data before loading.
+   * @param {Object} data - The data to process.
+   * @returns {Promise<Object>} The processed data.
+   */
   async preProc(data) {
     return data;
   }
 
+  /**
+   * Loads all key-value pairs into an object.
+   * @returns {Promise<Object>} The loaded data.
+   */
   async load() {
     const entries = await this.entries();
     let result = {};
@@ -210,6 +299,10 @@ class MongoStore extends Store {
     return await this.preProc(result);
   }
 
+  /**
+   * Clears the collection if allowed.
+   * @throws {Error} If clearing is not allowed.
+   */
   async clear() {
     if (!this.allowClear) {
       throw new Error("Clearing the collection is not allowed.");
@@ -221,6 +314,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Converts the store to an object.
+   * @returns {Promise<Object>} The store as an object.
+   */
   async toObject() {
     const entries = await this.entries();
     let result = {};
@@ -230,15 +327,27 @@ class MongoStore extends Store {
     return result;
   }
 
+  /**
+   * Converts the store to JSON.
+   * @returns {Promise<Object>} The store as JSON.
+   */
   async toJSON() {
     return await this.toObject();
   }
 
+  /**
+   * Iterates over key-value pairs.
+   * @yields {{key: string, value: any}} Key-value pair.
+   */
   async *[Symbol.iterator]() {
     const entries = await this.entries();
     yield* entries;
   }
 
+  /**
+   * Iterates over keys.
+   * @yields {string} Key.
+   */
   async *iKeys() {
     const keys = await this.keys();
     for (const key of keys) {
@@ -246,6 +355,10 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Iterates over values.
+   * @yields {any} Value.
+   */
   async *iValues() {
     const values = await this.values();
     for (const value of values) {
@@ -253,6 +366,9 @@ class MongoStore extends Store {
     }
   }
 
+  /**
+   * Closes the MongoDB connection.
+   */
   async close() {
     if (this.connection) {
       await MongoConnectionManager.closeConnection(this.uri);
@@ -262,6 +378,13 @@ class MongoStore extends Store {
   }
 }
 
+/**
+ * Factory function to create a store instance.
+ * @param {Object} options - Configuration options.
+ * @param {string} [options.type="mongodb"] - Store type.
+ * @returns {Store} The store instance.
+ * @throws {Error} If the store type is unsupported.
+ */
 function createStore(options) {
   const { type = "mongodb" } = options;
   if (type === "mongodb") {

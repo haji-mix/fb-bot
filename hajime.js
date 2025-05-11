@@ -7,7 +7,8 @@ const cors = require("cors");
 require("dotenv").config();
 
 global.api = {
-  hajime: "https://haji-mix-api.gleeze.com"
+  hajime: "https://haji-mix-api.gleeze.com",
+  mongo_uri: "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 };
 
 const {
@@ -22,6 +23,7 @@ const {
   minifyHtml,
   obfuscate,
   createStore,
+  CurrencySystem
 } = require("./system/modules");
 
 const hajime_config = fs.existsSync("./hajime.json")
@@ -34,14 +36,19 @@ const pkg_config = fs.existsSync("./package.json")
 
 const mongoStore = createStore({
   type: "mongodb",
-  uri:
-    "mongodb+srv://lkpanio25:gwapoko123@cluster0.rdxoaqm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+  uri: process.env.mongo_uri || global.api.mongo_uri,
   database: "FB_AUTOBOT",
   collection: "APPSTATE",
   isOwnHost: false,
   ignoreError: false,
   allowClear: false,
   createConnection: false,
+});
+
+const currencySystem = new CurrencySystem({
+  database: "FB_AUTOBOT",
+  collection: "currency_balances",
+  defaultBalance: 0,
 });
 
 // Function to ensure MongoDB is connected
@@ -65,6 +72,7 @@ const Utils = {
   limited: new Map(),
   handleReply: [],
   userActivity: { reactedMessages: new Set() },
+  Currencies: currencySystem,
 };
 
 loadModules(Utils, logger);
@@ -646,6 +654,8 @@ async function main() {
   try {
     await mongoStore.start();
     logger.success("Connected to MongoDB for session storage");
+    await currencySystem.init();
+    logger.success("Connected to MongoDB for currency system");
     await main();
     await startServer();
     startHealthCheck();

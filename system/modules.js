@@ -10,6 +10,7 @@ const { download } = require("./download");
 const { botHandler } = require("./bothandler");
 const { minifyHtml, obfuscate } = require("./htmlLib");
 const { createStore } = require("./dbStore");
+const { CurrencySystem } = require("./currency");
 
 module.exports = {
   logger,
@@ -26,5 +27,6 @@ module.exports = {
   botHandler,
   minifyHtml,
   obfuscate,
-  createStore
+  createStore,
+  CurrencySystem
 };
