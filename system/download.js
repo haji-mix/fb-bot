@@ -1,8 +1,15 @@
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
+const https = require("https"); 
 
 const targetPath = path.join(__dirname, "../cache");
+
+const axiosInstance = axios.create({
+    httpsAgent: new https.Agent({
+        rejectUnauthorized: false, // Disable SSL certificate verification
+    }),
+});
 
 const ensureDirectory = (dirPath) => {
     try {
@@ -73,7 +80,7 @@ const download = async (urls, responseType = "stream", extension = "") => {
         const files = await Promise.all(
             urls.map(async (url) => {
                 if (!/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i.test(url)) {
-                    return null; 
+                    return null;
                 }
 
                 try {
@@ -83,7 +90,8 @@ const download = async (urls, responseType = "stream", extension = "") => {
                         headers: getHeadersForUrl(url),
                     };
 
-                    const response = await axios.get(url, axiosConfig);
+                    // Use the custom Axios instance instead of the default axios.get
+                    const response = await axiosInstance.get(url, axiosConfig);
 
                     if (!fileExtension) {
                         fileExtension = getExtensionFromContentType(response.headers["content-type"]);
@@ -101,6 +109,7 @@ const download = async (urls, responseType = "stream", extension = "") => {
 
                     return fs.createReadStream(filePath);
                 } catch (error) {
+                    console.error(`Error downloading ${url}:`, error.message);
                     return null;
                 }
             })
@@ -108,6 +117,7 @@ const download = async (urls, responseType = "stream", extension = "") => {
 
         return files.length === 1 ? files[0] : files;
     } catch (error) {
+        console.error("Error in download function:", error.message);
         return null;
     }
 };
