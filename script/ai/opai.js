@@ -124,7 +124,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = format(model_used.split('/').pop().toUpperCase(), answer);
+    const responseMessage = format({ title: model_used.split('/').pop().toUpperCase(), content: answer, noFormat: true });
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();
