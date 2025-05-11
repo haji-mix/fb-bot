@@ -114,10 +114,10 @@ async function botHandler({
           .filter(Boolean) // Better than .map(trim) as it removes empty strings
       : [];
 
-  if (isPrefix && aliases(command)?.isPrefix === false) {
+ /* if (isPrefix && aliases(command)?.isPrefix === false) {
     reply(`this command doesn't need a prefix set by author.`);
     return;
-  }
+  } */
 
   const maintenanceEnabled = hajime_config?.maintenance?.enabled ?? false;
 
