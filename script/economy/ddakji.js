@@ -46,9 +46,9 @@ module.exports = {
                 const currentBalance = await Utils.Currencies.getBalance(senderID);
                 if (currentBalance >= penalty) {
                     await Utils.Currencies.removeBalance(senderID, penalty);
-                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You took a hit and lost **$${penalty} ** (x${multiplier} multiplier).\nLoss Streak: ${playerData[senderID].lossStreak}`;
+                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You took a hit and lost **$${penalty.toLocaleString()} ** (x${multiplier} multiplier).\nLoss Streak: ${playerData[senderID].lossStreak}`;
                 } else {
-                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You would have lost **$${penalty} **, but you're broke ($${currentBalance} coins).\nLoss Streak: ${playerData[senderID].lossStreak}`;
+                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You would have lost **$${penalty.toLocaleString()} **, but you're broke ($${currentBalance.toLocaleString()} coins).\nLoss Streak: ${playerData[senderID].lossStreak}`;
                 }
             }
 
