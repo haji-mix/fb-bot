@@ -20,7 +20,7 @@ module.exports.run = async ({ args, message, font }) => {
 
         const apiUrl = `${global.api.hajime}/api/cosplaytele?search=${search}&stream=true`;
 
-        const response = await message.stream(apiUrl);
+        const response = await message.arraybuffer(apiUrl);
         generatingMsg.delete();
 
         return message.reply({
