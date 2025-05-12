@@ -53,7 +53,7 @@ module.exports = {
             }
 
             // Update last played time
-            playerData[senderID].lastPlayed = now;
+            playerData[senderID].lastPlayed = Date.now();
 
             chat.reply(message);
         } catch (error) {
