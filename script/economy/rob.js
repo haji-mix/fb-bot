@@ -56,11 +56,11 @@ module.exports = {
             const targetBalance = await Utils.Currencies.getBalance(targetID);
 
             if (targetBalance < robAmount) {
-                return chat.reply("The target does not have enough coins to rob that amount.");
+                return chat.reply("The target does not have enough money to rob that amount.");
             }
 
             if (userBalance < Math.floor(robAmount * 0.1)) {
-                return chat.reply("You need at least 10% of the rob amount in coins to attempt a robbery.");
+                return chat.reply("You need at least 10% of the rob amount in money to attempt a robbery.");
             }
 
             // Random chance of success (e.g., 40% success rate)
@@ -71,7 +71,7 @@ module.exports = {
                 // Success: Robber gains coins, target loses coins
                 await Utils.Currencies.addBalance(senderID, robAmount);
                 await Utils.Currencies.removeBalance(targetID, robAmount);
-                resultMessage = `Robbery successful! You stole $${robAmount} coins from the user!`;
+                resultMessage = `Robbery successful! You stole $${robAmount} from the user!`;
             } else {
                 // Failure: Robber loses a small penalty
                 const penalty = Math.floor(robAmount * 0.1);

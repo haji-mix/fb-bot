@@ -43,12 +43,12 @@ module.exports = {
                     Math.random() * (earningsRange[job].max - earningsRange[job].min + 1) + earningsRange[job].min
                 );
                 await Utils.Currencies.addBalance(senderID, earnings);
-                resultMessage = `You worked hard at your $${job} job and earned ${earnings} coins!`;
+                resultMessage = `You worked hard at your ${job} job and earned $${earnings.toLocaleString()} coins!`;
             } else {
                 // Failure: No earnings, small penalty
                 const penalty = Math.floor(userBalance * 0.05) || 10; // 5% of balance or minimum 10 coins
                 await Utils.Currencies.removeBalance(senderID, penalty);
-                resultMessage = `Your ${job} job didn't go well today, and you lost $${penalty} coins due to mistakes.`;
+                resultMessage = `Your ${job} job didn't go well today, and you lost $${penalty.toLocaleString()} coins due to mistakes.`;
             }
 
             const formattedText = format({

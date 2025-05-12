@@ -21,7 +21,7 @@ module.exports = {
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
-                content: "You have $" + balance,
+                content: "You have $" + balance.toLocaleString(),
               });
 
             chat.reply(formattedText);
