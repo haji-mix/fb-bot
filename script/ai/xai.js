@@ -146,7 +146,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       return chat.reply({ body: responseMessage, attachment: attachments });
     }
 
-    chat.reply(format({ title: displayModel, content: responseMessage, noFormat: true }));
+    chat.reply(format({ title: displayModel, content: responseMessage, noFormat: true, contentFont: 'none' }));
   } catch (error) {
     answering.unsend();
     chat.reply(font.thin(error.stack || error.message));
