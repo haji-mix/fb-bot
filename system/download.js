@@ -54,6 +54,7 @@ const getExtensionFromContentType = (contentType) => {
     if (!contentType) return null;
     const typeMap = {
         "image/jpeg": "jpg",
+        "image/webp": "png",
         "image/png": "png",
         "image/gif": "gif",
         "application/pdf": "pdf",
