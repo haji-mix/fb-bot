@@ -1,8 +1,6 @@
-
 const { logger } = require("./logger");
 const { download } = require("./download");
 const { fonts } = require("./fonts");
-
 const axios = require("axios");
 
 const formatBold = (text) => {
@@ -30,12 +28,10 @@ class onChat {
         }
     }
 
-    // List of bad words (you can expand this list)
     #badWords = ['damn', 'hell', 'shit', 'fuck', 'bitch', 'asshole', "nigga", "dick", "cock", "penis", "suck", "blowjob", "porn", "nude", "naked", "hack"];
 
     #filterBadWords(text) {
         if (typeof text !== 'string') return text;
-
         let filteredText = text;
         this.#badWords.forEach(word => {
             const regex = new RegExp(`\\b${word}\\b`, 'gi');
@@ -49,7 +45,6 @@ class onChat {
 
     #processUrls(text) {
         if (typeof text !== 'string') return text;
-
         const urlRegex = /(https?:\/\/[^\s/$.?#].[^\s]*)/gi;
         return text.replace(urlRegex, url => {
             const domainMatch = url.match(/https?:\/\/([^\/]+)/i);
@@ -64,9 +59,7 @@ class onChat {
 
     async shorturl(url) {
         try {
-            if (!url) {
-                throw new Error("URL is required.");
-            }
+            if (!url) throw new Error("URL is required.");
             return await this.tinyurl(url);
         } catch (error) {
             return null;
@@ -75,29 +68,16 @@ class onChat {
 
     async tinyurl(url) {
         const urlRegex = /^(https?:\/\/[^\s/$.?#].[^\s]*)$/i;
-
-        if (!url) {
-            throw new Error("URL is required.");
-        }
-
-        if (!Array.isArray(url)) {
-            url = [url];
-        }
-
+        if (!url) throw new Error("URL is required.");
+        if (!Array.isArray(url)) url = [url];
         try {
             const shortenedUrls = await Promise.all(
                 url.map(async (u) => {
-                    if (!u || !urlRegex.test(u)) {
-                        return u;
-                    }
-
-                    const response = await axios.get(
-                        `https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`
-                    );
+                    if (!u || !urlRegex.test(u)) return u;
+                    const response = await axios.get(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(u)}`);
                     return response.data;
                 })
             );
-
             return url.length === 1 ? shortenedUrls[0] : shortenedUrls;
         } catch (error) {
             return url.length === 1 ? url[0] : url;
@@ -106,9 +86,7 @@ class onChat {
 
     async arraybuffer(link, extension = "png") {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await download(link, 'arraybuffer', extension);
         } catch (error) {
             return null;
@@ -117,9 +95,7 @@ class onChat {
 
     async binary(link, extension = "png") {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await download(link, 'binary', extension);
         } catch (error) {
             return null;
@@ -128,9 +104,7 @@ class onChat {
 
     async stream(link) {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await download(link, 'stream');
         } catch (error) {
             return null;
@@ -139,9 +113,7 @@ class onChat {
 
     async decodeStream(base64, extension = "png", responseType = "base64") {
         try {
-            if (!base64) {
-                throw new Error("Base64 data is required.");
-            }
+            if (!base64) throw new Error("Base64 data is required.");
             return await download(base64, responseType, extension);
         } catch (error) {
             return null;
@@ -150,9 +122,7 @@ class onChat {
 
     async profile(link, caption = "Profile Changed", date = null) {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await this.api.changeAvatar(await this.stream(link), formatBold(caption), date);
         } catch (error) {
             return null;
@@ -161,9 +131,7 @@ class onChat {
 
     async post(msg) {
         try {
-            if (!msg) {
-                throw new Error("Message is required.");
-            }
+            if (!msg) throw new Error("Message is required.");
             return await this.api.createPost(msg);
         } catch (error) {
             return null;
@@ -172,9 +140,7 @@ class onChat {
 
     async comment(msg, postID) {
         try {
-            if (!msg || !postID) {
-                throw new Error("Message and Post ID are required.");
-            }
+            if (!msg || !postID) throw new Error("Message and Post ID are required.");
             return await this.api.createCommentPost(msg, postID);
         } catch (error) {
             return null;
@@ -183,9 +149,7 @@ class onChat {
 
     async cover(link) {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await this.api.changeCover(await this.stream(link));
         } catch (error) {
             return null;
@@ -194,9 +158,7 @@ class onChat {
 
     async react(emoji = "❓", mid = this.messageID, bool = true) {
         try {
-            if (!mid) {
-                throw new Error("Message ID is required.");
-            }
+            if (!mid) throw new Error("Message ID is required.");
             return await this.api.setMessageReaction(emoji, mid, bool);
         } catch (error) {
             return null;
@@ -209,9 +171,7 @@ class onChat {
 
     async nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
         try {
-            if (!name || !id) {
-                throw new Error("Name and ID are required.");
-            }
+            if (!name || !id) throw new Error("Name and ID are required.");
             return await this.api.changeNickname(formatBold(name), this.threadID, id);
         } catch (error) {
             return null;
@@ -220,9 +180,7 @@ class onChat {
 
     async bio(text) {
         try {
-            if (!text) {
-                throw new Error("Text is required.");
-            }
+            if (!text) throw new Error("Text is required.");
             return await this.api.changeBio(formatBold(text));
         } catch (error) {
             return null;
@@ -232,9 +190,7 @@ class onChat {
     async contact(msg, id = this.api.getCurrentUserID(), tid = this.threadID) {
         const threadID = tid !== null && tid !== undefined ? String(tid) : null;
         try {
-            if (!msg || !id || !tid) {
-                throw new Error("Message, ID, and Thread ID are required.");
-            }
+            if (!msg || !id || !tid) throw new Error("Message, ID, and Thread ID are required.");
             const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
             return await this.api.shareContact(formattedMsg, id, threadID);
         } catch (error) {
@@ -244,9 +200,7 @@ class onChat {
 
     async uid(link) {
         try {
-            if (!link) {
-                throw new Error("Link is required.");
-            }
+            if (!link) throw new Error("Link is required.");
             return await this.api.getUID(link);
         } catch (error) {
             return null;
@@ -263,9 +217,7 @@ class onChat {
 
     async send(msg, tid = this.threadID, mid = null) {
         try {
-            if (!tid || !msg) {
-                throw new Error("Thread ID and Message are required.");
-            }
+            if (!tid || !msg) throw new Error("Thread ID and Message are required.");
             return await this(reply(msg, tid, mid));
         } catch (error) {
             return null;
@@ -275,41 +227,25 @@ class onChat {
     async reply(msg, tid = this.threadID || null, mid = this.messageID || null) {
         try {
             const threadID = tid !== null && tid !== undefined ? String(tid) : null;
-
-            if (!threadID || !msg) {
-                throw new Error("Thread ID and Message are required.");
-            }
-
-            // Determine the message body and attachments based on input type
+            if (!threadID || !msg) throw new Error("Thread ID and Message are required.");
             let messageBody = typeof msg === 'string' ? msg : msg.body || '';
             let attachments = typeof msg === 'object' && msg.attachment ? msg.attachment : null;
-
-            // Apply bad word filter, URL processing, and bold formatting
             const formattedMsg = typeof msg === 'string'
                 ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
                 : {
                     ...msg,
                     body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined
                 };
-
-            // Maximum character limit for Facebook Messenger
             const MAX_CHAR_LIMIT = 5000;
-
-            // If the message is a string and exceeds the character limit, split it
             if ((typeof formattedMsg === 'string' && formattedMsg.length > MAX_CHAR_LIMIT) ||
                 (typeof formattedMsg === 'object' && formattedMsg.body && formattedMsg.body.length > MAX_CHAR_LIMIT)) {
                 const messages = [];
                 let currentMessage = '';
                 let charCount = 0;
-
-                // Use the formatted message body for splitting
                 const textToSplit = typeof formattedMsg === 'string' ? formattedMsg : formattedMsg.body;
-
-                // Split the message into words to preserve word boundaries
                 const words = textToSplit.split(' ');
-
                 for (const word of words) {
-                    const wordLength = word.length + 1; // +1 for the space
+                    const wordLength = word.length + 1;
                     if (charCount + wordLength > MAX_CHAR_LIMIT) {
                         messages.push(currentMessage.trim());
                         currentMessage = word + ' ';
@@ -319,35 +255,20 @@ class onChat {
                         charCount += wordLength;
                     }
                 }
-
-                // Push the last chunk if it exists
-                if (currentMessage.trim()) {
-                    messages.push(currentMessage.trim());
-                }
-
-                // Send each chunk as a separate message sequentially
+                if (currentMessage.trim()) messages.push(currentMessage.trim());
                 const sentMessages = [];
                 for (let index = 0; index < messages.length; index++) {
                     const chunk = messages[index];
                     const chunkMsg = index === 0 ? chunk : `... ${chunk}`;
-
-                    // Attach the attachment only to the last chunk
                     const isLastChunk = index === messages.length - 1;
                     const messageObject = {
                         body: chunkMsg,
                         ...(isLastChunk && attachments ? { attachment: attachments } : {})
                     };
-
                     await new Promise(resolve => setTimeout(resolve, 5000));
-                    const replyMsg = await this.api.sendMessage(
-                        messageObject,
-                        threadID,
-                        index === 0 ? mid : null
-                    );
+                    const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 ? mid : null);
                     sentMessages.push(replyMsg);
                 }
-
-                // Return the last message's details with edit/unsend/delete methods
                 const lastReplyMsg = sentMessages[sentMessages.length - 1];
                 return {
                     messageID: lastReplyMsg.messageID,
@@ -377,9 +298,7 @@ class onChat {
                     }
                 };
             } else {
-                // If the message is within the limit, send it as is
                 const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
-
                 return {
                     messageID: replyMsg.messageID,
                     edit: async (message, delay = 0) => {
@@ -421,10 +340,7 @@ class onChat {
 
     async editmsg(msg, mid) {
         try {
-            if (!msg || !mid) {
-                throw new Error("Message and Message ID are required.");
-            }
-          
+            if (!msg || !mid) throw new Error("Message and Message ID are required.");
             const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
             return await this.api.editMessage(formattedMsg, mid);
         } catch (error) {
@@ -434,9 +350,7 @@ class onChat {
 
     async unsendmsg(mid) {
         try {
-            if (!mid) {
-                throw new Error("Message ID is required.");
-            }
+            if (!mid) throw new Error("Message ID is required.");
             return await this.api.unsendMessage(mid);
         } catch (error) {
             return null;
@@ -445,9 +359,7 @@ class onChat {
 
     async add(id, tid = this.threadID) {
         try {
-            if (!id || !tid) {
-                throw new Error("User ID and Thread ID are required.");
-            }
+            if (!id || !tid) throw new Error("User ID and Thread ID are required.");
             return await this.api.addUserToGroup(id, tid);
         } catch (error) {
             return null;
@@ -456,9 +368,7 @@ class onChat {
 
     async kick(id, tid = this.threadID) {
         try {
-            if (!id || !tid) {
-                throw new Error("User ID and Thread ID are required.");
-            }
+            if (!id || !tid) throw new Error("User ID and Thread ID are required.");
             return await this.api.removeUserFromGroup(id, tid);
         } catch (error) {
             return null;
@@ -467,9 +377,7 @@ class onChat {
 
     async block(id, app = "msg", bool = true) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             const status = bool ? (app === "fb" ? 3 : 1) : (app === "fb" ? 0 : 2);
             const type = app === "fb" ? "facebook" : "messenger";
             return await this.api.changeBlockedStatusMqtt(id, status, type);
@@ -480,9 +388,7 @@ class onChat {
 
     async promote(id) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             return await this.api.changeAdminStatus(this.threadID, id, true);
         } catch (error) {
             return null;
@@ -491,9 +397,7 @@ class onChat {
 
     async demote(id) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             return await this.api.changeAdminStatus(this.threadID, id, false);
         } catch (error) {
             return null;
@@ -510,9 +414,7 @@ class onChat {
 
     async userInfo(id = this.senderID) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             return await this.api.getUserInfo(id);
         } catch (error) {
             return null;
@@ -521,9 +423,7 @@ class onChat {
 
     async userName(id = this.senderID) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             const fetch = await this.api.getInfo(id);
             return fetch.name;
         } catch (error) {
@@ -533,9 +433,7 @@ class onChat {
 
     async unfriend(id) {
         try {
-            if (!id) {
-                throw new Error("User ID is required.");
-            }
+            if (!id) throw new Error("User ID is required.");
             return await this.api.unfriend(id);
         } catch (error) {
             return null;
@@ -544,9 +442,7 @@ class onChat {
 
     async threadInfo(tid = this.threadID) {
         try {
-            if (!tid) {
-                throw new Error("Thread ID is required.");
-            }
+            if (!tid) throw new Error("Thread ID is required.");
             return await this.api.getThreadInfo(tid);
         } catch (error) {
             return null;
@@ -555,9 +451,7 @@ class onChat {
 
     async delthread(tid, delay = 0) {
         try {
-            if (!tid) {
-                throw new Error("Thread ID is required.");
-            }
+            if (!tid) throw new Error("Thread ID is required.");
             await new Promise(resolve => setTimeout(resolve, delay));
             return await this.api.deleteThread(tid);
         } catch (error) {
