@@ -1,6 +1,6 @@
 module.exports = {
     config: {
-        name: "ddhakji",
+        name: "ddakji",
         aliases: ["squidddakji", "flipgame", "ddakjichallenge", "dkj", "dakji", "ttakjj", "tkj", "takji"],
         type: "economy",
         author: "Kenneth Panio",
