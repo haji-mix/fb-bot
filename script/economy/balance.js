@@ -9,14 +9,22 @@ module.exports = {
         description: "Check your current balance",
         prefix: true
     },
-    run: async ({ chat, event, Utils }) => {
+    run: async ({ chat, event, Utils, format }) => {
         try {
             const { senderID } = event;
             const { Currencies } = Utils;
 
             const balance = await Currencies.getBalance(senderID);
 
-            chat.reply(`Your current balance is ${balance} coins.`);
+            const formattedText = format({
+                title: 'Balance 💶',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                titleFont: 'double_struck',
+                contentFont: 'fancy_italic',
+                content: "You have $" + balance,
+              });
+
+            chat.reply(formattedText);
         } catch (error) {
             chat.reply(error.stack || error.message || 'An error occurred while checking your balance. Please try again later.');
         }
