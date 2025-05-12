@@ -12,7 +12,7 @@ module.exports = {
         usages: "[job type: office/freelance/factory] (optional)",
         prefix: true
     },
-    run: async ({ chat, event, Utils, args, api }) => {
+    run: async ({ chat, event, Utils, args, api, format, UNIRedux }) => {
         try {
             const { senderID } = event;
             const jobTypes = ["office", "freelance", "factory"];
@@ -43,15 +43,24 @@ module.exports = {
                     Math.random() * (earningsRange[job].max - earningsRange[job].min + 1) + earningsRange[job].min
                 );
                 await Utils.Currencies.addBalance(senderID, earnings);
-                resultMessage = `You worked hard at your ${job} job and earned ${earnings} coins!`;
+                resultMessage = `You worked hard at your $${job} job and earned ${earnings} coins!`;
             } else {
                 // Failure: No earnings, small penalty
                 const penalty = Math.floor(userBalance * 0.05) || 10; // 5% of balance or minimum 10 coins
                 await Utils.Currencies.removeBalance(senderID, penalty);
-                resultMessage = `Your ${job} job didn't go well today, and you lost ${penalty} coins due to mistakes.`;
+                resultMessage = `Your ${job} job didn't go well today, and you lost $${penalty} coins due to mistakes.`;
             }
 
-            chat.reply(resultMessage);
+            const formattedText = format({
+                title: 'WORK 💼',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                titleFont: 'double_struck',
+                contentFont: 'fancy_italic',
+                content: resultMessage,
+              });
+
+
+            chat.reply(formattedText);
         } catch (error) {
             chat.reply(error.stack || error.message || 'An error occurred while working. Please try again later.');
         }

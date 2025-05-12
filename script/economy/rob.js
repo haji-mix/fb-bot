@@ -11,7 +11,7 @@ module.exports = {
         usages: "[amount] [targetID/link/mention/reply]",
         prefix: true
     },
-    run: async ({ chat, event, Utils, args, api }) => {
+    run: async ({ chat, event, Utils, args, api, format, UNIRedux }) => {
         try {
             const { senderID, mentions } = event;
             const robAmount = parseInt(args[0]);
@@ -71,15 +71,23 @@ module.exports = {
                 // Success: Robber gains coins, target loses coins
                 await Utils.Currencies.addBalance(senderID, robAmount);
                 await Utils.Currencies.removeBalance(targetID, robAmount);
-                resultMessage = `Robbery successful! You stole ${robAmount} coins from the user!`;
+                resultMessage = `Robbery successful! You stole $${robAmount} coins from the user!`;
             } else {
                 // Failure: Robber loses a small penalty
                 const penalty = Math.floor(robAmount * 0.1);
                 await Utils.Currencies.removeBalance(senderID, penalty);
-                resultMessage = `Robbery failed! You were caught and lost ${penalty} coins as a penalty.`;
+                resultMessage = `Robbery failed! You were caught and lost $${penalty} as a penalty.`;
             }
 
-            chat.reply(resultMessage);
+            const formattedText = format({
+                title: 'ROBBERY 💰',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                titleFont: 'double_struck',
+                contentFont: 'fancy_italic',
+                content: resultMessage,
+              });
+
+            chat.reply(formattedText);
         } catch (error) {
             chat.reply(error.stack || error.message || 'An error occurred while attempting to rob. Please try again later.');
         }
