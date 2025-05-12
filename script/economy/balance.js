@@ -3,7 +3,7 @@ module.exports = {
         name: "balance",
         aliases: ["bal"],
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 5, 
         description: "Check your current balance",

@@ -4,7 +4,7 @@ module.exports = {
     config: {
         name: "rps",
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 12, 
         description: "Play Rock, Paper, Scissors and bet your coins",

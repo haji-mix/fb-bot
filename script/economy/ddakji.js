@@ -3,7 +3,7 @@ module.exports = {
         name: "ddakji",
         aliases: ["squidddakji", "flipgame", "ddakjichallenge", "dkj", "dakji", "ttakjj", "tkj", "takji"],
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 15,
         description: "Play a high-stakes Ddakji game inspired by Squid Game! Flip the opponent's tile to win money, or lose money if you fail!",

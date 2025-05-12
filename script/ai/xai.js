@@ -9,7 +9,7 @@ module.exports["config"] = {
   aliases: ["scira"],
   isPrefix: false,
   version: "1.0.4",
-  credits: "Kenneth Panio",
+  credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
   info: "Interact with the xAI API to get AI responses.",

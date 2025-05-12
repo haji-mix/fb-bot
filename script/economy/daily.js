@@ -4,7 +4,7 @@ module.exports = {
     config: {
         name: "daily",
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 43200, // 12 hours in seconds
         description: "Claim your daily reward",

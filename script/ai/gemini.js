@@ -9,7 +9,7 @@ module.exports["config"] = {
   isPrefix: false,
   aliases: ["gm"],
   version: "1.0.0",
-  credits: "Kenneth Panio",
+  credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
   info: "Interact with the Gemini API to get AI responses.",

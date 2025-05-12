@@ -4,7 +4,7 @@ module.exports = {
     config: {
         name: "rob",
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 60, // Longer cooldown to prevent spamming
         description: "Attempt to rob money from another user by providing their profile link, UID, mentioning them, or replying to their message",

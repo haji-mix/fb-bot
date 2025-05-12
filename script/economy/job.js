@@ -5,7 +5,7 @@ module.exports = {
         name: "work",
         aliases: ["job"],
         type: "economy",
-        author: "Kenneth Panio",
+        author: "Kenneth Panio | Liane Cagara",
         role: 0,
         cooldowns: 300, // 5-minute cooldown to prevent spamming
         description: "Work at a virtual job to earn random money",
