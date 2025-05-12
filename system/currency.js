@@ -29,7 +29,6 @@ class CurrencySystem {
       await this.store.put(userId, defaultData);
       return defaultData.balance;
     }
-    // Handle legacy entries (just a number)
     return typeof data === 'object' ? data.balance : data;
   }
 
@@ -44,7 +43,6 @@ class CurrencySystem {
     } else if (typeof data === 'object') {
       newData = { ...data, name: name.trim() };
     } else {
-      // Handle legacy number-only entries
       newData = { balance: data, name: name.trim() };
     }
     await this.store.put(userId, newData);
@@ -62,7 +60,6 @@ class CurrencySystem {
     } else if (typeof data === 'object') {
       newData = { ...data, balance: data.balance + amount };
     } else {
-      // Handle legacy number-only entries
       newData = { balance: data + amount, name: null };
     }
     await this.store.put(userId, newData);
@@ -132,6 +129,18 @@ class CurrencySystem {
       }))
       .sort((a, b) => b.balance - a.balance)
       .slice(0, limit);
+  }
+
+  async deleteUser(userId) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    const data = await this.store.get(userId);
+    if (data === null) {
+      throw new Error('User not found');
+    }
+    await this.store.delete(userId);
+    return true;
   }
 
   async close() {
