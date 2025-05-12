@@ -1,3 +1,5 @@
+const axios = require("axios");
+
 module.exports["config"] = {
     name: "aria",
     info: "Interact with Aria AI Capable of Search Across the web to answer your queries.",
