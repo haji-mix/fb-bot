@@ -13,13 +13,23 @@ class CurrencySystem {
       database,
       collection,
       ignoreError: false,
-      allowClear: false,
+      allowClear: true, // Modified to allow clearing
     });
     this.defaultBalance = defaultBalance;
   }
 
   async init() {
     await this.store.start();
+  }
+
+  // New force reset method
+  async forceReset() {
+    try {
+      await this.store.clear();
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to reset database: ${error.message}`);
+    }
   }
 
   async getBalance(userId) {
