@@ -1,14 +1,19 @@
 const { createStore } = require("./dbStore");
 
 class CurrencySystem {
-  constructor({ mongoUri = process.env.mongo_uri || global.api.mongo_uri, database = 'currency', collection = 'balances', defaultBalance = 0 }) {
+  constructor({
+    mongoUri = process.env.mongo_uri || global.api.mongo_uri,
+    database = 'currency',
+    collection = 'balances',
+    defaultBalance = 0
+  }) {
     this.store = createStore({
       type: "mongodb",
       uri: mongoUri,
       database,
       collection,
       ignoreError: false,
-      allowClear: false,
+      allowClear: true, // Modified to allow clearing
     });
     this.defaultBalance = defaultBalance;
   }
@@ -17,35 +22,77 @@ class CurrencySystem {
     await this.store.start();
   }
 
-  async getBalance(userId) {
-    let balance = await this.store.get(userId);
-    if (balance === null) {
-      balance = this.defaultBalance;
-      await this.store.put(userId, balance);
+  // New force reset method
+  async forceReset() {
+    try {
+      await this.store.clear();
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to reset database: ${error.message}`);
     }
-    return balance;
+  }
+
+  async getBalance(userId) {
+    const data = await this.store.get(userId);
+    if (data === null) {
+      const defaultData = { balance: this.defaultBalance, name: null };
+      await this.store.put(userId, defaultData);
+      return defaultData.balance;
+    }
+    return typeof data === 'object' ? data.balance : data;
+  }
+
+  async setName(userId, name) {
+    if (typeof name !== 'string' || name.trim() === '') {
+      throw new Error('Name must be a non-empty string');
+    }
+    const data = await this.store.get(userId);
+    let newData;
+    if (data === null) {
+      newData = { balance: this.defaultBalance, name: name.trim() };
+    } else if (typeof data === 'object') {
+      newData = { ...data, name: name.trim() };
+    } else {
+      newData = { balance: data, name: name.trim() };
+    }
+    await this.store.put(userId, newData);
+    return newData;
   }
 
   async addBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const balance = await this.getBalance(userId);
-    const newBalance = balance + amount;
-    await this.store.put(userId, newBalance);
-    return newBalance;
+    const data = await this.store.get(userId);
+    let newData;
+    if (data === null) {
+      newData = { balance: this.defaultBalance + amount, name: null };
+    } else if (typeof data === 'object') {
+      newData = { ...data, balance: data.balance + amount };
+    } else {
+      newData = { balance: data + amount, name: null };
+    }
+    await this.store.put(userId, newData);
+    return newData.balance;
   }
 
   async removeBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const balance = await this.getBalance(userId);
-    if (balance < amount) {
+    const data = await this.store.get(userId);
+    let currentBalance = this.defaultBalance;
+    let name = null;
+    if (data !== null) {
+      currentBalance = typeof data === 'object' ? data.balance : data;
+      name = typeof data === 'object' ? data.name : null;
+    }
+    if (currentBalance < amount) {
       throw new Error('Insufficient balance');
     }
-    const newBalance = balance - amount;
-    await this.store.put(userId, newBalance);
+    const newBalance = currentBalance - amount;
+    const newData = { balance: newBalance, name };
+    await this.store.put(userId, newData);
     return newBalance;
   }
 
@@ -53,24 +100,57 @@ class CurrencySystem {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const fromBalance = await this.getBalance(fromUserId);
+    const fromData = await this.store.get(fromUserId);
+    const toData = await this.store.get(toUserId);
+
+    let fromBalance = this.defaultBalance;
+    let fromName = null;
+    let toBalance = this.defaultBalance;
+    let toName = null;
+
+    if (fromData !== null) {
+      fromBalance = typeof fromData === 'object' ? fromData.balance : fromData;
+      fromName = typeof fromData === 'object' ? fromData.name : null;
+    }
+    if (toData !== null) {
+      toBalance = typeof toData === 'object' ? toData.balance : toData;
+      toName = typeof toData === 'object' ? toData.name : null;
+    }
+
     if (fromBalance < amount) {
       throw new Error('Insufficient balance');
     }
-    const toBalance = await this.getBalance(toUserId);
+
     await this.store.bulkPut({
-      [fromUserId]: fromBalance - amount,
-      [toUserId]: toBalance + amount,
+      [fromUserId]: { balance: fromBalance - amount, name: fromName },
+      [toUserId]: { balance: toBalance + amount, name: toName },
     });
+
     return { fromBalance: fromBalance - amount, toBalance: toBalance + amount };
   }
 
   async getLeaderboard(limit = 10) {
     const entries = await this.store.entries();
     return entries
-      .sort((a, b) => b.value - a.value)
-      .slice(0, limit)
-      .map(({ key, value }) => ({ userId: key, balance: value }));
+      .map(({ key, value }) => ({
+        userId: key,
+        balance: typeof value === 'object' ? value.balance : value,
+        name: typeof value === 'object' ? value.name : null
+      }))
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, limit);
+  }
+
+  async deleteUser(userId) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    const data = await this.store.get(userId);
+    if (data === null) {
+      throw new Error('User not found');
+    }
+    await this.store.delete(userId);
+    return true;
   }
 
   async close() {

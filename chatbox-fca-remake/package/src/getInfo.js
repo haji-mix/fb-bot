@@ -4,9 +4,7 @@ const axios = require('axios');
 const log = require("npmlog");
 const utils = require('../utils');
 
-//@Kenneth Panio
 function formatProfileData(data, userID) {
-  // If name is null or empty, set all fields to null
   if (!data.name) {
     return {
       name: null,
@@ -16,7 +14,6 @@ function formatProfileData(data, userID) {
     };
   }
 
-  // Otherwise, return populated profile data
   return {
     name: data.name,
     userid: userID,
@@ -51,7 +48,7 @@ function fetchProfileData(userID, retryCount, callback) {
         if (retryCount < 3) {
           setTimeout(() => {
             fetchProfileData(userID, retryCount + 1, callback);
-          }, 1000);  // Wait a second before retrying
+          }, 1000); 
         } else {
           callback(null, formatProfileData({ name: null }, userID));
         }
@@ -64,6 +61,14 @@ function fetchProfileData(userID, retryCount, callback) {
         },
         userID
       );
+
+      if (profileData.name && profileData.name.includes("Facebook") && retryCount < 3) {
+        setTimeout(() => {
+          fetchProfileData(userID, retryCount + 1, callback);
+        }, 1000); 
+        return;
+      }
+
       callback(null, profileData);
     })
     .catch((err) => {
@@ -87,10 +92,10 @@ module.exports = (defaultFuncs, api, ctx) => {
           }
           resolve(profileData);
         };
-        fetchProfileData(userID, 0, finalCallback);  // Start with 0 retries
+        fetchProfileData(userID, 0, finalCallback); 
       });
     } else {
-      fetchProfileData(userID, 0, callback);  // Start with 0 retries
+      fetchProfileData(userID, 0, callback);
     }
   };
 };

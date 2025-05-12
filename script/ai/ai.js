@@ -64,7 +64,7 @@ module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
       return chat.reply({ body: imageDescriptions, attachment: attachments });
     }
 
-    chat.reply(format({ title: "GPT-4O FREE", content: res.data.answer, noFormat: true }));
+    chat.reply(format({ title: "GPT-4O FREE", content: res.data.answer, noFormat: true, contentFont: 'none' }));
   } catch (error) {
     chat.reply(font.thin(error.stack || error.message));
     answering.unsend();

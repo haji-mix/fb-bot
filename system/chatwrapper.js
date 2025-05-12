@@ -525,7 +525,7 @@ class onChat {
                 throw new Error("User ID is required.");
             }
             const fetch = await this.api.getInfo(id);
-            return fetch.name || "Facebook User";
+            return fetch.name;
         } catch (error) {
             return null;
         }
