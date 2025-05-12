@@ -7,7 +7,7 @@ module.exports = {
         author: "Kenneth Panio",
         role: 0,
         cooldowns: 60, // Longer cooldown to prevent spamming
-        description: "Attempt to rob coins from another user by providing their profile link, UID, mentioning them, or replying to their message",
+        description: "Attempt to rob money from another user by providing their profile link, UID, mentioning them, or replying to their message",
         usages: "[amount] [targetID/link/mention/reply]",
         prefix: true
     },

@@ -10,7 +10,7 @@ module.exports = {
         description: "Play Rock, Paper, Scissors and bet your coins",
         prefix: true
     },
-    run: async ({ chat, event, Utils, args }) => {
+    run: async ({ chat, event, Utils, args, format, UNIRedux }) => {
         try {
             const { senderID } = event;
             const betAmount = parseInt(args[0]);
@@ -28,7 +28,7 @@ module.exports = {
 
             const userBalance = await Utils.Currencies.getBalance(senderID);
             if (userBalance < betAmount) {
-                return chat.reply("You do not have enough coins to place this bet.");
+                return chat.reply("You do not have enough money to place this bet.");
             }
 
             let resultMessage;
@@ -40,13 +40,21 @@ module.exports = {
                 (userChoice === "scissors" && botChoice === "paper")
             ) {
                 await Utils.Currencies.addBalance(senderID, betAmount);
-                resultMessage = `You win! You chose ${userChoice} and I chose ${botChoice}. You won ${betAmount} coins!`;
+                resultMessage = `You win! You chose ${userChoice} and I chose ${botChoice}. You won $${betAmount} !`;
             } else {
                 await Utils.Currencies.removeBalance(senderID, betAmount);
-                resultMessage = `You lose! You chose ${userChoice} and I chose ${botChoice}. You lost ${betAmount} coins.`;
+                resultMessage = `You lose! You chose ${userChoice} and I chose ${botChoice}. You lost $${betAmount} .`;
             }
 
-            chat.reply(resultMessage);
+            const formattedText = format({
+                title: 'RPS 🪨📄✄',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                titleFont: 'double_struck',
+                contentFont: 'fancy_italic',
+                content: resultMessage,
+              });
+
+            chat.reply(formattedText);
         } catch (error) {
             chat.reply(error.stack || error.message || 'An error occurred while playing RPS. Please try again later.');
         }

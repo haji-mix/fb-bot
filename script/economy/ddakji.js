@@ -6,7 +6,7 @@ module.exports = {
         author: "Kenneth Panio",
         role: 0,
         cooldowns: 15,
-        description: "Play a high-stakes Ddakji game inspired by Squid Game! Flip the opponent's tile to win coins, or lose coins if you fail!",
+        description: "Play a high-stakes Ddakji game inspired by Squid Game! Flip the opponent's tile to win money, or lose money if you fail!",
         prefix: true
     },
     run: async ({ chat, event, Utils }) => {
@@ -25,7 +25,7 @@ module.exports = {
 
             // Simulate Ddakji game (50% chance to flip, mimicking the skill/luck balance in Squid Game)
             const flipSuccess = Math.random() > 0.5;
-            let message = "🎴 *Ddakji Challenge (Squid Game Style)!* 🟥 ➡️ 🟦\nYou throw your tile against the opponent's tile...\n";
+            let message = "🟥 ➡️ 🟦\nYou throw your tile against the opponent's tile...\n";
 
             if (flipSuccess) {
                 // Handle success - Player's 🟥 flips the opponent's 🟦, showing 🔷 as flipped result
@@ -34,7 +34,7 @@ module.exports = {
                 const multiplier = 1 + (playerData[senderID].winStreak - 1) * multiplierIncrement;
                 const reward = Math.floor(baseReward * multiplier);
                 await Utils.Currencies.addBalance(senderID, reward);
-                message += `🎉 Your 🟥 flipped the opponent's 🟦 into 🔷! You survived this round and won **${reward} coins** (x${multiplier} multiplier).\nWin Streak: ${playerData[senderID].winStreak}`;
+                message += `🎉 Your 🟥 flipped the opponent's 🟦 into 🔷! You survived this round and won **$${reward} ** (x${multiplier} multiplier).\nWin Streak: ${playerData[senderID].winStreak}`;
             } else {
                 // Handle failure - Player's 🟥 fails, opponent's 🟦 stays as ♦️ to indicate loss
                 playerData[senderID].lossStreak += 1;
@@ -46,16 +46,24 @@ module.exports = {
                 const currentBalance = await Utils.Currencies.getBalance(senderID);
                 if (currentBalance >= penalty) {
                     await Utils.Currencies.removeBalance(senderID, penalty);
-                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You took a hit and lost **${penalty} coins** (x${multiplier} multiplier).\nLoss Streak: ${playerData[senderID].lossStreak}`;
+                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You took a hit and lost **$${penalty} ** (x${multiplier} multiplier).\nLoss Streak: ${playerData[senderID].lossStreak}`;
                 } else {
-                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You would have lost **${penalty} coins**, but you're broke (${currentBalance} coins).\nLoss Streak: ${playerData[senderID].lossStreak}`;
+                    message += `😣 Your 🟥 failed to flip the opponent's 🟦, revealing ♦️! You would have lost **$${penalty} **, but you're broke ($${currentBalance} coins).\nLoss Streak: ${playerData[senderID].lossStreak}`;
                 }
             }
 
             // Update last played time
             playerData[senderID].lastPlayed = Date.now();
 
-            chat.reply(message);
+            const formattedText = format({
+                title: 'DDAKJI 🟥🟦',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                titleFont: 'double_struck',
+                contentFont: 'fancy_italic',
+                content: message,
+              });
+
+            chat.reply(formattedText);
         } catch (error) {
             chat.reply(error.stack || error.message || '❌ An error occurred during the Ddakji challenge. Try again later.');
         }

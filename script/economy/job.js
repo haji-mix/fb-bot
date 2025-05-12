@@ -8,7 +8,7 @@ module.exports = {
         author: "Kenneth Panio",
         role: 0,
         cooldowns: 300, // 5-minute cooldown to prevent spamming
-        description: "Work at a virtual job to earn random coins",
+        description: "Work at a virtual job to earn random money",
         usages: "[job type: office/freelance/factory] (optional)",
         prefix: true
     },
