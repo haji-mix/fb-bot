@@ -9,7 +9,7 @@ module.exports = {
         description: "Play a high-stakes Ddakji game inspired by Squid Game! Flip the opponent's tile to win money, or lose money if you fail!",
         prefix: true
     },
-    run: async ({ chat, event, Utils }) => {
+    run: async ({ chat, event, Utils, format, UNIRedux }) => {
         try {
             const { senderID } = event;
             const baseReward = 1000; // Base reward for a win (like surviving a round in Squid Game)
