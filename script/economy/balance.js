@@ -9,7 +9,7 @@ module.exports = {
         description: "Check your current balance",
         prefix: true
     },
-    run: async ({ chat, event, Utils, format }) => {
+    run: async ({ chat, event, Utils, format, UNIRedux }) => {
         try {
             const { senderID } = event;
             const { Currencies } = Utils;
