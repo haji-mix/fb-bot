@@ -5,6 +5,7 @@ module.exports["config"] = {
     info: "Interact with Aria AI Capable of Search Across the web to answer your queries.",
     usage: "[prompt]",
     guide: "aria hello",
+    prefix: false,
     cd: 6,
     category: "artificial-intelligence",
     credits: "Kenneth Panio | Liane Cagara"
