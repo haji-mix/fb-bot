@@ -2,8 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./chatbox-fca-remake/package/index");
 const express = require("express");
-const helmet = require("helmet");
-const cors = require("cors");
 require("dotenv").config();
 
 global.api = {
@@ -90,8 +88,6 @@ app
   .set("view engine", "ejs")
   .set("views", path.join(__dirname, "public", "views"));
 app
-  .use(cors({ origin: "*" }))
-  .use(helmet({ contentSecurityPolicy: false }))
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
   .use(express.static(path.join(__dirname, "public")));
