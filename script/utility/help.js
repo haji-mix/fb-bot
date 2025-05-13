@@ -2,9 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const configPath = path.join(__dirname, "../../hajime.json");
 
+const hiddenTypes = ["nsfw", "pentest"];
+
 module.exports.config = {
     name: "help",
-    version: "1.3.1",
+    version: "1.3.2", 
     role: 0,
     isPrefix: false,
     type: "bot-utility",
@@ -22,7 +24,9 @@ module.exports.run = async ({ api, event, Utils, prefix, args, chat, font, admin
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     const input = args.join(" ").trim()?.toLowerCase();
     const isAdmin = admin.includes(String(event.senderID));
-    const allCommands = [...Utils.commands.values()].filter(cmd => isAdmin || cmd.type !== "nsfw");
+    const allCommands = [...Utils.commands.values()].filter(cmd => 
+        isAdmin || !hiddenTypes.includes(cmd.type)
+    );
     const perPage = 50;
     const totalCommands = allCommands.length;
     const commandPrefix = prefix || "";
