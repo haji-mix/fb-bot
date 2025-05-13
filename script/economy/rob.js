@@ -1,4 +1,3 @@
-const mocha = require("mocha");
 
 module.exports = {
     config: {
@@ -71,12 +70,12 @@ module.exports = {
                 // Success: Robber gains coins, target loses coins
                 await Utils.Currencies.addBalance(senderID, robAmount);
                 await Utils.Currencies.removeBalance(targetID, robAmount);
-                resultMessage = `Robbery successful! You stole $${robAmount} from the user!`;
+                resultMessage = `Robbery successful! You stole $${robAmount.toLocaleString()} from the user!`;
             } else {
                 // Failure: Robber loses a small penalty
                 const penalty = Math.floor(robAmount * 0.1);
                 await Utils.Currencies.removeBalance(senderID, penalty);
-                resultMessage = `Robbery failed! You were caught and lost $${penalty} as a penalty.`;
+                resultMessage = `Robbery failed! You were caught and lost $${penalty.toLocaleString()} as a penalty.`;
             }
 
             const formattedText = format({
