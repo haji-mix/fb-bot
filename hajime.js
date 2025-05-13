@@ -37,7 +37,7 @@ const {
 const hajime_config = fs.existsSync("./hajime.json")
   ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
   : {};
-const admins = Array.isArray(hajime_config?.admins) ? hajime_config.admins : [];
+const admins = Array.isArray(hajime_config?.admins) ? hajime_config.admins.map(String) : [];
 const pkg_config = fs.existsSync("./package.json")
   ? JSON.parse(fs.readFileSync("./package.json", "utf-8"))
   : { description: "", keywords: [], author: "", name: "" };
@@ -59,7 +59,6 @@ const currencySystem = new CurrencySystem({
   defaultBalance: 0,
 });
 
-// Function to ensure MongoDB is connected
 async function ensureMongoConnection() {
   try {
     await mongoStore.get("connection_test");
@@ -264,7 +263,6 @@ async function postLogin(req, res) {
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
     logger.error(`Post login failed: ${error.message}`);
-    // Remove the appstate if login fails
     if (state) {
       const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
       if (user) {
@@ -301,7 +299,6 @@ async function accountLogin(
         const errorMsg = error?.message || "API object is null";
         logger.error(`Login failed: ${errorMsg}`);
         
-        // Remove the appstate if login fails
         if (state) {
           const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
           if (user) {
@@ -340,29 +337,19 @@ async function accountLogin(
           await mongoStore.put(`session_${userid}`, appState);
         }
 
-        let admin_uid = null;
-        if (Array.isArray(admin) && admin.length > 0) {
-          admin_uid = admin[0];
-        } else if (typeof admin === "string" && admin) {
-          admin_uid = admin;
-        } else if (admins.length > 0) {
-          admin_uid = admins[0];
-        }
-
-        if (
-          admin_uid &&
-          /(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(admin_uid)
-        ) {
-          try {
-            admin_uid = await api.getUID(admin_uid);
-          } catch (err) {
-            logger.warn(
-              `Failed to resolve Facebook URL: ${admin_uid}, keeping original`
-            );
+        // Use the full admin array, resolve any Facebook URLs
+        let resolvedAdmins = Array.isArray(admin) ? [...admin] : admins;
+        for (let i = 0; i < resolvedAdmins.length; i++) {
+          if (/(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(resolvedAdmins[i])) {
+            try {
+              resolvedAdmins[i] = await api.getUID(resolvedAdmins[i]);
+            } catch (err) {
+              logger.warn(`Failed to resolve Facebook URL: ${resolvedAdmins[i]}, keeping original`);
+            }
           }
         }
 
-        await addThisUser(userid, appState, prefix, admin_uid);
+        await addThisUser(userid, appState, prefix, resolvedAdmins);
 
         Utils.account.set(userid, {
           name: "ANONYMOUS",
@@ -456,7 +443,7 @@ async function accountLogin(
             logger,
             event,
             aliases,
-            admin: admin_uid,
+            admin: resolvedAdmins, // Pass full admin array
             prefix,
             userid,
           });
@@ -466,7 +453,6 @@ async function accountLogin(
         resolve();
       } catch (innerError) {
         logger.error(`Error in accountLogin: ${innerError.message}`);
-        // Remove the appstate if any error occurs during login process
         try {
           const userid = await api?.getCurrentUserID();
           if (userid) {
@@ -481,7 +467,6 @@ async function accountLogin(
   });
 }
 
-// Attach accountLogin to Utils
 Utils.accountLogin = accountLogin;
 
 async function addThisUser(userid, state, prefix, admin) {
@@ -490,7 +475,7 @@ async function addThisUser(userid, state, prefix, admin) {
     await mongoStore.put(`config_${userid}`, {
       userid,
       prefix: prefix || "",
-      admin,
+      admin: Array.isArray(admin) ? admin : [], // Store full admin array
       time: 0,
       createdAt: Date.now(),
     });
@@ -599,7 +584,7 @@ async function main() {
       await Utils.accountLogin(
         session,
         userConfig?.prefix || "",
-        userConfig?.admin ? [userConfig.admin] : admins
+        userConfig?.admin || admins // Use stored admin array or fallback
       );
       logger.success(`Successfully loaded MongoDB session for user ${userid}`);
       return true;
@@ -657,7 +642,6 @@ async function main() {
   }
 }
 
-// Start MongoDB connection and server
 (async () => {
   try {
     await mongoStore.start();
@@ -695,3 +679,4 @@ process.on("unhandledRejection", (reason) => {
       : JSON.stringify(reason)
   );
 });
+
