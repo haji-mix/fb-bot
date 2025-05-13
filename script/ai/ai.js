@@ -18,9 +18,8 @@ module.exports["config"] = {
 module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
     
   let uuid = event.senderID;
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-  let ask = args.join(" ").replace(urlRegex, "").trim();
+  let ask = args.join(" ");
 
   const isAdmin = admin?.includes(uuid);
 
