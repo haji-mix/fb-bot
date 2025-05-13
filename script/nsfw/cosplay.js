@@ -18,7 +18,7 @@ module.exports.run = async ({ args, message, font }) => {
       
         const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Image... Please wait..."));
 
-        const apiUrl = `${global.api.hajime}/api/cosplaytele?search=${encodeURIComponent(search)}&stream=true`;
+        const apiUrl = `${global.api.hajime}/api/cosplaytele?search=${search}&stream=true`;
 
         const response = await message.arraybuffer(apiUrl);
         generatingMsg.delete();

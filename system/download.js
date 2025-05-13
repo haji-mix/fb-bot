@@ -91,8 +91,7 @@ const download = async (urls, responseType = "stream", extension = "") => {
                         headers: getHeadersForUrl(url),
                     };
 
-                    // Use the custom Axios instance instead of the default axios.get
-                    const response = await axiosInstance.get(url, axiosConfig);
+                    const response = await axiosInstance.get(encodeURIComponent(url), axiosConfig);
 
                     if (!fileExtension) {
                         fileExtension = getExtensionFromContentType(response.headers["content-type"]);
