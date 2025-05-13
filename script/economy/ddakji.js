@@ -34,7 +34,7 @@ module.exports = {
                 const multiplier = 1 + (playerData[senderID].winStreak - 1) * multiplierIncrement;
                 const reward = Math.floor(baseReward * multiplier);
                 await Utils.Currencies.addBalance(senderID, reward);
-                message += `🎉 Your 🟥 flipped the opponent's 🟦 into 🔷! You survived this round and won **$${reward} ** (x${multiplier} multiplier).\nWin Streak: ${playerData[senderID].winStreak}`;
+                message += `🎉 Your 🟥 flipped the opponent's 🟦 into 🔷! You survived this round and won **$${reward.toLocaleString()} ** (x${multiplier} multiplier).\nWin Streak: ${playerData[senderID].winStreak}`;
             } else {
                 // Handle failure - Player's 🟥 fails, opponent's 🟦 stays as ♦️ to indicate loss
                 playerData[senderID].lossStreak += 1;
