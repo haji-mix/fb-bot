@@ -2,6 +2,20 @@ const fs = require("fs");
 const path = require("path");
 const { FontSystem, format, UNIRedux } = require("cassidy-styler");
 
+
+async function Replies(chat, event) {
+  const replyData = global.hajime.replies[event.messageReply?.messageID];
+  if (!replyData) return;
+  if (replyData.author && event.senderID !== replyData.author) {
+    return chat.reply("I'm sorry but only sender can reply this message!");
+  }
+  try {
+    await replyData.callback({ chat, event, data: replyData });
+  } catch (err) {
+    chat.reply(error.stack || error.message || "Something Went Wrong!");
+  }
+}
+
 async function botHandler({
   fonts,
   chat,
@@ -22,6 +36,12 @@ async function botHandler({
 
   const SPAM_THRESHOLD = 6;
   const TIME_WINDOW = 10 * 1000;
+  
+  if (event.type === "message_reply" && event.messageReply) {
+      if (global.hajime.replies[event.messageReply.messageID]) {
+        await Replies(chat, event);
+        return;
+      }
 
   if (event && event?.body && event.senderID) {
     const userId = event.senderID;
@@ -431,6 +451,7 @@ async function botHandler({
         }
       }
       break;
+  }
   }
 }
 
