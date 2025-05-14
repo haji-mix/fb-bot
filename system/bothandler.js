@@ -36,12 +36,6 @@ async function botHandler({
 
   const SPAM_THRESHOLD = 6;
   const TIME_WINDOW = 10 * 1000;
-  
-  if (event.type === "message_reply" && event.messageReply) {
-      if (global.hajime.replies[event.messageReply.messageID]) {
-        await Replies(chat, event);
-        return;
-      }
 
   if (event && event?.body && event.senderID) {
     const userId = event.senderID;
@@ -451,7 +445,6 @@ async function botHandler({
         }
       }
       break;
-  }
   }
 }
 
