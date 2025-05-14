@@ -39,7 +39,13 @@ function fetchProfileData(userID, retryCount, callback) {
     })
     .then((response) => {
       if (response.status === 302 || response.request.res.statusCode === 302) {
-        callback(null, formatProfileData({ name: null }, userID));
+        if (retryCount < 3) {
+          setTimeout(() => {
+            fetchProfileData(userID, retryCount + 1, callback);
+          }, 1000);
+        } else {
+          callback(null, null); // Return null after max retries
+        }
         return;
       }
 
@@ -48,9 +54,9 @@ function fetchProfileData(userID, retryCount, callback) {
         if (retryCount < 3) {
           setTimeout(() => {
             fetchProfileData(userID, retryCount + 1, callback);
-          }, 1000); 
+          }, 1000);
         } else {
-          callback(null, formatProfileData({ name: null }, userID));
+          callback(null, null); // Return null after max retries
         }
         return;
       }
@@ -65,7 +71,7 @@ function fetchProfileData(userID, retryCount, callback) {
       if (profileData.name && profileData.name.includes("Facebook") && retryCount < 3) {
         setTimeout(() => {
           fetchProfileData(userID, retryCount + 1, callback);
-        }, 1000); 
+        }, 1000);
         return;
       }
 
@@ -73,10 +79,10 @@ function fetchProfileData(userID, retryCount, callback) {
     })
     .catch((err) => {
       if (err.message.includes('Unsupported protocol intent')) {
-        callback(null, formatProfileData({ name: null }, userID));
-        return;
+        callback(null, null); // Return null for unsupported protocol
+      } else {
+        callback(err, null); // Return null with error
       }
-      callback(err, formatProfileData({ name: null }, userID));
     });
 }
 
@@ -92,7 +98,7 @@ module.exports = (defaultFuncs, api, ctx) => {
           }
           resolve(profileData);
         };
-        fetchProfileData(userID, 0, finalCallback); 
+        fetchProfileData(userID, 0, finalCallback);
       });
     } else {
       fetchProfileData(userID, 0, callback);
