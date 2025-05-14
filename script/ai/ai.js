@@ -84,7 +84,7 @@ module.exports.run = async ({ args, chat, font, event, format, utils }) => {
   session.lastActive = Date.now();
 
   let prompt = args.join(" ");
-  const isBotReply = event.type === "message_reply" && event.messageReply.senderID === chat.botID;
+  const isBotReply = event.type === "message_reply" && event.messageReply.senderID === chat.botID();
   if (isBotReply) prompt = args.join(" ");
   if (event.messageReply?.attachments) {
     prompt += `\n\nAttachments: ${event.messageReply.attachments.map(a => a.url).join(", ")}`;
@@ -110,7 +110,7 @@ module.exports.run = async ({ args, chat, font, event, format, utils }) => {
 module.exports.handleReply = async ({ chat, event, font, format, utils }) => {
   const { senderID, body } = event;
   const session = utils.handleReply?.find(r => r.author === senderID && r.type === "gpt4o_conversation");
-  if (!session || event.type !== "message_reply" || event.messageReply.senderID !== chat.botID) return;
+  if (!session || event.type !== "message_reply" || event.messageReply.senderID !== chat.botID()) return;
 
   await Promise.all(session.sentMessages.map(msg => msg.unsend()));
   session.sentMessages = [];
