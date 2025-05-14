@@ -28,7 +28,7 @@
             "hours": [22, 23]
         },
         "restart": {
-            "enabled": false,
+            "enabled": true,
             "cronExpression": "0 */1 * * *"
         },
         "clearChat": {
