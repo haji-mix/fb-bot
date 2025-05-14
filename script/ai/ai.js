@@ -62,18 +62,25 @@ async function handlePrompt({ prompt, uuid, session, chat, font, format, isBotRe
   await processResponse(data, chat, format, session);
 }
 
-module.exports.run = async ({ args, chat, font, event, format, Utils }) => {
-  const uuid = event.senderID;
-  Utils.handleReply = Utils.handleReply || [];
+module.exports.run = async ({ args, chat, font, event, format, utils }) => {
 
-  let session = Utils.handleReply.find(r => r.author === uuid) || {
+  if (!utils.handleReply) {
+    utils.handleReply = [];
+  }
+
+  const uuid = event.senderID;
+
+  let session = utils.handleReply.find(r => r.author === uuid) || {
     type: "gpt4o_conversation",
     sessionID: randomUUID(),
     sentMessages: [],
     author: uuid,
     lastActive: Date.now()
   };
-  if (!Utils.handleReply.includes(session)) Utils.handleReply.push(session);
+  
+  if (!utils.handleReply.includes(session)) {
+    utils.handleReply.push(session);
+  }
   session.lastActive = Date.now();
 
   let prompt = args.join(" ");
@@ -84,11 +91,25 @@ module.exports.run = async ({ args, chat, font, event, format, Utils }) => {
   }
 
   await handlePrompt({ prompt, uuid, session, chat, font, format, isBotReply });
+
+  if (!utils.cleanupInterval) {
+    utils.cleanupInterval = setInterval(() => {
+      if (!utils.handleReply) return;
+      const timeout = 5 * 60 * 1000;
+      utils.handleReply = utils.handleReply.filter(session => {
+        if (Date.now() - session.lastActive > timeout) {
+          session.sentMessages.forEach(msg => msg.unsend());
+          return false;
+        }
+        return true;
+      });
+    }, 60 * 1000); 
+  }
 };
 
-module.exports.handleReply = async ({ chat, event, font, format, Utils }) => {
+module.exports.handleReply = async ({ chat, event, font, format, utils }) => {
   const { senderID, body } = event;
-  const session = Utils.handleReply?.find(r => r.author === senderID && r.type === "gpt4o_conversation");
+  const session = utils.handleReply?.find(r => r.author === senderID && r.type === "gpt4o_conversation");
   if (!session || event.type !== "message_reply" || event.messageReply.senderID !== chat.botID) return;
 
   await Promise.all(session.sentMessages.map(msg => msg.unsend()));
@@ -97,15 +118,3 @@ module.exports.handleReply = async ({ chat, event, font, format, Utils }) => {
   const prompt = body.trim();
   await handlePrompt({ prompt, uuid: senderID, session, chat, font, format, isBotReply: true });
 };
-
-setInterval(() => {
-  if (!Utils.handleReply) return;
-  const timeout = 5 * 60 * 1000;
-  Utils.handleReply = Utils.handleReply.filter(session => {
-    if (Date.now() - session.lastActive > timeout) {
-      session.sentMessages.forEach(msg => msg.unsend());
-      return false;
-    }
-    return true;
-  });
-}, 60 * 1000);
