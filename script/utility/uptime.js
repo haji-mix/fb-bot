@@ -29,17 +29,17 @@ module.exports["run"] = async ({ chat, font, event, format }) => {
         const freeMem = (os.freemem() / 1024 / 1024 / 1024).toFixed(2); 
         const usedMem = (totalMem - freeMem).toFixed(2); 
         const specs = [
-            `💻 OS: ${osType}`,
-            `🌐 Platform: ${platform}`,
-            `📌 Release: ${release}`,
-            `⚙️ Architecture: ${arch}`,
-            `🧠 Total Memory: ${totalMem} GB`,
-            `📈 Used Memory: ${usedMem} GB`,
-            `📉 Free Memory: ${freeMem} GB`,
-            `⏳ Uptime: ${uptimeString}`
+            `💻 **OS**: ${osType}`,
+            `🌐 **Platform**: ${platform}`,
+            `📌 **Release**: ${release}`,
+            `⚙️ **Architecture**: ${arch}`,
+            `🧠 **Total Memory**: ${totalMem} GB`,
+            `📈 **Used Memory**: ${usedMem} GB`,
+            `📉 **Free Memory**: ${freeMem} GB`,
+            `⏳ **Uptime**: ${uptimeString}`
         ].join("\n");
 
-        const coolTitle = "🔥 SYSTEM INFORMATION 🔥";
+        const coolTitle = "SYSTEM INFORMATION";
 
         const responseMessage = format({
             title: coolTitle,
