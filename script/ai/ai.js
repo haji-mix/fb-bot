@@ -1,5 +1,8 @@
 const axios = require('axios');
 
+global.hajime = global.hajime || { replies: {} };
+
+
 module.exports.config = {
   name: 'gpt4o',
   isPrefix: false,
