@@ -1,25 +1,22 @@
 const axios = require("axios");
 const { randomUUID } = require('crypto');
 
-module.exports["config"] = {
+module.exports.config = {
   name: "gpt4o",
-  isPrefix: false,
   aliases: ["gpt", "gpt4", "ai"],
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with the GPT4o AI.",
+  info: "Interact with GPT4o AI",
   usage: "[prompt]",
-  guide: "gpt4o hello?",
-  cd: 6,
+  cd: 6
 };
 
-async function fetchAIResponse(ask, uuid, sessionID, chat, font) {
+async function fetchAIResponse(prompt, uuid, sessionID, chat, font) {
   try {
     const res = await axios.get(
-      global.api.hajime +
-        `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${uuid}&sessionID=${sessionID}`
+      `${global.api.hajime}/api/gpt4o?ask=${encodeURIComponent(prompt)}&uid=${uuid}&sessionID=${sessionID}`
     );
     return res.data;
   } catch (error) {
@@ -28,148 +25,84 @@ async function fetchAIResponse(ask, uuid, sessionID, chat, font) {
   }
 }
 
-module.exports["run"] = async ({ args, chat, font, event, format, admin, Utils }) => {
-  const uuid = event.senderID;
-  let ask = args.join(" ");
-  const isAdmin = admin?.includes(uuid);
-  const mono = txt => font.thin(txt);
-
-  if (!Utils.handleReply) {
-    Utils.handleReply = [];
-  }
-
-  let handleReply = Utils.handleReply.find(reply => reply.author === uuid);
-  if (!handleReply) {
-    handleReply = {
-      type: "gpt4o_conversation",
-      sessionID: randomUUID(),
-      sentMessages: [],
-      author: uuid,
-      lastActive: Date.now(),
-    };
-    Utils.handleReply.push(handleReply);
-  }
-
-  handleReply.lastActive = Date.now();
-
-  const isReplyToBot = event.type === "message_reply" && event.messageReply.senderID === chat.botID;
-
-  if (!ask && !isReplyToBot) {
-    const msg = await chat.reply(mono("Please provide a message!"));
-    handleReply.sentMessages.push(msg);
-    handleReply.lastMessage = msg;
-    return;
-  }
-
-  if (isReplyToBot && event.messageReply.body) {
-    ask = args.join(" ");
-  }
-
-  if (event.messageReply && event.messageReply.attachments) {
-    const attachments = event.messageReply.attachments;
-    const recog_urls = attachments.map((attachment) => attachment.url);
-    ask += `\n\nUser also sent these attachments: ${recog_urls.join(", ")}`;
-  }
-
-  const answering = await chat.reply(mono("Generating response..."));
-  handleReply.sentMessages.push(answering);
-
-  const data = await fetchAIResponse(ask, uuid, handleReply.sessionID, chat, font);
-
-  await answering.unsend();
-  handleReply.sentMessages = handleReply.sentMessages.filter(msg => msg !== answering);
-
+async function processResponse(data, chat, format, session) {
   if (!data) return;
 
-  if (data.images && data.images.length > 0) {
-    const imageUrls = data.images.map((image) => image.url);
-    const imageDescriptions = data.images
-      .map((image, index) => `${index + 1}. ${image.description}`)
-      .join("\n\n");
-
-    const attachments = await Promise.all(
-      imageUrls.map((url) => chat.arraybuffer(url))
-    );
-    const msg = await chat.reply({ body: imageDescriptions, attachment: attachments });
-    handleReply.sentMessages.push(msg);
-    handleReply.lastMessage = msg;
+  if (data.images?.length) {
+    const attachments = await Promise.all(data.images.map(img => chat.arraybuffer(img.url)));
+    const descriptions = data.images.map((img, i) => `${i + 1}. ${img.description}`).join("\n\n");
+    const msg = await chat.reply({ body: descriptions, attachment: attachments });
+    session.sentMessages.push(msg);
+    session.lastMessage = msg;
     return;
   }
 
   const msg = await chat.reply(format({ title: "GPT-4O FREE", content: data.answer, noFormat: true, contentFont: 'none' }));
-  handleReply.sentMessages.push(msg);
-  handleReply.lastMessage = msg;
+  session.sentMessages.push(msg);
+  session.lastMessage = msg;
+}
+
+async function handlePrompt({ prompt, uuid, session, chat, font, format, isBotReply }) {
+  const mono = txt => font.thin(txt);
+
+  if (!prompt && !isBotReply) {
+    const msg = await chat.reply(mono("Please provide a message!"));
+    session.sentMessages.push(msg);
+    session.lastMessage = msg;
+    return;
+  }
+
+  const answering = await chat.reply(mono("Generating response..."));
+  session.sentMessages.push(answering);
+
+  const data = await fetchAIResponse(prompt, uuid, session.sessionID, chat, font);
+  await answering.unsend();
+  session.sentMessages = session.sentMessages.filter(msg => msg !== answering);
+
+  await processResponse(data, chat, format, session);
+}
+
+module.exports.run = async ({ args, chat, font, event, format, Utils }) => {
+  const uuid = event.senderID;
+  Utils.handleReply = Utils.handleReply || [];
+
+  let session = Utils.handleReply.find(r => r.author === uuid) || {
+    type: "gpt4o_conversation",
+    sessionID: randomUUID(),
+    sentMessages: [],
+    author: uuid,
+    lastActive: Date.now()
+  };
+  if (!Utils.handleReply.includes(session)) Utils.handleReply.push(session);
+  session.lastActive = Date.now();
+
+  let prompt = args.join(" ");
+  const isBotReply = event.type === "message_reply" && event.messageReply.senderID === chat.botID;
+  if (isBotReply) prompt = args.join(" ");
+  if (event.messageReply?.attachments) {
+    prompt += `\n\nAttachments: ${event.messageReply.attachments.map(a => a.url).join(", ")}`;
+  }
+
+  await handlePrompt({ prompt, uuid, session, chat, font, format, isBotReply });
 };
 
-module.exports["handleReply"] = async ({ chat, event, font, format, Utils }) => {
+module.exports.handleReply = async ({ chat, event, font, format, Utils }) => {
   const { senderID, body } = event;
-  const mono = txt => font.thin(txt);
+  const session = Utils.handleReply?.find(r => r.author === senderID && r.type === "gpt4o_conversation");
+  if (!session || event.type !== "message_reply" || event.messageReply.senderID !== chat.botID) return;
 
-  let handleReply = Utils.handleReply.find(reply => reply.author === senderID);
-  if (!handleReply || handleReply.type !== "gpt4o_conversation") {
-    return;
-  }
+  await Promise.all(session.sentMessages.map(msg => msg.unsend()));
+  session.sentMessages = [];
 
-  const isReplyToBot = event.type === "message_reply" && event.messageReply.senderID === chat.botID;
-  if (!isReplyToBot) {
-    return;
-  }
-
-  const unsendAllMessages = async () => {
-    for (const msg of handleReply.sentMessages) {
-      await msg.unsend();
-    }
-    handleReply.sentMessages = [];
-  };
-  await unsendAllMessages();
-
-  const args = body.trim().split(" ");
-  if (!args.length) {
-    const msg = await chat.reply(mono("Please provide a message!"));
-    handleReply.sentMessages.push(msg);
-    handleReply.lastMessage = msg;
-    return;
-  }
-
-  handleReply.lastActive = Date.now();
-
-  const ask = args.join(" ");
-  const answering = await chat.reply(mono("Generating response..."));
-  handleReply.sentMessages.push(answering);
-
-  const data = await fetchAIResponse(ask, senderID, handleReply.sessionID, chat, font);
-
-  await answering.unsend();
-  handleReply.sentMessages = handleReply.sentMessages.filter(msg => msg !== answering);
-
-  if (!data) return;
-
-  if (data.images && data.images.length > 0) {
-    const imageUrls = data.images.map((image) => image.url);
-    const imageDescriptions = data.images
-      .map((image, index) => `${index + 1}. ${image.description}`)
-      .join("\n\n");
-
-    const attachments = await Promise.all(
-      imageUrls.map((url) => chat.arraybuffer(url))
-    );
-    const msg = await chat.reply({ body: imageDescriptions, attachment: attachments });
-    handleReply.sentMessages.push(msg);
-    handleReply.lastMessage = msg;
-    return;
-  }
-
-  const msg = await chat.reply(format({ title: "GPT-4O FREE", content: data.answer, noFormat: true, contentFont: 'none' }));
-  handleReply.sentMessages.push(msg);
-  handleReply.lastMessage = msg;
+  const prompt = body.trim();
+  await handlePrompt({ prompt, uuid: senderID, session, chat, font, format, isBotReply: true });
 };
 
 setInterval(() => {
   if (!Utils.handleReply) return;
   const timeout = 5 * 60 * 1000;
-  const now = Date.now();
   Utils.handleReply = Utils.handleReply.filter(session => {
-    if (now - session.lastActive > timeout) {
+    if (Date.now() - session.lastActive > timeout) {
       session.sentMessages.forEach(msg => msg.unsend());
       return false;
     }
