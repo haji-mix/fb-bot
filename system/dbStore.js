@@ -78,6 +78,7 @@ class Store {
   async put(key, value) {}
   async bulkPut(pairs) {}
   async remove(key) {}
+  async delete(key) {}
   async containsKey(key) {}
   async size() {}
   async keys() {}
@@ -202,6 +203,15 @@ class MongoStore extends Store {
   async remove(key) {
     try {
       await this.KeyValue.deleteOne({ key: String(key) });
+    } catch (error) {
+      if (!this.ignoreError) throw error;
+    }
+  }
+  
+  
+  async delete(key) {
+    try {
+      await this.remove(key);
     } catch (error) {
       if (!this.ignoreError) throw error;
     }
