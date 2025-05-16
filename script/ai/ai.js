@@ -15,13 +15,11 @@ module.exports["config"] = {
   cd: 6,
 };
 
-module.exports["run"] = async ({ args, chat, font, event, format, admin }) => {
+module.exports["run"] = async ({ args, chat, font, event, format }) => {
     
   let uuid = event.senderID;
 
   let ask = args.join(" ");
-
-  const isAdmin = admin?.includes(uuid);
 
   if (event.type === "message_reply" && event.messageReply.body) {
     ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
