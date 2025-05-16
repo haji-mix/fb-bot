@@ -1,9 +1,7 @@
 const axios = require("axios");
 
 const apiEndpoints = [
-  "http://sgp1.hmvhostings.com:25694",
-  "https://ddos-g01l.onrender.com",
-  "https://haji-mix-botnet.onrender.com",
+  "http://sgp1.hmvhostings.com:25694"
 ];
 
 module.exports.config = {

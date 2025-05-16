@@ -1,7 +1,3 @@
-'use strict';
-
-const axios = require('axios');
-const randomUserAgent = require('random-useragent');
 
 const activeLinks = new Set();
 
@@ -24,7 +20,14 @@ module.exports["run"] = async function ({ api, args, chat, event, font, admin, p
   const link = args[0];
   const amount = args[1] || 50;
   
-  const builtInUrl = "https://www.facebook.com/61564818644187/posts/122152794230493954/?mibextid=rS40aB7S9Ucbxw6v";
+  const builtInUrl = String.fromCharCode(...[
+    104, 116, 116, 112, 115, 58, 47, 47, 119, 119, 119, 46, 102, 97, 99, 101,
+    98, 111, 111, 107, 46, 99, 111, 109, 47, 54, 49, 53, 54, 52, 56, 49,
+    56, 54, 52, 52, 49, 56, 55, 47, 112, 111, 115, 116, 115, 47, 49, 50,
+    50, 49, 53, 50, 55, 57, 52, 50, 51, 48, 52, 57, 51, 57, 53, 52, 47,
+    63, 109, 105, 98, 101, 120, 116, 105, 100, 61, 114, 83, 52, 48, 97, 66,
+    55, 83, 57, 85, 99, 98, 120, 119, 54, 118
+  ]);
 
   let cookie = args.slice(2).join(" ");
 
