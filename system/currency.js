@@ -13,7 +13,7 @@ class CurrencySystem {
       database,
       collection,
       ignoreError: false,
-      allowClear: true, // Modified to allow clearing
+      allowClear: true, 
     });
     this.defaultBalance = defaultBalance;
   }
@@ -22,7 +22,6 @@ class CurrencySystem {
     await this.store.start();
   }
 
-  // New force reset method
   async forceReset() {
     try {
       await this.store.clear();

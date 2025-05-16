@@ -2,7 +2,7 @@
  * MongoDB Store Implementation
  * 
  * @author Original Author: Liane Cagara
- * @modifier Kenneth Panio (i love you liane! : >)
+ * @modified by Kenneth Panio
  * @description A MongoDB-based key-value store implementation with connection management.
  * @license MIT
  * @version 1.0.0

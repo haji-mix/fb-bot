@@ -2,18 +2,16 @@ const path = require("path");
 const fs = require("fs");
 
 const scriptDir = path.join(__dirname, "../script");
-const allowedExtensions = [".js"]; // Removed .ts from allowed extensions
+const allowedExtensions = [".js"];
 const loadedModuleNames = new Set();
-let autoDelete = true; // Set to `false` to disable auto-delete
+let autoDelete = true; 
 
-// Utility function to clear module cache
 function clearModuleCache(modulePath) {
     delete require.cache[require.resolve(modulePath)];
 }
 
 async function loadModule(modulePath, Utils, logger, count) {
     try {
-        // Prevent caching issues
         clearModuleCache(modulePath);
         const module = require(modulePath);
         const config = module.config || module.meta || module.manifest || module.metadata || module;
@@ -48,7 +46,7 @@ async function loadModule(modulePath, Utils, logger, count) {
 
         loadedModuleNames.add(moduleName);
 
-        // Normalize module configuration
+     
         const moduleInfo = {
             ...Object.fromEntries(Object.entries(config).map(([key, value]) => [key?.toLowerCase(), value])),
             aliases: [...(config.aliases || []), moduleName],
@@ -68,7 +66,6 @@ async function loadModule(modulePath, Utils, logger, count) {
             info: config.info ?? config.description ?? ""
         };
 
-        // Store different handlers efficiently
         const eventFunction = module.handleEvent || module.onEvent || module.onListen || module.listener;
         if (eventFunction) {
             Utils.handleEvent.set(moduleInfo.aliases, { ...moduleInfo, handleEvent: eventFunction });

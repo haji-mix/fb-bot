@@ -7,7 +7,7 @@ const targetPath = path.join(__dirname, "../cache");
 
 const axiosInstance = axios.create({
     httpsAgent: new https.Agent({
-        rejectUnauthorized: false, // Disable SSL certificate verification
+        rejectUnauthorized: false, 
     }),
 });
 
