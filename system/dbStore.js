@@ -1,28 +1,18 @@
-/**
- * MongoDB Store Implementation
- * 
- * @author Original Author: Liane Cagara
- * @modified by Kenneth Panio
- * @description A MongoDB-based key-value store implementation with connection management.
- * @license MIT
- * @version 1.0.0
- */
-
 const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
-/**
- * Manages MongoDB connections to prevent duplicate connections and handle connection lifecycle.
- */
+const DataTypes = {
+  String: { type: String, validate: v => typeof v === 'string' },
+  Number: { type: Number, validate: v => typeof v === 'number' && !isNaN(v) },
+  Boolean: { type: Boolean, validate: v => typeof v === 'boolean' },
+  Date: { type: Date, validate: v => v instanceof Date && !isNaN(v.getTime()) },
+  Object: { type: Schema.Types.Mixed, validate: v => v !== null && typeof v === 'object' },
+  Array: { type: [Schema.Types.Mixed], validate: v => Array.isArray(v) }
+};
+
 class MongoConnectionManager {
   static connections = new Map();
-
-  /**
-   * Retrieves or creates a MongoDB connection for the given URI.
-   * @param {string} uri - MongoDB connection URI.
-   * @param {Object} [options={}] - Mongoose connection options.
-   * @returns {Promise<mongoose.Connection>} The MongoDB connection.
-   * @throws {Error} If connection fails.
-   */
+  
   static async getConnection(uri, options = {}) {
     if (this.connections.has(uri)) {
       const connection = this.connections.get(uri);
@@ -37,8 +27,15 @@ class MongoConnectionManager {
       const connection = await mongoose.createConnection(uri, {
         retryWrites: true,
         w: "majority",
+        maxPoolSize: options.maxPoolSize || 10,
+        serverSelectionTimeoutMS: options.serverSelectionTimeoutMS || 5000,
         ...options,
       }).asPromise();
+
+
+      connection.on('error', (err) => console.error(`MongoDB connection error: ${err}`));
+      connection.on('disconnected', () => console.warn(`MongoDB disconnected: ${uri}`));
+
       this.connections.set(uri, connection);
       return connection;
     } catch (error) {
@@ -46,10 +43,6 @@ class MongoConnectionManager {
     }
   }
 
-  /**
-   * Closes a MongoDB connection for the given URI.
-   * @param {string} uri - MongoDB connection URI.
-   */
   static async closeConnection(uri) {
     if (this.connections.has(uri)) {
       const connection = this.connections.get(uri);
@@ -58,25 +51,20 @@ class MongoConnectionManager {
     }
   }
 
-  /**
-   * Closes all active MongoDB connections.
-   */
   static async closeAllConnections() {
-    for (const [uri, connection] of this.connections) {
-      await connection.close();
-      this.connections.delete(uri);
-    }
+    await Promise.all(
+      Array.from(this.connections.entries()).map(([uri, connection]) =>
+        connection.close().then(() => this.connections.delete(uri))
+      )
+    );
   }
 }
 
-/**
- * Abstract base class for key-value store implementations.
- */
 class Store {
   async start() {}
   async get(key) {}
-  async put(key, value) {}
-  async bulkPut(pairs) {}
+  async put(key, value, options) {}
+  async bulkPut(pairs, options) {}
   async remove(key) {}
   async delete(key) {}
   async containsKey(key) {}
@@ -94,48 +82,86 @@ class Store {
   async *iValues() {}
 }
 
-/**
- * MongoDB-based key-value store implementation.
- * @extends Store
- */
 class MongoStore extends Store {
-  /**
-   * Creates a new MongoStore instance.
-   * @param {Object} options - Configuration options.
-   * @param {string} options.uri - MongoDB connection URI.
-   * @param {string} [options.database] - Database name.
-   * @param {string} options.collection - Collection name.
-   * @param {boolean} [options.ignoreError=false] - Ignore errors if true.
-   * @param {boolean} [options.allowClear=false] - Allow clearing the collection if true.
-   */
   constructor({
     uri,
     database,
     collection,
     ignoreError = false,
     allowClear = false,
+    schemaOptions = {},
+    ttl = null, // Time-to-live in seconds
+    maxValueSize = 16 * 1024 * 1024, // 16MB default
   }) {
     super();
     this.uri = database ? `${uri.replace(/\/[^\/]*$/, "")}/${database}` : uri;
     this.collectionName = collection;
     this.ignoreError = ignoreError;
     this.allowClear = allowClear;
+    this.maxValueSize = maxValueSize;
     this.connection = null;
     this.KeyValue = null;
+    
+    this.schemaOptions = {
+      dataType: 'Mixed', 
+      indexes: [], 
+      ...schemaOptions
+    };
+    
+    this.ttl = ttl;
   }
 
-  /**
-   * Initializes the MongoDB connection and schema.
-   * @throws {Error} If connection or schema setup fails and ignoreError is false.
-   */
   async start() {
     try {
       this.connection = await MongoConnectionManager.getConnection(this.uri);
-      const keyValueSchema = new mongoose.Schema({
-        key: { type: String, required: true, unique: true },
-        value: { type: mongoose.Schema.Types.Mixed, required: true },
+
+      const keyValueSchema = new Schema({
+        key: { 
+          type: String, 
+          required: true, 
+          unique: true,
+          index: true 
+        },
+        value: { 
+          type: DataTypes[this.schemaOptions.dataType] || Schema.Types.Mixed,
+          required: true,
+          validate: {
+            validator: v => Buffer.byteLength(JSON.stringify(v)) <= this.maxValueSize,
+            message: `Value exceeds maximum size of ${this.maxValueSize} bytes`
+          }
+        },
+        version: { 
+          type: Number, 
+          default: 0 
+        },
+        createdAt: { 
+          type: Date, 
+          default: Date.now 
+        },
+        updatedAt: { 
+          type: Date, 
+          default: Date.now 
+        },
+        expiresAt: { 
+          type: Date,
+          index: { expiresAfterSeconds: 0 }
+        }
+      }, {
+        timestamps: true,
+        collection: this.collectionName
       });
+
+      if (this.ttl) {
+        keyValueSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+      }
+
+      this.schemaOptions.indexes.forEach(index => {
+        keyValueSchema.index(index.fields, index.options);
+      });
+
       this.KeyValue = this.connection.model(this.collectionName, keyValueSchema);
+      
+      await this.KeyValue.createIndexes();
     } catch (error) {
       if (this.ignoreError) {
         console.error(`MongoStore start error (ignored): ${error.message}`);
@@ -145,14 +171,9 @@ class MongoStore extends Store {
     }
   }
 
-  /**
-   * Retrieves a value by key.
-   * @param {string} key - The key to query.
-   * @returns {Promise<any|null>} The value or null if not found.
-   */
   async get(key) {
     try {
-      const result = await this.KeyValue.findOne({ key: String(key) });
+      const result = await this.KeyValue.findOne({ key: String(key) }).lean();
       return result ? result.value : null;
     } catch (error) {
       if (this.ignoreError) return null;
@@ -160,46 +181,63 @@ class MongoStore extends Store {
     }
   }
 
-  /**
-   * Stores a key-value pair.
-   * @param {string} key - The key.
-   * @param {any} value - The value.
-   */
-  async put(key, value) {
+  async put(key, value, options = {}) {
+    const { session, ttl } = options;
     try {
-      await this.KeyValue.findOneAndUpdate(
+      if (Buffer.byteLength(JSON.stringify(value)) > this.maxValueSize) {
+        throw new Error(`Value size exceeds ${this.maxValueSize} bytes`);
+      }
+
+      const update = {
+        key: String(key),
+        value,
+        $inc: { version: 1 },
+        expiresAt: ttl ? new Date(Date.now() + ttl * 1000) : undefined
+      };
+
+      const doc = await this.KeyValue.findOneAndUpdate(
         { key: String(key) },
-        { key: String(key), value },
-        { upsert: true, new: true, setDefaultsOnInsert: true }
-      );
+        update,
+        { 
+          upsert: true, 
+          new: true, 
+          setDefaultsOnInsert: true,
+          session 
+        }
+      ).lean();
+      
+      return doc;
     } catch (error) {
       if (!this.ignoreError) throw error;
     }
   }
 
-  /**
-   * Stores multiple key-value pairs in bulk.
-   * @param {Object} pairs - Object containing key-value pairs.
-   */
-  async bulkPut(pairs) {
+  async bulkPut(pairs, options = {}) {
+    const { session } = options;
     try {
-      const operations = Object.entries(pairs).map(([key, value]) => ({
-        updateOne: {
-          filter: { key: String(key) },
-          update: { key: String(key), value },
-          upsert: true,
-        },
-      }));
-      await this.KeyValue.bulkWrite(operations);
+      const operations = Object.entries(pairs).map(([key, value]) => {
+        if (Buffer.byteLength(JSON.stringify(value)) > this.maxValueSize) {
+          throw new Error(`Value size for key ${key} exceeds ${this.maxValueSize} bytes`);
+        }
+        return {
+          updateOne: {
+            filter: { key: String(key) },
+            update: { 
+              key: String(key), 
+              value,
+              $inc: { version: 1 }
+            },
+            upsert: true,
+          }
+        };
+      });
+      
+      await this.KeyValue.bulkWrite(operations, { session });
     } catch (error) {
       if (!this.ignoreError) throw error;
     }
   }
 
-  /**
-   * Removes a key-value pair.
-   * @param {string} key - The key to remove.
-   */
   async remove(key) {
     try {
       await this.KeyValue.deleteOne({ key: String(key) });
@@ -207,8 +245,7 @@ class MongoStore extends Store {
       if (!this.ignoreError) throw error;
     }
   }
-  
-  
+
   async delete(key) {
     try {
       await this.remove(key);
@@ -217,102 +254,94 @@ class MongoStore extends Store {
     }
   }
 
-  /**
-   * Checks if a key exists.
-   * @param {string} key - The key to check.
-   * @returns {Promise<boolean>} True if the key exists, false otherwise.
-   */
   async containsKey(key) {
     try {
-      const count = await this.KeyValue.countDocuments({ key: String(key) });
-      return count > 0;
+      return await this.KeyValue.exists({ key: String(key) });
     } catch (error) {
       if (this.ignoreError) return false;
       throw error;
     }
   }
 
-  /**
-   * Gets the total number of key-value pairs.
-   * @returns {Promise<number>} The number of documents.
-   */
   async size() {
     try {
-      return await this.KeyValue.countDocuments();
+      return await this.KeyValue.estimatedDocumentCount();
     } catch (error) {
       if (this.ignoreError) return 0;
       throw error;
     }
   }
 
-  /**
-   * Retrieves all keys.
-   * @returns {Promise<string[]>} Array of keys.
-   */
-  async keys() {
+  async keys(options = {}) {
+    const { limit = 1000, skip = 0 } = options;
     try {
-      const results = await this.KeyValue.find({}, "key");
-      return results.map((doc) => doc.key);
+      const results = await this.KeyValue
+        .find({}, "key")
+        .limit(limit)
+        .skip(skip)
+        .lean();
+      return results.map(doc => doc.key);
     } catch (error) {
       if (this.ignoreError) return [];
       throw error;
     }
   }
 
-  /**
-   * Retrieves all values.
-   * @returns {Promise<any[]>} Array of values.
-   */
-  async values() {
+  async values(options = {}) {
+    const { limit = 1000, skip = 0 } = options;
     try {
-      const results = await this.KeyValue.find({}, "value");
-      return results.map((doc) => doc.value);
+      const results = await this.KeyValue
+        .find({}, "value")
+        .limit(limit)
+        .skip(skip)
+        .lean();
+      return results.map(doc => doc.value);
     } catch (error) {
       if (this.ignoreError) return [];
       throw error;
     }
   }
 
-  /**
-   * Retrieves all key-value pairs.
-   * @returns {Promise<{key: string, value: any}[]>} Array of key-value objects.
-   */
-  async entries() {
+  async entries(options = {}) {
+    const { limit = 1000, skip = 0 } = options;
     try {
-      const results = await this.KeyValue.find({}, "key value");
-      return results.map((doc) => ({ key: doc.key, value: doc.value }));
+      const results = await this.KeyValue
+        .find({}, "key value")
+        .limit(limit)
+        .skip(skip)
+        .lean();
+      return results.map(doc => ({ key: doc.key, value: doc.value }));
     } catch (error) {
       if (this.ignoreError) return [];
       throw error;
     }
   }
 
-  /**
-   * Pre-processes data before loading.
-   * @param {Object} data - The data to process.
-   * @returns {Promise<Object>} The processed data.
-   */
+  async withTransaction(callback) {
+    const session = await this.connection.startSession();
+    try {
+      let result;
+      await session.withTransaction(async () => {
+        result = await callback(session);
+      });
+      return result;
+    } finally {
+      await session.endSession();
+    }
+  }
+
   async preProc(data) {
     return data;
   }
 
-  /**
-   * Loads all key-value pairs into an object.
-   * @returns {Promise<Object>} The loaded data.
-   */
-  async load() {
-    const entries = await this.entries();
-    let result = {};
-    for (const { key, value } of entries) {
-      Reflect.set(result, key, value);
-    }
+  async load(options = {}) {
+    const entries = await this.entries(options);
+    const result = Object.fromEntries(
+      entries.map(({ key, value }) => [key, value])
+    );
     return await this.preProc(result);
   }
 
-  /**
-   * Clears the collection if allowed.
-   * @throws {Error} If clearing is not allowed.
-   */
   async clear() {
     if (!this.allowClear) {
       throw new Error("Clearing the collection is not allowed.");
@@ -324,61 +353,29 @@ class MongoStore extends Store {
     }
   }
 
-  /**
-   * Converts the store to an object.
-   * @returns {Promise<Object>} The store as an object.
-   */
   async toObject() {
-    const entries = await this.entries();
-    let result = {};
-    for (const { key, value } of entries) {
-      Reflect.set(result, key, value);
-    }
-    return result;
+    return await this.load();
   }
 
-  /**
-   * Converts the store to JSON.
-   * @returns {Promise<Object>} The store as JSON.
-   */
   async toJSON() {
     return await this.toObject();
   }
 
-  /**
-   * Iterates over key-value pairs.
-   * @yields {{key: string, value: any}} Key-value pair.
-   */
   async *[Symbol.iterator]() {
     const entries = await this.entries();
     yield* entries;
   }
 
-  /**
-   * Iterates over keys.
-   * @yields {string} Key.
-   */
   async *iKeys() {
     const keys = await this.keys();
-    for (const key of keys) {
-      yield key;
-    }
+    yield* keys;
   }
 
-  /**
-   * Iterates over values.
-   * @yields {any} Value.
-   */
   async *iValues() {
     const values = await this.values();
-    for (const value of values) {
-      yield value;
-    }
+    yield* values;
   }
 
-  /**
-   * Closes the MongoDB connection.
-   */
   async close() {
     if (this.connection) {
       await MongoConnectionManager.closeConnection(this.uri);
@@ -386,15 +383,35 @@ class MongoStore extends Store {
       this.KeyValue = null;
     }
   }
+  async getMetadata(key) {
+    try {
+      const doc = await this.KeyValue
+        .findOne({ key: String(key) }, 'version createdAt updatedAt')
+        .lean();
+      return doc ? {
+        version: doc.version,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt
+      } : null;
+    } catch (error) {
+      if (this.ignoreError) return null;
+      throw error;
+    }
+  }
+
+  async findByValue(query) {
+    try {
+      const results = await this.KeyValue
+        .find({ value: query })
+        .lean();
+      return results.map(doc => ({ key: doc.key, value: doc.value }));
+    } catch (error) {
+      if (this.ignoreError) return [];
+      throw error;
+    }
+  }
 }
 
-/**
- * Factory function to create a store instance.
- * @param {Object} options - Configuration options.
- * @param {string} [options.type="mongodb"] - Store type.
- * @returns {Store} The store instance.
- * @throws {Error} If the store type is unsupported.
- */
 function createStore(options) {
   const { type = "mongodb" } = options;
   if (type === "mongodb") {
@@ -403,4 +420,4 @@ function createStore(options) {
   throw new Error(`Unsupported database type: ${type}`);
 }
 
-module.exports = { Store, MongoStore, createStore, MongoConnectionManager };
+module.exports = { Store, MongoStore, createStore, MongoConnectionManager, DataTypes };
