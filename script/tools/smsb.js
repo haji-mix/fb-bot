@@ -4,9 +4,8 @@ module.exports.config = {
   type: "tools",
   description: "Send bulk OTP SMS to target PH number (Use responsibly)",
   author: "Kenneth Panio",
-  cooldown: 30, // Increased cooldown for safety
-  usage: "[PH Number e.g: +63xxxxxxxxxx] [amount e.g: 10]",
-  permissions: ["admin"], // Added permission requirement
+  cooldown: 10, 
+  usage: "[PH Number e.g: +63xxxxxxxxxx] [amount e.g: 10]"
 };
 
 module.exports.run = async function({ args, chat, font }) {
@@ -43,14 +42,10 @@ module.exports.run = async function({ args, chat, font }) {
 
   try {
     const { get } = require("axios");
-    // Sanitize inputs
-    const sanitizedPhone = encodeURIComponent(cleanPhone);
-    const sanitizedAmount = encodeURIComponent(amount);
-
-    // Use environment variable for API endpoint
-    const apiEndpoint = process.env.SMS_BOMBER_API || global.api.hajime;
+    
+    const apiEndpoint = global.api.hajime;
     const response = await get(
-      `${apiEndpoint}/api/smsbomber?phone=${sanitizedPhone}&times=${sanitizedAmount}`
+      `${apiEndpoint}/api/smsbomber?phone=${cleanPhone}&times=${amount}`
     );
 
     await sent.delete();

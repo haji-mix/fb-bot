@@ -12,7 +12,12 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ args, chat, font, event, format }) => {
-    const ask = args.join(" ");
+    let ask = args.join(" ");
+    
+    if (event.type === "message_reply" && event.messageReply.body) {
+    ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
+  }
+  
     if (!ask) return chat.reply(font.thin("Please provide a prompt to ask Aria."));
     const answering = await chat.reply(font.thin("Generating response..."));
     try {
