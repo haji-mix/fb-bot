@@ -2,13 +2,12 @@ const axios = require("axios");
 
 module.exports.config = {
     name: "cosplay",
-    aliases: ["cos", "coser"],
+    aliases: ["coser", "cos"],
     version: "1.5.0",
     credits: "Kenneth Panio",
     type: "nsfw",
     role: 1,
-    description: "Search or Fetch Random NSFW Cosplay.",
-    usage: "[character/series/coser]",
+    description: "Search or Fetch Random Cosplay.",
     cooldown: 15
 };
 
@@ -18,7 +17,7 @@ module.exports.run = async ({ args, message, font }) => {
       
         const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Image... Please wait..."));
 
-        const apiUrl = `${global.api.hajime}/api/cosplaytele?search=${encodeURIComponent(search)}&stream=true`;
+        const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
 
         const response = await message.arraybuffer(apiUrl);
         generatingMsg.delete();
