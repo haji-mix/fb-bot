@@ -15,7 +15,7 @@ module.exports.run = async ({ args, message, font }) => {
     try {
         const search = args.join(" ") || "";
       
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Image... Please wait..."));
+        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
 
         const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
 
