@@ -1,21 +1,23 @@
 const axios = require("axios");
 
 module.exports.config = {
-    name: "cosplay",
-    aliases: ["coser", "cos"],
+    name: "tiktok",
+    aliases: ["tt"],
     version: "1.5.0",
     credits: "Kenneth Panio",
     type: "videos",
-    description: "Fetch Random Cosplay Videos.",
+    description: "Search or Fetch random Tiktok Videos.",
     cooldown: 15
 };
 
-module.exports.run = async ({ message, font }) => {
+module.exports.run = async ({ args, message, font }) => {
     try {
-      
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
 
-        const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
+        const search = args.join(" ") || "";
+      
+        const generatingMsg = await message.reply(font.thin("🔄 Searching Tiktok Videos... Please wait..."));
+
+        const apiUrl = `${global.api.hajime}/api/tiktok?search=${encodeURIComponent(search)}`;
 
         const response = await message.stream(apiUrl);
         generatingMsg.delete();
