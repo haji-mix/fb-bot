@@ -19,7 +19,7 @@ module.exports.run = async ({ args, message, font }) => {
 
         const apiUrl = `${global.api.hajime}/api/tiktok?search=${encodeURIComponent(search)}`;
 
-        const response = await message.stream(apiUrl);
+        const response = await message.arraybuffer(apiUrl, "mp4");
         generatingMsg.delete();
 
         return message.reply({

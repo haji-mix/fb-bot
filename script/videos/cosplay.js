@@ -17,7 +17,7 @@ module.exports.run = async ({ message, font }) => {
 
         const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
 
-        const response = await message.stream(apiUrl);
+        const response = await message.arraybuffer(apiUrl, "mp4");
         generatingMsg.delete();
 
         return message.reply({
