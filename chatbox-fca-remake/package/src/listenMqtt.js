@@ -103,10 +103,10 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
 			protocolVersion: 13,
 			binaryType: 'arraybuffer',
 		},
-		keepalive: 10,
+		keepalive: 15,
 		reschedulePings: true,
-		connectTimeout: 10000,
-		reconnectPeriod: 1000
+		connectTimeout: 30000,
+		reconnectPeriod: 3000 + Math.random() * 100,
 	};
 
 	if (typeof ctx.globalOptions.proxy != "undefined") {
@@ -117,13 +117,30 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
 	ctx.mqttClient = new mqtt.Client(_ => websocket(host, options.wsOptions), options);
 
 	var mqttClient = ctx.mqttClient;
+    
+    let reconnectDelay = 1000;
+  mqttClient.on('close', function () {
+    log.info("listenMqtt", "Connection closed, attempting to reconnect...");
+    setTimeout(() => {
+      listenMqtt(defaultFuncs, api, ctx, globalCallback);
+      reconnectDelay = Math.min(reconnectDelay * 2, 60000);
+    }, reconnectDelay);
+  });
 
 	mqttClient.on('error', function (err) {
-		log.error("listenMqtt", err);
-		mqttClient.end();
-		if (ctx.globalOptions.autoReconnect) getSeqID();
-		else globalCallback({ type: "stop_listen", error: "Connection refused: Server unavailable" }, null);
-	});
+    log.error("listenMqtt", `MQTT error: ${err}`);
+    mqttClient.end();
+    if (ctx.globalOptions.autoReconnect) {
+      setTimeout(() => listenMqtt(defaultFuncs, api, ctx, globalCallback), reconnectDelay);
+    } else {
+      globalCallback({ type: "stop_listen", error: "Connection refused: Server unavailable" }, null);
+    }
+  });
+  
+  mqttClient.on('disconnect', function () {
+    log.warn("listenMqtt", "Disconnected, attempting to reconnect...");
+    setTimeout(() => listenMqtt(defaultFuncs, api, ctx, globalCallback), reconnectDelay);
+  });
 
 	mqttClient.on('connect', function () {
 		topics.forEach(topicsub => mqttClient.subscribe(topicsub));
