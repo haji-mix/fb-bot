@@ -18,8 +18,6 @@ const {
   getInfo,
   processExit,
   botHandler,
-  minifyHtml,
-  obfuscate,
   createStore,
   CurrencySystem
 } = require("./system/modules");
@@ -150,7 +148,7 @@ routes.forEach((route) => {
         (err, html) =>
           err
             ? res.status(500).send("Error rendering template")
-            : res.send(obfuscate(minifyHtml(html)))
+            : res.send(html)
       )
     );
   } else if (route.handler) {
