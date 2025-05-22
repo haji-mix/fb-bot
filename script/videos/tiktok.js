@@ -7,6 +7,7 @@ module.exports.config = {
     credits: "Kenneth Panio",
     type: "videos",
     description: "Search or Fetch random Tiktok Videos.",
+    usage: "[search query]",
     cooldown: 15
 };
 
