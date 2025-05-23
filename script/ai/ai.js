@@ -7,7 +7,7 @@ module.exports["config"] = {
   isPrefix: false,
   aliases: ["gpt", "gpt4", "ai"],
   version: "1.0.0",
-  credits: "Kenneth Panio | Liane Cagara",
+  credits: "Kenneth Panio | Liane Cagara | Aljur pogoy",
   role: 0,
   type: "artificial-intelligence",
   info: "Interact with the GPT4o AI.",
