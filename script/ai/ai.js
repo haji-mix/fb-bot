@@ -1,4 +1,3 @@
-
 const axios = require("axios");
 const { randomUUID } = require("crypto");
 
@@ -7,7 +6,7 @@ module.exports["config"] = {
   isPrefix: false,
   aliases: ["gpt", "gpt4", "ai"],
   version: "1.0.0",
-  credits: "Kenneth Panio | Liane Cagara | Aljur pogoy",
+  credits: "Kenneth Panio | Liane Cagara | Aljur Pogoy",
   role: 0,
   type: "artificial-intelligence",
   info: "Interact with the GPT4o AI.",
@@ -16,8 +15,69 @@ module.exports["config"] = {
   cd: 6,
 };
 
+const handleFollowUp = async ({ api, event, data, chat, format, uuid }) => {
+  try {
+    const userReply = event.body || "";
+    let followUpAsk = `Previous context: ${data.conversationHistory
+      .map((item) => `${item.user} -> ${item.bot}`)
+      .join("\n")}\n\nUser replied: ${userReply}`;
+    if (event.attachments) {
+      const attachUrls = event.attachments.map((a) => a.url).join(", ");
+      followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
+    }
+
+    const followUpResponse = await axios.get(
+      global.api.hajime +
+        `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
+    );
+
+    if (followUpResponse.data.images && followUpResponse.data.images.length > 0) {
+      const newImageUrls = followUpResponse.data.images.map((image) => image.url);
+      const newImageDescriptions = followUpResponse.data.images
+        .map((image, index) => `${index + 1}. ${image.description}`)
+        .join("\n\n");
+      const newAttachments = await Promise.all(
+        newImageUrls.map((url) => chat.arraybuffer(url))
+      );
+      const newResponse = await chat.reply({
+        body: newImageDescriptions,
+        attachment: newAttachments,
+      });
+      data.conversationHistory.push({
+        user: userReply,
+        bot: newImageDescriptions,
+      });
+      global.Hajime.replies[newResponse.messageID] = {
+        author: event.senderID,
+        conversationHistory: data.conversationHistory,
+        callback: handleFollowUp, 
+      };
+    } else {
+      const newResponse = await chat.reply(
+        format({
+          title: "GPT-4O FREE",
+          content: followUpResponse.data.answer,
+          noFormat: true,
+          contentFont: "none",
+        })
+      );
+      data.conversationHistory.push({
+        user: userReply,
+        bot: followUpResponse.data.answer,
+      });
+      global.Hajime.replies[newResponse.messageID] = {
+        author: event.senderID,
+        conversationHistory: data.conversationHistory,
+        callback: handleFollowUp, 
+      };
+    }
+  } catch (error) {
+    chat.reply(`Error: ${error.message}`);
+  }
+};
+
 module.exports["run"] = async ({ args, chat, font, event, format }) => {
-  let uuid = event.senderID;
+  const uuid = event.senderID;
   let ask = args.join(" ");
 
   if (event.type === "message_reply" && event.messageReply.body) {
@@ -57,64 +117,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       global.Hajime.replies[response.messageID] = {
         author: event.senderID,
         conversationHistory: [{ user: ask, bot: imageDescriptions }],
-        callback: async ({ api, event, data }) => {
-          const userReply = event.body || "";
-          let followUpAsk = `Previous context: ${data.conversationHistory
-            .map((item) => `${item.user} -> ${item.bot}`)
-            .join("\n")}\n\nUser replied: ${userReply}`;
-          if (event.attachments) {
-            const attachUrls = event.attachments.map((a) => a.url).join(", ");
-            followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
-          }
-
-          const followUpResponse = await axios.get(
-            global.api.hajime +
-              `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
-          );
-
-          if (followUpResponse.data.images && followUpResponse.data.images.length > 0) {
-            const newImageUrls = followUpResponse.data.images.map((image) => image.url);
-            const newImageDescriptions = followUpResponse.data.images
-              .map((image, index) => `${index + 1}. ${image.description}`)
-              .join("\n\n");
-            const newAttachments = await Promise.all(
-              newImageUrls.map((url) => chat.arraybuffer(url))
-            );
-            const newResponse = await chat.reply({
-              body: newImageDescriptions,
-              attachment: newAttachments,
-            });
-            data.conversationHistory.push({
-              user: userReply,
-              bot: newImageDescriptions,
-            });
-            global.Hajime.replies[newResponse.messageID] = {
-              author: event.senderID,
-              conversationHistory: data.conversationHistory,
-              callback: global.Hajime.replies[response.messageID].callback,
-            };
-            delete global.Hajime.replies[response.messageID];
-          } else {
-            const newResponse = await chat.reply(
-              format({
-                title: "GPT-4O FREE",
-                content: followUpResponse.data.answer,
-                noFormat: true,
-                contentFont: "none",
-              })
-            );
-            data.conversationHistory.push({
-              user: userReply,
-              bot: followUpResponse.data.answer,
-            });
-            global.Hajime.replies[newResponse.messageID] = {
-              author: event.senderID,
-              conversationHistory: data.conversationHistory,
-              callback: global.Hajime.replies[response.messageID].callback,
-            };
-            delete global.Hajime.replies[response.messageID];
-          }
-        },
+        callback: handleFollowUp, // Use the defined callback
       };
       setTimeout(() => {
         delete global.Hajime.replies[response.messageID];
@@ -131,40 +134,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       global.Hajime.replies[response.messageID] = {
         author: event.senderID,
         conversationHistory: [{ user: ask, bot: res.data.answer }],
-        callback: async ({ api, event, data }) => {
-          const userReply = event.body || "";
-          let followUpAsk = `Previous context: ${data.conversationHistory
-            .map((item) => `${item.user} -> ${item.bot}`)
-            .join("\n")}\n\nUser replied: ${userReply}`;
-          if (event.attachments) {
-            const attachUrls = event.attachments.map((a) => a.url).join(", ");
-            followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
-          }
-
-          const followUpResponse = await axios.get(
-            global.api.hajime +
-              `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
-          );
-
-          const newResponse = await chat.reply(
-            format({
-              title: "GPT-4O FREE",
-              content: followUpResponse.data.answer,
-              noFormat: true,
-              contentFont: "none",
-            })
-          );
-          data.conversationHistory.push({
-            user: userReply,
-            bot: followUpResponse.data.answer,
-          });
-          global.Hajime.replies[newResponse.messageID] = {
-            author: event.senderID,
-            conversationHistory: data.conversationHistory,
-            callback: global.Hajime.replies[response.messageID].callback,
-          };
-          delete global.Hajime.replies[response.messageID];
-        },
+        callback: handleFollowUp,
       };
       setTimeout(() => {
         delete global.Hajime.replies[response.messageID];
