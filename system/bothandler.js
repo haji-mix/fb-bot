@@ -1,13 +1,12 @@
-// modified aljur Pogoy
 const fs = require("fs");
 const path = require("path");
 const { FontSystem, format, UNIRedux } = require("cassidy-styler");
 
 global.Hajime = {
 
-  replies: {}
+  replies {}
 
-};
+  }
 
 async function botHandler({
   fonts,
@@ -137,12 +136,11 @@ async function botHandler({
       : [];
 
   if (event.messageReply && global.Hajime.replies && global.Hajime.replies[event.messageReply.messageID]) {
-  const replyData = global.Hajime.replies[event.messageReply.messageID];
-  if (replyData.author && event.senderID !== replyData.author) {
-    return reply("Only the original sender can reply to this message.");
-  }
-  if (replyData && replyData.callback && typeof replyData.callback === "function") {
-    try {
+    const replyData = global.Hajime.replies[event.messageReply.messageID];
+    if (replyData.author && event.senderID !== replyData.author) {
+      return reply("Only the original sender can reply to this message.");
+    }
+    if (replyData && replyData.callback && typeof replyData.callback === "function") {
       await replyData.callback({
         api,
         event,
@@ -157,14 +155,12 @@ async function botHandler({
         UNIRedux,
         data: replyData,
       });
-    } catch (err) {
-      reply(`error OCCURRED sir!: ${err.message}`);
+    } else {
+      reply("This conversation has expired or is invalid. Please start a new one.");
     }
-  } else {
-    reply("Convo expired sir try new one.");
+    return;
   }
-  return;
-  }
+
   const maintenanceEnabled = hajime_config?.maintenance?.enabled ?? false;
 
   if (
