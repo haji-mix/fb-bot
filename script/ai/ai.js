@@ -1,5 +1,6 @@
+
 const axios = require("axios");
-const { randomUUID } = require('crypto');
+const { randomUUID } = require("crypto");
 
 module.exports["config"] = {
   name: "gpt4o",
@@ -16,9 +17,7 @@ module.exports["config"] = {
 };
 
 module.exports["run"] = async ({ args, chat, font, event, format }) => {
-    
   let uuid = event.senderID;
-
   let ask = args.join(" ");
 
   if (event.type === "message_reply" && event.messageReply.body) {
@@ -37,8 +36,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
 
   try {
     const res = await axios.get(
-      global.api.hajime +
-        `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${uuid}`
+      global.api.hajime + `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${uuid}`
     );
 
     answering.unsend();
@@ -52,10 +50,126 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       const attachments = await Promise.all(
         imageUrls.map((url) => chat.arraybuffer(url))
       );
-      return chat.reply({ body: imageDescriptions, attachment: attachments });
-    }
+      const response = await chat.reply({
+        body: imageDescriptions,
+        attachment: attachments,
+      });
+      global.Hajime.replies[response.messageID] = {
+        author: event.senderID,
+        conversationHistory: [{ user: ask, bot: imageDescriptions }],
+        callback: async ({ api, event, data }) => {
+          const userReply = event.body || "";
+          let followUpAsk = `Previous context: ${data.conversationHistory
+            .map((item) => `${item.user} -> ${item.bot}`)
+            .join("\n")}\n\nUser replied: ${userReply}`;
+          if (event.attachments) {
+            const attachUrls = event.attachments.map((a) => a.url).join(", ");
+            followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
+          }
 
-    chat.reply(format({ title: "GPT-4O FREE", content: res.data.answer, noFormat: true, contentFont: 'none' }));
+          const followUpResponse = await axios.get(
+            global.api.hajime +
+              `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
+          );
+
+          if (followUpResponse.data.images && followUpResponse.data.images.length > 0) {
+            const newImageUrls = followUpResponse.data.images.map((image) => image.url);
+            const newImageDescriptions = followUpResponse.data.images
+              .map((image, index) => `${index + 1}. ${image.description}`)
+              .join("\n\n");
+            const newAttachments = await Promise.all(
+              newImageUrls.map((url) => chat.arraybuffer(url))
+            );
+            const newResponse = await chat.reply({
+              body: newImageDescriptions,
+              attachment: newAttachments,
+            });
+            data.conversationHistory.push({
+              user: userReply,
+              bot: newImageDescriptions,
+            });
+            global.Hajime.replies[newResponse.messageID] = {
+              author: event.senderID,
+              conversationHistory: data.conversationHistory,
+              callback: global.Hajime.replies[response.messageID].callback,
+            };
+            delete global.Hajime.replies[response.messageID];
+          } else {
+            const newResponse = await chat.reply(
+              format({
+                title: "GPT-4O FREE",
+                content: followUpResponse.data.answer,
+                noFormat: true,
+                contentFont: "none",
+              })
+            );
+            data.conversationHistory.push({
+              user: userReply,
+              bot: followUpResponse.data.answer,
+            });
+            global.Hajime.replies[newResponse.messageID] = {
+              author: event.senderID,
+              conversationHistory: data.conversationHistory,
+              callback: global.Hajime.replies[response.messageID].callback,
+            };
+            delete global.Hajime.replies[response.messageID];
+          }
+        },
+      };
+      setTimeout(() => {
+        delete global.Hajime.replies[response.messageID];
+      }, 300000);
+    } else {
+      const response = await chat.reply(
+        format({
+          title: "GPT-4O FREE",
+          content: res.data.answer,
+          noFormat: true,
+          contentFont: "none",
+        })
+      );
+      global.Hajime.replies[response.messageID] = {
+        author: event.senderID,
+        conversationHistory: [{ user: ask, bot: res.data.answer }],
+        callback: async ({ api, event, data }) => {
+          const userReply = event.body || "";
+          let followUpAsk = `Previous context: ${data.conversationHistory
+            .map((item) => `${item.user} -> ${item.bot}`)
+            .join("\n")}\n\nUser replied: ${userReply}`;
+          if (event.attachments) {
+            const attachUrls = event.attachments.map((a) => a.url).join(", ");
+            followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
+          }
+
+          const followUpResponse = await axios.get(
+            global.api.hajime +
+              `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
+          );
+
+          const newResponse = await chat.reply(
+            format({
+              title: "GPT-4O FREE",
+              content: followUpResponse.data.answer,
+              noFormat: true,
+              contentFont: "none",
+            })
+          );
+          data.conversationHistory.push({
+            user: userReply,
+            bot: followUpResponse.data.answer,
+          });
+          global.Hajime.replies[newResponse.messageID] = {
+            author: event.senderID,
+            conversationHistory: data.conversationHistory,
+            callback: global.Hajime.replies[response.messageID].callback,
+          };
+          delete global.Hajime.replies[response.messageID];
+        },
+      };
+      setTimeout(() => {
+        delete global.Hajime.replies[response.messageID];
+      }, 300000);
+    }
   } catch (error) {
     chat.reply(font.thin(error.stack || error.message));
     answering.unsend();
