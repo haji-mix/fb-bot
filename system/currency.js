@@ -13,7 +13,7 @@ class CurrencySystem {
       database,
       collection,
       ignoreError: false,
-      allowClear: true, 
+      allowClear: true,
     });
     this.defaultBalance = defaultBalance;
   }
@@ -31,98 +31,94 @@ class CurrencySystem {
     }
   }
 
-  async getBalance(userId) {
+  async getData(userId) {
     const data = await this.store.get(userId);
     if (data === null) {
-      const defaultData = { balance: this.defaultBalance, name: null };
+      const defaultData = { balance: this.defaultBalance, name: null, exp: 0, inventory: {} };
       await this.store.put(userId, defaultData);
-      return defaultData.balance;
+      return defaultData;
     }
-    return typeof data === 'object' ? data.balance : data;
+    return typeof data === 'object'
+      ? { balance: data.balance || this.defaultBalance, name: data.name || null, exp: data.exp || 0, inventory: data.inventory || {} }
+      : { balance: data, name: null, exp: 0, inventory: {} };
+  }
+
+  async setData(userId, data) {
+    if (!userId || typeof data !== 'object') {
+      throw new Error('Invalid user ID or data');
+    }
+    const currentData = await this.getData(userId);
+    const newData = { ...currentData, ...data };
+    await this.store.put(userId, newData);
+    return newData;
+  }
+
+  async getBalance(userId) {
+    const data = await this.getData(userId);
+    return data.balance;
   }
 
   async setName(userId, name) {
     if (typeof name !== 'string' || name.trim() === '') {
       throw new Error('Name must be a non-empty string');
     }
-    const data = await this.store.get(userId);
-    let newData;
-    if (data === null) {
-      newData = { balance: this.defaultBalance, name: name.trim() };
-    } else if (typeof data === 'object') {
-      newData = { ...data, name: name.trim() };
-    } else {
-      newData = { balance: data, name: name.trim() };
-    }
+    const data = await this.getData(userId);
+    const newData = { ...data, name: name.trim() };
     await this.store.put(userId, newData);
     return newData;
   }
 
-  async addBalance(userId, amount) {
+  async increaseMoney(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const data = await this.store.get(userId);
-    let newData;
-    if (data === null) {
-      newData = { balance: this.defaultBalance + amount, name: null };
-    } else if (typeof data === 'object') {
-      newData = { ...data, balance: data.balance + amount };
-    } else {
-      newData = { balance: data + amount, name: null };
-    }
+    const data = await this.getData(userId);
+    const newData = { ...data, balance: (data.balance || this.defaultBalance) + amount };
     await this.store.put(userId, newData);
     return newData.balance;
+  }
+
+  async increaseExp(userId, amount) {
+    if (typeof amount !== 'number' || amount <= 0) {
+      throw new Error('Amount must be a positive number');
+    }
+    const data = await this.getData(userId);
+    const newData = { ...data, exp: (data.exp || 0) + amount };
+    await this.store.put(userId, newData);
+    return newData.exp;
   }
 
   async removeBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const data = await this.store.get(userId);
-    let currentBalance = this.defaultBalance;
-    let name = null;
-    if (data !== null) {
-      currentBalance = typeof data === 'object' ? data.balance : data;
-      name = typeof data === 'object' ? data.name : null;
-    }
+    const data = await this.getData(userId);
+    const currentBalance = data.balance || this.defaultBalance;
     if (currentBalance < amount) {
       throw new Error('Insufficient balance');
     }
-    const newBalance = currentBalance - amount;
-    const newData = { balance: newBalance, name };
+    const newData = { ...data, balance: currentBalance - amount };
     await this.store.put(userId, newData);
-    return newBalance;
+    return newData.balance;
   }
 
   async transferBalance(fromUserId, toUserId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
-    const fromData = await this.store.get(fromUserId);
-    const toData = await this.store.get(toUserId);
+    const fromData = await this.getData(fromUserId);
+    const toData = await this.getData(toUserId);
 
-    let fromBalance = this.defaultBalance;
-    let fromName = null;
-    let toBalance = this.defaultBalance;
-    let toName = null;
-
-    if (fromData !== null) {
-      fromBalance = typeof fromData === 'object' ? fromData.balance : fromData;
-      fromName = typeof fromData === 'object' ? fromData.name : null;
-    }
-    if (toData !== null) {
-      toBalance = typeof toData === 'object' ? toData.balance : toData;
-      toName = typeof toData === 'object' ? toData.name : null;
-    }
+    const fromBalance = fromData.balance || this.defaultBalance;
+    const toBalance = toData.balance || this.defaultBalance;
 
     if (fromBalance < amount) {
       throw new Error('Insufficient balance');
     }
 
     await this.store.bulkPut({
-      [fromUserId]: { balance: fromBalance - amount, name: fromName },
-      [toUserId]: { balance: toBalance + amount, name: toName },
+      [fromUserId]: { ...fromData, balance: fromBalance - amount },
+      [toUserId]: { ...toData, balance: toBalance + amount },
     });
 
     return { fromBalance: fromBalance - amount, toBalance: toBalance + amount };
@@ -144,7 +140,7 @@ class CurrencySystem {
     if (!userId) {
       throw new Error('User ID is required');
     }
-    const data = await this.store.get(userId);
+    const data = await this.getData(userId);
     if (data === null) {
       throw new Error('User not found');
     }
