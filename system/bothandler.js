@@ -136,12 +136,12 @@ async function botHandler({
           .filter(Boolean)
       : [];
 
-  if (event.messageReply && global.Hajime.replies[event.messageReply.messageID]) {
+  if (event.messageReply && global.Hajime.replies && global.Hajime.replies[event.messageReply.messageID]) {
   const replyData = global.Hajime.replies[event.messageReply.messageID];
   if (replyData.author && event.senderID !== replyData.author) {
     return reply("Only the original sender can reply to this message.");
   }
-  if (replyData.callback) {
+  if (replyData && replyData.callback && typeof replyData.callback === "function") {
     try {
       await replyData.callback({
         api,
@@ -158,8 +158,10 @@ async function botHandler({
         data: replyData,
       });
     } catch (err) {
-      reply(`Error OCCURRED sir!: ${err.message}`);
+      reply(`error OCCURRED sir!: ${err.message}`);
     }
+  } else {
+    reply("Convo expired sir try new one.");
   }
   return;
   }
