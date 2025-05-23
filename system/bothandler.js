@@ -2,6 +2,12 @@ const fs = require("fs");
 const path = require("path");
 const { FontSystem, format, UNIRedux } = require("cassidy-styler");
 
+global.Hajime = {
+
+  replies: {}
+
+};
+
 async function botHandler({
   fonts,
   chat,
