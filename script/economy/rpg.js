@@ -1,3 +1,4 @@
+
 module.exports = {
     config: {
         name: "rpg",
@@ -16,7 +17,7 @@ module.exports = {
             line_bottom: "default",
         },
         footer: {
-            content: "**Developed by**: Aljur Pogoy",
+            content: "**Developed by**: Aljur pogoy",
             text_font: "fancy",
         },
         titleFont: "bold",
@@ -25,24 +26,17 @@ module.exports = {
     run: async ({ chat, event, Utils, format, UNIRedux }) => {
         try {
             const { senderID } = event;
-            const { CurrencySystem } = Utils; 
+            const { CurrenciesSystem } = Utils;
             const args = event.body?.split(" ").slice(1) || [];
-            if (!CurrencySystem || typeof CurrencySystem.getBalance !== 'function') {
-                throw new Error('CurrencySystem is not properly initialized.');
-            }
-            const subcommand = args[0]?.toLowerCase();
-            let userData = await CurrencySystem.getBalance(senderID);
-            if (typeof userData !== 'object') {
-            
-                userData = { balance: userData, name: null, exp: 0, inventory: {} };
-                await CurrencySystem.setName(senderID, userData.name); 
-            }
 
+            const subcommand = args[0]?.toLowerCase();
+
+            let userData = await Currencies.getData(senderID) || {};
             let balance = userData.balance || 0;
             let exp = userData.exp || 0;
             let level = Math.floor(exp / 100) || 1;
             let inventory = userData.inventory || {};
-            let playerName = userData.name || null;
+            let playerName = userData.playerName || null;
 
             if (subcommand !== "register" && !playerName) {
                 const notRegisteredText = format({
@@ -72,14 +66,7 @@ module.exports = {
                         });
                         return chat.reply(noNameText);
                     }
-                    await CurrencySystem.setName(senderID, name);
-                    await CurrencySystem.addBalance(senderID, 100); // Starting balance
-                    await CurrencySystem.store.put(senderID, {
-                        balance: 100,
-                        name,
-                        exp: 0,
-                        inventory: {}
-                    });
+                    await Currencies.setData(senderID, { playerName: name, balance: 100, exp: 0, inventory: {} });
                     const registerText = format({
                         title: 'Register ✅',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -99,7 +86,7 @@ module.exports = {
 
                 case "earn":
                     const earnAmount = Math.floor(Math.random() * 50) + 10;
-                    await CurrencySystem.addBalance(senderID, earnAmount);
+                    await Currencies.increaseMoney(senderID, earnAmount);
                     const earnText = format({
                         title: 'Earn 💰',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -119,29 +106,21 @@ module.exports = {
                     break;
 
                 case "battle":
-                    const enemies = [
-                        { name: "Goblin", health: 50, strength: 10, exp: Math.floor(Math.random() * 20) + 20 },
-                        { name: "Wolf", health: 70, strength: 15, exp: Math.floor(Math.random() * 30) + 30 },
-                        { name: "Troll", health: 100, strength: 20, exp: Math.floor(Math.random() * 40) + 40 }
-                    ];
-                    const enemy = enemies[Math.floor(Math.random() * enemies.length)];
-                    const playerStrength = level * 10; 
-                    const battleChance = Math.random() * (playerStrength / (playerStrength + enemy.strength));
-
+                    const enemyExp = Math.floor(Math.random() * 30) + 20;
+                    const battleChance = Math.random();
                     if (battleChance > 0.3) {
-                        userData.exp = (userData.exp || 0) + enemy.exp;
-                        await CurrencySystem.store.put(senderID, userData);
+                        await Currencies.increaseExp(senderID, enemyExp);
                         const battleWinText = format({
                             title: 'Battle 🗡️',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You defeated a ${enemy.name}! Gained ${enemy.exp} XP. New XP: ${userData.exp}`,
+                            content: `You defeated an enemy! Gained ${enemyExp} XP. New XP: ${(exp + enemyExp)}`,
                         });
                         chat.reply(battleWinText);
                     } else {
                         const battleLoseText = format({
                             title: 'Battle 🛡️',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You were defeated by a ${enemy.name}! Try again later.`,
+                            content: `You lost the battle! Try again later.`,
                         });
                         chat.reply(battleLoseText);
                     }
@@ -151,7 +130,7 @@ module.exports = {
                     const inventoryText = format({
                         title: 'Inventory 🎒',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Player: ${playerName}\n` +
+                        content: `Player: ${playerName}\n` + 
                                  (Object.keys(inventory).length > 0
                                      ? `Items: ${Object.entries(inventory).map(([item, qty]) => `${item}: ${qty}`).join(", ")}`
                                      : "Your inventory is empty!"),
@@ -161,15 +140,17 @@ module.exports = {
 
                 default:
                     const helpText = format({
-                        title: 'Menu ℹ️',
+                        title: 'Help ℹ️',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `***Available Subcommand(s)***:\n- **rpg** register <name>\n- **rpg** stats\n- **rpg** earn\n- **rpg** level\n- **rpg** battle\n- **rpg** inventory`,
+                        content: `Available commands:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory`,
                     });
                     chat.reply(helpText);
             }
         } catch (error) {
-            console.error(error);
-            chat.reply('An error occurred while processing your RPG command. Please try again later.');
+            chat.reply(error.stack || error.message || 'An error occurred while processing your RPG command. Please try again later.');
         }
     }
 };
+
+
+if you want to provide me anything I can do
