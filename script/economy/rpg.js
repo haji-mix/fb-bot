@@ -31,7 +31,7 @@ module.exports = {
 
             const subcommand = args[0]?.toLowerCase();
 
-            let userData = await Currencies.getData(senderID) || {};
+            let userData = await Currency.getData(senderID) || {};
             let balance = userData.balance || 0;
             let exp = userData.exp || 0;
             let level = Math.floor(exp / 100) || 1;
