@@ -26,7 +26,7 @@ module.exports = {
     run: async ({ chat, event, Utils, format, UNIRedux }) => {
         try {
             const { senderID } = event;
-            const { CurrenciesSystem } = Utils;
+            const { CurrencySystem } = Utils;
             const args = event.body?.split(" ").slice(1) || [];
 
             const subcommand = args[0]?.toLowerCase();
