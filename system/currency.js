@@ -1,3 +1,6 @@
+// ni add ko lang mga ano ko sa cmd. but still remains unchanged everything tho
+
+
 const { createStore } = require("./dbStore");
 
 class CurrencySystem {
@@ -68,7 +71,7 @@ class CurrencySystem {
     return newData;
   }
 
-  async increaseMoney(userId, amount) {
+  async addBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
       throw new Error('Amount must be a positive number');
     }
@@ -76,6 +79,10 @@ class CurrencySystem {
     const newData = { ...data, balance: (data.balance || this.defaultBalance) + amount };
     await this.store.put(userId, newData);
     return newData.balance;
+  }
+
+  async increaseMoney(userId, amount) {
+    return this.addBalance(userId, amount);
   }
 
   async increaseExp(userId, amount) {
@@ -108,19 +115,15 @@ class CurrencySystem {
     }
     const fromData = await this.getData(fromUserId);
     const toData = await this.getData(toUserId);
-
     const fromBalance = fromData.balance || this.defaultBalance;
     const toBalance = toData.balance || this.defaultBalance;
-
     if (fromBalance < amount) {
       throw new Error('Insufficient balance');
     }
-
     await this.store.bulkPut({
       [fromUserId]: { ...fromData, balance: fromBalance - amount },
       [toUserId]: { ...toData, balance: toBalance + amount },
     });
-
     return { fromBalance: fromBalance - amount, toBalance: toBalance + amount };
   }
 
