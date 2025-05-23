@@ -4,7 +4,7 @@ const { FontSystem, format, UNIRedux } = require("cassidy-styler");
 
 global.Hajime = {
 
-  replies {}
+  replies: {}
 
   }
 
