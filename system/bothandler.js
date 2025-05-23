@@ -137,10 +137,11 @@ async function botHandler({
       : [];
 
   if (event.messageReply && global.Hajime.replies[event.messageReply.messageID]) {
-    const replyData = global.Hajime.replies[event.messageReply.messageID];
-    if (replyData.author && event.senderID !== replyData.author) {
-      return reply("Only the original sender can reply to this message.");
-    }
+  const replyData = global.Hajime.replies[event.messageReply.messageID];
+  if (replyData.author && event.senderID !== replyData.author) {
+    return reply("Only the original sender can reply to this message.");
+  }
+  if (replyData.callback) {
     try {
       await replyData.callback({
         api,
@@ -157,11 +158,11 @@ async function botHandler({
         data: replyData,
       });
     } catch (err) {
-      reply(`An error occurred while processing your reply: ${err.message}`);
+      reply(`Error OCCURRED sir!: ${err.message}`);
     }
-    return;
   }
-
+  return;
+  }
   const maintenanceEnabled = hajime_config?.maintenance?.enabled ?? false;
 
   if (
