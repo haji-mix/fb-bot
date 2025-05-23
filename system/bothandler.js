@@ -16,13 +16,27 @@ async function botHandler({
 }) {
   const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
 
-  const reply = async (msg) => {
-    chat.reply(fonts.thin(msg));
+  const reply = async (msg, callback = null) => {
+    try {
+      const response = await chat.reply(fonts.thin(msg));
+      if (callback && typeof callback === "function") {
+        global.Hajime.replies[response.messageID] = {
+          author: event.senderID,
+          callback: callback,
+          conversationHistory: [],
+        };
+        setTimeout(() => {
+          delete global.Hajime.replies[response.messageID];
+        }, 300000);
+      }
+      return response;
+    } catch (error) {
+      logger.error("[Reply] Error sending reply:", error);
+    }
   };
 
   const SPAM_THRESHOLD = 6;
   const TIME_WINDOW = 10 * 1000;
-
 
   if (event && event?.body && event.senderID) {
     const userId = event.senderID;
@@ -62,7 +76,7 @@ async function botHandler({
         JSON.stringify(hajime_config, null, 2),
         "utf-8",
         (err) => {
-          if (err) console.error("Error writing file:", err);
+          if (err);
         }
       );
       reply(`UserID: ${userId}, You have been Banned for Spamming.`);
@@ -112,13 +126,34 @@ async function botHandler({
           .substring(isPrefix.length)
           .trim()
           .split(/\s+/)
-          .filter(Boolean) // Better than .map(trim) as it removes empty strings
+          .filter(Boolean)
       : [];
 
- /* if (isPrefix && aliases(command)?.isPrefix === false) {
-    reply(`this command doesn't need a prefix set by author.`);
+  if (event.messageReply && global.Hajime.replies[event.messageReply.messageID]) {
+    const replyData = global.Hajime.replies[event.messageReply.messageID];
+    if (replyData.author && event.senderID !== replyData.author) {
+      return reply("Only the original sender can reply to this message.");
+    }
+    try {
+      await replyData.callback({
+        api,
+        event,
+        args,
+        chat,
+        fonts,
+        admin,
+        prefix,
+        Utils,
+        FontSystem,
+        format,
+        UNIRedux,
+        data: replyData,
+      });
+    } catch (err) {
+      reply(`An error occurred while processing your reply: ${err.message}`);
+    }
     return;
-  } */
+  }
 
   const maintenanceEnabled = hajime_config?.maintenance?.enabled ?? false;
 
@@ -200,11 +235,7 @@ async function botHandler({
   const currentTime = Date.now();
   const oneDay = 25 * 60 * 1000;
 
-  /* 24 * 60 * 60 * 1000;  24 hours in milliseconds*/
-
-  // Check if the command requires a premium user
   if (aliases(command)?.isPremium === true) {
-    // Check if the sender is a premium user or an admin
     const isAdmin =
       admin.includes(senderID) || hajime_config?.admins.includes(senderID);
     const isPremiumUser = premium[senderID];
@@ -267,7 +298,6 @@ async function botHandler({
         sender.warned = true;
         Utils.cooldowns.set(cooldownKey, sender);
       }
- 
       return chat.reaction("🕒");
     }
   }
@@ -327,7 +357,7 @@ async function botHandler({
         });
       } catch (error) {
         logger.error(
-          `Something wen't wrong with the handleEvent '${name}' error: ` +
+          `Something went wrong with the handleEvent '${name}' error: ` +
             error.stack
         );
       }
@@ -339,14 +369,8 @@ async function botHandler({
     case "message_unsend":
     case "message_reaction":
     case "message_reply":
-    case "message_reply":
       if (aliases(command?.toLowerCase())?.name) {
         try {
-          logger.success(
-            `[${aliases(
-              command?.toLowerCase()
-            )?.name.toUpperCase()}] [CMD] [EXECUTED ✓]`
-          );
           Utils.handleReply.findIndex(
             (reply) => reply.author === event.senderID
           ) !== -1
@@ -379,16 +403,17 @@ async function botHandler({
             FontSystem,
             format,
             UNIRedux,
+            reply,
           });
         } catch (error) {
-          const error_msg = `Something wen't wrong with the command '${
+          const error_msg = `Something went wrong with the command '${
             aliases(command?.toLowerCase())?.name
           }' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${
             error.stack
           }`;
           reply(error_msg);
           logger.error(
-            `Something wen't wrong with the command '${
+            `Something went wrong with the command '${
               aliases(command?.toLowerCase())?.name
             }' error: ` + error.stack
           );
@@ -416,9 +441,7 @@ async function botHandler({
               fonts,
               font: fonts,
               admin,
-
               prefix,
-
               Utils,
               FontSystem,
               format,
@@ -426,7 +449,7 @@ async function botHandler({
             });
           } catch (error) {
             logger.error(
-              `Something wen't wrong with the handleReply error: ` + error.stack
+              `Something went wrong with the handleReply error: ` + error.stack
             );
           }
         }
