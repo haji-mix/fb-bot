@@ -322,20 +322,30 @@ async function accountLogin(
           logger.warn(`Session conflict for user ${userid}, overwriting...`);
           await mongoStore.put(`session_${userid}`, appState);
         }
-
-        // Use the full admin array, resolve any Facebook URLs
-        let resolvedAdmins = Array.isArray(admin) ? [...admin] : admins;
-        for (let i = 0; i < resolvedAdmins.length; i++) {
-          if (/(?:https?:\/\/)?(?:www\.)?facebook\.com/i.test(resolvedAdmins[i])) {
-            try {
-              resolvedAdmins[i] = await api.getUID(resolvedAdmins[i]);
-            } catch (err) {
-              logger.warn(`Failed to resolve Facebook URL: ${resolvedAdmins[i]}, keeping original`);
+        const adminList = [
+          ...new Set([
+            ...(Array.isArray(admins) ? admins.map(String) : []),
+            ...(Array.isArray(admin) ? admin.map(String) : [String(admin || '')]),
+          ]),
+        ].filter(Boolean); 
+        
+        const facebookUrlRegex = /^(?:https?:\/\/)?(?:www\.)?facebook\.com\/[a-zA-Z0-9.]+$/i;
+        
+        const resolvedAdminList = await Promise.all(
+          adminList.map(async (item) => {
+            if (facebookUrlRegex.test(item)) {
+              try {
+                const userId = await api.getUID(item);
+                return userId || item; 
+              } catch (err) {
+                return item;
+              }
             }
-          }
-        }
+            return item;
+          })
+        );
 
-        await addThisUser(userid, appState, prefix, resolvedAdmins);
+        await addThisUser(userid, appState, prefix, resolvedAdminList);
 
         Utils.account.set(userid, {
           name: "ANONYMOUS",
@@ -429,7 +439,7 @@ async function accountLogin(
             logger,
             event,
             aliases,
-            admin: resolvedAdmins, // Pass full admin array
+            admin: resolvedAdminList, 
             prefix,
             userid,
           });
