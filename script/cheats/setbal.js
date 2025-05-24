@@ -1,7 +1,7 @@
 module.exports = {
     config: {
         name: "setbal",
-        aliases: ["setbalance", "balance"],
+        aliases: ["setbalance"],
         type: "economy",
         author: "Grok",
         role: 1,
