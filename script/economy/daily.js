@@ -6,7 +6,7 @@ module.exports = {
         type: "economy",
         author: "Kenneth Panio | Liane Cagara",
         role: 0,
-        cooldowns: 43200, // 12 hours in seconds
+        cooldowns: 43200, 
         description: "Claim your daily reward",
         prefix: true
     },

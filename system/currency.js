@@ -74,6 +74,18 @@ class CurrencySystem {
     return newData;
   }
 
+  async setBalance(userId, amount) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    if (typeof amount !== 'number' || amount < 0) {
+      throw new Error('Amount must be a non-negative number');
+    }
+    const data = await this.getData(userId);
+    await this.setData(userId, { ...data, balance: amount });
+    return amount;
+  }
+
   async getBalance(userId) {
     const data = await this.getData(userId);
     return data.balance;
