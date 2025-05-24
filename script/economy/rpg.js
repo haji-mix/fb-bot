@@ -28,12 +28,11 @@ module.exports = {
             const { Currencies } = Utils;
             const args = event.body?.split(" ").slice(1) || [];
 
-            if (!Currencies || typeof Currencies.getData !== 'function') {
-                throw new Error('Currencies is not properly initialized.');
+            let userData = await Currencies.getData(senderID);
+            if (!userData) {
+                userData = { balance: 0, exp: 0, inventory: {}, name: null };
             }
 
-            const subcommand = args[0]?.toLowerCase();
-            let userData = await Currencies.getData(senderID);
             let balance = userData.balance || 0;
             let exp = userData.exp || 0;
             let level = Math.floor(exp / 100) || 1;
@@ -45,7 +44,7 @@ module.exports = {
                 contentFont: module.exports.style.footer.contentFont
             });
 
-            if (subcommand !== "register" && !playerName) {
+            if (args[0]?.toLowerCase() !== "register" && !playerName) {
                 const notRegisteredText = format({
                     title: 'Register 🚫',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -53,6 +52,8 @@ module.exports = {
                 });
                 return chat.reply(notRegisteredText);
             }
+
+            const subcommand = args[0]?.toLowerCase() || "help";
 
             switch (subcommand) {
                 case "register":
@@ -79,8 +80,7 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `Welcome, ${name}! You’ve registered as a new adventurer with $100.\n\n${formattedFooter}`,
                     });
-                    chat.reply(registerText);
-                    break;
+                    return chat.reply(registerText);
 
                 case "stats":
                     const statsText = format({
@@ -88,8 +88,7 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `Name: ${playerName}\nLevel: ${level}\nExperience: ${exp} XP\nBalance: $${balance.toLocaleString()}\n\n${formattedFooter}`,
                     });
-                    chat.reply(statsText);
-                    break;
+                    return chat.reply(statsText);
 
                 case "earn":
                     const earnAmount = Math.floor(Math.random() * 50) + 10;
@@ -99,8 +98,7 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `You earned $${earnAmount.toLocaleString()} from your adventure! New balance: $${(balance + earnAmount).toLocaleString()}\n\n${formattedFooter}`,
                     });
-                    chat.reply(earnText);
-                    break;
+                    return chat.reply(earnText);
 
                 case "level":
                     const requiredExp = level * 100;
@@ -109,8 +107,7 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `Level: ${level}\nExperience: ${exp} XP\nRequired for next level: ${requiredExp - exp} XP\n\n${formattedFooter}`,
                     });
-                    chat.reply(levelText);
-                    break;
+                    return chat.reply(levelText);
 
                 case "battle":
                     const enemies = [
@@ -126,7 +123,7 @@ module.exports = {
                     } catch (error) {
                         await Currencies.createItem({
                             name: enemy.loot,
-                            price: 50, 
+                            price: 50,
                             description: `A ${enemy.loot.toLowerCase()} obtained from defeating a ${enemy.name}`,
                             category: "battle_loot",
                         });
@@ -143,26 +140,33 @@ module.exports = {
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                             content: `You defeated a ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.loot} x1. New XP: ${exp + enemy.exp}\n\n${formattedFooter}`,
                         });
-                        chat.reply(battleWinText);
+                        return chat.reply(battleWinText);
                     } else {
                         const battleLoseText = format({
                             title: 'Battle 🛡️',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                             content: `You were defeated by a ${enemy.name}! Try again later.\n\n${formattedFooter}`,
                         });
-                        chat.reply(battleLoseText);
+                        return chat.reply(battleLoseText);
                     }
-                    break;
 
                 case "inventory":
                     const inventoryItems = [];
-                    for (const [itemId, data] of Object.entries(inventory)) {
-                        try {
-                            const item = await Currencies.getItem(itemId);
-                            inventoryItems.push(`${item.name}: ${data.quantity}`);
-                        } catch (error) {
-                            inventoryItems.push(`Unknown Item (ID: ${itemId}): ${data.quantity}`);
+                    if (inventory && typeof inventory === 'object') {
+                        for (const [itemId, data] of Object.entries(inventory)) {
+                            try {
+                                if (data && typeof data.quantity === 'number') {
+                                    const item = await Currencies.getItem(itemId);
+                                    inventoryItems.push(`${item.name}: ${data.quantity}`);
+                                } else {
+                                    inventoryItems.push(`Invalid Item (ID: ${itemId}): ${data?.quantity || 'N/A'}`);
+                                }
+                            } catch (error) {
+                                inventoryItems.push(`Unknown Item (ID: ${itemId}): ${data?.quantity || 'N/A'}`);
+                            }
                         }
+                    } else {
+                        inventoryItems.push("No items found or inventory is invalid.");
                     }
                     const inventoryText = format({
                         title: 'Inventory 🎒',
@@ -172,8 +176,7 @@ module.exports = {
                                      ? `Items: ${inventoryItems.join(", ")}\n\n${formattedFooter}`
                                      : `Your inventory is empty!\n\n${formattedFooter}`),
                     });
-                    chat.reply(inventoryText);
-                    break;
+                    return chat.reply(inventoryText);
 
                 default:
                     const helpText = format({
@@ -181,20 +184,20 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `Available commands:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory\n\n${formattedFooter}`,
                     });
-                    chat.reply(helpText);
+                    return chat.reply(helpText);
             }
         } catch (error) {
-            console.error(error);
+            console.error('RPG Command Error:', error);
             const formattedFooter = format({
                 content: module.exports.style.footer.content,
-                text_font: module.exports.style.footer.text_font
+                contentFont: module.exports.style.footer.contentFont 
             });
             const errorText = format({
                 title: 'Error ❌',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `An error occurred while processing your RPG command. Please try again later.\n\n${formattedFooter}`,
+                content: `An error occurred while processing your RPG command: ${error.message}. Please try again later.\n\n${formattedFooter}`,
             });
-            chat.reply(errorText);
+            return chat.reply(errorText);
         }
     }
 };
