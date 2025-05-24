@@ -1,18 +1,8 @@
-const { createStore } = require("./dbStore");
+ const { createStore } = require("./dbStore");
 
-class CurrencySystemError extends Error {
-  constructor(message, code) {
-    super(message);
-    this.name = 'CurrencySystemError';
-    this.code = code || 'UNKNOWN';
-  }
-}
+const generateId = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 class CurrencySystem {
-  static generateId() {
-    return `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
   constructor({
     mongoUri = process.env.mongo_uri || global.api.mongo_uri,
     database = 'currency',
@@ -20,11 +10,7 @@ class CurrencySystem {
     itemCollection = 'items',
     defaultBalance = 0,
     useItemCollection = true,
-  } = {}) {
-    if (!mongoUri) throw new CurrencySystemError('MongoDB URI is required', 'INVALID_MONGO_URI');
-    if (typeof defaultBalance !== 'number' || defaultBalance < 0) {
-      throw new CurrencySystemError('Default balance must be a non-negative number', 'INVALID_DEFAULT_BALANCE');
-    }
+  }) {
     this.userStore = createStore({
       type: "mongodb",
       uri: mongoUri,
@@ -45,7 +31,6 @@ class CurrencySystem {
       });
     }
     this.defaultBalance = defaultBalance;
-    this.cache = new Map();
   }
 
   async init() {
@@ -63,14 +48,11 @@ class CurrencySystem {
       }
       return true;
     } catch (error) {
-      throw new CurrencySystemError(`Failed to reset database: ${error.message}`, 'RESET_FAILED');
+      throw new Error(`Failed to reset database: ${error.message}`);
     }
   }
 
   async getData(userId) {
-    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
-      throw new CurrencySystemError('Invalid user ID', 'INVALID_USER_ID');
-    }
     const data = await this.userStore.get(userId);
     if (data === null) {
       const defaultData = { balance: this.defaultBalance, name: null, exp: 0, inventory: {} };
@@ -84,10 +66,7 @@ class CurrencySystem {
 
   async setData(userId, data) {
     if (!userId || typeof data !== 'object') {
-      throw new CurrencySystemError('Invalid user ID or data', 'INVALID_INPUT');
-    }
-    if (data.balance !== undefined && (typeof data.balance !== 'number' || data.balance < 0)) {
-      throw new CurrencySystemError('Balance cannot be negative', 'INVALID_BALANCE');
+      throw new Error('Invalid user ID or data');
     }
     const currentData = await this.getData(userId);
     const newData = { ...currentData, ...data };
@@ -102,14 +81,14 @@ class CurrencySystem {
 
   async setName(userId, name) {
     if (typeof name !== 'string' || name.trim() === '') {
-      throw new CurrencySystemError('Name must be a non-empty string', 'INVALID_NAME');
+      throw new Error('Name must be a non-empty string');
     }
     return this.setData(userId, { name: name.trim() });
   }
 
   async addBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
-      throw new CurrencySystemError('Amount must be a positive number', 'INVALID_AMOUNT');
+      throw new Error('Amount must be a positive number');
     }
     const data = await this.getData(userId);
     const newBalance = (data.balance || this.defaultBalance) + amount;
@@ -123,7 +102,7 @@ class CurrencySystem {
 
   async increaseExp(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
-      throw new CurrencySystemError('Amount must be a positive number', 'INVALID_AMOUNT');
+      throw new Error('Amount must be a positive number');
     }
     const data = await this.getData(userId);
     const newExp = (data.exp || 0) + amount;
@@ -133,12 +112,12 @@ class CurrencySystem {
 
   async removeBalance(userId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
-      throw new CurrencySystemError('Amount must be a positive number', 'INVALID_AMOUNT');
+      throw new Error('Amount must be a positive number');
     }
     const data = await this.getData(userId);
     const currentBalance = data.balance || this.defaultBalance;
     if (currentBalance < amount) {
-      throw new CurrencySystemError('Insufficient balance', 'INSUFFICIENT_BALANCE');
+      throw new Error('Insufficient balance');
     }
     const newBalance = currentBalance - amount;
     await this.setData(userId, { balance: newBalance });
@@ -147,61 +126,46 @@ class CurrencySystem {
 
   async transferBalance(fromUserId, toUserId, amount) {
     if (typeof amount !== 'number' || amount <= 0) {
-      throw new CurrencySystemError('Amount must be a positive number', 'INVALID_AMOUNT');
+      throw new Error('Amount must be a positive number');
     }
-    const session = await this.userStore.client.startSession();
-    try {
-      session.startTransaction();
-      const fromData = await this.getData(fromUserId);
-      const toData = await this.getData(toUserId);
-      const fromBalance = fromData.balance || this.defaultBalance;
-      const toBalance = toData.balance || this.defaultBalance;
-      if (fromBalance < amount) {
-        throw new CurrencySystemError('Insufficient balance', 'INSUFFICIENT_BALANCE');
-      }
-      await this.userStore.bulkPut(
-        {
-          [fromUserId]: { ...fromData, balance: fromBalance - amount },
-          [toUserId]: { ...toData, balance: toBalance + amount },
-        },
-        { session }
-      );
-      await session.commitTransaction();
-      return { fromBalance: fromBalance - amount, toBalance: toBalance + amount };
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
+    const fromData = await this.getData(fromUserId);
+    const toData = await this.getData(toUserId);
+    const fromBalance = fromData.balance || this.defaultBalance;
+    const toBalance = toData.balance || this.defaultBalance;
+    if (fromBalance < amount) {
+      throw new Error('Insufficient balance');
     }
+    await this.userStore.bulkPut({
+      [fromUserId]: { ...fromData, balance: fromBalance - amount },
+      [toUserId]: { ...toData, balance: toBalance + amount },
+    });
+    return { fromBalance: fromBalance - amount, toBalance: toBalance + amount };
   }
 
   async getLeaderboard(limit = 10) {
-    const pipeline = [
-      { $match: { balance: { $gt: 0 } } },
-      { $project: { userId: '$_id', balance: 1, name: 1 } },
-      { $sort: { balance: -1 } },
-      { $limit: limit },
-    ];
-    const results = await this.userStore.collection.aggregate(pipeline).toArray();
-    return results.map(doc => ({
-      userId: doc.userId,
-      balance: doc.balance || 0,
-      name: doc.name || null,
-    }));
-  }
+  const entries = await this.userStore.entries();
+  return entries
+    .map(({ key, value }) => ({
+      userId: key,
+      balance: typeof value === 'object' ? value.balance : value,
+      name: typeof value === 'object' ? value.name : null,
+    }))
+    .filter(user => user.balance > 0)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, limit);
+}
 
   async createItem(itemData, itemId = null) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
+      throw new Error('Item collection is disabled');
     }
     if (typeof itemData !== 'object' || !itemData.name || !itemData.price || typeof itemData.price !== 'number') {
-      throw new CurrencySystemError('Item data must include a name and a valid price', 'INVALID_ITEM_DATA');
+      throw new Error('Item data must include a name and a valid price');
     }
-    const id = itemId || CurrencySystem.generateId();
+    const id = itemId || generateId();
     const existingItem = await this.itemStore.get(id);
     if (existingItem) {
-      throw new CurrencySystemError(`Item with ID ${id} already exists`, 'ITEM_EXISTS');
+      throw new Error(`Item with ID ${id} already exists`);
     }
     const newItem = {
       id,
@@ -212,20 +176,15 @@ class CurrencySystem {
       custom: itemData.custom || {},
     };
     await this.itemStore.put(id, newItem);
-    this.cache.set(id, newItem);
     return newItem;
   }
 
   async _resolveItemId(identifier) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
-    }
-    if (this.cache.has(identifier)) {
-      return identifier;
+      throw new Error('Item collection is disabled');
     }
     const item = await this.itemStore.get(identifier);
     if (item) {
-      this.cache.set(identifier, item);
       return identifier;
     }
     const entries = await this.itemStore.entries();
@@ -233,31 +192,26 @@ class CurrencySystem {
       .map(({ key, value }) => ({ id: key, ...value }))
       .find(item => item.name.toLowerCase() === identifier.toLowerCase());
     if (!match) {
-      throw new CurrencySystemError(`No item found matching "${identifier}"`, 'ITEM_NOT_FOUND');
+      throw new Error(`No item found matching "${identifier}"`);
     }
-    this.cache.set(match.id, match);
     return match.id;
   }
 
   async getItem(identifier) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
+      throw new Error('Item collection is disabled');
     }
     const itemId = await this._resolveItemId(identifier);
-    if (this.cache.has(itemId)) {
-      return this.cache.get(itemId);
-    }
     const item = await this.itemStore.get(itemId);
     if (!item) {
-      throw new CurrencySystemError(`Item with ID ${itemId} not found`, 'ITEM_NOT_FOUND');
+      throw new Error(`Item with ID ${itemId} not found`);
     }
-    this.cache.set(itemId, item);
     return item;
   }
 
   async findItem(searchTerm) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
+      throw new Error('Item collection is disabled');
     }
     const entries = await this.itemStore.entries();
     const matches = entries
@@ -267,15 +221,14 @@ class CurrencySystem {
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     if (matches.length === 0) {
-      throw new CurrencySystemError(`No items found matching "${searchTerm}"`, 'ITEM_NOT_FOUND');
+      throw new Error(`No items found matching "${searchTerm}"`);
     }
-    matches.forEach(item => this.cache.set(item.id, item));
     return matches;
   }
 
   async addItem(userId, identifier, quantity = 1, customProps = {}) {
     if (typeof quantity !== 'number' || quantity <= 0) {
-      throw new CurrencySystemError('Quantity must be a positive number', 'INVALID_QUANTITY');
+      throw new Error('Quantity must be a positive number');
     }
     let itemId = identifier;
     if (this.useItemCollection) {
@@ -284,10 +237,6 @@ class CurrencySystem {
     const data = await this.getData(userId);
     const inventory = data.inventory || {};
     const currentQuantity = inventory[itemId]?.quantity || 0;
-    const maxInventorySize = 100;
-    if (currentQuantity + quantity > maxInventorySize) {
-      throw new CurrencySystemError('Inventory limit exceeded', 'INVENTORY_FULL');
-    }
     inventory[itemId] = {
       quantity: currentQuantity + quantity,
       ...customProps,
@@ -298,7 +247,7 @@ class CurrencySystem {
 
   async removeItem(userId, identifier, quantity = 1) {
     if (typeof quantity !== 'number' || quantity <= 0) {
-      throw new CurrencySystemError('Quantity must be a positive number', 'INVALID_QUANTITY');
+      throw new Error('Quantity must be a positive number');
     }
     let itemId = identifier;
     if (this.useItemCollection) {
@@ -307,7 +256,7 @@ class CurrencySystem {
     const data = await this.getData(userId);
     const inventory = data.inventory || {};
     if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
-      throw new CurrencySystemError('Insufficient item quantity', 'INSUFFICIENT_QUANTITY');
+      throw new Error('Insufficient item quantity');
     }
     inventory[itemId].quantity -= quantity;
     if (inventory[itemId].quantity <= 0) {
@@ -324,104 +273,95 @@ class CurrencySystem {
 
   async buyItem(userId, identifier, quantity = 1) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
+      throw new Error('Item collection is disabled');
     }
     if (typeof quantity !== 'number' || quantity <= 0) {
-      throw new CurrencySystemError('Quantity must be a positive number', 'INVALID_QUANTITY');
+      throw new Error('Quantity must be a positive number');
     }
-    const session = await this.userStore.client.startSession();
-    try {
-      session.startTransaction();
-      const itemId = await this._resolveItemId(identifier);
-      const item = await this.getItem(itemId);
-      const totalCost = item.price * quantity;
-      const currentBalance = await this.getBalance(userId);
-      if (currentBalance < totalCost) {
-        throw new CurrencySystemError('Insufficient balance to buy item', 'INSUFFICIENT_BALANCE');
-      }
-      await this.removeBalance(userId, totalCost);
-      await this.addItem(userId, itemId, quantity);
-      await session.commitTransaction();
-      return { itemId, quantity, totalCost };
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
+    const itemId = await this._resolveItemId(identifier);
+    const item = await this.getItem(itemId);
+    const totalCost = item.price * quantity;
+    const currentBalance = await this.getBalance(userId);
+    if (currentBalance < totalCost) {
+      throw new Error('Insufficient balance to buy item');
     }
+    await this.removeBalance(userId, totalCost);
+    await this.addItem(userId, itemId, quantity);
+    return { itemId, quantity, totalCost };
+  }
+  
+  async sellItem(userId, identifier, quantity = 1, sellPriceMultiplier = 0.5) {
+  if (!this.useItemCollection) {
+    throw new Error('Item collection is disabled');
+  }
+  if (typeof quantity !== 'number' || quantity <= 0) {
+    throw new Error('Quantity must be a positive number');
+  }
+  if (typeof sellPriceMultiplier !== 'number' || sellPriceMultiplier < 0 || sellPriceMultiplier > 1) {
+    throw new Error('Sell price multiplier must be a number between 0 and 1');
   }
 
-  async sellItem(userId, identifier, quantity = 1, sellPriceMultiplier = 0.5) {
-    if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
-    }
-    if (typeof quantity !== 'number' || quantity <= 0) {
-      throw new CurrencySystemError('Quantity must be a positive number', 'INVALID_QUANTITY');
-    }
-    if (typeof sellPriceMultiplier !== 'number' || sellPriceMultiplier < 0 || sellPriceMultiplier > 1) {
-      throw new CurrencySystemError('Sell price multiplier must be a number between 0 and 1', 'INVALID_MULTIPLIER');
-    }
-    const session = await this.userStore.client.startSession();
-    try {
-      session.startTransaction();
-      const itemId = await this._resolveItemId(identifier);
-      const item = await this.getItem(itemId);
-      const data = await this.getData(userId);
-      const inventory = data.inventory || {};
-      if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
-        throw new CurrencySystemError('Insufficient item quantity in inventory', 'INSUFFICIENT_QUANTITY');
-      }
-      const sellPrice = Math.floor(item.price * quantity * sellPriceMultiplier);
-      await this.removeItem(userId, itemId, quantity);
-      const newBalance = await this.addBalance(userId, sellPrice);
-      await session.commitTransaction();
-      return { itemId, quantity, sellPrice, newBalance };
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+  const itemId = await this._resolveItemId(identifier);
+  const item = await this.getItem(itemId);
+
+  const data = await this.getData(userId);
+  const inventory = data.inventory || {};
+  if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
+    throw new Error('Insufficient item quantity in inventory');
   }
+
+  const sellPrice = Math.floor(item.price * quantity * sellPriceMultiplier);
+
+  await this.removeItem(userId, itemId, quantity);
+  const newBalance = await this.addBalance(userId, sellPrice);
+
+  return { itemId, quantity, sellPrice, newBalance };
+}
 
   async deleteItem(identifier, removeFromInventories = true) {
     if (!this.useItemCollection) {
-      throw new CurrencySystemError('Item collection is disabled', 'ITEM_COLLECTION_DISABLED');
+      throw new Error('Item collection is disabled');
     }
     const itemId = await this._resolveItemId(identifier);
     const item = await this.itemStore.get(itemId);
     if (!item) {
-      throw new CurrencySystemError(`Item with ID ${itemId} not found`, 'ITEM_NOT_FOUND');
+      throw new Error(`Item with ID ${itemId} not found`);
     }
     await this.itemStore.delete(itemId);
-    this.cache.delete(itemId);
     if (removeFromInventories) {
-      await this.userStore.collection.updateMany(
-        { [`inventory.${itemId}`]: { $exists: true } },
-        { $unset: { [`inventory.${itemId}`]: "" } }
-      );
+      const entries = await this.userStore.entries();
+      const updates = {};
+      entries.forEach(({ key, value }) => {
+        if (value.inventory && value.inventory[itemId]) {
+          delete value.inventory[itemId];
+          updates[key] = { ...value, inventory: value.inventory };
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        await this.userStore.bulkPut(updates);
+      }
     }
     return true;
   }
 
   async addKeyValue(userId, key, value) {
-    if (!userId) throw new CurrencySystemError('User ID is required', 'INVALID_USER_ID');
+    if (!userId) throw new Error('User ID is required');
     if (typeof key !== 'string' || key.trim() === '') {
-      throw new CurrencySystemError('Key must be a non-empty string', 'INVALID_KEY');
+      throw new Error('Key must be a non-empty string');
     }
-    if (['balance', 'name', 'exp', 'inventory'].includes(key)) {
-      throw new CurrencySystemError('Cannot overwrite reserved fields', 'RESERVED_FIELD');
+    if (key === 'balance' || key === 'name' || key === 'exp' || key === 'inventory') {
+      throw new Error('Cannot overwrite reserved fields: balance, name, exp, or inventory');
     }
     return this.setData(userId, { [key]: value });
   }
 
   async deleteUser(userId) {
     if (!userId) {
-      throw new CurrencySystemError('User ID is required', 'INVALID_USER_ID');
+      throw new Error('User ID is required');
     }
     const data = await this.getData(userId);
     if (data === null) {
-      throw new CurrencySystemError('User not found', 'USER_NOT_FOUND');
+      throw new Error('User not found');
     }
     await this.userStore.delete(userId);
     return true;
@@ -432,7 +372,6 @@ class CurrencySystem {
     if (this.useItemCollection) {
       await this.itemStore.close();
     }
-    this.cache.clear();
   }
 }
 
