@@ -1,33 +1,51 @@
-// ni add ko lang mga ano ko sa cmd. but still remains unchanged everything tho
-
-
 const { createStore } = require("./dbStore");
+
+const generateId = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 class CurrencySystem {
   constructor({
     mongoUri = process.env.mongo_uri || global.api.mongo_uri,
     database = 'currency',
-    collection = 'balances',
-    defaultBalance = 0
+    userCollection = 'balances',
+    itemCollection = 'items',
+    defaultBalance = 0,
+    useItemCollection = true,
   }) {
-    this.store = createStore({
+    this.userStore = createStore({
       type: "mongodb",
       uri: mongoUri,
       database,
-      collection,
+      collection: userCollection,
       ignoreError: false,
       allowClear: true,
     });
+    this.useItemCollection = useItemCollection;
+    if (useItemCollection) {
+      this.itemStore = createStore({
+        type: "mongodb",
+        uri: mongoUri,
+        database,
+        collection: itemCollection,
+        ignoreError: false,
+        allowClear: true,
+      });
+    }
     this.defaultBalance = defaultBalance;
   }
 
   async init() {
-    await this.store.start();
+    await this.userStore.start();
+    if (this.useItemCollection) {
+      await this.itemStore.start();
+    }
   }
 
   async forceReset() {
     try {
-      await this.store.clear();
+      await this.userStore.clear();
+      if (this.useItemCollection) {
+        await this.itemStore.clear();
+      }
       return true;
     } catch (error) {
       throw new Error(`Failed to reset database: ${error.message}`);
@@ -35,10 +53,10 @@ class CurrencySystem {
   }
 
   async getData(userId) {
-    const data = await this.store.get(userId);
+    const data = await this.userStore.get(userId);
     if (data === null) {
       const defaultData = { balance: this.defaultBalance, name: null, exp: 0, inventory: {} };
-      await this.store.put(userId, defaultData);
+      await this.userStore.put(userId, defaultData);
       return defaultData;
     }
     return typeof data === 'object'
@@ -52,7 +70,7 @@ class CurrencySystem {
     }
     const currentData = await this.getData(userId);
     const newData = { ...currentData, ...data };
-    await this.store.put(userId, newData);
+    await this.userStore.put(userId, newData);
     return newData;
   }
 
@@ -65,10 +83,7 @@ class CurrencySystem {
     if (typeof name !== 'string' || name.trim() === '') {
       throw new Error('Name must be a non-empty string');
     }
-    const data = await this.getData(userId);
-    const newData = { ...data, name: name.trim() };
-    await this.store.put(userId, newData);
-    return newData;
+    return this.setData(userId, { name: name.trim() });
   }
 
   async addBalance(userId, amount) {
@@ -76,9 +91,9 @@ class CurrencySystem {
       throw new Error('Amount must be a positive number');
     }
     const data = await this.getData(userId);
-    const newData = { ...data, balance: (data.balance || this.defaultBalance) + amount };
-    await this.store.put(userId, newData);
-    return newData.balance;
+    const newBalance = (data.balance || this.defaultBalance) + amount;
+    await this.setData(userId, { balance: newBalance });
+    return newBalance;
   }
 
   async increaseMoney(userId, amount) {
@@ -90,9 +105,9 @@ class CurrencySystem {
       throw new Error('Amount must be a positive number');
     }
     const data = await this.getData(userId);
-    const newData = { ...data, exp: (data.exp || 0) + amount };
-    await this.store.put(userId, newData);
-    return newData.exp;
+    const newExp = (data.exp || 0) + amount;
+    await this.setData(userId, { exp: newExp });
+    return newExp;
   }
 
   async removeBalance(userId, amount) {
@@ -104,9 +119,9 @@ class CurrencySystem {
     if (currentBalance < amount) {
       throw new Error('Insufficient balance');
     }
-    const newData = { ...data, balance: currentBalance - amount };
-    await this.store.put(userId, newData);
-    return newData.balance;
+    const newBalance = currentBalance - amount;
+    await this.setData(userId, { balance: newBalance });
+    return newBalance;
   }
 
   async transferBalance(fromUserId, toUserId, amount) {
@@ -120,7 +135,7 @@ class CurrencySystem {
     if (fromBalance < amount) {
       throw new Error('Insufficient balance');
     }
-    await this.store.bulkPut({
+    await this.userStore.bulkPut({
       [fromUserId]: { ...fromData, balance: fromBalance - amount },
       [toUserId]: { ...toData, balance: toBalance + amount },
     });
@@ -128,15 +143,139 @@ class CurrencySystem {
   }
 
   async getLeaderboard(limit = 10) {
-    const entries = await this.store.entries();
+    const entries = await this.userStore.entries();
     return entries
       .map(({ key, value }) => ({
         userId: key,
         balance: typeof value === 'object' ? value.balance : value,
-        name: typeof value === 'object' ? value.name : null
+        name: typeof value === 'object' ? value.name : null,
       }))
       .sort((a, b) => b.balance - a.balance)
       .slice(0, limit);
+  }
+
+  async createItem(itemData, itemId = null) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    if (typeof itemData !== 'object' || !itemData.name || !itemData.price || typeof itemData.price !== 'number') {
+      throw new Error('Item data must include a name and a valid price');
+    }
+    const id = itemId || generateId();
+    const existingItem = await this.itemStore.get(id);
+    if (existingItem) {
+      throw new Error(`Item with ID ${id} already exists`);
+    }
+    const aliases = Array.isArray(itemData.aliases) ? itemData.aliases.map(alias => alias.trim().toLowerCase()) : [];
+    const newItem = {
+      id,
+      name: itemData.name.trim(),
+      price: itemData.price,
+      description: itemData.description || '',
+      category: itemData.category || 'misc',
+      aliases,
+      custom: itemData.custom || {},
+    };
+    await this.itemStore.put(id, newItem);
+    return newItem;
+  }
+
+  async getItem(itemId) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    const item = await this.itemStore.get(itemId);
+    if (!item) {
+      throw new Error(`Item with ID ${itemId} not found`);
+    }
+    return item;
+  }
+
+  async findItem(searchTerm) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    const entries = await this.itemStore.entries();
+    const matches = entries
+      .map(({ key, value }) => ({ id: key, ...value }))
+      .filter(item =>
+        item.id === searchTerm ||
+        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.aliases && item.aliases.includes(searchTerm.toLowerCase()))
+      );
+    if (matches.length === 0) {
+      throw new Error(`No items found matching "${searchTerm}"`);
+    }
+    return matches;
+  }
+
+  async addItem(userId, itemId, quantity = 1, customProps = {}) {
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      throw new Error('Quantity must be a positive number');
+    }
+    if (this.useItemCollection) {
+      await this.getItem(itemId);
+    }
+    const data = await this.getData(userId);
+    const inventory = data.inventory || {};
+    const currentQuantity = inventory[itemId]?.quantity || 0;
+    inventory[itemId] = {
+      quantity: currentQuantity + quantity,
+      ...customProps,
+    };
+    await this.setData(userId, { inventory });
+    return inventory[itemId];
+  }
+
+  async removeItem(userId, itemId, quantity = 1) {
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      throw new Error('Quantity must be a positive number');
+    }
+    const data = await this.getData(userId);
+    const inventory = data.inventory || {};
+    if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
+      throw new Error('Insufficient item quantity');
+    }
+    inventory[itemId].quantity -= quantity;
+    if (inventory[itemId].quantity <= 0) {
+      delete inventory[itemId];
+    }
+    await this.setData(userId, { inventory });
+    return inventory[itemId] || null;
+  }
+
+  async getInventory(userId) {
+    const data = await this.getData(userId);
+    return data.inventory || {};
+  }
+
+  async buyItem(userId, itemId, quantity = 1) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      throw new Error('Quantity must be a positive number');
+    }
+    const item = await this.getItem(itemId);
+    const totalCost = item.price * quantity;
+    const currentBalance = await this.getBalance(userId);
+    if (currentBalance < totalCost) {
+      throw new Error('Insufficient balance to buy item');
+    }
+    await this.removeBalance(userId, totalCost);
+    await this.addItem(userId, itemId, quantity);
+    return { itemId, quantity, totalCost };
+  }
+
+  async addKeyValue(userId, key, value) {
+    if (!userId) throw new Error('User ID is required');
+    if (typeof key !== 'string' || key.trim() === '') {
+      throw new Error('Key must be a non-empty string');
+    }
+    if (key === 'balance' || key === 'name' || key === 'exp' || key === 'inventory') {
+      throw new Error('Cannot overwrite reserved fields: balance, name, exp, or inventory');
+    }
+    return this.setData(userId, { [key]: value });
   }
 
   async deleteUser(userId) {
@@ -147,12 +286,15 @@ class CurrencySystem {
     if (data === null) {
       throw new Error('User not found');
     }
-    await this.store.delete(userId);
+    await this.userStore.delete(userId);
     return true;
   }
 
   async close() {
-    await this.store.close();
+    await this.userStore.close();
+    if (this.useItemCollection) {
+      await this.itemStore.close();
+    }
   }
 }
 
