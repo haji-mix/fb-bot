@@ -24,7 +24,7 @@ module.exports = {
         contentFont: "fancy",
     },
     run: async ({ chat, event, Utils, format, UNIRedux, args }) => {
-        const footer = format(module.exports.config.style.footer);
+        const footer = format(module.exports.style.footer);
         
         try {
             const { senderID } = event;
