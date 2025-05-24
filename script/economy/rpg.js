@@ -7,8 +7,7 @@ module.exports = {
         role: 0,
         cooldowns: 10,
         description: "Manage your RPG character and economy",
-        prefix: true,
-        usage: "<command> [arguments]"
+        prefix: true
     },
     style: {
         title: {
@@ -18,21 +17,22 @@ module.exports = {
         },
         footer: {
             content: "**Developed by**: Aljur Pogoy",
-            contentFont: "fancy",
+            text_font: "fancy",
         },
         titleFont: "bold",
         contentFont: "fancy",
     },
-    run: async ({ chat, event, Utils, format, UNIRedux, args }) => {
-        const footer = format(module.exports.style.footer);
-        
+    run: async ({ chat, event, Utils, format, UNIRedux }) => {
         try {
             const { senderID } = event;
             const { Currencies } = Utils;
+            const args = event.body?.split(" ").slice(1) || [];
 
-            const [subcommand, ...restArgs] = args.map(arg => arg?.toLowerCase().trim());
-            const commandArgs = restArgs.join(" ").trim();
+            if (!Currencies || typeof Currencies.getData !== 'function') {
+                throw new Error('Currencies is not properly initialized.');
+            }
 
+            const subcommand = args[0]?.toLowerCase();
             let userData = await Currencies.getData(senderID);
             let balance = userData.balance || 0;
             let exp = userData.exp || 0;
@@ -40,24 +40,11 @@ module.exports = {
             let inventory = userData.inventory || {};
             let playerName = userData.name || null;
 
-            const validateCommand = (expectedArgs, usageExample) => {
-                if (restArgs.length < expectedArgs) {
-                    const errorText = format({
-                        title: 'Usage ❌',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Incorrect usage! Example: ${usageExample}\n\n${footer}`,
-                    });
-                    chat.reply(errorText);
-                    return false;
-                }
-                return true;
-            };
-
             if (subcommand !== "register" && !playerName) {
                 const notRegisteredText = format({
                     title: 'Register 🚫',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                    content: `You need to register first! Use: rpg register <name>\n\n${footer}`,
+                    content: `You need to register first! Use: rpg register <name>`,
                 });
                 return chat.reply(notRegisteredText);
             }
@@ -68,34 +55,24 @@ module.exports = {
                         const alreadyRegisteredText = format({
                             title: 'Register 📝',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You are already registered as ${playerName}!\n\n${footer}`,
+                            content: `You are already registered as ${playerName}!`,
                         });
                         return chat.reply(alreadyRegisteredText);
                     }
-                    
-                    if (!validateCommand(1, "rpg register <your_name>")) return;
-                    
-                    const name = commandArgs;
-                    if (!name || name.length > 20) {
-                        const invalidNameText = format({
+                    const name = args.slice(1).join(" ").trim();
+                    if (!name) {
+                        const noNameText = format({
                             title: 'Register 🚫',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Invalid name! Must be 1-20 characters.\nUsage: rpg register <name>\n\n${footer}`,
+                            content: `Please provide a name! Usage: rpg register <name>`,
                         });
-                        return chat.reply(invalidNameText);
+                        return chat.reply(noNameText);
                     }
-                    
-                    await Currencies.setData(senderID, { 
-                        name, 
-                        balance: 100, 
-                        exp: 0, 
-                        inventory: {} 
-                    });
-                    
+                    await Currencies.setData(senderID, { name, balance: 100, exp: 0, inventory: {} });
                     const registerText = format({
                         title: 'Register ✅',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Welcome, ${name}! You've registered as a new adventurer with $100.\n\n${footer}`,
+                        content: `Welcome, ${name}! You’ve registered as a new adventurer with $100.`,
                     });
                     chat.reply(registerText);
                     break;
@@ -104,7 +81,7 @@ module.exports = {
                     const statsText = format({
                         title: 'Stats 📊',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Name: ${playerName}\nLevel: ${level}\nExperience: ${exp} XP\nBalance: $${balance.toLocaleString()}\n\n${footer}`,
+                        content: `Name: ${playerName}\nLevel: ${level}\nExperience: ${exp} XP\nBalance: $${balance.toLocaleString()}`,
                     });
                     chat.reply(statsText);
                     break;
@@ -115,7 +92,7 @@ module.exports = {
                     const earnText = format({
                         title: 'Earn 💰',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You earned $${earnAmount.toLocaleString()} from your adventure! New balance: $${(balance + earnAmount).toLocaleString()}\n\n${footer}`,
+                        content: `You earned $${earnAmount.toLocaleString()} from your adventure! New balance: $${(balance + earnAmount).toLocaleString()}`,
                     });
                     chat.reply(earnText);
                     break;
@@ -125,7 +102,7 @@ module.exports = {
                     const levelText = format({
                         title: 'Level 📈',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Level: ${level}\nExperience: ${exp} XP\nRequired for next level: ${requiredExp - exp} XP\n\n${footer}`,
+                        content: `Level: ${level}\nExperience: ${exp} XP\nRequired for next level: ${requiredExp - exp} XP`,
                     });
                     chat.reply(levelText);
                     break;
@@ -159,21 +136,22 @@ module.exports = {
                         const battleWinText = format({
                             title: 'Battle 🗡️',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You defeated a ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.loot} x1. New XP: ${exp + enemy.exp}\n\n${footer}`,
+                            content: `You defeated a ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.loot} x1. New XP: ${exp + enemy.exp}`,
+                            
                         });
                         chat.reply(battleWinText);
                     } else {
                         const battleLoseText = format({
                             title: 'Battle 🛡️',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You were defeated by a ${enemy.name}! Try again later.\n\n${footer}`,
+                            content: `You were defeated by a ${enemy.name}! Try again later.`,
+                            
                         });
                         chat.reply(battleLoseText);
                     }
                     break;
 
                 case "inventory":
-                case "inv":
                     const inventoryItems = [];
                     for (const [itemId, data] of Object.entries(inventory)) {
                         try {
@@ -189,41 +167,28 @@ module.exports = {
                         content: `Player: ${playerName}\n` +
                                  (inventoryItems.length > 0
                                      ? `Items: ${inventoryItems.join(", ")}`
-                                     : "Your inventory is empty!") + `\n\n${footer}`,
+                                     : "Your inventory is empty!"),
+                        
                     });
                     chat.reply(inventoryText);
                     break;
 
-                case "help":
-                case undefined:
+                default:
                     const helpText = format({
                         title: 'Menu ℹ️',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Available commands:\n` +
-                                `- rpg register <name> - Register your character\n` +
-                                `- rpg stats - View your character stats\n` +
-                                `- rpg earn - Earn money from adventures\n` +
-                                `- rpg level - Check your level progress\n` +
-                                `- rpg battle - Fight enemies for XP and loot\n` +
-                                `- rpg inventory - View your collected items\n\n${footer}`,
+                        content: `Available commands:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory`,
+                        
                     });
                     chat.reply(helpText);
-                    break;
-
-                default:
-                    const unknownCommandText = format({
-                        title: 'Error ❌',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Unknown command: ${subcommand}\nUse "rpg help" for available commands.\n\n${footer}`,
-                    });
-                    chat.reply(unknownCommandText);
             }
         } catch (error) {
-            console.error("RPG Error:", error);
+            console.error(error);
             const errorText = format({
                 title: 'Error ❌',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: "An unexpected error occurred. Please try again later.\n\n" + footer,
+                content: 'An error occurred while processing your RPG command. Please try again later.',
+                
             });
             chat.reply(errorText);
         }
