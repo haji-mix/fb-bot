@@ -8,21 +8,28 @@ module.exports = {
         usage: "[number/limit]",
         guide: "top 10",
         cooldowns: 5,
-        description: "Show the top users with the highest balance",
+        description: "Show the top users with the highest balance (excluding admins)",
         prefix: true
     },
-    run: async ({ chat, args, Utils, format, UNIRedux }) => {
+    run: async ({ chat, args, Utils, format, UNIRedux, admin }) => {
         try {
             const { Currencies } = Utils;
-            const topLimit = parseInt(args[0]) || 5; 
+            const topLimit = parseInt(args[0]) || 5;
 
-            if (isNaN(topLimit) || topLimit < 1 || topLimit > 50) {
-                return chat.reply("Please provide a valid number of users (1-50).");
+            if (isNaN(topLimit) || topLimit < 1 || topLimit > 10) {
+                return chat.reply("Please provide a valid number of users (1-10).");
             }
 
-            const leaderboard = await Currencies.getLeaderboard(topLimit);
+            let leaderboard = await Currencies.getLeaderboard(topLimit + admin.length); 
             if (!leaderboard || leaderboard.length === 0) {
                 return chat.reply("No users found in the economy system.");
+            }
+
+            leaderboard = leaderboard.filter(entry => !admin.includes(String(entry.userId)));
+            leaderboard = leaderboard.slice(0, topLimit); 
+
+            if (leaderboard.length === 0) {
+                return chat.reply("No non-admin users found in the economy system.");
             }
 
             for (const entry of leaderboard) {
@@ -35,7 +42,6 @@ module.exports = {
                             entry.name = userName.trim();
                         }
                     } catch (error) {
-               //         console.warn(`Failed to fetch/store name for user ${userId}: ${error.message}`);
                     }
                 }
             }

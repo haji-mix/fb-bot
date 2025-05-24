@@ -3,7 +3,7 @@ module.exports = {
         name: "hesoyam",
         type: "cheats",
         author: "Kenneth Panio",
-        role: 0,
+        role: 1,
         cooldowns: 10,
         description: "Claim a massive currency boost with the HESOYAM cheat code!",
         prefix: true
