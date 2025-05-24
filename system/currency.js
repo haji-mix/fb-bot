@@ -143,16 +143,17 @@ class CurrencySystem {
   }
 
   async getLeaderboard(limit = 10) {
-    const entries = await this.userStore.entries();
-    return entries
-      .map(({ key, value }) => ({
-        userId: key,
-        balance: typeof value === 'object' ? value.balance : value,
-        name: typeof value === 'object' ? value.name : null,
-      }))
-      .sort((a, b) => b.balance - a.balance)
-      .slice(0, limit);
-  }
+  const entries = await this.userStore.entries();
+  return entries
+    .map(({ key, value }) => ({
+      userId: key,
+      balance: typeof value === 'object' ? value.balance : value,
+      name: typeof value === 'object' ? value.name : null,
+    }))
+    .filter(user => user.balance > 0)
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, limit);
+}
 
   async createItem(itemData, itemId = null) {
     if (!this.useItemCollection) {
