@@ -180,10 +180,32 @@ class CurrencySystem {
     return newItem;
   }
 
-  async getItem(itemId) {
+  async _resolveItemId(identifier) {
     if (!this.useItemCollection) {
       throw new Error('Item collection is disabled');
     }
+    const item = await this.itemStore.get(identifier);
+    if (item) {
+      return identifier;
+    }
+    const entries = await this.itemStore.entries();
+    const match = entries
+      .map(({ key, value }) => ({ id: key, ...value }))
+      .find(item =>
+        item.name.toLowerCase() === identifier.toLowerCase() ||
+        (item.aliases && item.aliases.includes(identifier.toLowerCase()))
+      );
+    if (!match) {
+      throw new Error(`No item found matching "${identifier}"`);
+    }
+    return match.id;
+  }
+
+  async getItem(identifier) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    const itemId = await this._resolveItemId(identifier);
     const item = await this.itemStore.get(itemId);
     if (!item) {
       throw new Error(`Item with ID ${itemId} not found`);
@@ -209,12 +231,13 @@ class CurrencySystem {
     return matches;
   }
 
-  async addItem(userId, itemId, quantity = 1, customProps = {}) {
+  async addItem(userId, identifier, quantity = 1, customProps = {}) {
     if (typeof quantity !== 'number' || quantity <= 0) {
       throw new Error('Quantity must be a positive number');
     }
+    let itemId = identifier;
     if (this.useItemCollection) {
-      await this.getItem(itemId);
+      itemId = await this._resolveItemId(identifier);
     }
     const data = await this.getData(userId);
     const inventory = data.inventory || {};
@@ -227,9 +250,13 @@ class CurrencySystem {
     return inventory[itemId];
   }
 
-  async removeItem(userId, itemId, quantity = 1) {
+  async removeItem(userId, identifier, quantity = 1) {
     if (typeof quantity !== 'number' || quantity <= 0) {
       throw new Error('Quantity must be a positive number');
+    }
+    let itemId = identifier;
+    if (this.useItemCollection) {
+      itemId = await this._resolveItemId(identifier);
     }
     const data = await this.getData(userId);
     const inventory = data.inventory || {};
@@ -249,13 +276,14 @@ class CurrencySystem {
     return data.inventory || {};
   }
 
-  async buyItem(userId, itemId, quantity = 1) {
+  async buyItem(userId, identifier, quantity = 1) {
     if (!this.useItemCollection) {
       throw new Error('Item collection is disabled');
     }
     if (typeof quantity !== 'number' || quantity <= 0) {
       throw new Error('Quantity must be a positive number');
     }
+    const itemId = await this._resolveItemId(identifier);
     const item = await this.getItem(itemId);
     const totalCost = item.price * quantity;
     const currentBalance = await this.getBalance(userId);
