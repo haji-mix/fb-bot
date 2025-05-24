@@ -7,7 +7,8 @@ module.exports = {
         role: 0,
         cooldowns: 10,
         description: "Roll two dice to win or lose currency based on your bet",
-        prefix: true
+        prefix: true,
+        usage: "[bet]"
     },
     run: async ({ chat, event, args, Utils, format, UNIRedux }) => {
         try {

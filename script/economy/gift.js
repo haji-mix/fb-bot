@@ -2,7 +2,7 @@
 module.exports = {
     config: {
         name: "gift",
-        aliases: ["donate"],
+        aliases: ["donate", "give"],
         type: "economy",
         author: "Kenneth Panio | Liane Cagara",
         role: 0,
@@ -16,30 +16,23 @@ module.exports = {
             const { senderID, mentions } = event;
             const giftAmount = parseInt(args[0]);
             let targetID;
-
-            // Regex to validate Facebook profile links
+            
             const profileLinkRegex = /^(https?:\/\/(www\.|m\.)?facebook\.com\/(profile\.php\?id=\d+|[\w\.]+))$/i;
 
-            // Determine targetID: profile link, UID, mention, or message reply
             if (args[1] && profileLinkRegex.test(args[1])) {
-                // Profile link provided
                 try {
                     targetID = await api.getUID(args[1]);
                 } catch (error) {
                     return chat.reply("Invalid profile link or failed to fetch UID. Please try again.");
                 }
             } else if (args[1] && !isNaN(args[1])) {
-                // Direct UID provided
                 targetID = args[1];
             } else if (Object.keys(mentions).length > 0) {
-                // Mention provided
                 targetID = Object.keys(mentions)[0];
             } else if (event.type === "message_reply") {
-                // Message reply
                 targetID = event.messageReply.senderID;
             }
 
-            // Validation checks
             if (!giftAmount || isNaN(giftAmount) || giftAmount <= 0) {
                 return chat.reply("Please enter a valid amount to gift.");
             }
@@ -58,7 +51,6 @@ module.exports = {
                 return chat.reply("You do not have enough money to gift that amount.");
             }
 
-            // Perform the gifting
             await Utils.Currencies.removeBalance(senderID, giftAmount);
             await Utils.Currencies.addBalance(targetID, giftAmount);
 

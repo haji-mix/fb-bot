@@ -8,6 +8,7 @@ module.exports = {
         role: 0,
         cooldowns: 12, 
         description: "Play Rock, Paper, Scissors and bet your coins",
+        usage: "[bet] [rock/paper/scissors]",
         prefix: true
     },
     run: async ({ chat, event, Utils, args, format, UNIRedux }) => {
