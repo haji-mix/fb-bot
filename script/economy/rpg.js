@@ -17,7 +17,7 @@ module.exports = {
         },
         footer: {
             content: "**Developed by**: Aljur Pogoy",
-            text_font: "fancy",
+            contentFont: "fancy",
         },
         titleFont: "bold",
         contentFont: "fancy",
@@ -42,7 +42,7 @@ module.exports = {
 
             const formattedFooter = format({
                 content: module.exports.style.footer.content,
-                text_font: module.exports.style.footer.text_font
+                contentFont: module.exports.style.footer.contentFont
             });
 
             if (subcommand !== "register" && !playerName) {
