@@ -22,8 +22,9 @@ module.exports = {
         titleFont: "bold",
         contentFont: "fancy",
     },
-    run: async ({ chat, event, Utils, format, UNIRedux }) => {
+    run: async ({ chat, event, Utils, format, UNIRedux, FontSystem, abbreviateNumber }) => {
         try {
+
             const { senderID } = event;
             const { Currencies } = Utils;
             const args = event.body?.split(" ").slice(1) || [];
@@ -40,15 +41,19 @@ module.exports = {
             let playerName = userData.name || null;
 
             const formattedFooter = format({
-                content: module.exports.style.footer.content,
+                content: FontSystem.applyFonts(module.exports.style.footer.content, module.exports.style.footer.contentFont),
                 contentFont: module.exports.style.footer.contentFont
             });
 
+            const titlePattern = `${UNIRedux.arrow} {word}`;
+
             if (args[0]?.toLowerCase() !== "register" && !playerName) {
                 const notRegisteredText = format({
-                    title: 'Register 🚫',
-                    titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                    content: `You need to register first! Use: rpg register <name>\n\n${formattedFooter}`,
+                    title: FontSystem.applyFonts('Register 🚫', 'bold'),
+                    titlePattern,
+                    content: FontSystem.applyFonts(`You need to register first! Use: rpg register <name>\n\n${formattedFooter}`, 'fancy'),
+                    titleFont: 'bold',
+                    contentFont: 'fancy'
                 });
                 return chat.reply(notRegisteredText);
             }
@@ -59,34 +64,42 @@ module.exports = {
                 case "register":
                     if (playerName) {
                         const alreadyRegisteredText = format({
-                            title: 'Register 📝',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You are already registered as ${playerName}!\n\n${formattedFooter}`,
+                            title: FontSystem.applyFonts('Register 📝', 'bold'),
+                            titlePattern,
+                            content: FontSystem.applyFonts(`You are already registered as ${playerName}!\n\n${formattedFooter}`, 'fancy'),
+                            titleFont: 'bold',
+                            contentFont: 'fancy'
                         });
                         return chat.reply(alreadyRegisteredText);
                     }
                     const name = args.slice(1).join(" ").trim();
                     if (!name) {
                         const noNameText = format({
-                            title: 'Register 🚫',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Please provide a name! Usage: rpg register <name>\n\n${formattedFooter}`,
+                            title: FontSystem.applyFonts('Register 🚫', 'bold'),
+                            titlePattern,
+                            content: FontSystem.applyFonts(`Please provide a name! Usage: rpg register <name>\n\n${formattedFooter}`, 'fancy'),
+                            titleFont: 'bold',
+                            contentFont: 'fancy'
                         });
                         return chat.reply(noNameText);
                     }
                     await Currencies.setData(senderID, { name, balance: 100, exp: 0, inventory: {} });
                     const registerText = format({
-                        title: 'Register ✅',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Welcome, ${name}! You’ve registered as a new adventurer with $100.\n\n${formattedFooter}`,
+                        title: FontSystem.applyFonts('Register ✅', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`Welcome, ${name}! You’ve registered as a new adventurer with $100.\n\n${formattedFooter}`, 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(registerText);
 
                 case "stats":
                     const statsText = format({
-                        title: 'Stats 📊',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Name: ${playerName}\nLevel: ${level}\nExperience: ${exp} XP\nBalance: $${balance.toLocaleString()}\n\n${formattedFooter}`,
+                        title: FontSystem.applyFonts('Stats 📊', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`Name: ${playerName}\nLevel: ${level}\nExperience: ${exp} XP\nBalance: $${abbreviateNumber(balance)}\n\n${formattedFooter}`, 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(statsText);
 
@@ -94,18 +107,22 @@ module.exports = {
                     const earnAmount = Math.floor(Math.random() * 50) + 10;
                     await Currencies.increaseMoney(senderID, earnAmount);
                     const earnText = format({
-                        title: 'Earn 💰',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You earned $${earnAmount.toLocaleString()} from your adventure! New balance: $${(balance + earnAmount).toLocaleString()}\n\n${formattedFooter}`,
+                        title: FontSystem.applyFonts('Earn 💰', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`You earned $${abbreviateNumber(earnAmount)} from your adventure! New balance: $${abbreviateNumber(balance + earnAmount)}\n\n${formattedFooter}`, 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(earnText);
 
                 case "level":
                     const requiredExp = level * 100;
                     const levelText = format({
-                        title: 'Level 📈',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Level: ${level}\nExperience: ${exp} XP\nRequired for next level: ${requiredExp - exp} XP\n\n${formattedFooter}`,
+                        title: FontSystem.applyFonts('Level 📈', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`Level: ${level}\nExperience: ${exp} XP\nRequired for next level: ${requiredExp - exp} XP\n\n${formattedFooter}`, 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(levelText);
 
@@ -136,16 +153,20 @@ module.exports = {
                         await Currencies.increaseExp(senderID, enemy.exp);
                         await Currencies.addItem(senderID, itemId, 1);
                         const battleWinText = format({
-                            title: 'Battle 🗡️',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You defeated a ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.loot} x1. New XP: ${exp + enemy.exp}\n\n${formattedFooter}`,
+                            title: FontSystem.applyFonts('Battle 🗡️', 'bold'),
+                            titlePattern,
+                            content: FontSystem.applyFonts(`You defeated a ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.loot} x1. New XP: ${exp + enemy.exp}\n\n${formattedFooter}`, 'fancy'),
+                            titleFont: 'bold',
+                            contentFont: 'fancy'
                         });
                         return chat.reply(battleWinText);
                     } else {
                         const battleLoseText = format({
-                            title: 'Battle 🛡️',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You were defeated by a ${enemy.name}! Try again later.\n\n${formattedFooter}`,
+                            title: FontSystem.applyFonts('Battle 🛡️', 'bold'),
+                            titlePattern,
+                            content: FontSystem.applyFonts(`You were defeated by a ${enemy.name}! Details: Health: ${enemy.health}, Strength: ${enemy.strength}. Try again later.\n\n${formattedFooter}`, 'fancy'),
+                            titleFont: 'bold',
+                            contentFont: 'fancy'
                         });
                         return chat.reply(battleLoseText);
                     }
@@ -169,35 +190,41 @@ module.exports = {
                         inventoryItems.push("No items found or inventory is invalid.");
                     }
                     const inventoryText = format({
-                        title: 'Inventory 🎒',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Player: ${playerName}\n` +
-                                 (inventoryItems.length > 0
-                                     ? `Items: ${inventoryItems.join(", ")}\n\n${formattedFooter}`
-                                     : `Your inventory is empty!\n\n${formattedFooter}`),
+                        title: FontSystem.applyFonts('Inventory 🎒', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`Player: ${playerName}\n` +
+                            (inventoryItems.length > 0
+                                ? `Items: ${inventoryItems.join(", ")}\n\n${formattedFooter}`
+                                : `Your inventory is empty!\n\n${formattedFooter}`), 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(inventoryText);
 
                 default:
                     const helpText = format({
-                        title: 'Menu ℹ️',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Available commands:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory\n\n${formattedFooter}`,
+                        title: FontSystem.applyFonts('Menu ℹ️', 'bold'),
+                        titlePattern,
+                        content: FontSystem.applyFonts(`Available commands:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory\n\n${formattedFooter}`, 'fancy'),
+                        titleFont: 'bold',
+                        contentFont: 'fancy'
                     });
                     return chat.reply(helpText);
             }
         } catch (error) {
-            console.error('RPG Command Error:', error);
-            const formattedFooter = format({
-                content: module.exports.style.footer.content,
-                contentFont: module.exports.style.footer.contentFont 
-            });
-            const errorText = format({
-                title: 'Error ❌',
-                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `An error occurred while processing your RPG command: ${error.message}. Please try again later.\n\n${formattedFooter}`,
-            });
-            return chat.reply(errorText);
+            const fallbackMessage = `An error occurred while processing your RPG command: ${error.message}. Please try again later or contact admins/mods using 'callad'.\n\n${module.exports.style.footer.content}`;
+            try {
+                const errorText = format({
+                    title: FontSystem.applyFonts('Error', 'bold'),
+                    titlePattern: `${UNIRedux.arrow} {word}`,
+                    content: FontSystem.applyFonts(fallbackMessage, 'fancy'),
+                    titleFont: 'bold',
+                    contentFont: 'fancy'
+                });
+                return chat.reply(errorText);
+            } catch (formatError) {
+                return chat.reply(fallbackMessage);
+            }
         }
     }
 };
