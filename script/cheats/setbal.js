@@ -2,8 +2,8 @@ module.exports = {
     config: {
         name: "setbal",
         aliases: ["setbalance"],
-        type: "economy",
-        author: "Grok",
+        type: "admin",
+        author: "Kenneth Panio",
         role: 1,
         cooldowns: 5,
         description: "Set a user's currency balance by providing their profile link, UID, mentioning them, or replying to their message (Admin only)",
