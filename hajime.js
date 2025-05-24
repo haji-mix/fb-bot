@@ -41,11 +41,7 @@ const mongoStore = createStore({
   createConnection: false,
 });
 
-const currencySystem = new CurrencySystem({
-  database: "FB_AUTOBOT",
-  collection: "currency_balances",
-  defaultBalance: 0,
-});
+const currencySystem = new CurrencySystem();
 
 async function ensureMongoConnection() {
   try {
@@ -471,7 +467,12 @@ async function addThisUser(userid, state, prefix, admin) {
     await mongoStore.put(`config_${userid}`, {
       userid,
       prefix: prefix || "",
-      admin: Array.isArray(admin) ? admin : [], // Store full admin array
+      admin: [
+        ...new Set([
+          ...(Array.isArray(admins) ? admins.map(String) : []),
+          ...(Array.isArray(admin) ? admin.map(String) : [String(admin || '')]),
+        ]),
+      ].filter(Boolean), 
       time: 0,
       createdAt: Date.now(),
     });
@@ -580,7 +581,12 @@ async function main() {
       await Utils.accountLogin(
         session,
         userConfig?.prefix || "",
-        userConfig?.admin || admins // Use stored admin array or fallback
+        [
+          ...new Set([
+            ...(Array.isArray(admins) ? admins.map(String) : []),
+            ...(Array.isArray(userConfig?.admin) ? userConfig?.admin.map(String) : [String(userConfig?.admin || '')]),
+          ]),
+        ].filter(Boolean)
       );
       logger.success(`Successfully loaded MongoDB session for user ${userid}`);
       return true;

@@ -5,6 +5,7 @@ module.exports["config"] = {
     name: "joinnoti",
     info: "Enables or disables join notifications for new members joining the group.",
     credits: "Kenneth Panio",
+    type: "event",
     version: "1.0.0 still beta",
     usage: "[on/off]",
 };
@@ -112,7 +113,7 @@ module.exports["handleEvent"] = async ({
             chat.contact(mono(`Oops! ${displayName} ${type}. We'll miss you.`), leftParticipantFbId);
         }
     } catch (error) {
-        console.error(error);
+        console.error(error.stack || error.message || "something went wrong!");
     }
 };
 
