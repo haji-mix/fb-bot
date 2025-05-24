@@ -166,14 +166,12 @@ class CurrencySystem {
     if (existingItem) {
       throw new Error(`Item with ID ${id} already exists`);
     }
-    const aliases = Array.isArray(itemData.aliases) ? itemData.aliases.map(alias => alias.trim().toLowerCase()) : [];
     const newItem = {
       id,
       name: itemData.name.trim(),
       price: itemData.price,
       description: itemData.description || '',
       category: itemData.category || 'misc',
-      aliases,
       custom: itemData.custom || {},
     };
     await this.itemStore.put(id, newItem);
@@ -191,10 +189,7 @@ class CurrencySystem {
     const entries = await this.itemStore.entries();
     const match = entries
       .map(({ key, value }) => ({ id: key, ...value }))
-      .find(item =>
-        item.name.toLowerCase() === identifier.toLowerCase() ||
-        (item.aliases && item.aliases.includes(identifier.toLowerCase()))
-      );
+      .find(item => item.name.toLowerCase() === identifier.toLowerCase());
     if (!match) {
       throw new Error(`No item found matching "${identifier}"`);
     }
@@ -222,8 +217,7 @@ class CurrencySystem {
       .map(({ key, value }) => ({ id: key, ...value }))
       .filter(item =>
         item.id === searchTerm ||
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.aliases && item.aliases.includes(searchTerm.toLowerCase()))
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     if (matches.length === 0) {
       throw new Error(`No items found matching "${searchTerm}"`);
@@ -293,6 +287,32 @@ class CurrencySystem {
     await this.removeBalance(userId, totalCost);
     await this.addItem(userId, itemId, quantity);
     return { itemId, quantity, totalCost };
+  }
+
+  async deleteItem(identifier, removeFromInventories = true) {
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    const itemId = await this._resolveItemId(identifier);
+    const item = await this.itemStore.get(itemId);
+    if (!item) {
+      throw new Error(`Item with ID ${itemId} not found`);
+    }
+    await this.itemStore.delete(itemId);
+    if (removeFromInventories) {
+      const entries = await this.userStore.entries();
+      const updates = {};
+      entries.forEach(({ key, value }) => {
+        if (value.inventory && value.inventory[itemId]) {
+          delete value.inventory[itemId];
+          updates[key] = { ...value, inventory: value.inventory };
+        }
+      });
+      if (Object.keys(updates).length > 0) {
+        await this.userStore.bulkPut(updates);
+      }
+    }
+    return true;
   }
 
   async addKeyValue(userId, key, value) {
