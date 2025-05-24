@@ -356,6 +356,14 @@ class CurrencySystem {
     return true;
   }
 
+  async getName(userId) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    const data = await this.getData(userId);
+    return data.name;
+  }
+
   async addKeyValue(userId, key, value) {
     if (!userId) throw new Error('User ID is required');
     if (typeof key !== 'string' || key.trim() === '') {
