@@ -1,4 +1,4 @@
- const { createStore } = require("./dbStore");
+const { createStore } = require("./dbStore");
 
 const generateId = () => `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -155,17 +155,17 @@ class CurrencySystem {
   }
 
   async getLeaderboard(limit = 10) {
-  const entries = await this.userStore.entries();
-  return entries
-    .map(({ key, value }) => ({
-      userId: key,
-      balance: typeof value === 'object' ? value.balance : value,
-      name: typeof value === 'object' ? value.name : null,
-    }))
-    .filter(user => user.balance > 0)
-    .sort((a, b) => b.balance - a.balance)
-    .slice(0, limit);
-}
+    const entries = await this.userStore.entries();
+    return entries
+      .map(({ key, value }) => ({
+        userId: key,
+        balance: typeof value === 'object' ? value.balance : value,
+        name: typeof value === 'object' ? value.name : null,
+      }))
+      .filter(user => user.balance > 0)
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, limit);
+  }
 
   async createItem(itemData, itemId = null) {
     if (!this.useItemCollection) {
@@ -174,14 +174,18 @@ class CurrencySystem {
     if (typeof itemData !== 'object' || !itemData.name || !itemData.price || typeof itemData.price !== 'number') {
       throw new Error('Item data must include a name and a valid price');
     }
-    const id = itemId || generateId();
-    const existingItem = await this.itemStore.get(id);
+    const trimmedName = itemData.name.trim();
+    const entries = await this.itemStore.entries();
+    const existingItem = entries
+      .map(({ value }) => value)
+      .find(item => item.name.toLowerCase() === trimmedName.toLowerCase());
     if (existingItem) {
-      throw new Error(`Item with ID ${id} already exists`);
+      throw new Error(`Item with name "${trimmedName}" already exists`);
     }
+    const id = itemId || generateId();
     const newItem = {
       id,
-      name: itemData.name.trim(),
+      name: trimmedName,
       price: itemData.price,
       description: itemData.description || '',
       category: itemData.category || 'misc',
@@ -301,34 +305,34 @@ class CurrencySystem {
     await this.addItem(userId, itemId, quantity);
     return { itemId, quantity, totalCost };
   }
-  
+
   async sellItem(userId, identifier, quantity = 1, sellPriceMultiplier = 0.5) {
-  if (!this.useItemCollection) {
-    throw new Error('Item collection is disabled');
+    if (!this.useItemCollection) {
+      throw new Error('Item collection is disabled');
+    }
+    if (typeof quantity !== 'number' || quantity <= 0) {
+      throw new Error('Quantity must be a positive number');
+    }
+    if (typeof sellPriceMultiplier !== 'number' || sellPriceMultiplier < 0 || sellPriceMultiplier > 1) {
+      throw new Error('Sell price multiplier must be a number between 0 and 1');
+    }
+
+    const itemId = await this._resolveItemId(identifier);
+    const item = await this.getItem(itemId);
+
+    const data = await this.getData(userId);
+    const inventory = data.inventory || {};
+    if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
+      throw new Error('Insufficient item quantity in inventory');
+    }
+
+    const sellPrice = Math.floor(item.price * quantity * sellPriceMultiplier);
+
+    await this.removeItem(userId, itemId, quantity);
+    const newBalance = await this.addBalance(userId, sellPrice);
+
+    return { itemId, quantity, sellPrice, newBalance };
   }
-  if (typeof quantity !== 'number' || quantity <= 0) {
-    throw new Error('Quantity must be a positive number');
-  }
-  if (typeof sellPriceMultiplier !== 'number' || sellPriceMultiplier < 0 || sellPriceMultiplier > 1) {
-    throw new Error('Sell price multiplier must be a number between 0 and 1');
-  }
-
-  const itemId = await this._resolveItemId(identifier);
-  const item = await this.getItem(itemId);
-
-  const data = await this.getData(userId);
-  const inventory = data.inventory || {};
-  if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
-    throw new Error('Insufficient item quantity in inventory');
-  }
-
-  const sellPrice = Math.floor(item.price * quantity * sellPriceMultiplier);
-
-  await this.removeItem(userId, itemId, quantity);
-  const newBalance = await this.addBalance(userId, sellPrice);
-
-  return { itemId, quantity, sellPrice, newBalance };
-}
 
   async deleteItem(identifier, removeFromInventories = true) {
     if (!this.useItemCollection) {
