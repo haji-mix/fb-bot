@@ -1,6 +1,7 @@
 module.exports = {
     config: {
         name: "shell",
+        aliases: ["sh", "bash"],
         usage: '[command]',
         type: "utils",
         author: "Kenneth Panio",
