@@ -38,8 +38,8 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
   }
 
   try {
-    result = await chat.profile(imageUrl, caption);
-    chat.reply(result);
+    await chat.profile(imageUrl, caption);
+    chat.reply(mono("Profile Picture Updated!"));
   } catch (error) {
     chat.reply(mono(error.stack || error.message || "Failed to Update Profile Picture!"));
   }
