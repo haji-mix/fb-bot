@@ -6,6 +6,7 @@ module.exports = {
     name: "notification",
     aliases: ["noti"],
     version: "1.0.3",
+    type: "event",
     credits: "Kenneth Panio",
     info: "Receive Group Notification Update",
     usage: "[on/off]",
@@ -78,7 +79,6 @@ module.exports = {
             ? `${authorName} updated the group name to "${updatedName}".`
             : `${authorName} cleared the group name.`;
 
-          // Use a random GIF like in joinnoti
           const url_array = [
             "https://i.imgur.com/9UIo0dq.gif"
           ];
@@ -96,7 +96,6 @@ module.exports = {
         "log:user-nickname": async () => {
           const { participant_id, nickname } = logMessageData;
           if (authorID === chat.botID()) return;
-          // Update cache with new nickname
           if (groupInfo.data.userInfo) {
             const user = groupInfo.data.userInfo.find(user => user.id === participant_id);
             if (user) {
