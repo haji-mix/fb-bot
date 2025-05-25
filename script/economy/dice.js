@@ -5,7 +5,7 @@ module.exports = {
         type: "economy",
         author: "Kenneth Panio | Liane Cagara",
         role: 0,
-        cooldowns: 10,
+        cooldowns: 30,
         description: "Roll two dice to win or lose currency based on your bet",
         prefix: true,
         usage: "[bet]"

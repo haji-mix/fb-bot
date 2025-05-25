@@ -5,7 +5,7 @@ module.exports = {
         type: "economy",
         author: "Kenneth Panio | Liane Cagara",
         role: 0,
-        cooldowns: 12,
+        cooldowns: 15,
         description: "Spin a slot machine to win or lose currency based on your bet and matching symbols",
         prefix: true,
         usage: "[bet]",
