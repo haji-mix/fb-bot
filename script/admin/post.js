@@ -6,7 +6,7 @@ module.exports["config"] = {
     role: 1,
     credits: "kennethpanio",
     info: "Post multiple pictures using bot",
-    type: "utility",
+    type: "admin",
     usage: "[reply with attachment or provide URL in args]",
     guide: "reply with an image attachment with caption or provide the caption directly",
     cd: 10,

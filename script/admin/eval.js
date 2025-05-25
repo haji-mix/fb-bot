@@ -8,7 +8,7 @@ module.exports["config"] = {
     usage: "[code] or reply to a message with code",
     info: "Evaluate and execute JavaScript code.",
     guide: "Use eval [code] to execute JavaScript code or reply to a message with code.",
-    type: "Programming",
+    type: "admin",
     credits: "Kenneth Panio",
     version: "2.3.6",
     role: 3,
