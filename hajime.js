@@ -285,13 +285,6 @@ async function accountLogin(
         const errorMsg = error?.message || "API object is null";
         logger.error(`Login failed: ${errorMsg}`);
         
-        if (state) {
-          const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
-          if (user) {
-            await deleteThisUser(user.value);
-          }
-        }
-        
         return reject(error || new Error("API object is null"));
       }
 
