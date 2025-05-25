@@ -20,7 +20,7 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         titleFont: 'double_struck',
                         contentFont: 'fancy_italic',
-                        content: 'Please provide a shell script name and arguments (e.g., shell lscpu).'
+                        content: 'Please provide a shell command (e.g., shell lscpu).'
                     })
                 );
             }
