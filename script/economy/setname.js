@@ -4,9 +4,10 @@ module.exports = {
         aliases: ["changename", "namechange"],
         type: "economy",
         author: "Kenneth Panio | Aljur Pogoy",
+        usage: "[new name]",
         role: 0,
         cooldowns: 86400, 
-        description: "Change your RPG character name (costs money)",
+        description: "Change your character name (costs money)",
         prefix: true
     },
     style: {
