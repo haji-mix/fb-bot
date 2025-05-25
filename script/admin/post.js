@@ -39,5 +39,5 @@ module.exports["run"] = async ({ chat, event, args, font, prefix }) => {
         result = await chat.post(caption);
     }
 
-    return chat.reply(mono(result));
+    return chat.reply(result);
 };
