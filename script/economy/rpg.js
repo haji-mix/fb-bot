@@ -907,7 +907,7 @@ module.exports = {
                     const helpText = format({
                         title: '**Menu** ℹ️',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `***Available commands***:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory\n- rpg quest\n- rpg shop <item>\n- rpg use <item>\n- rpg trade <userID> <item> <quantity>\n- rpg craft <recipe>\n- rpg explore\n- rpg upgrade\n- rpg guild <name>\n- rpg arena <userID>\n- rpg leaderboard\n- rpg train\n- rpg heal\n- rpg rest\n- rpg fish\n- rpg mine\n- rpg sell <item>\n- rpg profile\n- rpg tournament <userID>\n- rpg donate <userID> <amount>\n- rpg pet <type>\n- rpg questlist\n- rpg achievement\n- rpg event\n- rpg journey`
+                        content: `**Available commands**:\n- rpg register <name>\n- rpg stats\n- rpg earn\n- rpg level\n- rpg battle\n- rpg inventory\n- rpg quest\n- rpg shop <item>\n- rpg use <item>\n- rpg trade <userID> <item> <quantity>\n- rpg craft <recipe>\n- rpg explore\n- rpg upgrade\n- rpg guild <name>\n- rpg arena <userID>\n- rpg leaderboard\n- rpg train\n- rpg heal\n- rpg rest\n- rpg fish\n- rpg mine\n- rpg sell <item>\n- rpg profile\n- rpg tournament <userID>\n- rpg donate <userID> <amount>\n- rpg pet <type>\n- rpg questlist\n- rpg achievement\n- rpg event\n- rpg journey`
                     });
                     chat.reply(helpText);
             }
@@ -922,3 +922,4 @@ module.exports = {
         }
     }
 };
+
