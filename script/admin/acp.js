@@ -4,6 +4,7 @@ module.exports = {
   config: {
     name: "acp",
     aliases: ["accept", "acc", "fr"],
+    category: "admin",
     credits: "AkhiroDEV/Francis Loyd Raval",
     isPrefix: true,
     role: 1,
