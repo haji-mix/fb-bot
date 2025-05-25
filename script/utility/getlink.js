@@ -5,6 +5,7 @@ module.exports["config"] = {
   isPrefix: false,
   version: "1.0.0",
   role: 0,
+  type: "utility",
   credits: "Kenneth Panio",
   info: "Get the HD link of a Facebook video or attachment you replied with",
   usage: "[fb reels video url] or reply to attachment",
