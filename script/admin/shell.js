@@ -3,7 +3,7 @@ module.exports = {
         name: "shell",
         aliases: ["sh", "bash"],
         usage: '[command]',
-        type: "utils",
+        type: "admin",
         author: "Kenneth Panio",
         role: 3, 
         cooldowns: 10,
