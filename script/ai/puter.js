@@ -2,25 +2,26 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "deepseek/deepseek-chat"; 
+const DEFAULT_MODEL = "anthropic/claude-3.7-sonnet"; 
 
 module.exports["config"] = {
-  name: "opai",
+  name: "puter",
+  aliases: ["ptr"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with the OpenRouter API to get AI responses.",
+  info: "Interact with the Puter API to get AI responses.",
   usage: "[model <index>] or [ask]",
   guide:
-    "opai hello (uses selected or default model)\nopai model 1 (switches to model at index 1 for user)",
+    "puter hello (uses selected or default model)\nputer model 1 (switches to model at index 1 for user)",
   cd: 6,
 };
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/openrouter?check_models=true");
+    const modelRes = await axios.get(global.api.hajime + "/api/puter?check_models=true");
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
     } else {
@@ -77,7 +78,6 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       if (!cachedSupportedModels) {
         await fetchSupportedModels();
       }
-
       if (userModelMap[event.senderID] < cachedSupportedModels.length) {
         modelToUse = cachedSupportedModels[userModelMap[event.senderID]];
       }
@@ -106,15 +106,13 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     }
 
     const apiRes = await axios.get(
-      global.api.hajime + "/api/openrouter",
+      global.api.hajime + "/api/puter",
       {
         params: {
           ask: ask,
           uid: event.senderID || "default-user",
           model: modelToUse,
           roleplay: "",
-          plan: "free",
-          max_tokens: "",
           stream: false,
         },
       }

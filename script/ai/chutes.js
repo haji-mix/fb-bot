@@ -2,25 +2,26 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "deepseek/deepseek-chat"; 
+const DEFAULT_MODEL = "deepseek-ai/DeepSeek-R1"; 
 
 module.exports["config"] = {
-  name: "opai",
+  name: "chutes",
+  aliases: ["cts"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with the OpenRouter API to get AI responses.",
+  info: "Interact with the Chutes API to get AI responses.",
   usage: "[model <index>] or [ask]",
   guide:
-    "opai hello (uses selected or default model)\nopai model 1 (switches to model at index 1 for user)",
+    "chutes hello (uses selected or default model)\nchutes model 1 (switches to model at index 1 for user)",
   cd: 6,
 };
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/openrouter?check_models=true");
+    const modelRes = await axios.get(global.api.hajime + "/api/chutes?check_models=true");
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
     } else {
@@ -106,7 +107,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     }
 
     const apiRes = await axios.get(
-      global.api.hajime + "/api/openrouter",
+      global.api.hajime + "/api/chutes",
       {
         params: {
           ask: ask,
