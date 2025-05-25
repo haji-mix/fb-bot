@@ -28,7 +28,7 @@ class onChat {
         }
     }
 
-    #badWords = ['damn', 'hell', 'shit', 'fuck', 'bitch', 'asshole', "nigga", "dick", "cock", "penis", "suck", "blowjob", "porn", "nude", "naked", "hack"];
+    #badWords = ['damn', 'hell', 'shit', 'fuck', 'bitch', 'asshole', "nigga", "dick", "cock", "penis", "suck", "blowjob", "porn", "nude", "naked", "hack", "kill", "murder"];
 
     #filterBadWords(text) {
         if (typeof text !== 'string') return text;
