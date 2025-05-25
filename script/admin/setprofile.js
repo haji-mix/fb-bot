@@ -7,7 +7,7 @@ module.exports["config"] = {
   role: 1,
   credits: "kennethpanio",
   info: "Change your profile picture",
-  type: "utility",
+  type: "admin",
   usage: "[reply with attachment or provide URL in args]",
   guide: "reply with an image attachment or provide the image URL as an argument",
   cd: 10,
