@@ -3,7 +3,7 @@ module.exports["config"] = {
   version: "1.3.0",
   isPrefix: false,
   role: 0,
-  type: "bot-utility",
+  type: "utility",
   aliases: ["id", "userid", "fbid"],
   info: "Get your id or from facebook users",
   usage: "[mention/fbplink]",

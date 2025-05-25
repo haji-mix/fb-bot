@@ -117,7 +117,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       global.Hajime.replies[response.messageID] = {
         author: event.senderID,
         conversationHistory: [{ user: ask, bot: imageDescriptions }],
-        callback: handleFollowUp, // Use the defined callback
+        callback: handleFollowUp,
       };
       setTimeout(() => {
         delete global.Hajime.replies[response.messageID];

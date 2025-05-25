@@ -2,6 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
     name: "cosplaytele",
+    aliases: ["costele", "cosertele"],
     version: "1.5.0",
     credits: "Kenneth Panio",
     type: "nsfw",

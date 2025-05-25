@@ -115,7 +115,6 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
         uid: event.senderID || "default-user",
         model: modelToUse,
         group: "web",
-        roleplay: "",
       },
     });
 
