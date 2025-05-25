@@ -5,7 +5,7 @@ module.exports = {
         usage: '[command]',
         type: "utils",
         author: "Kenneth Panio",
-        role: 1, 
+        role: 3, 
         cooldowns: 10,
         description: "Execute a shell script with provided arguments!",
         prefix: true
