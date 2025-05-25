@@ -13,11 +13,20 @@ module.exports = {
     run: async ({ chat, event, Utils, args, api, format, UNIRedux }) => {
         try {
             const { senderID, mentions } = event;
-            const amount = parseInt(args[0]);
+            let amount = parseInt(args[0]);
             let targetID = senderID;
             let targetName = "your";
 
             const profileLinkRegex = /^(https?:\/\/(www\.|m\.)?facebook\.com\/(profile\.php\?id=\d+|[\w\.]+))$/i;
+
+            if (!amount || isNaN(amount) || amount < 0) {
+                return chat.reply("Please enter a valid positive number for the balance.");
+            }
+
+            if (amount > Number.MAX_SAFE_INTEGER) {
+                amount = Number.MAX_SAFE_INTEGER;
+                chat.reply(`⚠️ Amount was too large and has been capped at the maximum safe value ($${Number.MAX_SAFE_INTEGER.toLocaleString()}).`);
+            }
 
             if (args[1] && profileLinkRegex.test(args[1])) {
                 try {
@@ -35,10 +44,6 @@ module.exports = {
             } else if (event.type === "message_reply") {
                 targetID = event.messageReply.senderID;
                 targetName = "the user's";
-            }
-
-            if (!amount || isNaN(amount) || amount < 0) {
-                return chat.reply("Please enter a valid positive number for the balance.");
             }
 
             await Utils.Currencies.setBalance(targetID, amount);
