@@ -1,7 +1,7 @@
 module.exports = {
     config: {
         name: "gitlog",
-        aliases: ["commits", "github-log"],
+        aliases: ["commits", "gitlogs"],
         type: "utility",
         author: "Kenneth Panio",
         role: 0,
@@ -49,12 +49,12 @@ module.exports = {
 
             const formattedCommits = commits.map((commit, index) => (
                 `╭──────────────────\n` +
-                `│  🌟 Commit #${index + 1}\n` +
-                `│  🔖 SHA: ${commit.sha}\n` +
-                `│  👨‍💻 Author: ${commit.author}\n` +
-                `│  📅 Date: ${commit.date}\n` +
-                `│  ✏️ Message: ${commit.message}\n` +
-                `│  🔗 URL: ${commit.url}\n` +
+                `│  🌟 **Commit #${index + 1}**\n` +
+                `│  🔖 **SHA**: ${commit.sha}\n` +
+                `│  👨‍💻 **Author**: ${commit.author}\n` +
+                `│  📅 **Date**: ${commit.date}\n` +
+                `│  ✏️ **Message**: ${commit.message}\n` +
+                `│  🔗 **URL**: ${commit.url}\n` +
                 `╰──────────────────`
             )).join('\n\n');
 

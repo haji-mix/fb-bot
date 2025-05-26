@@ -377,7 +377,7 @@ async function accountLogin(
           online: false,
           autoMarkDelivery: false,
           autoMarkRead: false,
-          userAgent: "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+          userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0",
         });
 
         require('./system/cronjob')({
