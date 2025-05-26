@@ -48,14 +48,14 @@ module.exports = {
             });
 
             const formattedCommits = commits.map((commit, index) => (
-                `╭───────────────────\n` +
+                `╭──────────────────\n` +
                 `│  🌟 Commit #${index + 1}\n` +
                 `│  🔖 SHA: ${commit.sha}\n` +
                 `│  👨‍💻 Author: ${commit.author}\n` +
                 `│  📅 Date: ${commit.date}\n` +
                 `│  ✏️ Message: ${commit.message}\n` +
                 `│  🔗 URL: ${commit.url}\n` +
-                `╰───────────────────`
+                `╰──────────────────`
             )).join('\n\n');
 
             return chat.reply(
