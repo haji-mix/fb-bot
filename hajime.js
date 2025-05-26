@@ -289,7 +289,7 @@ async function accountLogin(
       }
 
       try {
-        const appState = state || api.getAppState();
+        const appState = state;
         const userid = await api.getCurrentUserID();
 
         if (!userid) {
@@ -372,14 +372,12 @@ async function accountLogin(
           forceLogin: false,
           listenEvents: true,
           logLevel: "silent",
-          updatePresence: true,
+          updatePresence: false,
           selfListen: false,
-          online: true,
+          online: false,
           autoMarkDelivery: false,
           autoMarkRead: false,
-          userAgent: atob(
-            "ZmFjZWJvb2tleHRlcm5hbGhpdC8xLjEgKCtodHRwOi8vd3d3LmZhY2Vib29rLmNvbS9leHRlcm5hbGhpdF91YXRleHQucGhwKQ=="
-          ),
+          userAgent: "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
         });
 
         require('./system/cronjob')({
