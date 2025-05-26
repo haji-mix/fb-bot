@@ -21,7 +21,9 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/puter?check_models=true");
+    const modelRes = await axios.post(global.api.hajime + "/api/puter", {
+      check_models: true
+    });
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
     } else {
@@ -105,23 +107,26 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.get(
+    const apiRes = await axios.post(
       global.api.hajime + "/api/puter",
       {
-        params: {
-          ask: ask,
-          uid: event.senderID || "default-user",
-          model: modelToUse,
-          roleplay: "",
-          stream: false,
-        },
+        ask: ask,
+        uid: event.senderID || "default-user",
+        model: modelToUse,
+        roleplay: "",
+        stream: false
       }
     );
 
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = format({ title: model_used.split('/').pop().toUpperCase(), content: answer, noFormat: true, contentFont: 'none' });
+    const responseMessage = format({ 
+      title: model_used.split('/').pop().toUpperCase(), 
+      content: answer, 
+      noFormat: true, 
+      contentFont: 'none' 
+    });
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

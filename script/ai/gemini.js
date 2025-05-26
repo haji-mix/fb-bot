@@ -21,8 +21,8 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/gemini", {
-      params: { check_models: true },
+    const modelRes = await axios.post(global.api.hajime + "/api/gemini", {
+      check_models: true
     });
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
@@ -106,22 +106,25 @@ module.exports["run"] = async ({ args, chat, event, format }) => {
       );
     }
 
-    const apiRes = await axios.get(global.api.hajime + "/api/gemini", {
-      params: {
-        ask: ask,
-        uid: event.senderID || "default-user",
-        model: modelToUse,
-        roleplay: "You're Gemini AI Assistant",
-        google_api_key: "", // Add API key if required
-        file_url: fileUrl, // Pass single attachment URL
-        max_tokens: "",
-      },
+    const apiRes = await axios.post(global.api.hajime + "/api/gemini", {
+      ask: ask,
+      uid: event.senderID || "default-user",
+      model: modelToUse,
+      roleplay: "You're Gemini AI Assistant",
+      google_api_key: "", // Add API key if required
+      file_url: fileUrl, // Pass single attachment URL
+      max_tokens: ""
     });
 
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = format({ title: model_used.toUpperCase(), content: answer, noFormat: true, contentFont: 'none' });
+    const responseMessage = format({ 
+      title: model_used.toUpperCase(), 
+      content: answer, 
+      noFormat: true, 
+      contentFont: 'none' 
+    });
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

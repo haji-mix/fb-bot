@@ -26,9 +26,12 @@ const handleFollowUp = async ({ api, event, data, chat, format, uuid }) => {
       followUpAsk += `\n\nUser also sent these attachments: ${attachUrls}`;
     }
 
-    const followUpResponse = await axios.get(
-      global.api.hajime +
-        `/api/gpt4o?ask=${encodeURIComponent(followUpAsk)}&uid=${uuid}`
+    const followUpResponse = await axios.post(
+      global.api.hajime + `/api/gpt4o`,
+      {
+        ask: followUpAsk,
+        uid: uuid
+      }
     );
 
     if (followUpResponse.data.images && followUpResponse.data.images.length > 0) {
@@ -95,8 +98,12 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
   const answering = await chat.reply(font.thin("Generating response..."));
 
   try {
-    const res = await axios.get(
-      global.api.hajime + `/api/gpt4o?ask=${encodeURIComponent(ask)}&uid=${uuid}`
+    const res = await axios.post(
+      global.api.hajime + `/api/gpt4o`,
+      {
+        ask: ask,
+        uid: uuid
+      }
     );
 
     answering.unsend();

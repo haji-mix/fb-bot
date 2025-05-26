@@ -21,7 +21,9 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/workers?check_models=true");
+    const modelRes = await axios.post(global.api.hajime + "/api/workers", {
+      check_models: true
+    });
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
     } else {
@@ -72,14 +74,12 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
   const answering = await chat.reply(font.thin("Generating response..."));
 
   try {
-    let modelToUse = DEFAULT_MODEL; // Start with default model
+    let modelToUse = DEFAULT_MODEL;
     
-    // Only consider fetched models if user has explicitly selected one
     if (userModelMap[event.senderID] !== undefined) {
       if (!cachedSupportedModels) {
         await fetchSupportedModels();
       }
-      // If user has selected a model and it exists, use it
       if (userModelMap[event.senderID] < cachedSupportedModels.length) {
         modelToUse = cachedSupportedModels[userModelMap[event.senderID]];
       }
@@ -107,24 +107,27 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.get(
+    const apiRes = await axios.post(
       global.api.hajime + "/api/workers",
       {
-        params: {
-          ask: ask,
-          uid: event.senderID || "default-user",
-          model: modelToUse,
-          roleplay: "",
-          max_tokens: "",
-          stream: false,
-        },
+        ask: ask,
+        uid: event.senderID || "default-user",
+        model: modelToUse,
+        roleplay: "",
+        max_tokens: "",
+        stream: false
       }
     );
 
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = format({ title: model_used.split('/').pop().toUpperCase(), content: answer, noFormat: true, contentFont: 'none' });
+    const responseMessage = format({ 
+      title: model_used.split('/').pop().toUpperCase(), 
+      content: answer, 
+      noFormat: true, 
+      contentFont: 'none' 
+    });
     chat.reply(responseMessage);
   } catch (error) {
     answering.unsend();

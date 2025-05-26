@@ -21,7 +21,7 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + `/api/xai`);
+    const modelRes = await axios.post(global.api.hajime + `/api/xai`);
     cachedSupportedModels = modelRes.data.supported_models || [DEFAULT_MODEL];
   } catch (error) {
     if (
@@ -109,13 +109,11 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.get(global.api.hajime + `/api/xai`, {
-      params: {
-        ask: ask,
-        uid: event.senderID || "default-user",
-        model: modelToUse,
-        group: "web",
-      },
+    const apiRes = await axios.post(global.api.hajime + `/api/xai`, {
+      ask: ask,
+      uid: event.senderID || "default-user",
+      model: modelToUse,
+      group: "web"
     });
 
     answering.unsend();
@@ -145,7 +143,12 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       return chat.reply({ body: responseMessage, attachment: attachments });
     }
 
-    chat.reply(format({ title: displayModel, content: responseMessage, noFormat: true, contentFont: 'none' }));
+    chat.reply(format({ 
+      title: displayModel, 
+      content: responseMessage, 
+      noFormat: true, 
+      contentFont: 'none' 
+    }));
   } catch (error) {
     answering.unsend();
     chat.reply(font.thin(error.stack || error.message));
