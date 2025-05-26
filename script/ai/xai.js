@@ -21,7 +21,7 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.post(global.api.hajime + `/api/xai`);
+    const modelRes = await axios.get(global.api.hajime + `/api/xai`);
     cachedSupportedModels = modelRes.data.supported_models || [DEFAULT_MODEL];
   } catch (error) {
     if (

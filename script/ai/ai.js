@@ -15,7 +15,7 @@ module.exports["config"] = {
   cd: 6,
 };
 
-const handleFollowUp = async ({ api, event, data, chat, format, uuid }) => {
+const handleFollowUp = async ({ event, data, chat, format, uuid }) => {
   try {
     const userReply = event.body || "";
     let followUpAsk = `Previous context: ${data.conversationHistory

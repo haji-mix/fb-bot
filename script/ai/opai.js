@@ -2,7 +2,7 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "deepseek/deepseek-chat"; 
+const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
 module.exports["config"] = {
   name: "opai",
@@ -21,15 +21,17 @@ module.exports["config"] = {
 async function fetchSupportedModels() {
   try {
     const modelRes = await axios.post(global.api.hajime + "/api/openrouter", {
-      check_models: true
+      params: {
+        check_models: true,
+      },
     });
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
     } else {
-      cachedSupportedModels = [DEFAULT_MODEL]; 
+      cachedSupportedModels = [DEFAULT_MODEL];
     }
   } catch (error) {
-    cachedSupportedModels = [DEFAULT_MODEL]; 
+    cachedSupportedModels = [DEFAULT_MODEL];
   }
   return cachedSupportedModels;
 }
@@ -73,8 +75,8 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
   const answering = await chat.reply(font.thin("Generating response..."));
 
   try {
-    let modelToUse = DEFAULT_MODEL; 
-    
+    let modelToUse = DEFAULT_MODEL;
+
     if (userModelMap[event.senderID] !== undefined) {
       if (!cachedSupportedModels) {
         await fetchSupportedModels();
@@ -107,27 +109,27 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.post(
-      global.api.hajime + "/api/openrouter",
-      {
-        ask: ask,
-        uid: event.senderID || "default-user",
-        model: modelToUse,
-        roleplay: "",
-        plan: "free",
-        max_tokens: "",
-        stream: false
-      }
-    );
+    const apiRes = await axios.post(global.api.hajime + "/api/openrouter", {
+      ask: ask,
+      uid: event.senderID || "default-user",
+      model: modelToUse,
+      roleplay: "",
+      plan: "free",
+      max_tokens: "",
+      stream: false,
+    });
 
     answering.unsend();
 
     const { answer, model_used } = apiRes.data;
-    const responseMessage = format({ 
-      title: model_used.split('/').pop().toUpperCase(), 
-      content: answer, 
-      noFormat: true, 
-      contentFont: 'none' 
+    const responseMessage = format({
+      title: model_used
+        .split("/")
+        .pop()
+        .toUpperCase(),
+      content: answer,
+      noFormat: true,
+      contentFont: "none",
     });
     chat.reply(responseMessage);
   } catch (error) {

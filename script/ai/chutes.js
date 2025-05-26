@@ -21,8 +21,10 @@ module.exports["config"] = {
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.post(global.api.hajime + "/api/chutes", {
+    const modelRes = await axios.get(global.api.hajime + "/api/chutes", {
+      params: {
       check_models: true
+      }
     });
     if (modelRes.data && modelRes.data.supported_models) {
       cachedSupportedModels = modelRes.data.supported_models;
