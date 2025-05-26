@@ -48,22 +48,22 @@ module.exports = {
             });
 
             const formattedCommits = commits.map((commit, index) => (
-                `╭─────────────────────────\n` +
+                `╭───────────────────\n` +
                 `│  🌟 Commit #${index + 1}\n` +
                 `│  🔖 SHA: ${commit.sha}\n` +
                 `│  👨‍💻 Author: ${commit.author}\n` +
                 `│  📅 Date: ${commit.date}\n` +
                 `│  ✏️ Message: ${commit.message}\n` +
                 `│  🔗 URL: ${commit.url}\n` +
-                `╰─────────────────────────`
+                `╰───────────────────`
             )).join('\n\n');
 
             return chat.reply(
                 format({
-                    title: `LATEST COMMITS: ${owner}/${repo} 🚀`,
+                    title: `LATEST COMMITS 🚀`,
                     titlePattern: `{emojis} → {word}`,
                     titleFont: 'double_struck',
-                    contentFont: 'fancy_italic',
+                    contentFont: 'none',
                     content: `Showing 5 latest commits from ${owner}/${repo}:\n\n${formattedCommits}`
                 })
             );
