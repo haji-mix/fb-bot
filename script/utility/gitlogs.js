@@ -9,7 +9,7 @@ module.exports = {
         description: "Show the 5 latest commits from haji-mix/fb-bot repository",
         prefix: true
     },
-    run: async ({ chat, format }) => {
+    run: async ({ chat, format, UNIRedux }) => {
         try {
             const owner = "haji-mix";
             const repo = "fb-bot";
@@ -22,7 +22,7 @@ module.exports = {
                 return chat.reply(
                     format({
                         title: 'GIT COMMITS ❌',
-                        titlePattern: `{emojis} → {word}`,
+                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         titleFont: 'double_struck',
                         contentFont: 'fancy_italic',
                         content: 'No commits found for this repository'
@@ -61,10 +61,10 @@ module.exports = {
             return chat.reply(
                 format({
                     title: `LATEST COMMITS 🚀`,
-                    titlePattern: `{emojis} → {word}`,
+                    titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                     titleFont: 'double_struck',
                     contentFont: 'none',
-                    content: `Showing 5 latest commits from ${owner}/${repo}:\n\n${formattedCommits}`
+                    content: `**Showing 5 latest commits from ${owner}/${repo}**:\n\n${formattedCommits}`
                 })
             );
 
@@ -81,7 +81,7 @@ module.exports = {
             return chat.reply(
                 format({
                     title: 'GIT COMMITS ERROR ❌',
-                    titlePattern: `{emojis} → {word}`,
+                    titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                     titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
                     content: errorMessage
