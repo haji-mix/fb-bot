@@ -590,7 +590,6 @@ async function main() {
       );
       
       const ERROR_PATTERNS = {
-        unsupportedBrowser: /https:\/\/www\.facebook\.com\/unsupportedbrowser/,
         errorRetrieving: /Error retrieving userID.*unknown location/,
         connectionRefused: /Connection refused: Server unavailable/,
         notLoggedIn: /Not logged in\./,
