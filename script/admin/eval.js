@@ -18,7 +18,6 @@ module.exports = {
                     format({
                         title: 'EVALUATION ERROR 💻',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        titleFont: 'double_struck',
                         contentFont: 'fancy_italic',
                         content: 'Please provide code to evaluate.'
                     })
@@ -26,13 +25,7 @@ module.exports = {
             }
 
             const sandbox = {
-                require: (module) => {
-   /*                 const whitelist = ['fs', 'path', 'axios', 'moment', 'child_process']; 
-                    if (!whitelist.includes(module)) {
-                        throw new Error(`Module ${module} is not allowed`);
-                    }  */
-                    return require(module);
-                },
+                require: require,
                 console: {
                     log: (...args) => chat.reply(args.join(' ')),
                     error: (...args) => chat.reply(args.join(' ')),
@@ -41,17 +34,27 @@ module.exports = {
                     debug: (...args) => chat.reply(args.join(' ')),
                     trace: (...args) => chat.reply(args.join(' '))
                 },
-                process: {
-                    env: process.env,
-                    cwd: () => '/safe/path',
-                    platform: process.platform
-                },
+                process: process,
                 setTimeout,
                 setInterval,
                 setImmediate,
                 clearTimeout,
                 clearInterval,
-                clearImmediate
+                clearImmediate,
+                api,
+                event,
+                chat,
+                box,
+                message,
+                font,
+                fonts,
+                blacklist,
+                prefix,
+                admin,
+                Utils,
+                FontSystem,
+                format,
+                UNIRedux
             };
 
             let result;
@@ -69,7 +72,6 @@ module.exports = {
                 format({
                     title: 'EVALUATION RESULT 💻',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                    titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
                     content: `Code executed successfully!\n\nOutput:\n${output.slice(0, 10000)}`
                 })
@@ -80,7 +82,6 @@ module.exports = {
                 format({
                     title: 'EVALUATION ERROR 💻',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                    titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
                     content: error.message || 'An error occurred during evaluation.'
                 })
