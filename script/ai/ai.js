@@ -46,6 +46,7 @@ const handleFollowUp = async ({ event, data, chat, format, uuid }) => {
         body: newImageDescriptions,
         attachment: newAttachments,
       });
+      newResponse.unsend(30000);
       data.conversationHistory.push({
         user: userReply,
         bot: newImageDescriptions,
@@ -121,6 +122,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
         body: imageDescriptions,
         attachment: attachments,
       });
+      response.unsend(30000);
       global.Hajime.replies[response.messageID] = {
         author: event.senderID,
         conversationHistory: [{ user: ask, bot: imageDescriptions }],
