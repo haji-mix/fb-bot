@@ -18,6 +18,7 @@ module.exports = {
                     format({
                         title: 'EVALUATION ERROR 💻',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                        titleFont: 'double_struck',
                         contentFont: 'fancy_italic',
                         content: 'Please provide code to evaluate.'
                     })
@@ -64,16 +65,17 @@ module.exports = {
                 throw new Error(`Evaluation error: ${e.message}`);
             }
 
-            const output = typeof result === 'object' 
-                ? JSON.stringify(result, null, 2) 
-                : String(result);
+            const output = result !== undefined 
+                ? (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result))
+                : "N/A";
 
             return chat.reply(
                 format({
                     title: 'EVALUATION RESULT 💻',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                    titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
-                    content: `Code executed successfully!\n\nOutput:\n${output.slice(0, 10000)}`
+                    content: `✅ Code executed successfully!\n\nOutput:\n${output.slice(0, 10000)}`
                 })
             );
 
@@ -82,6 +84,7 @@ module.exports = {
                 format({
                     title: 'EVALUATION ERROR 💻',
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                    titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
                     content: error.message || 'An error occurred during evaluation.'
                 })
