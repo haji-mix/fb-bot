@@ -27,58 +27,44 @@ module.exports["run"] = async ({ api, event, args, chat, box, message, font, fon
         return chat.reply(font.monospace('Please provide the JavaScript code to evaluate.'));
     }
 
-    const logMessages = [];
-    const errorMessages = [];
-
-    console.log = (...args) => logMessages.push(args.join(' '));
-    console.error = (...args) => errorMessages.push(args.join(' '));
-
-    const evalPromise = new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
-    (async () => {
-        try {
-            const result = await eval(`(async () => { try { ${code} } catch (error) { chat.reply(error.stack || error.message); } })()`);
-            clearTimeout(timeout);
-            resolve(result);
-        } catch (error) {
-            clearTimeout(timeout);
-            reject(error);
+    const context = {
+        console: {
+            log: (...args) => chat.reply(font.monospace(`Log: ${args.join(' ')}`)),
+            error: (...args) => chat.reply(font.monospace(`Error: ${args.join(' ')}`))
         }
-    })();
-});
-
+    };
 
     try {
+        const evalPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Evaluation timed out.')), 30000);
+            (async () => {
+                try {
+                    const result = await eval(`(async () => { 
+                        const console = arguments[0].console; 
+                        try { 
+                            ${code} 
+                        } catch (error) { 
+                            throw error; 
+                        }
+                    })()`)(context);
+                    clearTimeout(timeout);
+                    resolve(result);
+                } catch (error) {
+                    clearTimeout(timeout);
+                    reject(error);
+                }
+            })();
+        });
+
         const result = await evalPromise;
 
-        const response = {
-            logs: logMessages,
-            errors: errorMessages,
-            result: result !== undefined ? result : 'No result returned',
-        };
-
-        const shouldSendAsAttachment = typeof response.result === 'object' ||
-            response.logs.some(log => typeof log === 'object') ||
-            response.errors.some(error => typeof error === 'object') ||
-            JSON.stringify(response).length > 1000;
-
-        if (shouldSendAsAttachment) {
-            const cacheFolderPath = path.join(__dirname, "cache");
-            if (!fs.existsSync(cacheFolderPath)) fs.mkdirSync(cacheFolderPath);
-            const filePath = path.join(cacheFolderPath, `Eval_Result_${event.senderID}_${Math.floor(Math.random() * 10000)}.json`);
-            fs.writeFileSync(filePath, JSON.stringify(response, null, 2), 'utf-8');
-            await chat.reply({ body: code, attachment: fs.createReadStream(filePath) });
-            fs.unlinkSync(filePath);
+        if (result !== undefined) {
+            const resultText = typeof result === 'object' ? JSON.stringify(result, null, 2) : result;
+            return chat.reply(font.monospace(`Result: ${resultText}`));
         } else {
-            const responseText = [
-                logMessages.length > 0 && `Logs:\n${logMessages.join('\n')}`,
-                errorMessages.length > 0 && `Errors:\n${errorMessages.join('\n')}`,
-                result !== undefined && `Result: ${result}`
-            ].filter(Boolean).join('\n\n');
-
-            if (responseText) chat.reply(font.monospace(responseText));
+            return chat.reply(font.monospace('No result returned'));
         }
     } catch (error) {
-        chat.reply(font.monospace(error.stack || error.message));
+        return chat.reply(font.monospace(error.stack || error.message));
     }
 };

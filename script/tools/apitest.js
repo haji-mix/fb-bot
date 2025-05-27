@@ -83,9 +83,7 @@ module.exports["run"] = async ({ chat, args, font, admin, event }) => {
         if (contentType.includes("json")) {
             const jsonData = JSON.parse(data.toString());
             const formatted = JSON.stringify(jsonData, null, 2);
-            return formatted.length > 4000
-                ? sendFile(chat, "txt", formatted, "📄 Large JSON response attached.", true)
-                : chat.reply(formatted);
+            return chat.reply(formatted); 
         }
 
         if (isMediaAttachment(contentType)) {
