@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const configPath = path.join(__dirname, "../../hajime.json");
 
-const hiddenTypes = ["nsfw", "pentest"];
+const hiddenTypes = ["nsfw", "pentest", "admin", "cheats"];
 
 module.exports.config = {
     name: "help",

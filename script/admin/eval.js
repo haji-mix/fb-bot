@@ -82,7 +82,7 @@ module.exports = {
                     titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                     titleFont: 'double_struck',
                     contentFont: 'fancy_italic',
-                    content: `✅ Code executed successfully!\n\nLogs:\n${logs.join('\n') || 'None'}\n\nOutput:\n${output}`.slice(0, 10000)
+                    content: `✅ Code executed successfully!\n\n${logs.join('\n') || ''}\n\nOutput:\n${output}`.slice(0, 10000)
                 })
             );
 
