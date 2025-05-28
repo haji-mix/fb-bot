@@ -2,25 +2,26 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "deepseek/deepseek-chat";
+const DEFAULT_MODEL = "claude-opus-4-20250514";
 
 module.exports["config"] = {
-  name: "opai",
+  name: "claude",
+  aliases: ["cl"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara",
   role: 0,
   type: "artificial-intelligence",
-  info: "Interact with the OpenRouter API to get AI responses.",
+  info: "Interact with the claude API to get AI responses.",
   usage: "[model <index>] or [ask]",
   guide:
-    "opai hello (uses selected or default model)\nopai model 1 (switches to model at index 1 for user)",
+    "claude hello (uses selected or default model)\nclaude model 1 (switches to model at index 1 for user)",
   cd: 6,
 };
 
 async function fetchSupportedModels() {
   try {
-    const modelRes = await axios.get(global.api.hajime + "/api/openrouter", {
+    const modelRes = await axios.get(global.api.hajime + "/api/anthropic", {
       params: {
         check_models: true,
       },
@@ -109,12 +110,11 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
       );
     }
 
-    const apiRes = await axios.post(global.api.hajime + "/api/openrouter", {
+    const apiRes = await axios.post(global.api.hajime + "/api/anthropic", {
       ask: ask,
       uid: event.senderID || "default-user",
       model: modelToUse,
       roleplay: "",
-      plan: "free",
       max_tokens: "",
       stream: false,
     });
