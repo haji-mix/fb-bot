@@ -37,7 +37,7 @@ module.exports = {
                 title: 'BA ERROR ❌',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
-                content: `Failed to fetch image: ${error.message}\n\nThank you for using our Cid Kagenou bot`
+                content: `Failed to fetch image: ${error.message}`
             });
             chat.reply(errorText);
         }
