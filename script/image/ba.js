@@ -6,7 +6,7 @@ module.exports = {
         author: "Aljur Pogoy",
         role: 0,
         cooldowns: 5,
-        description: "Get a fun BA image!",
+        description: "Get a fun blue archive image sir!",
         usages: "ba",
         prefix: true
     },
@@ -14,18 +14,18 @@ module.exports = {
         try {
             const axios = await import("axios").then(module => module.default);
 
-            const { data } = await axios.get("https://haji-mix-api.gleeze.com/api/ba", {
+            const response = await axios.get("https://haji-mix-api.gleeze.com/api/ba", {
                 responseType: "json"
             });
 
-            const imageUrl = data.url || data.image || data.result;
+            const imageUrl = response.data;
             if (!imageUrl) throw new Error("No image URL found");
 
             const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
             const imageBuffer = Buffer.from(imageResponse.data);
 
             const formattedText = format({
-                title: 'Heres your Blue Archive ✨',
+                title: 'BA IMAGE ✨',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
                 content: `Here's your BA image!`
