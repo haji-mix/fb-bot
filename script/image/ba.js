@@ -14,7 +14,7 @@ module.exports = {
         try {
             const axios = await import("axios").then(module => module.default);
 
-            const response = await axios.get("https://haji-mix-api.gleeze.com/api/ba", {
+            const response = await axios.get("https://haji-mix.up.railway.app/api/ba?api_key=21b2b7f078ab98cb5af9a0bd4eaa24c4e1c3ec20b1c864006a6f03cf0eee6006", {
                 responseType: "json"
             });
 
