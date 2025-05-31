@@ -14,7 +14,7 @@ module.exports = {
         try {
             const axios = await import("axios").then(module => module.default);
 
-            const response = await axios.post(global.api.hajime + "/api/ba", {}, {
+            const response = await axios.get(global.api.hajime + "/api/ba", {}, {
                 responseType: "arraybuffer"
             });
 
