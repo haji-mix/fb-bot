@@ -25,7 +25,7 @@ module.exports = {
             const imageBuffer = Buffer.from(imageResponse.data);
 
             const formattedText = format({
-                title: 'BA IMAGE ✨',
+                title: 'Heres your Blue archive Image  ✨',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
                 content: `Here's your BA image!`
