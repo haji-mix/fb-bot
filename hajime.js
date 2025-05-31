@@ -249,12 +249,6 @@ async function postLogin(req, res) {
       .json({ success: true, message: "Authentication successful" });
   } catch (error) {
     logger.error(`Post login failed: ${error.message}`);
-    if (state) {
-      const user = state.find((item) => ["i_user", "c_user"].includes(item.key));
-      if (user) {
-        await deleteThisUser(user.value);
-      }
-    }
     res
       .status(400)
       .json({ error: true, message: error.message || "Invalid app state" });
@@ -291,12 +285,6 @@ async function accountLogin(
       try {
         const appState = state;
         const userid = await api.getCurrentUserID();
-
-        if (!userid) {
-          logger.error("Failed to get user ID from API");
-          await deleteThisUser(userid);
-          return reject(new Error("Failed to get user ID"));
-        }
 
         logger.info(`Logged in user ${userid}`);
 
@@ -400,9 +388,7 @@ async function accountLogin(
             logger.warn(
               `MQTT error for user ${userid}: ${error?.stack || error}`
             );
-            Utils.account.delete(userid);
-            deleteThisUser(userid);
-            return;
+            return process.exit(1);
           }
 
           logger.info(
@@ -439,14 +425,6 @@ async function accountLogin(
         resolve();
       } catch (innerError) {
         logger.error(`Error in accountLogin: ${innerError.message}`);
-        try {
-          const userid = await api?.getCurrentUserID();
-          if (userid) {
-            await deleteThisUser(userid);
-          }
-        } catch (e) {
-          logger.error(`Error while cleaning up failed login: ${e.message}`);
-        }
         return reject(innerError);
       }
     });
