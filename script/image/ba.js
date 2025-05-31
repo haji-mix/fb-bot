@@ -6,7 +6,7 @@ module.exports = {
         author: "Aljur Pogoy",
         role: 0,
         cooldowns: 5,
-        description: "Get a fun BA image!",
+        description: "Get a fun Blue Archive image!",
         usages: "ba",
         prefix: true
     },
@@ -14,7 +14,7 @@ module.exports = {
         try {
             const axios = await import("axios").then(module => module.default);
 
-            const response = await axios.get("https://haji-mix-api.gleeze.com/api/ba", {
+            const response = await axios.post(global.api.hajime + "/api/ba", {}, {
                 responseType: "arraybuffer"
             });
 
@@ -22,10 +22,10 @@ module.exports = {
             if (!imageBuffer || imageBuffer.length === 0) throw new Error("No image data received");
 
             const formattedText = format({
-                title: 'Heres your Blue archive Image ✨',
+                title: 'Heres your Blue Archive ✨',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
-                content: `Here's your Blue Archve!!`
+                content: `Here's your Blue Archive image!`
             });
 
             await chat.reply({
@@ -37,7 +37,7 @@ module.exports = {
                 title: 'BA ERROR ❌',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
-                content: `Failed to fetch image: ${error.message}`
+                content: `Failed to fetch image: ${error.message}\n\nThank you for using our Cid Kagenou bot`
             });
             chat.reply(errorText);
         }
