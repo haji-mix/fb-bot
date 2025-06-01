@@ -21,22 +21,23 @@ async function botHandler({
 }) {
   const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
 
-  const reply = async (msg, callback = null) => {
+  const reply = async (msg, callback = null, reactCallback = null) => {
     try {
       const response = await chat.reply(fonts.thin(msg));
       if (callback && typeof callback === "function") {
         global.Hajime.replies[response.messageID] = {
           author: event.senderID,
-          callback: callback,
+          callback,
           conversationHistory: [],
         };
-        setTimeout(() => {
-          delete global.Hajime.replies[response.messageID];
-        }, 300000);
+        setTimeout(() => delete global.Hajime.replies[response.messageID], 300000);
+      }
+      if (reactCallback && typeof reactCallback === "function") {
+        await response.onReact(reactCallback);
       }
       return response;
     } catch (error) {
-      logger.error("[Reply] Error sending reply:", error);
+      logger.error(`[Reply] Error sending reply: ${error.message}`);
     }
   };
 
