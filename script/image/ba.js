@@ -2,7 +2,7 @@ module.exports = {
     config: {
         name: "ba",
         aliases: ["b"],
-        type: "image",
+        type: "anime",
         author: "Aljur Pogoy",
         role: 0,
         cooldowns: 5,
@@ -12,17 +12,8 @@ module.exports = {
     },
     run: async ({ chat, event, api, format }) => {
         try {
-            const axios = await import("axios").then(module => module.default);
-
-            const response = await axios.get(global.api.hajime + "/api/ba", {}, {
-                responseType: "arraybuffer"
-            });
-
-            const imageBuffer = Buffer.from(response.data);
-            if (!imageBuffer || imageBuffer.length === 0) throw new Error("No image data received");
-
             const formattedText = format({
-                title: 'Heres your Blue Archive ✨',
+                title: 'Blue Archive ✨',
                 titleFont: 'double_struck',
                 contentFont: 'fancy_italic',
                 content: `Here's your Blue Archive image!`
@@ -30,7 +21,7 @@ module.exports = {
 
             await chat.reply({
                 body: formattedText,
-                attachment: imageBuffer
+                attachment: await chat.stream(global.api.hajime + "/api/ba")
             });
         } catch (error) {
             const errorText = format({
