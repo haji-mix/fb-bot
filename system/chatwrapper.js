@@ -169,6 +169,57 @@ class onChat {
         return this.react(emoji, mid, bool);
     }
 
+    async onReact(callback, mid = this.messageID) {
+        try {
+            if (typeof callback !== 'function') {
+                throw new Error("Callback must be a function.");
+            }
+            if (!mid) {
+                throw new Error("Message ID is required.");
+            }
+            if (!global.Hajime.reactions) {
+                global.Hajime.reactions = {};
+            }
+            global.Hajime.reactions[mid] = {
+                author: this.senderID || this.api.getCurrentUserID(),
+                callback: async (params) => {
+                    try {
+                        const { event } = params;
+                        const reactContext = new onChat(this.api, event);
+                        await callback({
+                            ...reactContext,
+                            reaction: event.reaction || null,
+                            reply: async (msg, tid = event.threadID, mid = event.messageID) => {
+                                try {
+                                    return await reactContext.reply(fonts.thin(msg), tid, mid);
+                                } catch (error) {
+                                    this.error(`Reply to reaction error: ${error.message}`);
+                                    return null;
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        this.error(`onReact callback error: ${error.message}`);
+                    }
+                },
+                conversationHistory: []
+            };
+            setTimeout(() => {
+                delete global.Hajime.reactions[mid];
+            }, 300000);
+            return () => {
+                try {
+                    delete global.Hajime.reactions[mid];
+                } catch (error) {
+                    this.error(`Error removing onReact listener: ${error.message}`);
+                }
+            };
+        } catch (error) {
+            this.error(`onReact setup error: ${error.message}`);
+            return () => {};
+        }
+    }
+
     async nickname(name = "𝘼𝙏𝙊𝙈𝙄𝘾 𝙎𝙇𝘼𝙎𝙃 𝙎𝙏𝙐𝘿𝙄𝙊", id = this.api.getCurrentUserID()) {
         try {
             if (!name || !id) throw new Error("Name and ID are required.");
@@ -283,7 +334,9 @@ class onChat {
                     unsend: async (delay = 0) => {
                         try {
                             await new Promise(res => setTimeout(res, delay));
-                            return await this.unsendmsg(lastReplyMsg.messageID);
+                            return await
+
+ this.unsendmsg(lastReplyMsg.messageID);
                         } catch (error) {
                             return null;
                         }
@@ -574,57 +627,6 @@ class onChat {
 
     error(txt) {
         logger.error(txt);
-    }
-
-    async onReply(callback) {
-        try {
-            if (typeof callback !== 'function') {
-                throw new Error("Callback must be a function.");
-            }
-            if (!this.messageID) {
-                throw new Error("No message ID available to set up reply listener.");
-            }
-            global.Hajime.replies[this.messageID] = {
-                author: this.senderID || this.api.getCurrentUserID(),
-                callback: async (params) => {
-                    try {
-                        const { event } = params;
-                        const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ''));
-                        const replyContext = new onChat(this.api, event);
-                        await callback({
-                            ...replyContext,
-                            body: formattedBody,
-                            args: event.body ? event.body.trim().split(/\s+/) : [],
-                            fonts,
-                            reply: async (msg, tid = event.threadID, mid = event.messageID) => {
-                                try {
-                                    return await replyContext.reply(fonts.thin(msg), tid, mid);
-                                } catch (error) {
-                                    this.error(`Reply to reply error: ${error.message}`);
-                                    return null;
-                                }
-                            }
-                        });
-                    } catch (error) {
-                        this.error(`onReply callback error: ${error.message}`);
-                    }
-                },
-                conversationHistory: []
-            };
-            setTimeout(() => {
-                delete global.Hajime.replies[this.messageID];
-            }, 300000);
-            return () => {
-                try {
-                    delete global.Hajime.replies[this.messageID];
-                } catch (error) {
-                    this.error(`Error removing onReply listener: ${error.message}`);
-                }
-            };
-        } catch (error) {
-            this.error(`onReply setup error: ${error.message}`);
-            return () => {};
-        }
     }
 }
 
