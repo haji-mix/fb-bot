@@ -109,7 +109,7 @@ module.exports = async ({ api, font, logger }) => {
         }
     };
 
-    const captions = [
+/*    const captions = [
         `
         🚀 Check out my GitHub profile! 🚀
     
@@ -177,7 +177,7 @@ module.exports = async ({ api, font, logger }) => {
     
     // Schedule the promotion to post every morning at 8 AM, evening at 6 PM, and night at 10 PM Manila time
     schedulePromotion(['0 8 * * *', '0 18 * * *', '0 22 * * *']);
-
+*/
     const scheduleGreetings = (timeOfDay, hours) => {
         if (!greetings[timeOfDay]) {
             logger.error(`Invalid time of day: ${timeOfDay}`);
