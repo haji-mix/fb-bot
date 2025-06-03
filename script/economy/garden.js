@@ -821,7 +821,7 @@ module.exports = {
         format({
           title: 'Error ❌',
           titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-          content: 'An error occurred. Please try again later.',
+          content: error.stack || error.message || 'An error occurred. Please try again later.',
         })
       );
     }
