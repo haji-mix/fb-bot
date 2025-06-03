@@ -75,11 +75,19 @@ module.exports = {
         }
       };
 
+      // Case-insensitive lookup maps
+      const itemMaps = {
+        seeds: Object.keys(itemData.seeds).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {}),
+        gear: Object.keys(itemData.gear).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {}),
+        eggs: Object.keys(itemData.eggs).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {}),
+        cosmetics: Object.keys(itemData.cosmetics).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {})
+      };
+
       if (subcommand !== "register" && !playerName) {
         return chat.reply(format({
           title: 'Register 🚫',
           titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-          content: `You need to register first! Use: garden register <name>`
+          content: `You need to register first! Use: #garden register <name>`
         }));
       }
 
@@ -97,7 +105,7 @@ module.exports = {
             return chat.reply(format({
               title: 'Register 🚫',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Please provide a name! Usage: garden register <name>`
+              content: `Please provide a name! Usage: #garden register <name>`
             }));
           }
           await Currencies.setData(senderID, {
@@ -122,11 +130,12 @@ module.exports = {
               axios.get(endpoints.bloodTwilight)
             ]);
             stockData = {
-              seeds: seedGearResponse.data.seeds,
-              gear: seedGearResponse.data.gear,
-              eggs: eggResponse.data.egg,
-              cosmetics: cosmeticResponse.data.cosmetics,
-              bloodTwilight: bloodTwilightResponse.data
+              seeds: seedGearResponse.data.seeds || [],
+              gear: seedGearResponse.data.gear || [],
+              eggs: eggResponse.data.egg || [],
+              cosmetics: cosmeticResponse.data.cosmetics || [],
+              bloodTwilight: bloodTwilightResponse.data || { blood: {}, twilight: {} },
+              updatedAt: seedGearResponse.data.updatedAt || Date.now()
             };
           } catch (error) {
             return chat.reply(format({
@@ -138,44 +147,48 @@ module.exports = {
           return chat.reply(format({
             title: 'Shop 🏪',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `**Seeds** (Updated: ${new Date(stockData.seeds.updatedAt || Date.now()).toLocaleString()}):\n` +
-                     (stockData.seeds?.length > 0
+            content: `**Seeds** (Updated: ${new Date(stockData.updatedAt).toLocaleString()}):\n` +
+                     (stockData.seeds.length > 0
                        ? stockData.seeds.map(seed => {
-                           const seedName = seed.replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                           const seedName = seed.replace(/\*\*x\d+\*\*/, "").trim();
                            const quantity = seed.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
-                           const price = itemData.seeds[seedName]?.price || "Unknown";
-                           return `${seedName} x${quantity} ($${price} each)`;
+                           const canonicalName = itemMaps.seeds[seedName.toLowerCase()] || seedName;
+                           const price = itemData.seeds[canonicalName]?.price || "Unknown";
+                           return `${canonicalName} x${quantity} ($${price} each)`;
                          }).join("\n")
                        : "No seeds available") +
                      `\n\n**Gear**:\n` +
-                     (stockData.gear?.length > 0
+                     (stockData.gear.length > 0
                        ? stockData.gear.map(gear => {
-                           const gearName = gear.replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                           const gearName = gear.replace(/\*\*x\d+\*\*/, "").trim();
                            const quantity = gear.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
-                           const price = itemData.gear[gearName]?.price || "Unknown";
-                           return `${gearName} x${quantity} ($${price} each)`;
+                           const canonicalName = itemMaps.gear[gearName.toLowerCase()] || gearName;
+                           const price = itemData.gear[canonicalName]?.price || "Unknown";
+                           return `${canonicalName} x${quantity} ($${price} each)`;
                          }).join("\n")
                        : "No gear available") +
                      `\n\n**Eggs**:\n` +
-                     (stockData.eggs?.length > 0
+                     (stockData.eggs.length > 0
                        ? stockData.eggs.map(egg => {
-                           const eggName = egg.replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                           const eggName = egg.replace(/\*\*x\d+\*\*/, "").trim();
                            const quantity = egg.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
-                           const price = itemData.eggs[eggName]?.price || "Unknown";
-                           return `${eggName} x${quantity} ($${price} each)`;
+                           const canonicalName = itemMaps.eggs[eggName.toLowerCase()] || eggName;
+                           const price = itemData.eggs[canonicalName]?.price || "Unknown";
+                           return `${canonicalName} x${quantity} ($${price} each)`;
                          }).join("\n")
                        : "No eggs available") +
                      `\n\n**Cosmetics**:\n` +
-                     (stockData.cosmetics?.length > 0
+                     (stockData.cosmetics.length > 0
                        ? stockData.cosmetics.map(cosmetic => {
-                           const cosmeticName = cosmetic.replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                           const cosmeticName = cosmetic.replace(/\*\*x\d+\*\*/, "").trim();
                            const quantity = cosmetic.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
-                           const price = itemData.cosmetics[cosmeticName]?.price || "Unknown";
-                           return `${cosmeticName} x${quantity} ($${price} each)`;
+                           const canonicalName = itemMaps.cosmetics[cosmeticName.toLowerCase()] || cosmeticName;
+                           const price = itemData.cosmetics[canonicalName]?.price || "Unknown";
+                           return `${canonicalName} x${quantity} ($${price} each)`;
                          }).join("\n")
                        : "No cosmetics available") +
                      `\n\n**Blood/Twilight Events**:\n` +
-                     (stockData.bloodTwilight.blood || stockData.bloodTwilight.twilight
+                     (Object.keys(stockData.bloodTwilight.blood).length > 0 || Object.keys(stockData.bloodTwilight.twilight).length > 0
                        ? `Blood: ${JSON.stringify(stockData.bloodTwilight.blood)}\nTwilight: ${JSON.stringify(stockData.bloodTwilight.twilight)}`
                        : "No event items available")
           }));
@@ -184,24 +197,24 @@ module.exports = {
           let weatherData;
           try {
             const response = await axios.get(endpoints.weather);
-            weatherData = response.data;
+            weatherData = response.data || {};
           } catch (error) {
             return chat.reply(format({
               title: 'Weather Error ❌',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Failed to fetch weather data. Please try again later.`
+              content: 'Failed to fetch weather data. Try again later.'
             }));
           }
           return chat.reply(format({
-            title: 'Weather ☁️',
-            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `Current Weather: ${weatherData.currentWeather} ${weatherData.icon || ""}\n` +
-                     `Description: ${weatherData.description || "N/A"}\n` +
-                     `Effect: ${weatherData.effectDescription || "None"}\n` +
-                     `Crop Bonuses: ${weatherData.cropBonuses || "None"}\n` +
-                     `Mutations: ${weatherData.mutations?.length > 0 ? weatherData.mutations.join(", ") : "None"}\n` +
-                     `Rarity: ${weatherData.rarity || "Common"}\n` +
-                     `Updated: ${new Date(weatherData.updatedAt).toLocaleString()}`
+            title: 'Weather �',
+            titlePattern: '{emojis} ${UNIRedux.arrow} {word}',
+            content: `Current Weather: ${weatherData.currentWeather || 'N/A'} ${weatherData.icon || ''}\n` +
+                     `Description: ${weatherData.description || 'N/A'}\n` +
+                     `Effect: ${weatherData.effectDescription || 'None'}\n` +
+                     `Crop Bonuses: ${weatherData.cropBonuses || 'None'}\n` +
+                     `Mutations: ${weatherData.mutations?.length > 0 ? weatherData.mutations.join(',') : 'None'}\n` +
+                     `Rarity: ${weatherData.rarity || 'Common'}\n` +
+                     `Updated: ${new Date(weatherData.updatedAt || Date.now()).toLocaleString()}`
           }));
 
         case "buy":
@@ -209,69 +222,62 @@ module.exports = {
             return chat.reply(format({
               title: 'Buy 🛒',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Usage: garden buy <type> <item> (e.g., garden buy seed Carrot)`
+              content: 'Usage: buy <type> <item> (e.g., #garden buy seed Carrot)'
             }));
           }
           const itemType = args[1].toLowerCase();
-          const itemName = args.slice(2).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
-          const quantityMatch = args.join(" ").match(/\*\*x(\d+)\*\*/);
-          const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-
-          if (!["seed", "gear", "egg", "cosmetic"].includes(itemType)) {
+          const itemName = args.slice(2).join(' ').replace(/\*\*x\d+\*\*/g, '').trim().toLowerCase();
+          const quantity = parseInt(args.join(' ').match(/\*\*x(\d+)\*\)/)?.[1] || 1;
+          const canonicalName = itemMaps[itemType]?.[itemName] || '';
+          if (!['seed', 'gear', 'egg', 'cosmetic'].includes(itemType)) {
             return chat.reply(format({
               title: 'Buy 🛒',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Invalid item type! Use: seed, gear, egg, or cosmetic`
+              content: 'Invalid item type! Use: seed, gear, egg, or cosmetic'
             }));
           }
-
-          const typeKey = itemType + "s";
-          if (!itemData[typeKey][itemName]) {
+          if (!canonicalName || !itemData[`${itemType}s`][canonicalName]) {
             return chat.reply(format({
               title: 'Buy 🛒',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Item "${itemName}" not found! Check stock with: garden stock`
+              content: `Item '${itemName}' not found! Check stock with: #garden stock`
             }));
           }
-
           let stockDataBuy;
           try {
-            const endpoint = itemType === "cosmetic" ? endpoints.cosmetics : itemType === "egg" ? endpoints.eggs : endpoints.seeds;
+            const endpoint = itemType === 'cosmetic' ? endpoints.cosmetics : itemType === 'egg' ? endpoints.eggs : endpoints.seeds;
             const response = await axios.get(endpoint);
-            stockDataBuy = response.data;
+            stockDataBuy = response.data || {};
           } catch (error) {
             return chat.reply(format({
               title: 'Buy Error ❌',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Failed to fetch stock data. Please try again later.`
+              content: 'Failed to fetch stock data. Try again later.'
             }));
           }
-
-          const stockItems = itemType === "cosmetic" ? stockDataBuy.cosmetics : itemType === "egg" ? stockDataBuy.egg : stockDataBuy[typeKey];
-          if (!stockItems.includes(`${itemName} **x${quantity}**`) && quantity > 1) {
+          const stockItems = itemType === 'cosmetic' ? stockDataBuy.cosmetics || [] : itemType === 'egg' ? stockDataBuy.egg || [] : stockDataBuy[`${itemType}s`] || [];
+          if (quantity > 1 && !stockItems.includes(`${canonicalName} **x${quantity}**`)) {
             return chat.reply(format({
               title: 'Buy 🛒',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `${itemName} x${quantity} is not in stock! Check: garden stock`
+              content: `${canonicalName} x${quantity} is not in stock! Check: #garden stock`
             }));
           }
-
-          const totalCost = itemData[typeKey][itemName].price * quantity;
+          const totalCost = itemData[`${itemType}s`][canonicalName].price * quantity;
           if (balance < totalCost) {
             return chat.reply(format({
               title: 'Buy 🛒',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `You need $${totalCost} to buy ${itemName} x${quantity}! You have $${balance}.`
+              content: `You need $${totalCost} to buy ${canonicalName} x${quantity}! You have $${balance}.`
             }));
           }
-
-          inventory[typeKey][itemName] = (inventory[typeKey][itemName] || 0) + quantity;
+          inventory[`${itemType}s`][canonicalName] = (inventory[`${itemType}s`][canonicalName] || 0) + quantity;
           balance -= totalCost;
           await Currencies.setData(senderID, { balance, inventory });
           return chat.reply(format({
             title: 'Buy 🛒',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `You bought ${itemName} x${quantity} (${itemType}) for $${totalCost}! New balance: $${balance.toLocaleString()}`
+            content: `You bought ${canonicalName} x${quantity} (${itemType}) for $${totalCost}! New balance: $${balance.toLocaleString()}`
           }));
 
         case "plant":
@@ -279,58 +285,57 @@ module.exports = {
             return chat.reply(format({
               title: 'Plant 🌱',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Specify a seed to plant! Use: garden plant <seed>`
+              content: 'Specify a seed to plant! Use: #garden plant <seed>'
             }));
           }
-          const plantSeedName = args.slice(1).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
-          if (!itemData.seeds[plantSeedName] || !inventory.seeds[plantSeedName] || inventory.seeds[plantSeedName] <= 0) {
+          const plantSeedName = args.slice(1).join(' ').replace(/\*\*x\d+\*\*/g, '').trim().toLowerCase();
+          const canonicalSeedName = itemMaps.seeds[plantSeedName] || '';
+          if (!canonicalSeedName || !itemData.seeds[canonicalSeedName] || !inventory.seeds[canonicalSeedName] || inventory.seeds[canonicalSeedName] <= 0) {
             return chat.reply(format({
               title: 'Plant 🌱',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `You don't have ${plantSeedName}! Check your inventory with: garden inventory`
+              content: `You don't have ${plantSeedName}! Check your inventory with: #garden inventory`
             }));
           }
           if (crops.length >= 10) {
             return chat.reply(format({
               title: 'Plant 🌱',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Your garden is full! Harvest or sell crops first with: garden harvest`
+              content: 'Your garden is full! Harvest or sell crops first with: #garden harvest'
             }));
           }
-
           let weatherDataPlant;
           try {
             const response = await axios.get(endpoints.weather);
-            weatherDataPlant = response.data;
+            weatherDataPlant = response.data || { currentWeather: 'Clear', mutations: [] };
           } catch (error) {
-            weatherDataPlant = { currentWeather: "Clear", mutations: [] };
+            weatherDataPlant = { currentWeather: 'Clear', mutations: [] };
           }
-          let growthTime = itemData.seeds[plantSeedName].growthTime;
+          let growthTime = itemData.seeds[canonicalSeedName].growthTime;
           let mutationChance = 0.1;
-          if (weatherDataPlant.currentWeather.includes("Rain")) {
+          if (weatherDataPlant.currentWeather.includes('Rain')) {
             growthTime *= 0.8;
             mutationChance += 0.1;
           }
-          if (inventory.gear["Basic Sprinkler"]) {
+          if (inventory.gear['Basic Sprinkler']) {
             growthTime *= 0.9;
             mutationChance += 0.05;
           }
-
-          inventory.seeds[plantSeedName] -= 1;
-          if (inventory.seeds[plantSeedName] === 0) delete inventory.seeds[plantSeedName];
+          inventory.seeds[canonicalSeedName] -= 1;
+          if (inventory.seeds[canonicalSeedName] === 0) delete inventory.seeds[canonicalSeedName];
           crops.push({
-            seedName: plantSeedName,
+            seedName: canonicalSeedName,
             plantedAt: Date.now(),
             growthTime: growthTime * 1000,
-            regrows: itemData.seeds[plantSeedName].regrows
+            regrows: itemData.seeds[canonicalSeedName].regrows
           });
           await Currencies.setData(senderID, { inventory, crops });
           return chat.reply(format({
             title: 'Plant 🌱',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `You planted a ${plantSeedName}! It will be ready to harvest in ${Math.ceil(growthTime)} seconds.` +
-                     (weatherDataPlant.currentWeather.includes("Rain") ? `\nRain is speeding up growth!` : "") +
-                     (inventory.gear["Basic Sprinkler"] ? `\nSprinkler is boosting growth!` : "")
+            content: `You planted a ${canonicalSeedName}! Ready to harvest in ${Math.ceil(growthTime)} seconds.` +
+                     (weatherDataPlant.currentWeather.includes('Rain') ? '\nRain is speeding up growth!' : '') +
+                     (inventory.gear['Basic Sprinkler'] ? '\nSprinkler is boosting growth!' : '')
           }));
 
         case "harvest":
@@ -338,22 +343,20 @@ module.exports = {
             return chat.reply(format({
               title: 'Harvest 🌾',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `You have no crops growing! Plant seeds with: garden plant <seed>`
+              content: 'You have no crops growing! Plant seeds with: #garden plant <seed>'
             }));
           }
-
           let weatherDataHarvest;
           try {
             const response = await axios.get(endpoints.weather);
-            weatherDataHarvest = response.data;
+            weatherDataHarvest = response.data || { currentWeather: 'Clear', mutations: [] };
           } catch (error) {
-            weatherDataHarvest = { currentWeather: "Clear", mutations: [] };
+            weatherDataHarvest = { currentWeather: 'Clear', mutations: [] };
           }
           let totalYield = 0;
           const harvestedCrops = [];
           const remainingCrops = [];
           const now = Date.now();
-
           for (const crop of crops) {
             const seedName = crop.seedName;
             const isReady = now >= crop.plantedAt + crop.growthTime;
@@ -361,32 +364,32 @@ module.exports = {
               let yieldValue = itemData.seeds[seedName].baseYield;
               const mutationChance = Math.random();
               let mutations = [];
-              if (weatherDataHarvest.currentWeather.includes("Rain") && mutationChance < 0.5) {
-                mutations.push("Wet");
+              if (weatherDataHarvest.currentWeather.includes('Rain') && mutationChance < 0.5) {
+                mutations.push('Wet');
                 yieldValue *= 2;
               }
-              if (weatherDataHarvest.currentWeather.includes("Thunderstorm") && mutationChance < 0.3) {
-                mutations.push("Shocked");
+              if (weatherDataHarvest.currentWeather.includes('Thunderstorm') && mutationChance < 0.3) {
+                mutations.push('Shocked');
                 yieldValue *= 3;
               }
-              if (weatherDataHarvest.currentWeather.includes("Snow") && mutationChance < 0.2) {
-                mutations.push(mutationChance < 0.1 ? "Frozen" : "Chilled");
+              if (weatherDataHarvest.currentWeather.includes('Snow') && mutationChance < 0.2) {
+                mutations.push(mutationChance < 0.1 ? 'Frozen' : 'Chilled');
                 yieldValue *= mutationChance < 0.1 ? 10 : 2;
               }
               if (mutationChance < 0.01) {
-                mutations.push("Gold");
+                mutations.push('Gold');
                 yieldValue *= 20;
               }
               if (mutationChance < 0.001) {
-                mutations.push("Rainbow");
+                mutations.push('Rainbow');
                 yieldValue *= 50;
               }
-              if (inventory.gear["Basic Sprinkler"] && mutationChance < 0.15) {
-                mutations.push("Large");
+              if (inventory.gear['Basic Sprinkler'] && mutationChance < 0.15) {
+                mutations.push('Large');
                 yieldValue *= 2;
               }
               totalYield += yieldValue;
-              harvestedCrops.push(`${seedName} (${mutations.length > 0 ? mutations.join(", ") : "None"})`);
+              harvestedCrops.push(`${seedName} (${mutations.length > 0 ? mutations.join(', ') : 'None'})`);
               if (crop.regrows) {
                 crop.plantedAt = Date.now();
                 remainingCrops.push(crop);
@@ -395,21 +398,19 @@ module.exports = {
               remainingCrops.push(crop);
             }
           }
-
           if (harvestedCrops.length === 0) {
             return chat.reply(format({
               title: 'Harvest 🌾',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `No crops are ready yet! Check back later or use: garden status`
+              content: 'No crops are ready yet! Check back later or use: #garden status'
             }));
           }
-
           balance += totalYield;
           await Currencies.setData(senderID, { balance, crops: remainingCrops });
           return chat.reply(format({
             title: 'Harvest 🌾',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `You harvested: ${harvestedCrops.join(", ")}\nEarned: $${totalYield.toLocaleString()}\nNew balance: $${balance.toLocaleString()}`
+            content: `You harvested: ${harvestedCrops.join(', ')}\nEarned: $${totalYield.toLocaleString()}\nNew balance: $${balance.toLocaleString()}`
           }));
 
         case "status":
@@ -417,19 +418,18 @@ module.exports = {
             return chat.reply(format({
               title: 'Status 📊',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `You have no crops growing! Plant seeds with: garden plant <seed>`
+              content: 'You have no crops growing! Plant seeds with: #garden plant <seed>'
             }));
           }
-
           const nowStatus = Date.now();
           const cropStatus = crops.map(crop => {
             const timeLeft = Math.max(0, Math.ceil((crop.plantedAt + crop.growthTime - nowStatus) / 1000));
-            return `${crop.seedName}: ${timeLeft > 0 ? `${timeLeft} seconds left` : "Ready to harvest"}`;
+            return `${crop.seedName}: ${timeLeft > 0 ? `${timeLeft} seconds left` : 'Ready to harvest'}`;
           });
           return chat.reply(format({
             title: 'Status 📊',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-            content: `Growing Crops:\n${cropStatus.join("\n")}\nUse: garden harvest to collect ready crops`
+            content: `Growing Crops:\n${cropStatus.join('\n')}\nUse: #garden harvest to collect ready crops`
           }));
 
         case "inventory":
@@ -438,17 +438,17 @@ module.exports = {
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
             content: `Player: ${playerName}\n` +
                      `**Seeds**:\n${Object.entries(inventory.seeds).length > 0
-                       ? Object.entries(inventory.seeds).map(([seed, qty]) => `${seed}: ${qty}`).join("\n")
-                       : "No seeds"}\n` +
+                       ? Object.entries(inventory.seeds).map(([seed, qty]) => `${seed}: ${qty}`).join('\n')
+                       : 'No seeds'}\n` +
                      `**Gear**:\n${Object.entries(inventory.gear).length > 0
-                       ? Object.entries(inventory.gear).map(([gear, qty]) => `${gear}: ${qty}`).join("\n")
-                       : "No gear"}\n` +
+                       ? Object.entries(inventory.gear).map(([gear, qty]) => `${gear}: ${qty}`).join('\n')
+                       : 'No gear'}\n` +
                      `**Eggs**:\n${Object.entries(inventory.eggs).length > 0
-                       ? Object.entries(inventory.eggs).map(([egg, qty]) => `${egg}: ${qty}`).join("\n")
-                       : "No eggs"}\n` +
+                       ? Object.entries(inventory.eggs).map(([egg, qty]) => `${egg}: ${qty}`).join('\n')
+                       : 'No eggs'}\n` +
                      `**Cosmetics**:\n${Object.entries(inventory.cosmetics).length > 0
-                       ? Object.entries(inventory.cosmetics).map(([cosmetic, qty]) => `${cosmetic}: ${qty}`).join("\n")
-                       : "No cosmetics"}`
+                       ? Object.entries(inventory.cosmetics).map(([cosmetic, qty]) => `${cosmetic}: ${qty}`).join('\n')
+                       : 'No cosmetics'}`
           }));
 
         case "profile":
@@ -466,23 +466,22 @@ module.exports = {
             title: 'Menu ℹ️',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
             content: `**Available commands**:\n` +
-                     `- garden register <name>\n` +
-                     `- garden stock\n` +
-                     `- garden weather\n` +
-                     `- garden buy <type> <item> (e.g., seed Carrot, gear Basic Sprinkler)\n` +
-                     `- garden plant <seed>\n` +
-                     `- garden harvest\n` +
-                     `- garden status\n` +
-                     `- garden inventory\n` +
-                     `- garden profile`
+                     `- #garden register <name>\n` +
+                     `- #garden stock\n` +
+                     `- #garden weather\n` +
+                     `- #garden buy <type> <item> (e.g., seed Carrot)\n` +
+                     `- #garden plant <seed>\n` +
+                     `- #garden harvest\n` +
+                     `- #garden status\n` +
+                     `- #garden inventory\n` +
+                     `- #garden profile`
           }));
       }
     } catch (error) {
-      console.error("Garden Command Error:", error);
       return chat.reply(format({
         title: 'Error ❌',
         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-        content: `An error occurred while processing your command. Please try again later.`
+        content: error.stack || error.message || "Something Wen't Wrong!"
       }));
     }
   }
