@@ -22,24 +22,17 @@ module.exports = {
   },
   run: async ({ chat, event, Utils, format, UNIRedux }) => {
     try {
-      // Validate event and dependencies
-      if (!event || !event.senderID || !Utils || !Utils.Currencies || !chat || !format || !UNIRedux) {
-        throw new Error('Missing required event or utility dependencies');
-      }
-
       const { senderID } = event;
       const { Currencies } = Utils;
       const args = (event.body || '').trim().split(/\s+/).slice(1);
       const subcommand = args[0]?.toLowerCase() || '';
 
-      // Initialize user data
       let userData = (await Currencies.getData(senderID)) || {};
       let balance = userData.balance || 0;
       let inventory = userData.inventory || { seeds: {}, gear: {}, eggs: {}, cosmetics: {} };
       let playerName = userData.name || null;
       let crops = userData.crops || [];
 
-      // API and item configuration
       const API_BASE = 'https://growagardenstock.com/api';
       const endpoints = {
         seeds: `${API_BASE}/stock?type=gear-seeds&ts=${Date.now()}`,
@@ -420,9 +413,7 @@ module.exports = {
           if (crops.length >= 10) {
             return chat.reply(
               format({
-                title: 'Plant'
-
- 🌱',
+                title: 'Plant 🌱', // Fixed syntax error here
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                 content: 'Your garden is full! Harvest or sell crops first with: #garden harvest',
               })
