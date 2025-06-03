@@ -4,11 +4,11 @@ module.exports = {
     config: {
         name: "garden",
         aliases: ["gag"],
-        type: "economy",
+        type: "game",
         author: "Black Nigga",
         role: 0,
         cooldowns: 5,
-        description: "Manage your Grow A Garden farm and track shop stock",
+        description: "Manage your Grow A Garden farm, plant seeds, and sell crops",
         prefix: true
     },
     style: {
@@ -30,15 +30,23 @@ module.exports = {
             let balance = userData.balance || 0;
             let inventory = userData.inventory || {};
             let playerName = userData.name || null;
+            let crops = userData.crops || []; // Array of { seedId, plantedAt, growthTime }
 
             // API base URL and endpoints
             const API_BASE = "https://growagardenstock.com/api";
             const endpoints = {
-                cosmetics: `${API_BASE}/special-stock?type=cosmetics&ts=`,
-                bloodTwilight: `${API_BASE}/special-stock?type=blood-twilight&ts=`,
-                egg: `${API_BASE}/stock?type=egg&ts=`,
-                gearSeeds: `${API_BASE}/stock?type=gear-seeds&ts=`,
+                seeds: `${API_BASE}/stock?type=gear-seeds&ts=`,
                 weather: `${API_BASE}/stock/weather?ts=${Date.now()}`
+            };
+
+            // Item prices and growth times (in seconds)
+            const itemData = {
+                "Carrot": { price: 50, growthTime: 60, baseYield: 100 },
+                "Corn": { price: 60, growthTime: 120, baseYield: 150 },
+                "Daffodil": { price: 70, growthTime: 90, baseYield: 120 },
+                "Strawberry": { price: 80, growthTime: 180, baseYield: 200 },
+                "Tomato": { price: 60, growthTime: 120, baseYield: 140 },
+                "Blueberry": { price: 90, growthTime: 240, baseYield: 250 }
             };
 
             // Check if player is registered
@@ -70,42 +78,31 @@ module.exports = {
                         });
                         return chat.reply(noNameText);
                     }
-                    await Currencies.setData(senderID, { name, balance: 1000, inventory: {} });
+                    await Currencies.setData(senderID, { name, balance: 1000, inventory: {}, crops: [] });
                     const registerText = format({
                         title: 'Register ✅',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Welcome, ${name}! You've started your garden with 1000 Sheckles.`
+                        content: `Welcome, ${name}! You've started your garden with $1000.`
                     });
                     chat.reply(registerText);
                     break;
 
                 case "stock":
-                    const shopType = args[1]?.toLowerCase() || "all";
-                    let stockText = "";
-                    if (shopType === "cosmetics" || shopType === "all") {
-                        const { data } = await axios.get(endpoints.cosmetics);
-                        stockText += `Cosmetics Shop (Updated: ${new Date(data.updatedAt).toLocaleString()}):\n${data.cosmetics.length > 0 ? data.cosmetics.join(", ") : "No items available"}\n\n`;
-                    }
-                    if (shopType === "blood-twilight" || shopType === "all") {
-                        const { data } = await axios.get(endpoints.bloodTwilight);
-                        stockText += `Blood Moon Shop:\n${Object.keys(data.blood).length > 0 ? Object.entries(data.blood).map(([item, qty]) => `${item} x${qty}`).join(", ") : "No items available"}\n\n`;
-                        stockText += `Twilight Shop:\n${Object.keys(data.twilight).length > 0 ? Object.entries(data.twilight).map(([item, qty]) => `${item} x${qty}`).join(", ") : "No items available"}\n\n`;
-                    }
-                    if (shopType === "egg" || shopType === "all") {
-                        const { data } = await axios.get(endpoints.egg);
-                        stockText += `Egg Shop (Updated: ${new Date(data.updatedAt).toLocaleString()}):\n${data.egg.length > 0 ? data.egg.join(", ") : "No items available"}\n\n`;
-                    }
-                    if (shopType === "gear-seeds" || shopType === "all") {
-                        const { data } = await axios.get(endpoints.gearSeeds);
-                        stockText += `Gear Shop (Updated: ${new Date(data.updatedAt).toLocaleString()}):\n${data.gear.length > 0 ? data.gear.join(", ") : "No items available"}\n\n`;
-                        stockText += `Seed Shop (Updated: ${new Date(data.updatedAt).toLocaleString()}):\n${data.seeds.length > 0 ? data.seeds.join(", ") : "No items available"}\n\n`;
-                    }
-                    const stockReply = format({
-                        title: 'Shop Stock 🏪',
+                    const { data: stockData } = await axios.get(endpoints.seeds);
+                    const stockText = format({
+                        title: 'Seed Shop 🏪',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: stockText || `No stock available for ${shopType}! Use: garden stock [cosmetics|blood-twilight|egg|gear-seeds|all]`
+                        content: `Seeds (Updated: ${new Date(stockData.updatedAt).toLocaleString()}):\n` +
+                                 (stockData.seeds.length > 0
+                                     ? stockData.seeds.map(seed => {
+                                         const seedName = seed.replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                                         const quantity = seed.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
+                                         const price = itemData[seedName]?.price || "Unknown";
+                                         return `${seedName} x${quantity} ($${price} each)`;
+                                     }).join("\n")
+                                     : "No seeds available")
                     });
-                    chat.reply(stockReply);
+                    chat.reply(stockText);
                     break;
 
                 case "weather":
@@ -125,112 +122,218 @@ module.exports = {
                     break;
 
                 case "buy":
-                    if (!args[1] || !args[2]) {
+                    if (!args[1]) {
                         const buyHelpText = format({
                             title: 'Buy 🛒',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Usage: garden buy <shop> <item>`
+                            content: `Usage: garden buy <seed>`
                         });
                         return chat.reply(buyHelpText);
                     }
-                    const buyShop = args[1].toLowerCase();
-                    const itemName = args.slice(2).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                    const seedName = args.slice(1).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
                     const quantityMatch = args.join(" ").match(/\*\*x(\d+)\*\*/);
                     const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
 
-                    const itemPrices = {
-                        "Common Gnome Crate": 500,
-                        "Ring Walkway": 200,
-                        "Large Wood Table": 300,
-                        "Torch": 100,
-                        "Shovel Grave": 150,
-                        "Medium Circle Tile": 100,
-                        "Yellow Umbrella": 250,
-                        "Mini TV": 400,
-                        "Axe Stump": 200,
-                        "Common Egg": 300,
-                        "Uncommon Egg": 600,
-                        "Favorite Tool": 150,
-                        "Trowel": 100,
-                        "Basic Sprinkler": 200,
-                        "Watering Can": 150,
-                        "Lightning Rod": 500,
-                        "Recall Wrench": 400,
-                        "Carrot": 50,
-                        "Corn": 60,
-                        "Daffodil": 70,
-                        "Strawberry": 80,
-                        "Tomato": 60,
-                        "Blueberry": 90
-                    };
-
-                    if (!itemPrices[itemName]) {
-                        const invalidItemText = format({
+                    if (!itemData[seedName]) {
+                        const invalidSeedText = format({
                             title: 'Buy 🛒',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Item "${itemName}" not found! Check stock with: garden stock`
+                            content: `Seed "${seedName}" not found! Check stock with: garden stock`
                         });
-                        return chat.reply(invalidItemText);
+                        return chat.reply(invalidSeedText);
                     }
 
-                    // Check if item is in stock
-                    let stockData;
-                    if (buyShop === "cosmetics") {
-                        stockData = (await axios.get(endpoints.cosmetics)).data.cosmetics;
-                    } else if (buyShop === "egg") {
-                        stockData = (await axios.get(endpoints.egg)).data.egg;
-                    } else if (buyShop === "gear") {
-                        stockData = (await axios.get(endpoints.gearSeeds)).data.gear;
-                    } else if (buyShop === "seeds") {
-                        stockData = (await axios.get(endpoints.gearSeeds)).data.seeds;
-                    } else {
-                        const invalidShopText = format({
-                            title: 'Buy 🛒',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Invalid shop! Use: cosmetics, egg, gear, or seeds`
-                        });
-                        return chat.reply(invalidShopText);
-                    }
-
-                    if (!stockData.includes(`${itemName} **x${quantity}**`) && quantity > 1) {
+                    const { data: stockDataBuy } = await axios.get(endpoints.seeds);
+                    if (!stockDataBuy.seeds.includes(`${seedName} **x${quantity}**`) && quantity > 1) {
                         const notInStockText = format({
                             title: 'Buy 🛒',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `${itemName} x${quantity} is not in stock! Check: garden stock ${buyShop}`
+                            content: `${seedName} x${quantity} is not in stock! Check: garden stock`
                         });
                         return chat.reply(notInStockText);
                     }
 
-                    const totalCost = itemPrices[itemName] * quantity;
+                    const totalCost = itemData[seedName].price * quantity;
                     if (balance < totalCost) {
                         const notEnoughText = format({
                             title: 'Buy 🛒',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You need ${totalCost} Sheckles to buy ${itemName} x${quantity}! You have ${balance} Sheckles.`
+                            content: `You need $${totalCost} to buy ${seedName} x${quantity}! You have $${balance}.`
                         });
                         return chat.reply(notEnoughText);
                     }
 
-                    let itemId;
+                    let seedId;
                     try {
-                        itemId = await Currencies._resolveItemId(itemName);
+                        seedId = await Currencies._resolveItemId(seedName);
                     } catch (error) {
                         await Currencies.createItem({
-                            name: itemName,
-                            price: itemPrices[itemName],
-                            description: `A ${itemName.toLowerCase()} from the ${buyShop} shop`,
-                            category: buyShop
+                            name: seedName,
+                            price: itemData[seedName].price,
+                            description: `A ${seedName.toLowerCase()} seed for planting`,
+                            category: "seed"
                         });
-                        itemId = await Currencies._resolveItemId(itemName);
+                        seedId = await Currencies._resolveItemId(seedName);
                     }
 
-                    await Currencies.buyItem(senderID, itemId, quantity);
+                    await Currencies.buyItem(senderID, seedId, quantity);
                     const buyText = format({
                         title: 'Buy 🛒',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You bought ${itemName} x${quantity} for ${totalCost} Sheckles! New balance: ${(balance - totalCost).toLocaleString()} Sheckles`
+                        content: `You bought ${seedName} x${quantity} for $${totalCost}! New balance: $${(balance - totalCost).toLocaleString()}`
                     });
                     chat.reply(buyText);
+                    break;
+
+                case "plant":
+                    if (!args[1]) {
+                        const plantHelpText = format({
+                            title: 'Plant 🌱',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `Specify a seed to plant! Use: garden plant <seed>`
+                        });
+                        return chat.reply(plantHelpText);
+                    }
+                    const plantSeedName = args.slice(1).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
+                    let seedId;
+                    try {
+                        seedId = await Currencies._resolveItemId(plantSeedName);
+                    } catch (error) {
+                        const noSeedText = format({
+                            title: 'Plant 🌱',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `You don't have ${plantSeedName}! Check your inventory with: garden inventory`
+                        });
+                        return chat.reply(noSeedText);
+                    }
+                    if (!inventory[seedId] || inventory[seedId].quantity <= 0) {
+                        const noSeedText = format({
+                            title: 'Plant 🌱',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `You don't have ${plantSeedName}! Check your inventory with: garden inventory`
+                        });
+                        return chat.reply(noSeedText);
+                    }
+                    if (crops.length >= 10) { // Limit to 10 crops to simulate plot size
+                        const plotFullText = format({
+                            title: 'Plant 🌱',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `Your garden is full! Harvest or sell crops first with: garden harvest`
+                        });
+                        return chat.reply(plotFullText);
+                    }
+
+                    const { data: weatherData } = await axios.get(endpoints.weather);
+                    let growthTime = itemData[plantSeedName].growthTime;
+                    if (weatherData.currentWeather.includes("Rain")) {
+                        growthTime *= 0.8; // 20% faster growth in Rain
+                    }
+
+                    await Currencies.removeItem(senderID, seedId, 1);
+                    crops.push({
+                        seedId,
+                        plantedAt: Date.now(),
+                        growthTime: growthTime * 1000 // Convert to milliseconds
+                    });
+                    await Currencies.setData(senderID, { crops });
+                    const plantText = format({
+                        title: 'Plant 🌱',
+                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                        content: `You planted a ${plantSeedName}! It will be ready to harvest in ${Math.ceil(growthTime)} seconds.` +
+                                 (weatherData.currentWeather.includes("Rain") ? `\nRain is speeding up growth!` : "")
+                    });
+                    chat.reply(plantText);
+                    break;
+
+                case "harvest":
+                    if (crops.length === 0) {
+                        const noCropsText = format({
+                            title: 'Harvest 🌾',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `You have no crops growing! Plant seeds with: garden plant <seed>`
+                        });
+                        return chat.reply(noCropsText);
+                    }
+
+                    const { data: weatherDataHarvest } = await axios.get(endpoints.weather);
+                    let totalYield = 0;
+                    const harvestedCrops = [];
+                    const remainingCrops = [];
+                    const now = Date.now();
+
+                    for (const crop of crops) {
+                        const seedName = (await Currencies.getItem(crop.seedId)).name;
+                        const isReady = now >= crop.plantedAt + crop.growthTime;
+                        if (isReady) {
+                            let yieldValue = itemData[seedName].baseYield;
+                            // Apply weather mutations
+                            const mutationChance = Math.random();
+                            let mutation = "None";
+                            if (weatherDataHarvest.currentWeather.includes("Rain") && mutationChance < 0.5) {
+                                mutation = "Wet";
+                                yieldValue *= 2; // Wet mutation: 2x value
+                            } else if (weatherDataHarvest.currentWeather.includes("Thunderstorm") && mutationChance < 0.3) {
+                                mutation = "Shocked";
+                                yieldValue *= 3; // Shocked mutation: 3x value
+                            } else if (weatherDataHarvest.currentWeather.includes("Snow") && mutationChance < 0.2) {
+                                mutation = mutationChance < 0.1 ? "Frozen" : "Chilled";
+                                yieldValue *= mutation === "Frozen" ? 10 : 2; // Frozen: 10x, Chilled: 2x
+                            } else if (mutationChance < 0.01) {
+                                mutation = "Gold";
+                                yieldValue *= 20; // Gold: 20x (1% chance)
+                            } else if (mutationChance < 0.001) {
+                                mutation = "Rainbow";
+                                yieldValue *= 100; // Rainbow: 100x (0.1% chance)
+                            }
+                            totalYield += yieldValue;
+                            harvestedCrops.push(`${seedName} (${mutation})`);
+                        } else {
+                            remainingCrops.push(crop);
+                        }
+                    }
+
+                    if (harvestedCrops.length === 0) {
+                        const notReadyText = format({
+                            title: 'Harvest 🌾',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `No crops are ready yet! Check back later or use: garden status`
+                        });
+                        return chat.reply(notReadyText);
+                    }
+
+                    await Currencies.increaseMoney(senderID, totalYield);
+                    await Currencies.setData(senderID, { crops: remainingCrops });
+                    const harvestText = format({
+                        title: 'Harvest 🌾',
+                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                        content: `You harvested: ${harvestedCrops.join(", ")}\nEarned: $${totalYield.toLocaleString()}\nNew balance: $${(balance + totalYield).toLocaleString()}`
+                    });
+                    chat.reply(harvestText);
+                    break;
+
+                case "status":
+                    if (crops.length === 0) {
+                        const noCropsText = format({
+                            title: 'Status 📊',
+                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                            content: `You have no crops growing! Plant seeds with: garden plant <seed>`
+                        });
+                        return chat.reply(noCropsText);
+                    }
+
+                    const nowStatus = Date.now();
+                    const cropStatus = [];
+                    for (const crop of crops) {
+                        const seedName = (await Currencies.getItem(crop.seedId)).name;
+                        const timeLeft = Math.max(0, Math.ceil((crop.plantedAt + crop.growthTime - nowStatus) / 1000));
+                        cropStatus.push(`${seedName}: ${timeLeft > 0 ? `${timeLeft} seconds left` : "Ready to harvest"}`);
+                    }
+                    const statusText = format({
+                        title: 'Status 📊',
+                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                        content: `Growing Crops:\n${cropStatus.join("\n")}\nUse: garden harvest to collect ready crops`
+                    });
+                    chat.reply(statusText);
                     break;
 
                 case "inventory":
@@ -248,57 +351,17 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `Player: ${playerName}\n` +
                                  (inventoryItems.length > 0
-                                     ? `Items: ${inventoryItems.join(", ")}`
+                                     ? `Seeds: ${inventoryItems.join(", ")}`
                                      : "Your inventory is empty!")
                     });
                     chat.reply(inventoryText);
-                    break;
-
-                case "plant":
-                    if (!args[1]) {
-                        const plantHelpText = format({
-                            title: 'Plant 🌱',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Specify a seed to plant! Use: garden plant <seed>`
-                        });
-                        return chat.reply(plantHelpText);
-                    }
-                    const seedName = args.slice(1).join(" ").replace(/\s*\*\*x\d+\*\*/g, "").trim();
-                    let seedId;
-                    try {
-                        seedId = await Currencies._resolveItemId(seedName);
-                    } catch (error) {
-                        const noSeedText = format({
-                            title: 'Plant 🌱',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You don't have ${seedName}! Check your inventory with: garden inventory`
-                        });
-                        return chat.reply(noSeedText);
-                    }
-                    if (!inventory[seedId] || inventory[seedId].quantity <= 0) {
-                        const noSeedText = format({
-                            title: 'Plant 🌱',
-                            titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You don't have ${seedName}! Check your inventory with: garden inventory`
-                        });
-                        return chat.reply(noSeedText);
-                    }
-                    await Currencies.removeItem(senderID, seedId, 1);
-                    const cropYield = Math.floor(Math.random() * 100) + 50; 
-                    await Currencies.increaseMoney(senderID, cropYield);
-                    const plantText = format({
-                        title: 'Plant 🌱',
-                        titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You planted a ${seedName} and harvested crops worth ${cropYield} Sheckles! New balance: ${(balance + cropYield).toLocaleString()} Sheckles`
-                    });
-                    chat.reply(plantText);
                     break;
 
                 case "profile":
                     const profileText = format({
                         title: 'Profile 👤',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Name: ${playerName}\nBalance: ${balance.toLocaleString()} Sheckles\nInventory Items: ${Object.keys(inventory).length}`
+                        content: `Name: ${playerName}\nBalance: $${balance.toLocaleString()}\nSeeds: ${Object.keys(inventory).length}\nGrowing Crops: ${crops.length}`
                     });
                     chat.reply(profileText);
                     break;
@@ -309,11 +372,13 @@ module.exports = {
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                         content: `**Available commands**:\n` +
                                  `- garden register <name>\n` +
-                                 `- garden stock [cosmetics|blood-twilight|egg|gear-seeds|all]\n` +
+                                 `- garden stock\n` +
                                  `- garden weather\n` +
-                                 `- garden buy <shop> <item>\n` +
-                                 `- garden inventory\n` +
+                                 `- garden buy <seed>\n` +
                                  `- garden plant <seed>\n` +
+                                 `- garden harvest\n` +
+                                 `- garden status\n` +
+                                 `- garden inventory\n` +
                                  `- garden profile`
                     });
                     chat.reply(helpText);
