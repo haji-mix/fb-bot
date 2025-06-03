@@ -6,7 +6,7 @@ module.exports = {
     author: 'xAI',
     role: 0,
     cooldowns: 5,
-    description: 'Manage your Grow A Garden farm: plant seeds, buy gear, eggs, cosmetics, hatch pets, and wait for crops to grow',
+    description: 'Manage your Grow A Garden farm: plant seeds, buy gear, eggs, cosmetics, hatch pets, feed pets, and wait for crops to grow',
     prefix: true,
   },
   style: {
@@ -37,14 +37,14 @@ module.exports = {
       // Static item data
       const itemData = {
         seeds: {
-          Carrot: { price: 50, growthTime: 60, baseYield: 100, regrows: false },
-          Corn: { price: 60, growthTime: 120, baseYield: 150, regrows: false },
-          Daffodil: { price: 70, growthTime: 90, baseYield: 120, regrows: false },
-          Strawberry: { price: 80, growthTime: 180, baseYield: 200, regrows: true },
-          Tomato: { price: 60, growthTime: 120, baseYield: 140, regrows: true },
-          Blueberry: { price: 90, growthTime: 240, baseYield: 250, regrows: true },
-          CandyBlossom: { price: 500, growthTime: 300, baseYield: 1000, regrows: false },
-          MoonMango: { price: 600, growthTime: 360, baseYield: 1200, regrows: false },
+          Carrot: { price: 50, growthTime: 60, baseYield: 100, regrows: false, foodValue: 20 },
+          Corn: { price: 60, growthTime: 120, baseYield: 150, regrows: false, foodValue: 30 },
+          Daffodil: { price: 70, growthTime: 90, baseYield: 120, regrows: false, foodValue: 15 },
+          Strawberry: { price: 80, growthTime: 180, baseYield: 200, regrows: true, foodValue: 25 },
+          Tomato: { price: 60, growthTime: 120, baseYield: 140, regrows: true, foodValue: 20 },
+          Blueberry: { price: 90, growthTime: 240, baseYield: 250, regrows: true, foodValue: 30 },
+          CandyBlossom: { price: 500, growthTime: 300, baseYield: 1000, regrows: false, foodValue: 50 },
+          MoonMango: { price: 600, growthTime: 360, baseYield: 1200, regrows: false, foodValue: 60 },
         },
         gear: {
           'Favorite Tool': { price: 100, effect: 'Increases mutation chance' },
@@ -73,14 +73,15 @@ module.exports = {
         },
       };
 
-      // Static pet data (simplified, focusing on key pets)
+      // Static pet data with hunger decay rates
       const petData = {
-        Dragonfly: { rarity: 'Bug', passive: 'Turns a random fruit into Gold (20x value) every 5 minutes', hatchChance: 0.01, egg: 'Bug Egg' },
-        'Praying Mantis': { rarity: 'Bug', passive: 'Prays every 80s for a crop mutation', hatchChance: 0.05, egg: 'Bug Egg' },
-        Raccoon: { rarity: 'Legendary', passive: 'Duplicates a random fruit from a neighbor’s garden every 15 minutes', hatchChance: 0.03, egg: 'Legendary Egg' },
-        'Polar Bear': { rarity: 'Rare', passive: 'Chance to apply Chilled (2x value) or Frozen (10x value) mutation', hatchChance: 0.1, egg: 'Rare Egg' },
-        'Red Giant Ant': { rarity: 'Mythical', passive: '5% chance to duplicate crops on harvest', hatchChance: 0.02, egg: 'Mythical Egg' },
-        'Golden Lab': { rarity: 'Common', passive: '5% chance to dig up a random seed every 60s', hatchChance: 0.333, egg: 'Common Egg' },
+        Dragonfly: { rarity: 'Bug', passive: 'Turns a random fruit into Glow (20x value) every 5 minutes', hatchChance: 0.01, egg: 'Bug Egg', hungerDecay: 1 },
+        'Praying Mantis': { rarity: 'Bug', passive: 'Prays every 80s for a crop mutation', hatchChance: 0.05, egg: 'Bug Egg', hungerDecay: 1 },
+        Raccoon: { rarity: 'Legendary', passive: 'Duplicates a random fruit from a neighbor’s garden every 15 minutes', hatchChance: 0.03, egg: 'Legendary Egg', hungerDecay: 2 },
+        'Polar Bear': { rarity: 'Rare', passive: 'Chance to apply Chilled (2x value) or Frozen (2x value) mutation', hatchChance: 30, egg: 'Rare Egg', hungerDecay: 3 },
+        'Red Giant Ant': { rarity: 'Mythical', passive: '5% chance to duplicate crops on harvestChance: 50', hatchChance: 0.02, egg: 'Mythical Egg', hungerDecay: 2 },
+        'Green Lab': { rarity: 'Common', passive: '5% chance to dig up a random seed', hatchChance: 33.3, egg: 'Common Egg', hungerDecay: 2 },
+        Bunny: { rarity: 'Common', passive: 'Boosts carrot sell value by 1.5x', hatchChance: 0.3, egg: 'Common Egg', hungerDecay: 2, preferredFood: 'Carrot' },
       };
 
       // Static stock data
@@ -161,11 +162,28 @@ module.exports = {
               xp: 0,
               passive: petData[pet].passive,
               rarity: petData[pet].rarity,
+              lastUpdated: Date.now(),
             };
           }
         }
         return null;
       };
+
+      const updatePetHunger = () => {
+        const now = Date.now();
+        const updatePet = (pet) => {
+          const timeElapsed = (now - pet.lastUpdated) / 1000 / 60; // Minutes
+          pet.hunger = Math.max(0, pet.hunger - petData[pet.name].hungerDecay * timeElapsed);
+          pet.lastUpdated = now;
+          return pet;
+        };
+        pets.active = pets.active.map(updatePet);
+        pets.stored = pets.stored.map(updatePet);
+      };
+
+      // Update pet hunger before processing commands
+      updatePetHunger();
+      await Currencies.setData(senderID, { ...userData, pets });
 
       // Command logic
       if (subcommand !== 'register' && !playerName) {
@@ -185,7 +203,7 @@ module.exports = {
               format({
                 title: 'Register 📝',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `You are already registered as ${playerName}!`,
+                content: `You are already registered as ${playerName} with $${balance.toLocaleString()}!`,
               })
             );
           }
@@ -201,8 +219,14 @@ module.exports = {
           }
           await Currencies.setData(senderID, {
             name,
-            balance: 1000,
-            inventory: { seeds: {}, gear: {}, eggs: {}, cosmetics: {}, petEggs: {} },
+            balance: 1000, // Free starting money
+            inventory: { 
+              seeds: { Carrot: 5 }, // Starter seeds
+              gear: {}, 
+              eggs: {}, 
+              cosmetics: {}, 
+              petEggs: {} 
+            },
             crops: [],
             pets: { active: [], stored: [] },
             petSlots: 3,
@@ -211,7 +235,7 @@ module.exports = {
             format({
               title: 'Register ✅',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Welcome, ${name}! You've started your garden with $1000 and 3 pet slots.`,
+              content: `Welcome, ${name}! You've started your garden with $1000 and 5 Carrot seeds. Buy more items with: #garden buy, or plant your seeds with: #garden plant Carrot`,
             })
           );
         }
@@ -263,7 +287,7 @@ module.exports = {
               format({
                 title: 'Buy 🛒',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: 'Usage: buy <type> <item> [quantity] (e.g., #garden buy seed Carrot **x2**, #garden buy petEgg Bug Egg **x1**)',
+                content: 'Usage: buy <type> <item> [quantity] (e.g., #garden buy seed Carrot **x2**, #garden buy petEgg Common Egg **x1**)',
               })
             );
           }
@@ -300,7 +324,7 @@ module.exports = {
               format({
                 title: 'Buy 🛒',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `Item '${itemName}' not found! Check stock with: #garden stock`,
+                content: `Item '${itemName}' not found! Check available items with: #garden stock`,
               })
             );
           }
@@ -318,11 +342,16 @@ module.exports = {
 
           const totalCost = price * quantity;
           if (balance < totalCost) {
+            const shortfall = totalCost - balance;
+            const affordableQuantity = Math.floor(balance / price);
             return chat.reply(
               format({
                 title: 'Buy 🛒',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `You need $${totalCost} to buy ${canonicalName} x${quantity}! You have $${balance}.`,
+                content: `Not enough money! You need $${totalCost} for ${canonicalName} x${quantity}, but you have $${balance}.\n` +
+                         `Shortfall: $${shortfall}.\n` +
+                         (affordableQuantity > 0 ? `You can afford ${canonicalName} x${affordableQuantity} for $${affordableQuantity * price}.\n` : '') +
+                         `Earn more by harvesting crops with: #garden harvest, or plant seeds with: #garden plant`,
               })
             );
           }
@@ -368,7 +397,7 @@ module.exports = {
               format({
                 title: 'Plant 🌱',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `You don't have ${canonicalName} seeds! Check your inventory with: #garden inventory`,
+                content: `You don't have ${canonicalName} seeds! Buy more with: #garden buy seed ${canonicalName}`,
               })
             );
           }
@@ -378,7 +407,7 @@ module.exports = {
               format({
                 title: 'Plant 🌱',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: 'Your garden is full! Harvest or sell crops first with: #garden harvest',
+                content: 'Your garden is full! Harvest crops first with: #garden harvest',
               })
             );
           }
@@ -397,11 +426,13 @@ module.exports = {
           if (weatherData.currentWeather.toLowerCase().includes('thunderstorm') && inventory.gear['Lightning Rod']) {
             mutationChance += 0.15;
           }
-          if (pets.active.some((pet) => pet.name === 'Praying Mantis')) {
+          if (pets.active.some((pet) => pet.name === 'Praying Mantis' && pet.hunger >= 20)) {
             mutationChance += 0.2;
           }
-          if (pets.active.some((pet) => pet.name === 'Echo Frog')) {
-            growthTime *= 0.9;
+          if (pets.active.some((pet) => pet.name === 'Green Lab' && pet.hunger >= 20 && Math.random() < 0.05)) {
+            const seedKeys = Object.keys(itemData.seeds);
+            const randomSeed = seedKeys[Math.floor(Math.random() * seedKeys.length)];
+            inventory.seeds[randomSeed] = (inventory.seeds[randomSeed] || 0) + 1;
           }
 
           inventory.seeds[canonicalName] -= 1;
@@ -415,7 +446,7 @@ module.exports = {
             plantedAt: Date.now(),
             growthTime: growthTime * 1000,
             regrows: seedDetails.regrows || false,
-            mutations: mutationChance > Math.random() ? ['Gold'] : [],
+            mutations: mutationChance > Math.random() ? ['Glow'] : [],
           });
 
           await Currencies.setData(senderID, { inventory, crops });
@@ -423,7 +454,7 @@ module.exports = {
             format({
               title: 'Plant 🌱',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Planted ${canonicalName}! It will take ${Math.round(growthTime)} seconds to grow. Check progress with: #garden check${mutationChance > Math.random() ? '\nPossible Gold mutation!' : ''}`,
+              content: `Planted ${canonicalName}! It will take ${Math.round(growthTime)} seconds to grow. Check progress with: #garden check${mutationChance > Math.random() ? '\nPossible Glow mutation!' : ''}`,
             })
           );
         }
@@ -457,7 +488,7 @@ module.exports = {
               format({
                 title: 'Hatch 🥚',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `You don't have ${canonicalName} pet eggs! Check your inventory with: #garden inventory`,
+                content: `You don't have ${canonicalName} pet eggs! Buy more with: #garden buy petEgg ${canonicalName}`,
               })
             );
           }
@@ -467,13 +498,13 @@ module.exports = {
               format({
                 title: 'Hatch 🥚',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: 'Your garden is full! Harvest or sell crops first to make space for hatching.',
+                content: 'Your garden is full! Harvest crops first to make space with: #garden harvest',
               })
             );
           }
 
           let adjustedHatchTime = hatchTime;
-          if (pets.active.some((pet) => pet.name === 'Polar Bear')) {
+          if (pets.active.some((pet) => pet.name === 'Polar Bear' && pet.hunger >= 20)) {
             adjustedHatchTime *= 0.8;
           }
 
@@ -505,7 +536,7 @@ module.exports = {
               format({
                 title: 'Check 🌱🥚',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: 'Your garden is empty! Plant seeds or hatch pet eggs to get started.',
+                content: 'Your garden is empty! Plant seeds with: #garden plant, or hatch pet eggs with: #garden hatch',
               })
             );
           }
@@ -547,10 +578,10 @@ module.exports = {
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No pet eggs';
           const activePetList = pets.active
-            .map((pet) => `${pet.name} (Age: ${pet.age}, Hunger: ${pet.hunger}, Passive: ${pet.passive})`)
+            .map((pet, index) => `${index + 1}. ${pet.name} (Hunger: ${pet.hunger.toFixed(1)}/100, Passive: ${pet.hunger >= 20 ? pet.passive : 'Disabled (low hunger)'})`)
             .join('\n') || 'No active pets';
           const storedPetList = pets.stored
-            .map((pet) => `${pet.name} (Age: ${pet.age}, Hunger: ${pet.hunger}, Passive: ${pet.passive})`)
+            .map((pet, index) => `${index + 1}. ${pet.name} (Hunger: ${pet.hunger.toFixed(1)}/100, Passive: ${pet.hunger >= 20 ? pet.passive : 'Disabled (low hunger)'})`)
             .join('\n') || 'No stored pets';
 
           return chat.reply(
@@ -585,7 +616,6 @@ module.exports = {
           let harvested = [];
           let totalYield = 0;
           const now = Date.now();
-          let newPets = [];
 
           crops = crops.filter((item) => {
             if (item.type === 'petEgg') {
@@ -606,18 +636,22 @@ module.exports = {
             } else {
               if (now >= item.plantedAt + item.growthTime) {
                 let yieldValue = itemData.seeds[item.seedName]?.baseYield || 100;
-                if (item.mutations.includes('Gold') && pets.active.some((pet) => pet.name === 'Dragonfly')) {
+                if (item.mutations.includes('Glow') && pets.active.some((pet) => pet.name === 'Dragonfly' && pet.hunger >= 20)) {
                   yieldValue *= 20;
                 }
-                if (pets.active.some((pet) => pet.name === 'Polar Bear') && Math.random() < 0.1) {
+                if (pets.active.some((pet) => pet.name === 'Polar Bear' && pet.hunger >= 20) && Math.random() < 0.1) {
                   yieldValue *= Math.random() < 0.5 ? 2 : 10;
                 }
-                if (pets.active.some((pet) => pet.name === 'Red Giant Ant') && Math.random() < 0.05) {
+                if (pets.active.some((pet) => pet.name === 'Red Giant Ant' && pet.hunger >= 20) && Math.random() < 0.05) {
                   harvested.push(`${item.seedName} ($${yieldValue}, duplicated by Red Giant Ant)`);
                   totalYield += yieldValue;
                 }
+                if (pets.active.some((pet) => pet.name === 'Bunny' && pet.hunger >= 20) && item.seedName === 'Carrot') {
+                  yieldValue *= 1.5;
+                }
                 harvested.push(`${item.seedName} ($${yieldValue}${item.mutations.length ? ', ' + item.mutations.join(', ') : ''})`);
                 totalYield += yieldValue;
+                inventory.seeds[item.seedName] = (inventory.seeds[item.seedName] || 0) + 1;
                 if (item.regrows) {
                   item.plantedAt = now;
                   return true;
@@ -628,7 +662,7 @@ module.exports = {
             }
           });
 
-          if (pets.active.some((pet) => pet.name === 'Raccoon') && Math.random() < 0.1) {
+          if (pets.active.some((pet) => pet.name === 'Raccoon' && pet.hunger >= 20) && Math.random() < 0.1) {
             const rareSeeds = ['CandyBlossom', 'MoonMango'];
             const stolenSeed = rareSeeds[Math.floor(Math.random() * rareSeeds.length)];
             inventory.seeds[stolenSeed] = (inventory.seeds[stolenSeed] || 0) + 1;
@@ -643,7 +677,7 @@ module.exports = {
               title: 'Harvest 🌾',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
               content: harvested.length
-                ? `Harvested:\n${harvested.join('\n')}\n\nEarned: $${totalYield}\nNew balance: $${balance.toLocaleString()}\n\nCheck remaining crops with: #garden check`
+                ? `Harvested:\n${harvested.join('\n')}\n\nEarned: $${totalYield}\nNew balance: $${balance.toLocaleString()}\n\nCrops added to inventory. Check remaining crops with: #garden check`
                 : 'No crops or pet eggs are ready yet! Check growth status with: #garden check',
             })
           );
@@ -663,6 +697,8 @@ module.exports = {
               );
             }
             [pets.active[petIndex], pets.stored[storedIndex]] = [pets.stored[storedIndex], pets.active[petIndex]];
+            pets.active[petIndex].lastUpdated = Date.now();
+            pets.stored[storedIndex].lastUpdated = Date.now();
             await Currencies.setData(senderID, { pets });
             return chat.reply(
               format({
@@ -671,12 +707,101 @@ module.exports = {
                 content: `Swapped ${pets.active[petIndex].name} with ${pets.stored[storedIndex].name}!`,
               })
             );
+          } else if (args[1]?.toLowerCase() === 'feed') {
+            if (!args[2] || !args[3]) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: 'Usage: #garden pets feed <active/stored> <pet index> <crop> (e.g., #garden pets feed active 1 Carrot)',
+                })
+              );
+            }
+            const petType = args[2].toLowerCase();
+            const petIndex = parseInt(args[3]) - 1;
+            const cropName = args.slice(4).join(' ').trim().toLowerCase();
+            const cropDetails = getItemDetails('seeds', cropName);
+            const { canonicalName: cropCanonicalName, foodValue } = cropDetails;
+
+            if (!['active', 'stored'].includes(petType)) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: 'Invalid pet type! Use: active or stored',
+                })
+              );
+            }
+            const petList = petType === 'active' ? pets.active : pets.stored;
+            if (isNaN(petIndex) || petIndex < 0 || petIndex >= petList.length) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `Invalid pet index! Check indices with: #garden inventory`,
+                })
+              );
+            }
+            if (!cropDetails.canonicalName || !itemData.seeds[cropCanonicalName]) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `Crop '${cropName}' not found! Check your inventory with: #garden inventory`,
+                })
+              );
+            }
+            if (!inventory.seeds[cropCanonicalName] || inventory.seeds[cropCanonicalName] <= 0) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `You don't have ${cropCanonicalName} in your inventory! Plant and harvest more crops with: #garden plant`,
+                })
+              );
+            }
+
+            const pet = petList[petIndex];
+            if (pet.hunger >= 100) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `${pet.name} is already full (Hunger: ${pet.hunger.toFixed(1)}/100)!`,
+                })
+              );
+            }
+            if (petData[pet.name].preferredFood && petData[pet.name].preferredFood !== cropCanonicalName) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `${pet.name} only eats ${petData[pet.name].preferredFood}! Try a different crop.`,
+                })
+              );
+            }
+
+            inventory.seeds[cropCanonicalName] -= 1;
+            if (inventory.seeds[cropCanonicalName] === 0) {
+              delete inventory.seeds[cropCanonicalName];
+            }
+            pet.hunger = Math.min(100, pet.hunger + (foodValue || 20));
+            pet.lastUpdated = Date.now();
+
+            await Currencies.setData(senderID, { inventory, pets });
+            return chat.reply(
+              format({
+                title: 'Feed 🐾',
+                titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                content: `Fed ${pet.name} with ${cropCanonicalName}! Hunger restored to ${pet.hunger.toFixed(1)}/100.${pet.hunger >= 20 ? ' Passive ability activated!' : ' Feed more to restore passive ability.'}`,
+              })
+            );
           }
           return chat.reply(
             format({
               title: 'Pets 🐾',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Available commands: #garden pets swap <active pet index> <stored pet index>`,
+              content: `Available commands:\n#garden pets swap <active pet index> <stored pet index>\n#garden pets feed <active/stored> <pet index> <crop>`,
             })
           );
         }
