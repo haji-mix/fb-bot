@@ -22,11 +22,12 @@ module.exports = {
   },
   run: async ({ chat, event, Utils, format, UNIRedux }) => {
     try {
+
       const { senderID } = event;
       const { Currencies } = Utils;
       const args = (event.body || '').trim().split(/\s+/).slice(1);
       const subcommand = args[0]?.toLowerCase() || '';
-
+      
       let userData = (await Currencies.getData(senderID)) || {};
       let balance = userData.balance || 0;
       let inventory = userData.inventory || { seeds: {}, gear: {}, eggs: {}, cosmetics: {} };
@@ -413,7 +414,7 @@ module.exports = {
           if (crops.length >= 10) {
             return chat.reply(
               format({
-                title: 'Plant 🌱', // Fixed syntax error here
+                title: 'Plan 🌱',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                 content: 'Your garden is full! Harvest or sell crops first with: #garden harvest',
               })
