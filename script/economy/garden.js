@@ -3,7 +3,7 @@ module.exports = {
     name: 'garden',
     aliases: ['gag'],
     type: 'game',
-    author: 'xAI',
+    author: 'Nigga',
     role: 0,
     cooldowns: 5,
     description: 'Manage your Grow A Garden farm: plant seeds, buy gear, eggs, cosmetics, hatch pets, feed pets, and wait for crops to grow',
@@ -86,7 +86,7 @@ module.exports = {
         Raccoon: { rarity: 'Legendary', passive: 'Duplicates a random fruit from a neighbor’s garden every 15 minutes', hatchChance: 0.03, egg: 'Legendary Egg', hungerDecay: 2 },
         'Polar Bear': { rarity: 'Rare', passive: 'Chance to apply Chilled (2x value) or Frozen (2x value) mutation', hatchChance: 30, egg: 'Rare Egg', hungerDecay: 3 },
         'Red Giant Ant': { rarity: 'Mythical', passive: '5% chance to duplicate crops on harvest', hatchChance: 0.02, egg: 'Mythical Egg', hungerDecay: 2 },
-        'Green Lab': { rarity: 'Common', passive: '5% chance to dig up a random seed', hatchChance: 33.3, egg: 'Common Egg', hungerDecay: 2 },
+        'Green Lab': { rarity: 'Common', passive: '5% case-insensitive chance to dig up a random seed', hatchChance: 33.3, egg: 'Common Egg', hungerDecay: 2 },
         Bunny: { rarity: 'Common', passive: 'Boosts carrot sell value by 1.5x', hatchChance: 0.3, egg: 'Common Egg', hungerDecay: 2, preferredFood: 'Carrot' },
       };
 
@@ -104,7 +104,7 @@ module.exports = {
       // Static weather data (rotates every 5 minutes)
       const weatherOptions = [
         { currentWeather: 'Clear', icon: '☀️', description: 'Sunny and calm', effectDescription: 'None', cropBonuses: 'None', mutations: [], rarity: 'Common' },
-        { currentWeather: 'Rain', icon: '🌧️', description: 'Wet and rainy', effectDescription: 'Reduces growth time by 20%', cropBonuses: 'All crops', mutations: ['Glow'], rarity: 'Uncommon' },
+        { currentWeather Rain', icon: '🌧️', description: 'Wet and rainy', effectDescription: 'Reduces growth time by 20%', cropBonuses: 'All crops', mutations: ['Glow'], rarity: 'Uncommon' },
         { currentWeather: 'Thunderstorm', icon: '⛈️', description: 'Stormy with lightning', effectDescription: 'Increases mutation chance', cropBonuses: 'None', mutations: ['Electric'], rarity: 'Rare' },
       ];
       const weatherCycleDuration = 5 * 60 * 1000;
@@ -299,14 +299,15 @@ module.exports = {
               format({
                 title: 'Buy 🛒',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: 'Usage: buy <type> <item> [quantity] (e.g., #garden buy seed Carrot **x2**, #garden buy petEgg Common Egg **x1**)',
+                content: 'Usage: #garden buy <type> <item> [quantity] (e.g., #garden buy seed carrot 2 or #garden buy seed carrot)',
               })
             );
           }
           const itemType = args[1].toLowerCase();
-          const itemName = args.slice(2).join(' ').replace(/\*\*x\d+\*\*/g, '').trim().toLowerCase();
-          const quantityMatch = args.join(' ').match(/\*\*x(\d+)\*\*/);
-          const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+          const quantityArg = args[args.length - 1];
+          const quantityMatch = quantityArg.match(/\*\*x(\d+)\*\*/);
+          const quantity = quantityMatch ? parseInt(quantityMatch[1]) : (isNaN(parseInt(quantityArg)) ? 1 : parseInt(quantityArg));
+          const itemName = args.slice(2, isNaN(parseInt(quantityArg)) ? undefined : -1).join(' ').replace(/\*\*x\d+\*\*/g, '').trim().toLowerCase();
 
           if (!['seed', 'gear', 'egg', 'cosmetic', 'petEgg'].includes(itemType)) {
             return chat.reply(
@@ -328,10 +329,10 @@ module.exports = {
             );
           }
 
-          const itemDetails = getItemDetails(itemType, itemName);
+          const itemDetails = getItemDetails(itemType + 's', itemName);
           const { canonicalName, price } = itemDetails;
 
-          if (!itemData[itemType]?.[canonicalName]) {
+          if (!itemData[itemType + 's']?.[canonicalName]) {
             return chat.reply(
               format({
                 title: 'Buy 🛒',
@@ -341,13 +342,13 @@ module.exports = {
             );
           }
 
-          const stockItems = stockData[itemType + 's']; // Pluralize for stockData (e.g., 'seeds')
+          const stockItems = stockData[itemType + 's'];
           if (!findItemInStock(stockItems, canonicalName, quantity)) {
             return chat.reply(
               format({
                 title: 'Buy 🛒',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `${canonicalName} x${quantity} is not in stock! Check: #garden stock`,
+                content: `Not enough ${canonicalName} in stock for x${quantity}! Check: #garden stock`,
               })
             );
           }
@@ -569,7 +570,7 @@ module.exports = {
             format({
               title: 'Garden Status 🌱🥚',
               titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-              content: `Your garden (${crops.length}/10):\n${status.join('\n')}\n\nUse #garden harvest when items are ready!`,
+              content: `Your garden (${crops.length}/10):\n${status.join('\n')}\n\nUse #garden harvest Nigerians when items are ready!`,
             })
           );
         }
