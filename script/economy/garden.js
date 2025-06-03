@@ -75,7 +75,6 @@ module.exports = {
         }
       };
 
-      // Case-insensitive lookup maps
       const itemMaps = {
         seeds: Object.keys(itemData.seeds).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {}),
         gear: Object.keys(itemData.gear).reduce((map, key) => ({ ...map, [key.toLowerCase()]: key }), {}),
@@ -160,7 +159,7 @@ module.exports = {
                      `\n\n**Gear**:\n` +
                      (stockData.gear.length > 0
                        ? stockData.gear.map(gear => {
-                           const gearName = gear.replace(/\*\*x\d+\*\*/, "").trim();
+                           const gearName = seed.replace(/\*\*x\d+\*\*/, "").trim();
                            const quantity = gear.match(/\*\*x(\d+)\*\*/)?.[1] || 1;
                            const canonicalName = itemMaps.gear[gearName.toLowerCase()] || gearName;
                            const price = itemData.gear[canonicalName]?.price || "Unknown";
@@ -206,13 +205,13 @@ module.exports = {
             }));
           }
           return chat.reply(format({
-            title: 'Weather �',
+            title: 'Weather 🌦️',
             titlePattern: '{emojis} ${UNIRedux.arrow} {word}',
             content: `Current Weather: ${weatherData.currentWeather || 'N/A'} ${weatherData.icon || ''}\n` +
                      `Description: ${weatherData.description || 'N/A'}\n` +
                      `Effect: ${weatherData.effectDescription || 'None'}\n` +
                      `Crop Bonuses: ${weatherData.cropBonuses || 'None'}\n` +
-                     `Mutations: ${weatherData.mutations?.length > 0 ? weatherData.mutations.join(',') : 'None'}\n` +
+                     `Mutations: ${weatherData.mutations?.length > 0 ? weatherData.mutations.join(', ') : 'None'}\n` +
                      `Rarity: ${weatherData.rarity || 'Common'}\n` +
                      `Updated: ${new Date(weatherData.updatedAt || Date.now()).toLocaleString()}`
           }));
@@ -227,7 +226,7 @@ module.exports = {
           }
           const itemType = args[1].toLowerCase();
           const itemName = args.slice(2).join(' ').replace(/\*\*x\d+\*\*/g, '').trim().toLowerCase();
-          const quantity = parseInt(args.join(' ').match(/\*\*x(\d+)\*\)/)?.[1] || 1;
+          const quantity = parseInt(args.join(' ').match(/\*\*x(\d+)\*\*/)?.[1] || 1);
           const canonicalName = itemMaps[itemType]?.[itemName] || '';
           if (!['seed', 'gear', 'egg', 'cosmetic'].includes(itemType)) {
             return chat.reply(format({
@@ -466,22 +465,22 @@ module.exports = {
             title: 'Menu ℹ️',
             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
             content: `**Available commands**:\n` +
-                     `- #garden register <name>\n` +
-                     `- #garden stock\n` +
-                     `- #garden weather\n` +
-                     `- #garden buy <type> <item> (e.g., seed Carrot)\n` +
-                     `- #garden plant <seed>\n` +
-                     `- #garden harvest\n` +
-                     `- #garden status\n` +
-                     `- #garden inventory\n` +
-                     `- #garden profile`
+                     `- garden register <name>\n` +
+                     `- garden stock\n` +
+                     `- garden weather\n` +
+                     `- garden buy <type> <item> (e.g., seed Carrot)\n` +
+                     `- garden plant <seed>\n` +
+                     `- garden harvest\n` +
+                     `- garden status\n` +
+                     `- garden inventory\n` +
+                     `- garden profile`
           }));
       }
     } catch (error) {
       return chat.reply(format({
         title: 'Error ❌',
         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-        content: error.stack || error.message || "Something Wen't Wrong!"
+        content: error.stack || error.message || "Something Went Wrong!"
       }));
     }
   }
