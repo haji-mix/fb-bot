@@ -25,10 +25,16 @@ module.exports = {
       const args = (event.body || '').trim().split(/\s+/).slice(1);
       const subcommand = args[0]?.toLowerCase() || '';
 
-      // Load user data
+      // Load user data with defaults
       let userData = (await Currencies.getData(senderID)) || {};
       let balance = userData.balance || 0;
-      let inventory = userData.inventory || { seeds: {}, gear: {}, eggs: {}, cosmetics: {}, petEggs: {} };
+      let inventory = userData.inventory || {
+        seeds: {},
+        gear: {},
+        eggs: {},
+        cosmetics: {},
+        petEggs: {},
+      };
       let playerName = userData.name || null;
       let crops = userData.crops || [];
       let pets = userData.pets || { active: [], stored: [] };
@@ -79,7 +85,7 @@ module.exports = {
         'Praying Mantis': { rarity: 'Bug', passive: 'Prays every 80s for a crop mutation', hatchChance: 0.05, egg: 'Bug Egg', hungerDecay: 1 },
         Raccoon: { rarity: 'Legendary', passive: 'Duplicates a random fruit from a neighbor’s garden every 15 minutes', hatchChance: 0.03, egg: 'Legendary Egg', hungerDecay: 2 },
         'Polar Bear': { rarity: 'Rare', passive: 'Chance to apply Chilled (2x value) or Frozen (2x value) mutation', hatchChance: 30, egg: 'Rare Egg', hungerDecay: 3 },
-        'Red Giant Ant': { rarity: 'Mythical', passive: '5% chance to duplicate crops on harvestChance: 50', hatchChance: 0.02, egg: 'Mythical Egg', hungerDecay: 2 },
+        'Red Giant Ant': { rarity: 'Mythical', passive: '5% chance to duplicate crops on harvest', hatchChance: 0.02, egg: 'Mythical Egg', hungerDecay: 2 },
         'Green Lab': { rarity: 'Common', passive: '5% chance to dig up a random seed', hatchChance: 33.3, egg: 'Common Egg', hungerDecay: 2 },
         Bunny: { rarity: 'Common', passive: 'Boosts carrot sell value by 1.5x', hatchChance: 0.3, egg: 'Common Egg', hungerDecay: 2, preferredFood: 'Carrot' },
       };
@@ -116,8 +122,12 @@ module.exports = {
 
       // Helper functions
       const getItemDetails = (itemType, itemName) => {
-        const canonicalName = itemMaps[itemType]?.[itemName.toLowerCase()] || itemName;
-        return { canonicalName, ...itemData[itemType]?.[canonicalName] };
+        const lowerItemName = itemName.toLowerCase().trim();
+        const canonicalName = itemMaps[itemType]?.[lowerItemName] || itemName;
+        return {
+          canonicalName,
+          ...(itemData[itemType]?.[canonicalName] || {}),
+        };
       };
 
       const findItemInStock = (stockItems, itemName, quantity) => {
@@ -147,9 +157,10 @@ module.exports = {
       };
 
       const hatchPet = (eggName) => {
-        const eggDetails = itemData.petEggs[eggName];
+        const canonicalEggName = itemMaps.petEggs[eggName.toLowerCase()] || eggName;
+        const eggDetails = itemData.petEggs[canonicalEggName];
         if (!eggDetails) return null;
-        const possiblePets = Object.keys(petData).filter((pet) => petData[pet].egg === eggName);
+        const possiblePets = Object.keys(petData).filter((pet) => petData[pet].egg === canonicalEggName);
         let totalChance = possiblePets.reduce((sum, pet) => sum + petData[pet].hatchChance, 0);
         let rand = Math.random() * totalChance;
         for (const pet of possiblePets) {
@@ -172,6 +183,7 @@ module.exports = {
       const updatePetHunger = () => {
         const now = Date.now();
         const updatePet = (pet) => {
+          if (!petData[pet.name]) return pet; // Skip invalid pets
           const timeElapsed = (now - pet.lastUpdated) / 1000 / 60; // Minutes
           pet.hunger = Math.max(0, pet.hunger - petData[pet.name].hungerDecay * timeElapsed);
           pet.lastUpdated = now;
@@ -220,12 +232,12 @@ module.exports = {
           await Currencies.setData(senderID, {
             name,
             balance: 1000, // Free starting money
-            inventory: { 
+            inventory: {
               seeds: { Carrot: 5 }, // Starter seeds
-              gear: {}, 
-              eggs: {}, 
-              cosmetics: {}, 
-              petEggs: {} 
+              gear: {},
+              eggs: {},
+              cosmetics: {},
+              petEggs: {},
             },
             crops: [],
             pets: { active: [], stored: [] },
@@ -319,7 +331,7 @@ module.exports = {
           const itemDetails = getItemDetails(itemType, itemName);
           const { canonicalName, price } = itemDetails;
 
-          if (!itemData[itemType][canonicalName]) {
+          if (!itemData[itemType]?.[canonicalName]) {
             return chat.reply(
               format({
                 title: 'Buy 🛒',
@@ -329,7 +341,7 @@ module.exports = {
             );
           }
 
-          const stockItems = stockData[itemType];
+          const stockItems = stockData[itemType + 's']; // Pluralize for stockData (e.g., 'seeds')
           if (!findItemInStock(stockItems, canonicalName, quantity)) {
             return chat.reply(
               format({
@@ -356,7 +368,8 @@ module.exports = {
             );
           }
 
-          inventory[itemType][canonicalName] = (inventory[itemType][canonicalName] || 0) + quantity;
+          inventory[itemType + 's'] = inventory[itemType + 's'] || {};
+          inventory[itemType + 's'][canonicalName] = (inventory[itemType + 's'][canonicalName] || 0) + quantity;
           balance -= totalCost;
           await Currencies.setData(senderID, { balance, inventory });
           return chat.reply(
@@ -392,7 +405,7 @@ module.exports = {
           }
 
           const { canonicalName } = seedDetails;
-          if (!inventory.seeds[canonicalName] || inventory.seeds[canonicalName] <= 0) {
+          if (!inventory.seeds?.[canonicalName] || inventory.seeds[canonicalName] <= 0) {
             return chat.reply(
               format({
                 title: 'Plant 🌱',
@@ -412,18 +425,18 @@ module.exports = {
             );
           }
 
-          let growthTime = seedDetails.growthTime;
+          let growthTime = seedDetails.growthTime || 60;
           let mutationChance = 0.1;
 
           if (weatherData.currentWeather.toLowerCase().includes('rain')) {
             growthTime *= 0.8;
             mutationChance += 0.1;
           }
-          if (inventory.gear['Basic Sprinkler']) {
+          if (inventory.gear?.['Basic Sprinkler']) {
             growthTime *= 0.9;
             mutationChance += 0.05;
           }
-          if (weatherData.currentWeather.toLowerCase().includes('thunderstorm') && inventory.gear['Lightning Rod']) {
+          if (weatherData.currentWeather.toLowerCase().includes('thunderstorm') && inventory.gear?.['Lightning Rod']) {
             mutationChance += 0.15;
           }
           if (pets.active.some((pet) => pet.name === 'Praying Mantis' && pet.hunger >= 20)) {
@@ -483,7 +496,7 @@ module.exports = {
           }
 
           const { canonicalName, hatchTime } = eggDetails;
-          if (!inventory.petEggs[canonicalName] || inventory.petEggs[canonicalName] <= 0) {
+          if (!inventory.petEggs?.[canonicalName] || inventory.petEggs[canonicalName] <= 0) {
             return chat.reply(
               format({
                 title: 'Hatch 🥚',
@@ -503,7 +516,7 @@ module.exports = {
             );
           }
 
-          let adjustedHatchTime = hatchTime;
+          let adjustedHatchTime = hatchTime || 1800;
           if (pets.active.some((pet) => pet.name === 'Polar Bear' && pet.hunger >= 20)) {
             adjustedHatchTime *= 0.8;
           }
@@ -562,19 +575,19 @@ module.exports = {
         }
 
         case 'inventory': {
-          const seedList = Object.entries(inventory.seeds)
+          const seedList = Object.entries(inventory.seeds || {})
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No seeds';
-          const gearList = Object.entries(inventory.gear)
+          const gearList = Object.entries(inventory.gear || {})
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No gear';
-          const eggList = Object.entries(inventory.eggs)
+          const eggList = Object.entries(inventory.eggs || {})
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No hatching eggs';
-          const cosmeticList = Object.entries(inventory.cosmetics)
+          const cosmeticList = Object.entries(inventory.cosmetics || {})
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No cosmetics';
-          const petEggList = Object.entries(inventory.petEggs)
+          const petEggList = Object.entries(inventory.petEggs || {})
             .map(([name, qty]) => `${name}: ${qty}`)
             .join('\n') || 'No pet eggs';
           const activePetList = pets.active
@@ -751,7 +764,7 @@ module.exports = {
                 })
               );
             }
-            if (!inventory.seeds[cropCanonicalName] || inventory.seeds[cropCanonicalName] <= 0) {
+            if (!inventory.seeds?.[cropCanonicalName] || inventory.seeds[cropCanonicalName] <= 0) {
               return chat.reply(
                 format({
                   title: 'Feed 🐾',
@@ -762,6 +775,15 @@ module.exports = {
             }
 
             const pet = petList[petIndex];
+            if (!petData[pet.name]) {
+              return chat.reply(
+                format({
+                  title: 'Feed 🐾',
+                  titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
+                  content: `Invalid pet '${pet.name}'! Please contact support.`,
+                })
+              );
+            }
             if (pet.hunger >= 100) {
               return chat.reply(
                 format({
