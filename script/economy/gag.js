@@ -390,7 +390,7 @@ module.exports = {
             const errorText = format({
                 title: 'Error ❌',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: `Something went wrong! Please try again later.`
+                content: error.stack || error.message || `Something went wrong! Please try again later.`
             });
             chat.reply(errorText);
         }
