@@ -32,6 +32,23 @@ module.exports = {
             let inventory = userData.inventory || {};
             let playerName = userData.name || null;
 
+            // Weather cache to reduce API calls
+            const weatherCache = {};
+            async function getWeather() {
+                if (weatherCache.lastUpdated && Date.now() - weatherCache.lastUpdated < 300000) {
+                    return weatherCache.data;
+                }
+                try {
+                    const weatherResponse = await axios.get('https://growagardenstock.com/api/stock/weather', apiConfig);
+                    weatherCache.data = weatherResponse.data;
+                    weatherCache.lastUpdated = Date.now();
+                    return weatherCache.data;
+                } catch (error) {
+                    console.error('Weather API error:', error.message);
+                    return { currentWeather: 'Unknown', effectDescription: 'No weather data available' };
+                }
+            }
+
             // API configuration for Grow a Garden
             const apiConfig = {
                 method: 'GET',
@@ -82,7 +99,9 @@ module.exports = {
                         return chat.reply(noNameText);
                     }
                     userData = { name, balance: 100, garden: { crops: [], decorations: [] }, inventory: {} };
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Registered user ${senderID} with name ${name}`);
+                    });
                     const registerText = format({
                         title: 'Register ✅',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -121,17 +140,22 @@ module.exports = {
                         return chat.reply(noSeedText);
                     }
                     const seedDetails = await Currencies.getItem(seedId);
+                    const growthTime = seedDetails.metadata?.growthTime 
+                        ? parseInt(seedDetails.metadata.growthTime) * 60000 
+                        : 600000; // Default 10 minutes
                     await Currencies.removeItem(senderID, seedId, 1);
-                    inventory[seedId].quantity -= 1; // Update local inventory
+                    inventory[seedId].quantity -= 1;
                     if (inventory[seedId].quantity === 0) delete inventory[seedId];
-                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 });
+                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime });
                     userData.garden = garden;
                     userData.inventory = inventory;
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Planted ${seedDetails.name} for ${senderID}:`, JSON.stringify(userData));
+                    });
                     const plantText = format({
                         title: 'Plant 🌱',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You planted a ${seedDetails.name} seed! It will be ready to harvest in 10 minutes.`
+                        content: `You planted a ${seedDetails.name} seed! It will be ready to harvest in ${growthTime / 60000} minutes.`
                     });
                     chat.reply(plantText);
                     break;
@@ -148,20 +172,18 @@ module.exports = {
                         return chat.reply(noCropsText);
                     }
                     let harvestResults = [];
+                    const weather = await getWeather();
                     for (const crop of readyCrops) {
                         const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
-                        let sellValue = itemDetails?.metadata?.sellValue || "20";
-                        let value = parseInt(sellValue.replace(/[^0-9]/g, '')) || 20;
-                        // Apply weather effects (Snow Alert)
-                        const weatherResponse = await axios.get('https://growagardenstock.com/api/stock/weather', apiConfig);
-                        if (weatherResponse.data.currentWeather === "Snow Alert!") {
+                        let sellValue = itemDetails?.metadata?.sellValue ? parseInt(String(itemDetails.metadata.sellValue).replace(/[^0-9]/g, '')) || 20 : 20;
+                        if (weather.currentWeather === "Snow Alert!") {
                             const rand = Math.random();
-                            if (rand < 0.1) value *= 10; // Freeze fruit (x10 value)
-                            else if (rand < 0.3) value *= 2; // Chill fruit (x2 value)
+                            if (rand < 0.1) sellValue *= 10; // Freeze fruit
+                            else if (rand < 0.3) sellValue *= 2; // Chill fruit
                         }
-                        await Currencies.increaseMoney(senderID, value);
-                        balance += value;
-                        harvestResults.push(`${crop.name}: $${value}`);
+                        await Currencies.increaseMoney(senderID, sellValue);
+                        balance += sellValue;
+                        harvestResults.push(`${crop.name}: $${sellValue}`);
                     }
                     garden.crops = garden.crops.filter(crop => now - crop.plantedAt < crop.growthTime);
                     userData.garden = garden;
@@ -176,20 +198,32 @@ module.exports = {
                     break;
 
                 case "shop":
-                    const shopResponse = await axios.get('https://growagardenstock.com/api/stock?type=gear-seeds', apiConfig);
-                    const shopItems = [...shopResponse.data.seeds, ...shopResponse.data.gear].map(item => {
+                    const shopResponse = await axios.get('https://growagardenstock.com/api/stock?type=gear-seeds', apiConfig).catch(err => {
+                        console.error('Shop API error:', err.message);
+                        return { data: { seeds: [], gear: [] } };
+                    });
+                    const shopItems = [...(shopResponse.data.seeds || []), ...(shopResponse.data.gear || [])].map(item => {
                         const [name, quantity] = item.split(" **x");
-                        return { name, quantity: parseInt(quantity) };
+                        return { name, quantity: parseInt(quantity) || 1 };
                     });
                     if (!args[1]) {
-                        const itemDetailsResponse = await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig);
-                        const itemDetails = itemDetailsResponse.data.items;
+                        const itemDetailsResponse = await axios.get('https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position', apiConfig).catch(err => {
+                            console.error('Item details API error:', err.message);
+                            return { data: { items: [] } };
+                        });
+                        const itemDetails = itemDetailsResponse.data.items || [];
                         const shopText = format({
                             title: 'Shop 🏪',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
                             content: `Available items:\n${shopItems.map(item => {
                                 const details = itemDetails.find(i => i.name.toLowerCase() === item.name.toLowerCase());
-                                const price = details?.metadata?.buyPrice ? parseInt(details.metadata.buyPrice) || 50 : 50;
+                                if (!details) {
+                                    console.warn(`No details for item: ${item.name}`);
+                                    return `${item.name} x${item.quantity} (Price unavailable)`;
+                                }
+                                const price = details.metadata?.buyPrice 
+                                    ? parseInt(String(details.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50 
+                                    : 50;
                                 return `${item.name} x${item.quantity} ($${price})`;
                             }).join("\n")}\nUse: garden shop <item>`
                         });
@@ -213,7 +247,7 @@ module.exports = {
                             content: `Item details for "${itemToBuy.name}" not found!`
                         }));
                     }
-                    const price = parseInt(itemDetails.metadata.buyPrice) || 50;
+                    const price = parseInt(String(itemDetails.metadata?.buyPrice).replace(/[^0-9]/g, '')) || 50;
                     if (balance < price) {
                         const notEnoughText = format({
                             title: 'Shop 🏪',
@@ -251,10 +285,13 @@ module.exports = {
                     break;
 
                 case "decorate":
-                    const cosmeticsResponse = await axios.get('https://growagardenstock.com/api/special-stock?type=cosmetics', apiConfig);
+                    const cosmeticsResponse = await axios.get('https://growagardenstock.com/api/special-stock?type=cosmetics', apiConfig).catch(err => {
+                        console.error('Cosmetics API error:', err.message);
+                        return { data: { cosmetics: [] } };
+                    });
                     const cosmetics = cosmeticsResponse.data.cosmetics.map(item => {
                         const [name, quantity] = item.split(" **x");
-                        return { name, quantity: parseInt(quantity) };
+                        return { name, quantity: parseInt(quantity) || 1 };
                     });
                     if (!args[1]) {
                         const decorateHelpText = format({
@@ -309,17 +346,21 @@ module.exports = {
                     break;
 
                 case "status":
-                    const weatherResponse = await axios.get('https://growagardenstock.com/api/stock/weather', apiConfig);
-                    const weather = weatherResponse.data;
-                    const cropStatus = garden.crops.map(crop => {
-                        const timeLeft = Math.ceil((crop.growthTime - (Date.now() - crop.plantedAt)) / 60000);
-                        return `${crop.name}: ${timeLeft > 0 ? `${timeLeft} minutes left` : "Ready to harvest"}`;
-                    });
+                    userData = await Currencies.getData(senderID) || {};
+                    console.log(`Status userData for ${senderID}:`, JSON.stringify(userData));
+                    garden = userData.garden || { crops: [], decorations: [] };
+                    const weather = await getWeather();
+                    const cropStatus = garden.crops.length > 0 
+                        ? garden.crops.map(crop => {
+                            const timeLeft = Math.ceil((crop.growthTime - (Date.now() - crop.plantedAt)) / 60000);
+                            return `${crop.name}: ${timeLeft > 0 ? `${timeLeft} minutes left` : "Ready to harvest"}`;
+                        })
+                        : ["No crops planted (check if planting was successful)"];
                     const decorationList = garden.decorations.map(deco => deco.name).join(", ") || "None";
                     const statusText = format({
                         title: 'Garden Status 🌳',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `Player: ${playerName}\nBalance: $${balance.toLocaleString()}\nWeather: ${weather.currentWeather} (${weather.effectDescription})\nCrops:\n${cropStatus.join("\n") || "No crops planted"}\nDecorations: ${decorationList}`
+                        content: `Player: ${playerName}\nBalance: $${balance.toLocaleString()}\nWeather: ${weather.currentWeather} (${weather.effectDescription})\nCrops:\n${cropStatus.join("\n")}\nDecorations: ${decorationList}`
                     });
                     chat.reply(statusText);
                     break;
@@ -343,10 +384,13 @@ module.exports = {
                     break;
 
                 case "hatch":
-                    const eggResponse = await axios.get('https://growagardenstock.com/api/stock?type=egg', apiConfig);
+                    const eggResponse = await axios.get('https://growagardenstock.com/api/stock?type=egg', apiConfig).catch(err => {
+                        console.error('Egg API error:', err.message);
+                        return { data: { egg: [] } };
+                    });
                     const eggs = eggResponse.data.egg.map(item => {
                         const [name, quantity] = item.split(" **x");
-                        return { name, quantity: parseInt(quantity) };
+                        return { name, quantity: parseInt(quantity) || 1 };
                     });
                     if (!args[1]) {
                         const hatchHelpText = format({
@@ -394,7 +438,7 @@ module.exports = {
                         const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
                         await Currencies.createItem({
                             name: reward,
-                            price: rewardDetails?.metadata?.buyPrice || 50,
+                            price: rewardDetails?.metadata?.buyPrice ? parseInt(String(rewardDetails.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50 : 50,
                             description: `A reward from hatching a ${eggToHatch.name}`,
                             category: rewardDetails?.metadata?.type === "Crop" ? "seed" : "cosmetic",
                             metadata: rewardDetails?.metadata || {}
@@ -426,7 +470,7 @@ module.exports = {
                     break;
             }
         } catch (error) {
-            console.error('Error in garden command:', error);
+            console.error('Error in garden command:', error.message);
             const errorText = format({
                 title: 'Error ❌',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
