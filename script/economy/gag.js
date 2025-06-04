@@ -24,7 +24,7 @@ module.exports = {
         try {
             const { senderID } = event;
             const { Currencies } = Utils;
-            const args = event.body?.split(" ").slice(1) || [];
+            const args = event.body?.trim().split(" ").slice(1) || [];
             const subcommand = args[0]?.toLowerCase();
             let userData = await Currencies.getData(senderID);
             let balance = userData.balance || 0;
@@ -48,7 +48,7 @@ module.exports = {
                     'referer': 'https://growagarden.gg/values',
                     'accept-language': 'en-US,en;q=0.9',
                     'priority': 'u=1, i',
-                    'Cookie': 'dannyNotificationDismissed1=true; _ga=GA1.1.1068361458.1748996221; ...'
+                    'Cookie': 'dannyNotificationDismissed1=true; _ga=GA1.1.1068361458.1748996221; usprivacy=1---; pwBotScore=98; ad_clicker=false; _sharedid=3fa9d628-aa44-4919-b77f-a6f00dadef42; _sharedid_cst=zix7LPQsHA%3D%3D; _li_dcdm_c=.growagarden.gg; _lc2_fpi=86c7975c3383--01jww4rwre9wyzfc6fe6fmt0sv; _lc2_fpi_meta=%7B%22w%22%3A1748996223761%7D; _cc_id=54f6844c29987b05fc29258e28877501; panoramaId=f53e28a3bb2b6e04ceff755d6574185ca02c8089a4b47b2092a92bf07b79820b; panoramaId_expiry=1749601025877; panoramaIdType=panoDevice; connectId={"ttl":86400000,"lastUsed":1748996226110,"lastSynced":1748996226110}; __gads=ID=8261e8b4a0dac8b3:T=1748996227:RT=1748996227:S=ALNI_MazAunvuWez9Fk4Q81PWI3S1yQTqg; __eoi=ID=aa247d947aa355b0:T=1748996227:RT=1748996227:S=AA-AfjZv3VqL0BtOBiw9RC0vLo7k; _ga_5D3G90M88H=GS2.1.s1748996220$o1$g1$t1748996407$j24$l0$h0; _ga_RQP7JYRJS8=GS2.1.s1748996220$o1$g1$t1748996407$j24$l0$h0; cto_bundle=wcIRtl9NRmg2ZGVqUG05SGxUb0tVcEglMkIwNkJoWE90MzBWTWJSS1kwRzVIRllCMDYwY0ZwYTMxUkVuek11UzhCNERqUDJRNnZPR25uUFRuZE1BQjJoYkhFYTBZZzd1Um9QN3FKczglMkJLNSUyRnVRdzhROG1DYktVV25WQkIzS05nWm9ScyUyQnpTbEdwWTdQY0tOeFU0TmlocUJzRnhsWWJBdjFDSWhXZGpQWFlLMk9BcjYweDBGYnJuU0xRdWYxTUtPS2hOdDdtU2FibjdHbE9sMDhOYjklMkJXaXBVJTJGYWVxQW5KUlN3NFZwNFZWRVI3REswbk8lMkZQQnY3bDZaVGxtMnBnWFJnSUtKS3E; cto_bidid=OZNn5V9pOUNhaTdHbWpCQmhLZlB0Vm81TjhPTE04eCUyQkFrYmtIWSUyRm1jaTlGOGV0WVNmTldGZ2l1UTRXbWhHMDNZRnBSQXpNTkVVRUg4RFRadGZ0U2pybDY2bk9wblVWdEtkMmNqdXJqekhZWHIwbUxzaEYlMkJWWUdyN0YwN1NwZnBPN1VQRg'
                 }
             };
 
@@ -81,7 +81,8 @@ module.exports = {
                         });
                         return chat.reply(noNameText);
                     }
-                    await Currencies.setData(senderID, { name, balance: 100, garden: { crops: [], decorations: [] }, inventory: {} });
+                    userData = { name, balance: 100, garden: { crops: [], decorations: [] }, inventory: {} };
+                    await Currencies.setData(senderID, userData);
                     const registerText = format({
                         title: 'Register ✅',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -99,9 +100,10 @@ module.exports = {
                         });
                         return chat.reply(plantHelpText);
                     }
+                    const seedName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
                     let seedId;
                     try {
-                        seedId = await Currencies._resolveItemId(args[1]);
+                        seedId = await Currencies._resolveItemId(seedName);
                     } catch (error) {
                         const noSeedText = format({
                             title: 'Plant 🌱',
@@ -114,14 +116,15 @@ module.exports = {
                         const noSeedText = format({
                             title: 'Plant 🌱',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You don't have enough ${args[1]} seeds!`
+                            content: `You don't have enough ${seedName} seeds!`
                         });
                         return chat.reply(noSeedText);
                     }
                     const seedDetails = await Currencies.getItem(seedId);
                     await Currencies.removeItem(senderID, seedId, 1);
-                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 });
-                    await Currencies.setData(senderID, { garden });
+                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 }); // 10 minutes growth
+                    userData.garden = garden; // Fix: Update userData to ensure persistence
+                    await Currencies.setData(senderID, userData);
                     const plantText = format({
                         title: 'Plant 🌱',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -143,15 +146,17 @@ module.exports = {
                     }
                     let harvestResults = [];
                     for (const crop of readyCrops) {
-                        const cropDetails = await Currencies.getItemByName(crop.name);
-                        const sellValue = cropDetails.metadata?.sellValue || "20";
+                        const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
+                        const sellValue = itemDetails?.metadata?.sellValue || "20";
                         const value = parseInt(sellValue.replace(/[^0-9]/g, '')) || 20;
                         await Currencies.increaseMoney(senderID, value);
                         balance += value;
                         harvestResults.push(`${crop.name}: $${value}`);
                     }
                     garden.crops = garden.crops.filter(crop => now - crop.plantedAt < crop.growthTime);
-                    await Currencies.setData(senderID, { garden, balance });
+                    userData.garden = garden;
+                    userData.balance = balance;
+                    await Currencies.setData(senderID, userData);
                     const harvestText = format({
                         title: 'Harvest 🌾',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -167,19 +172,26 @@ module.exports = {
                         return { name, quantity: parseInt(quantity) };
                     });
                     if (!args[1]) {
+                        const itemDetailsResponse = await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig);
+                        const itemDetails = itemDetailsResponse.data.items;
                         const shopText = format({
                             title: 'Shop 🏪',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Available items:\n${shopItems.map(item => `${item.name} x${item.quantity}`).join("\n")}\nUse: garden shop <item>`
+                            content: `Available items:\n${shopItems.map(item => {
+                                const details = itemDetails.find(i => i.name.toLowerCase() === item.name.toLowerCase());
+                                const price = details?.metadata?.buyPrice ? parseInt(details.metadata.buyPrice) || 50 : 50;
+                                return `${item.name} x${item.quantity} ($${price})`;
+                            }).join("\n")}\nUse: garden shop <item>`
                         });
                         return chat.reply(shopText);
                     }
-                    const itemToBuy = shopItems.find(item => item.name.toLowerCase() === args[1].toLowerCase());
+                    const itemToBuyName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const itemToBuy = shopItems.find(item => item.name.toLowerCase() === itemToBuyName.toLowerCase());
                     if (!itemToBuy) {
                         const invalidItemText = format({
                             title: 'Shop 🏪',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Item not found! Use: garden shop to see available items.`
+                            content: `Item "${itemToBuyName}" not found! Use: garden shop to see available items.`
                         });
                         return chat.reply(invalidItemText);
                     }
@@ -188,7 +200,7 @@ module.exports = {
                         return chat.reply(format({
                             title: 'Shop 🏪',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Item details not found!`
+                            content: `Item details for "${itemToBuy.name}" not found!`
                         }));
                     }
                     const price = parseInt(itemDetails.metadata.buyPrice) || 50;
@@ -214,9 +226,9 @@ module.exports = {
                         shopItemId = await Currencies._resolveItemId(itemToBuy.name);
                     }
                     await Currencies.buyItem(senderID, shopItemId, 1);
-                    // Fix: Update balance directly and use setData to decrease money
                     balance -= price;
-                    await Currencies.setData(senderID, { balance });
+                    userData.balance = balance;
+                    await Currencies.setData(senderID, userData);
                     const buyText = format({
                         title: 'Shop 🏪',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -239,12 +251,13 @@ module.exports = {
                         });
                         return chat.reply(decorateHelpText);
                     }
-                    const decoration = cosmetics.find(item => item.name.toLowerCase() === args[1].toLowerCase());
+                    const decorationName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const decoration = cosmetics.find(item => item.name.toLowerCase() === decorationName.toLowerCase());
                     if (!decoration) {
                         const invalidDecorationText = format({
                             title: 'Decorate 🎨',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Decoration not found! Use: garden decorate to see available decorations.`
+                            content: `Decoration "${decorationName}" not found! Use: garden decorate to see available decorations.`
                         });
                         return chat.reply(invalidDecorationText);
                     }
@@ -269,7 +282,8 @@ module.exports = {
                     }
                     await Currencies.removeItem(senderID, decorationId, 1);
                     garden.decorations.push({ name: decoration.name, placedAt: Date.now() });
-                    await Currencies.setData(senderID, { garden });
+                    userData.garden = garden;
+                    await Currencies.setData(senderID, userData);
                     const decorateText = format({
                         title: 'Decorate 🎨',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -326,12 +340,13 @@ module.exports = {
                         });
                         return chat.reply(hatchHelpText);
                     }
-                    const eggToHatch = eggs.find(egg => egg.name.toLowerCase() === args[1].toLowerCase());
+                    const eggName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const eggToHatch = eggs.find(egg => egg.name.toLowerCase() === eggName.toLowerCase());
                     if (!eggToHatch) {
                         const invalidEggText = format({
                             title: 'Hatch 🥚',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `Egg not found! Use: garden hatch to see available eggs.`
+                            content: `Egg "${eggName}" not found! Use: garden hatch to see available eggs.`
                         });
                         return chat.reply(invalidEggText);
                     }
@@ -360,16 +375,20 @@ module.exports = {
                     try {
                         rewardId = await Currencies._resolveItemId(reward);
                     } catch (error) {
+                        const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
                         await Currencies.createItem({
                             name: reward,
-                            price: 50,
+                            price: rewardDetails?.metadata?.buyPrice || 50,
                             description: `A reward from hatching a ${eggToHatch.name}`,
-                            category: reward.includes("Seed") ? "seed" : "cosmetic"
+                            category: rewardDetails?.metadata?.type === "Crop" ? "seed" : "cosmetic",
+                            metadata: rewardDetails?.metadata || {}
                         });
                         rewardId = await Currencies._resolveItemId(reward);
                     }
                     await Currencies.removeItem(senderID, eggId, 1);
                     await Currencies.addItem(senderID, rewardId, 1);
+                    userData.inventory = inventory; // Fix: Update userData to ensure inventory persistence
+                    await Currencies.setData(senderID, userData);
                     const hatchText = format({
                         title: 'Hatch 🥚',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -392,7 +411,7 @@ module.exports = {
             const errorText = format({
                 title: 'Error ❌',
                 titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                content: error.stack || error.message || `Something went wrong! Please try again later.`
+                content: error.message || `Something went wrong! Please try again later.`
             });
             chat.reply(errorText);
         }
