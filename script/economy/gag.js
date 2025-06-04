@@ -32,7 +32,6 @@ module.exports = {
             let inventory = userData.inventory || {};
             let playerName = userData.name || null;
 
-            // Weather cache to reduce API calls
             const weatherCache = {};
             async function getWeather() {
                 if (weatherCache.lastUpdated && Date.now() - weatherCache.lastUpdated < 300000) {
@@ -49,7 +48,6 @@ module.exports = {
                 }
             }
 
-            // API configuration for Grow a Garden
             const apiConfig = {
                 method: 'GET',
                 headers: {
@@ -98,9 +96,17 @@ module.exports = {
                         });
                         return chat.reply(noNameText);
                     }
-                    userData = { name, balance: 100, garden: { crops: [], decorations: [] }, inventory: {} };
+                    userData = {
+                        name,
+                        balance: 100,
+                        garden: { crops: [], decorations: [] },
+                        inventory: {}
+                    };
                     await Currencies.setData(senderID, userData).then(() => {
-                        console.log(`Registered user ${senderID} with name ${name}`);
+                        console.log(`Registered user ${senderID} with name ${name}:`, JSON.stringify(userData));
+                    }).catch(err => {
+                        console.error(`Failed to register user ${senderID}:`, err.message);
+                        throw new Error('Failed to register. Please try again.');
                     });
                     const registerText = format({
                         title: 'Register ✅',
@@ -140,8 +146,8 @@ module.exports = {
                         return chat.reply(noSeedText);
                     }
                     const seedDetails = await Currencies.getItem(seedId);
-                    const growthTime = seedDetails.metadata?.growthTime 
-                        ? parseInt(seedDetails.metadata.growthTime) * 60000 
+                    const growthTime = seedDetails.metadata?.growthTime
+                        ? parseInt(seedDetails.metadata.growthTime) * 60000
                         : 600000; // Default 10 minutes
                     await Currencies.removeItem(senderID, seedId, 1);
                     inventory[seedId].quantity -= 1;
@@ -151,6 +157,9 @@ module.exports = {
                     userData.inventory = inventory;
                     await Currencies.setData(senderID, userData).then(() => {
                         console.log(`Planted ${seedDetails.name} for ${senderID}:`, JSON.stringify(userData));
+                    }).catch(err => {
+                        console.error(`Failed to save plant data for ${senderID}:`, err.message);
+                        throw new Error('Failed to plant seed. Please try again.');
                     });
                     const plantText = format({
                         title: 'Plant 🌱',
@@ -174,8 +183,14 @@ module.exports = {
                     let harvestResults = [];
                     const weather = await getWeather();
                     for (const crop of readyCrops) {
-                        const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
-                        let sellValue = itemDetails?.metadata?.sellValue ? parseInt(String(itemDetails.metadata.sellValue).replace(/[^0-9]/g, '')) || 20 : 20;
+                        const itemDetailsResponse = await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig).catch(err => {
+                            console.error('Harvest item details API error:', err.message);
+                            return { data: { items: [] } };
+                        });
+                        const itemDetails = itemDetailsResponse.data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
+                        let sellValue = itemDetails?.metadata?.sellValue
+                            ? parseInt(String(itemDetails.metadata.sellValue).replace(/[^0-9]/g, '')) || 20
+                            : 20;
                         if (weather.currentWeather === "Snow Alert!") {
                             const rand = Math.random();
                             if (rand < 0.1) sellValue *= 10; // Freeze fruit
@@ -188,7 +203,9 @@ module.exports = {
                     garden.crops = garden.crops.filter(crop => now - crop.plantedAt < crop.growthTime);
                     userData.garden = garden;
                     userData.balance = balance;
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Harvested for ${senderID}:`, JSON.stringify(userData));
+                    });
                     const harvestText = format({
                         title: 'Harvest 🌾',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -221,8 +238,8 @@ module.exports = {
                                     console.warn(`No details for item: ${item.name}`);
                                     return `${item.name} x${item.quantity} (Price unavailable)`;
                                 }
-                                const price = details.metadata?.buyPrice 
-                                    ? parseInt(String(details.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50 
+                                const price = details.metadata?.buyPrice
+                                    ? parseInt(String(details.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50
                                     : 50;
                                 return `${item.name} x${item.quantity} ($${price})`;
                             }).join("\n")}\nUse: garden shop <item>`
@@ -239,7 +256,10 @@ module.exports = {
                         });
                         return chat.reply(invalidItemText);
                     }
-                    const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === itemToBuy.name.toLowerCase());
+                    const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig).catch(err => {
+                        console.error('Shop item details API error:', err.message);
+                        return { data: { items: [] } };
+                    })).data.items.find(i => i.name.toLowerCase() === itemToBuy.name.toLowerCase());
                     if (!itemDetails) {
                         return chat.reply(format({
                             title: 'Shop 🏪',
@@ -275,7 +295,9 @@ module.exports = {
                     balance -= price;
                     userData.balance = balance;
                     userData.inventory = inventory;
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Bought ${itemToBuy.name} for ${senderID}:`, JSON.stringify(userData));
+                    });
                     const buyText = format({
                         title: 'Shop 🏪',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -336,7 +358,9 @@ module.exports = {
                     garden.decorations.push({ name: decoration.name, placedAt: Date.now() });
                     userData.garden = garden;
                     userData.inventory = inventory;
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Decorated with ${decoration.name} for ${senderID}:`, JSON.stringify(userData));
+                    });
                     const decorateText = format({
                         title: 'Decorate 🎨',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
@@ -350,7 +374,7 @@ module.exports = {
                     console.log(`Status userData for ${senderID}:`, JSON.stringify(userData));
                     garden = userData.garden || { crops: [], decorations: [] };
                     const weather = await getWeather();
-                    const cropStatus = garden.crops.length > 0 
+                    const cropStatus = garden.crops.length > 0
                         ? garden.crops.map(crop => {
                             const timeLeft = Math.ceil((crop.growthTime - (Date.now() - crop.plantedAt)) / 60000);
                             return `${crop.name}: ${timeLeft > 0 ? `${timeLeft} minutes left` : "Ready to harvest"}`;
@@ -435,10 +459,15 @@ module.exports = {
                     try {
                         rewardId = await Currencies._resolveItemId(reward);
                     } catch (error) {
-                        const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
+                        const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig).catch(err => {
+                            console.error('Hatch reward API error:', err.message);
+                            return { data: { items: [] } };
+                        })).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
                         await Currencies.createItem({
                             name: reward,
-                            price: rewardDetails?.metadata?.buyPrice ? parseInt(String(rewardDetails.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50 : 50,
+                            price: rewardDetails?.metadata?.buyPrice
+                                ? parseInt(String(rewardDetails.metadata.buyPrice).replace(/[^0-9]/g, '')) || 50
+                                : 50,
                             description: `A reward from hatching a ${eggToHatch.name}`,
                             category: rewardDetails?.metadata?.type === "Crop" ? "seed" : "cosmetic",
                             metadata: rewardDetails?.metadata || {}
@@ -451,7 +480,9 @@ module.exports = {
                     inventory[rewardId] = inventory[rewardId] || { quantity: 0 };
                     inventory[rewardId].quantity += 1;
                     userData.inventory = inventory;
-                    await Currencies.setData(senderID, userData);
+                    await Currencies.setData(senderID, userData).then(() => {
+                        console.log(`Hatched ${eggToHatch.name} for ${senderID}:`, JSON.stringify(userData));
+                    });
                     const hatchText = format({
                         title: 'Hatch 🥚',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
