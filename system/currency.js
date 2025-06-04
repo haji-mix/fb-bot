@@ -55,23 +55,53 @@ class CurrencySystem {
   async getData(userId) {
     const data = await this.userStore.get(userId);
     if (data === null) {
-      const defaultData = { balance: this.defaultBalance, name: null, exp: 0, inventory: {} };
+      const defaultData = {
+        balance: this.defaultBalance,
+        name: null,
+        exp: 0,
+        inventory: {},
+        garden: { crops: [], decorations: [] } // Initialize garden
+      };
       await this.userStore.put(userId, defaultData);
+      console.log(`Initialized data for user ${userId}:`, JSON.stringify(defaultData));
       return defaultData;
     }
     return typeof data === 'object'
-      ? { balance: data.balance || this.defaultBalance, name: data.name || null, exp: data.exp || 0, inventory: data.inventory || {} }
-      : { balance: data, name: null, exp: 0, inventory: {} };
+      ? {
+          balance: data.balance || this.defaultBalance,
+          name: data.name || null,
+          exp: data.exp || 0,
+          inventory: data.inventory || {},
+          garden: data.garden || { crops: [], decorations: [] } // Ensure garden exists
+        }
+      : {
+          balance: data,
+          name: null,
+          exp: 0,
+          inventory: {},
+          garden: { crops: [], decorations: [] }
+        };
   }
 
-  async setData(userId, data) {
+  async setData(userId, data, retries = 3) {
     if (!userId || typeof data !== 'object') {
       throw new Error('Invalid user ID or data');
     }
     const currentData = await this.getData(userId);
     const newData = { ...currentData, ...data };
-    await this.userStore.put(userId, newData);
-    return newData;
+    // Ensure garden is preserved
+    newData.garden = data.garden || currentData.garden || { crops: [], decorations: [] };
+    for (let i = 0; i < retries; i++) {
+      try {
+        await this.userStore.put(userId, newData);
+        console.log(`Saved data for user ${userId}:`, JSON.stringify(newData));
+        return newData;
+      } catch (error) {
+        console.error(`Retry ${i + 1} failed for setData user ${userId}:`, error.message);
+        if (i === retries - 1) throw new Error(`Failed to save data: ${error.message}`);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
   }
 
   async setBalance(userId, amount) {
@@ -190,8 +220,10 @@ class CurrencySystem {
       description: itemData.description || '',
       category: itemData.category || 'misc',
       custom: itemData.custom || {},
+      metadata: itemData.metadata || {} // Preserve metadata for garden items
     };
     await this.itemStore.put(id, newItem);
+    console.log(`Created item ${trimmedName} with ID ${id}:`, JSON.stringify(newItem));
     return newItem;
   }
 
@@ -316,21 +348,16 @@ class CurrencySystem {
     if (typeof sellPriceMultiplier !== 'number' || sellPriceMultiplier < 0 || sellPriceMultiplier > 1) {
       throw new Error('Sell price multiplier must be a number between 0 and 1');
     }
-
     const itemId = await this._resolveItemId(identifier);
     const item = await this.getItem(itemId);
-
     const data = await this.getData(userId);
     const inventory = data.inventory || {};
     if (!inventory[itemId] || inventory[itemId].quantity < quantity) {
       throw new Error('Insufficient item quantity in inventory');
     }
-
     const sellPrice = Math.floor(item.price * quantity * sellPriceMultiplier);
-
     await this.removeItem(userId, itemId, quantity);
     const newBalance = await this.addBalance(userId, sellPrice);
-
     return { itemId, quantity, sellPrice, newBalance };
   }
 
@@ -373,8 +400,8 @@ class CurrencySystem {
     if (typeof key !== 'string' || key.trim() === '') {
       throw new Error('Key must be a non-empty string');
     }
-    if (key === 'balance' || key === 'name' || key === 'exp' || key === 'inventory') {
-      throw new Error('Cannot overwrite reserved fields: balance, name, exp, or inventory');
+    if (key === 'balance' || key === 'name' || key === 'exp' || key === 'inventory' || key === 'garden') {
+      throw new Error('Cannot overwrite reserved fields: balance, name, exp, inventory, or garden');
     }
     return this.setData(userId, { [key]: value });
   }
