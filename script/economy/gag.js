@@ -26,7 +26,7 @@ module.exports = {
             const { Currencies } = Utils;
             const args = event.body?.trim().split(" ").slice(1) || [];
             const subcommand = args[0]?.toLowerCase();
-            let userData = await Currencies.getData(senderID);
+            let userData = await Currencies.getData(senderID) || {};
             let balance = userData.balance || 0;
             let garden = userData.garden || { crops: [], decorations: [] };
             let inventory = userData.inventory || {};
@@ -100,7 +100,7 @@ module.exports = {
                         });
                         return chat.reply(plantHelpText);
                     }
-                    const seedName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const seedName = args.slice(1).join(" ").trim();
                     let seedId;
                     try {
                         seedId = await Currencies._resolveItemId(seedName);
@@ -108,7 +108,7 @@ module.exports = {
                         const noSeedText = format({
                             title: 'Plant 🌱',
                             titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                            content: `You don't have that seed! Check your inventory with: garden inventory`
+                            content: `You don't have the seed "${seedName}"! Check your inventory with: garden inventory`
                         });
                         return chat.reply(noSeedText);
                     }
@@ -122,8 +122,11 @@ module.exports = {
                     }
                     const seedDetails = await Currencies.getItem(seedId);
                     await Currencies.removeItem(senderID, seedId, 1);
-                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 }); // 10 minutes growth
-                    userData.garden = garden; // Fix: Update userData to ensure persistence
+                    inventory[seedId].quantity -= 1; // Update local inventory
+                    if (inventory[seedId].quantity === 0) delete inventory[seedId];
+                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 });
+                    userData.garden = garden;
+                    userData.inventory = inventory;
                     await Currencies.setData(senderID, userData);
                     const plantText = format({
                         title: 'Plant 🌱',
@@ -146,9 +149,16 @@ module.exports = {
                     }
                     let harvestResults = [];
                     for (const crop of readyCrops) {
-                        const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
-                        const sellValue = itemDetails?.metadata?.sellValue || "20";
-                        const value = parseInt(sellValue.replace(/[^0-9]/g, '')) || 20;
+                        const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === crop.name.toLowerCase());
+                        let sellValue = itemDetails?.metadata?.sellValue || "20";
+                        let value = parseInt(sellValue.replace(/[^0-9]/g, '')) || 20;
+                        // Apply weather effects (Snow Alert)
+                        const weatherResponse = await axios.get('https://growagardenstock.com/api/stock/weather', apiConfig);
+                        if (weatherResponse.data.currentWeather === "Snow Alert!") {
+                            const rand = Math.random();
+                            if (rand < 0.1) value *= 10; // Freeze fruit (x10 value)
+                            else if (rand < 0.3) value *= 2; // Chill fruit (x2 value)
+                        }
                         await Currencies.increaseMoney(senderID, value);
                         balance += value;
                         harvestResults.push(`${crop.name}: $${value}`);
@@ -172,7 +182,7 @@ module.exports = {
                         return { name, quantity: parseInt(quantity) };
                     });
                     if (!args[1]) {
-                        const itemDetailsResponse = await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig);
+                        const itemDetailsResponse = await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig);
                         const itemDetails = itemDetailsResponse.data.items;
                         const shopText = format({
                             title: 'Shop 🏪',
@@ -185,7 +195,7 @@ module.exports = {
                         });
                         return chat.reply(shopText);
                     }
-                    const itemToBuyName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const itemToBuyName = args.slice(1).join(" ").trim();
                     const itemToBuy = shopItems.find(item => item.name.toLowerCase() === itemToBuyName.toLowerCase());
                     if (!itemToBuy) {
                         const invalidItemText = format({
@@ -195,7 +205,7 @@ module.exports = {
                         });
                         return chat.reply(invalidItemText);
                     }
-                    const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === itemToBuy.name.toLowerCase());
+                    const itemDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === itemToBuy.name.toLowerCase());
                     if (!itemDetails) {
                         return chat.reply(format({
                             title: 'Shop 🏪',
@@ -226,8 +236,11 @@ module.exports = {
                         shopItemId = await Currencies._resolveItemId(itemToBuy.name);
                     }
                     await Currencies.buyItem(senderID, shopItemId, 1);
+                    inventory[shopItemId] = inventory[shopItemId] || { quantity: 0 };
+                    inventory[shopItemId].quantity += 1;
                     balance -= price;
                     userData.balance = balance;
+                    userData.inventory = inventory;
                     await Currencies.setData(senderID, userData);
                     const buyText = format({
                         title: 'Shop 🏪',
@@ -251,7 +264,7 @@ module.exports = {
                         });
                         return chat.reply(decorateHelpText);
                     }
-                    const decorationName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const decorationName = args.slice(1).join(" ").trim();
                     const decoration = cosmetics.find(item => item.name.toLowerCase() === decorationName.toLowerCase());
                     if (!decoration) {
                         const invalidDecorationText = format({
@@ -281,8 +294,11 @@ module.exports = {
                         return chat.reply(noDecorationText);
                     }
                     await Currencies.removeItem(senderID, decorationId, 1);
+                    inventory[decorationId].quantity -= 1;
+                    if (inventory[decorationId].quantity === 0) delete inventory[decorationId];
                     garden.decorations.push({ name: decoration.name, placedAt: Date.now() });
                     userData.garden = garden;
+                    userData.inventory = inventory;
                     await Currencies.setData(senderID, userData);
                     const decorateText = format({
                         title: 'Decorate 🎨',
@@ -340,7 +356,7 @@ module.exports = {
                         });
                         return chat.reply(hatchHelpText);
                     }
-                    const eggName = args.slice(1).join(" ").trim(); // Fix: Join all args for multi-word names
+                    const eggName = args.slice(1).join(" ").trim();
                     const eggToHatch = eggs.find(egg => egg.name.toLowerCase() === eggName.toLowerCase());
                     if (!eggToHatch) {
                         const invalidEggText = format({
@@ -375,7 +391,7 @@ module.exports = {
                     try {
                         rewardId = await Currencies._resolveItemId(reward);
                     } catch (error) {
-                        const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&limit=24&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
+                        const rewardDetails = (await axios.get(`https://growagarden.gg/api/v1/items/Gag/all?page=1&sortBy=position`, apiConfig)).data.items.find(i => i.name.toLowerCase() === reward.toLowerCase());
                         await Currencies.createItem({
                             name: reward,
                             price: rewardDetails?.metadata?.buyPrice || 50,
@@ -386,8 +402,11 @@ module.exports = {
                         rewardId = await Currencies._resolveItemId(reward);
                     }
                     await Currencies.removeItem(senderID, eggId, 1);
-                    await Currencies.addItem(senderID, rewardId, 1);
-                    userData.inventory = inventory; // Fix: Update userData to ensure inventory persistence
+                    inventory[eggId].quantity -= 1;
+                    if (inventory[eggId].quantity === 0) delete inventory[eggId];
+                    inventory[rewardId] = inventory[rewardId] || { quantity: 0 };
+                    inventory[rewardId].quantity += 1;
+                    userData.inventory = inventory;
                     await Currencies.setData(senderID, userData);
                     const hatchText = format({
                         title: 'Hatch 🥚',
