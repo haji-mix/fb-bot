@@ -48,7 +48,7 @@ module.exports = {
                     'referer': 'https://growagarden.gg/values',
                     'accept-language': 'en-US,en;q=0.9',
                     'priority': 'u=1, i',
-                    'Cookie': 'dannyNotificationDismissed1=true; _ga=GA1.1.1068361458.1748996221; ...' // Truncated for brevity
+                    'Cookie': 'dannyNotificationDismissed1=true; _ga=GA1.1.1068361458.1748996221; ...'
                 }
             };
 
@@ -120,7 +120,7 @@ module.exports = {
                     }
                     const seedDetails = await Currencies.getItem(seedId);
                     await Currencies.removeItem(senderID, seedId, 1);
-                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 }); // 10 minutes growth
+                    garden.crops.push({ name: seedDetails.name, plantedAt: Date.now(), growthTime: 600000 });
                     await Currencies.setData(senderID, { garden });
                     const plantText = format({
                         title: 'Plant 🌱',
@@ -214,11 +214,13 @@ module.exports = {
                         shopItemId = await Currencies._resolveItemId(itemToBuy.name);
                     }
                     await Currencies.buyItem(senderID, shopItemId, 1);
-                    await Currencies.increaseMoney(senderID, -price);
+                    // Fix: Update balance directly and use setData to decrease money
+                    balance -= price;
+                    await Currencies.setData(senderID, { balance });
                     const buyText = format({
                         title: 'Shop 🏪',
                         titlePattern: `{emojis} ${UNIRedux.arrow} {word}`,
-                        content: `You bought a ${itemToBuy.name} for $${price}! New balance: $${(balance - price).toLocaleString()}`
+                        content: `You bought a ${itemToBuy.name} for $${price}! New balance: $${balance.toLocaleString()}`
                     });
                     chat.reply(buyText);
                     break;
