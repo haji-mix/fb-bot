@@ -113,7 +113,7 @@ fbvibex-bot/
 │   ├── index.js (FBVibeX module)
 │   ├── index.d.ts (TypeScript declarations)
 │   ├── utils.js (custom utilities)
-│   └── src/ (extra API functions, e.g., listen.js, sendMessage.js, getThreadInfo.js)
+│   └── src/ (extra API functions, e.g., listenMqtt.js, sendMessage.js, getThreadInfo.js)
 ├── appstate.json
 ├── package.json
 └── tsconfig.json (for TypeScript)
@@ -145,16 +145,12 @@ async function startBot() {
     console.log('Bot’s live and vibin’! 😎');
 
     // Listen for messages via WebSocket (requires src/listen.js)
-    api.listen((err: Error | null, event: any) => {
+    api.listenMqtt((err: Error | null, event: any) => {
       if (err) {
         console.error('Listen error:', err);
         return;
       }
       if (event.type === 'message') {
-        if (event.body === '/stop') {
-          api.sendMessage('Chillin’ out, shutting down... 🛑', event.threadID);
-          return api.listen.stop();
-        }
         if (event.body.toLowerCase() === 'test') {
           api.sendMessage(`Echo: ${event.body} 🔊`, event.threadID);
         }
@@ -198,16 +194,12 @@ async function startBot() {
     console.log('Bot’s live and vibin’! 😎');
 
     // Listen for messages via WebSocket (requires src/listen.js)
-    api.listen((err, event) => {
+    api.listenMqtt((err, event) => {
       if (err) {
         console.error('Listen error:', err);
         return;
       }
       if (event.type === 'message') {
-        if (event.body === '/stop') {
-          api.sendMessage('Chillin’ out, shutting down... 🛑', event.threadID);
-          return api.listen.stop();
-        }
         if (event.body.toLowerCase() === 'test') {
           api.sendMessage(`Echo: ${event.body} 🔊`, event.threadID);
         }
