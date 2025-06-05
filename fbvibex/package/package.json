@@ -1,30 +1,25 @@
 {
-    "name": "chatbox-fca-remake",
+    "name": "fbvibex",
     "version": "4.3.8",
     "description": "Unofficial Facebook Chat API",
-    "main": "index.js",
+    "main": "./index.js",
+    "types": "./index.d.ts",
     "scripts": {
-        "start": "node index.js"
+                 "test": "echo \"Error: no test specified\" && exit 1"
     },
-    "author": "Avery, David, Maude, Benjamin, UIRI, DongDev, Kenneth Panio, Jr Busaco",
+    "author": "Avery, David, Maude, Benjamin, UIRI, DongDev, Kenneth Panio, Jr Busaco, Aljur Pogoy",
     "license": "MIT",
     "keywords": [
         "facebook",
         "chat",
         "api",
         "fca",
-        "chatbox-fca-remake",
-        "chatbox-fca",
-        "chatbox-fca-utils",
-        "chatbox-horizon",
-        "chatbox-nextgen",
-        "chatbox-fca-pro"
+        "fbvibex"
     ],
     "dependencies": {
         "sshpk": "^1.18.0",
         "readline": "^1.3.0",
         "cheerio": "^0.22.0",
-        "deasync": "^0.1.30",
         "node-cron": "^3.0.3",
         "random-useragent": "^0.5.0",
         "bluebird": "^3.7.2",
