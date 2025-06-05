@@ -4,8 +4,8 @@ const { FontSystem, format, UNIRedux } = require("cassidy-styler");
 
 global.Hajime = {
   replies: {},
-  reactions: {}
-  };
+  reactions: {},
+};
 
 async function botHandler({
   fonts,
@@ -33,7 +33,20 @@ async function botHandler({
         setTimeout(() => delete global.Hajime.replies[response.messageID], 300000);
       }
       if (reactCallback && typeof reactCallback === "function") {
-        await response.onReact(reactCallback);
+        await response.onReact(async (context) => {
+          await reactCallback({
+            ...context,
+            api,
+            args: event.body ? event.body.trim().split(/\s+/) : [],
+            fonts,
+            admin,
+            prefix,
+            Utils,
+            FontSystem,
+            format,
+            UNIRedux,
+          });
+        });
       }
       return response;
     } catch (error) {
@@ -82,16 +95,16 @@ async function botHandler({
         JSON.stringify(hajime_config, null, 2),
         "utf-8",
         (err) => {
-          if (err);
+          if (err) logger.error(`Error writing to hajime.json: ${err.message}`);
         }
       );
-      reply(`UserID: ${userId}, You have been Banned for Spamming.`);
+      await reply(`UserID: ${userId}, You have been Banned for Spamming.`);
       return;
     }
 
     if (repeatedMessages.length >= SPAM_THRESHOLD) {
       if (!Utils.userActivity[userId].warned) {
-        reply(`Warning to userID: ${userId} Please stop spamming!`);
+        await reply(`Warning to userID: ${userId} Please stop spamming!`);
         Utils.userActivity[userId].warned = true;
       }
       return;
@@ -138,7 +151,8 @@ async function botHandler({
   if (event.messageReply && global.Hajime.replies && global.Hajime.replies[event.messageReply.messageID]) {
     const replyData = global.Hajime.replies[event.messageReply.messageID];
     if (replyData.author && event.senderID !== replyData.author) {
-      return reply("Only the original sender can reply to this message.");
+      await reply("Only the original sender can reply to this message.");
+      return;
     }
     if (replyData && replyData.callback && typeof replyData.callback === "function") {
       await replyData.callback({
@@ -156,7 +170,7 @@ async function botHandler({
         data: replyData,
       });
     } else {
-      reply("This conversation has expired or is invalid. Please start a new one.");
+      await reply("This conversation has expired or is invalid. Please start a new one.");
     }
     return;
   }
@@ -192,38 +206,43 @@ async function botHandler({
     }
 
     if (maintenanceEnabled && !excludes_mod) {
-      return reply(
+      await reply(
         `Our system is currently undergoing maintenance. Please try again later!`
       );
+      return;
     }
     const warning = fonts.bold("[You don't have permission!]\n\n");
 
     if (role === 1 && !bot_owner) {
-      reply(warning + `Only the bot owner/admin have access to this command.`);
+      await reply(warning + `Only the bot owner/admin have access to this command.`);
       return;
     }
 
     if (role === 2 && !group_admin) {
-      return reply(warning + `Only group admin have access to this command.`);
+      await reply(warning + `Only group admin have access to this command.`);
+      return;
     }
 
     if (role === 3 && !super_admin) {
-      return reply(
+      await reply(
         warning +
           `Only moderators/super_admins/site_owner have access to this command.`
       );
+      return;
     }
   }
 
   if (aliases(command)?.isGroup === true) {
     if (!event.isGroup) {
-      return reply("You can only use this command in group chats.");
+      await reply("You can only use this command in group chats.");
+      return;
     }
   }
 
   if (aliases(command)?.isPrivate === true) {
     if (event.isGroup) {
-      return reply("You can only use this command in private chat.");
+      await reply("You can only use this command in private chat.");
+      return;
     }
   }
 
@@ -267,11 +286,12 @@ async function botHandler({
 
       const updatedUsageInfo = Utils.limited.get(usageKey);
       if (updatedUsageInfo.count >= aliases(command)?.limit) {
-        return reply(
+        await reply(
           `Limit Reached: This command is available up to ${
             aliases(command)?.limit
           } times per 25 minutes for standard users. To access unlimited usage, please upgrade to our Premium version. For more information, contact us directly or use callad!`
         );
+        return;
       } else {
         Utils.limited.set(usageKey, {
           count: updatedUsageInfo.count + 1,
@@ -298,23 +318,46 @@ async function botHandler({
       const active = Math.ceil((sender.timestamp + delay * 1000 - now) / 1000);
 
       if (!sender.warned) {
-        reply(
+        await reply(
           `Please wait ${active} second(s) before using the "${name}" command again.`
         );
         sender.warned = true;
         Utils.cooldowns.set(cooldownKey, sender);
       }
-      return chat.reaction("🕒");
+      return chat.react("🕒");
     }
   }
 
-  if (event && event.type === "message_reaction") {
-    if (
-      event.senderID === userid &&
-      ["🗑️", "🚮", "👎"].includes(event.reaction)
-    ) {
-      return api.unsendMessage(event.messageID);
+  if (
+    event &&
+    event.type === "message_reaction" &&
+    global.Hajime.rections &&
+    global.Hajime.reactions[event.messageID]
+  ) {
+    const reactionData = global.Hajime.reactions[event.messageID];
+    if (reactionData && reactionData.callback && typeof reactionData.callback === "function") {
+      await reactionData.callback({
+        api,
+        event,
+        chat,
+        fonts,
+        admin,
+        prefix,
+        Utils,
+        FontSystem,
+        format,
+        UNIRedux,
+      });
     }
+  }
+
+  if (
+    event &&
+    event.type === "message_reaction" &&
+    event.senderID === userid &&
+    ["🗑️", "🚮", "👎"].includes(event.reaction)
+  ) {
+    return api.unsendMessage(event.messageID);
   }
 
   if (
@@ -323,9 +366,10 @@ async function botHandler({
     !command &&
     event?.body?.toLowerCase().startsWith(prefix?.toLowerCase())
   ) {
-    return reply(
+    await reply(
       `Invalid command please use help to see the list of available commands.`
     );
+    return;
   }
 
   if (
@@ -336,9 +380,10 @@ async function botHandler({
     event?.body?.toLowerCase().startsWith(prefix?.toLowerCase()) &&
     !aliases(command)?.name
   ) {
-    return reply(
+    await reply(
       `Invalid command '${command}' please use ${prefix}help to see the list of available commands.`
     );
+    return;
   }
 
   for (const { handleEvent, name } of Utils.handleEvent.values()) {
@@ -373,7 +418,6 @@ async function botHandler({
   switch (event.type) {
     case "message":
     case "message_unsend":
-    case "message_reaction":
     case "message_reply":
       if (aliases(command?.toLowerCase())?.name) {
         try {
@@ -417,7 +461,7 @@ async function botHandler({
           }' please contact admins/mods or use 'callad' [report issue here! or your message.]\n\nERROR: ${
             error.stack
           }`;
-          reply(error_msg);
+          await reply(error_msg);
           logger.error(
             `Something went wrong with the command '${
               aliases(command?.toLowerCase())?.name
@@ -428,36 +472,23 @@ async function botHandler({
           }
         }
       }
-      for (const { handleReply } of Utils.ObjectReply.values()) {
-        if (Array.isArray(Utils.handleReply) && Utils.handleReply.length > 0) {
-          try {
-            if (!event.messageReply) return;
-            const indexOfHandle = Utils.handleReply.findIndex(
-              (reply) => reply.author === event.messageReply.senderID
-            );
-            if (indexOfHandle !== -1) return;
-            await handleReply({
-              logger,
-              api,
-              event,
-              args,
-              chat,
-              box: chat,
-              message: chat,
-              fonts,
-              font: fonts,
-              admin,
-              prefix,
-              Utils,
-              FontSystem,
-              format,
-              UNIRedux,
-            });
-          } catch (error) {
-            logger.error(
-              `Something went wrong with the handleReply error: ` + error.stack
-            );
-          }
+      break;
+    case "message_reaction":
+      if (global.Hajime.reactions && global.Hajime.reactions[event.messageID]) {
+        const reactionData = global.Hajime.reactions[event.messageID];
+        if (reactionData && reactionData.callback && typeof reactionData.callback === "function") {
+          await reactionData.callback({
+            api,
+            event,
+            chat,
+            fonts,
+            admin,
+            prefix,
+            Utils,
+            FontSystem,
+            format,
+            UNIRedux,
+          });
         }
       }
       break;

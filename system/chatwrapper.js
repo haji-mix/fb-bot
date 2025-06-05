@@ -190,30 +190,28 @@ class onChat {
     }
   }
 
-  async onReact(callback, mid) {
+  async onReact(callback, mid = this.messageID) {
     try {
       if (typeof callback !== "function") throw new Error("Callback must be a function.");
-      if (!mid) throw new Error("Message ID is required.");
-      if (!global.Hajime) global.Hajime = { reactions: {}, replies: {} };
-      if (!global.Hajime.reactions) global.Hajime.reactions = {};
+      if (!mid) throw new Error("Message ID is required for reaction listener.");
 
+      global.Hajime.reactions = global.Hajime.reactions || {};
       global.Hajime.reactions[mid] = {
         author: this.senderID || this.api.getCurrentUserID(),
         callback: async (params) => {
           try {
             const { event } = params;
-            const reactContext = new onChat(this.api, event);
+            const reactionContext = new onChat(this.api, event);
             await callback({
-              ...reactContext,
+              ...reactionContext,
               reaction: event.reaction || null,
               reply: async (msg, tid = event.threadID, mid = event.messageID) =>
-                await reactContext.reply(fonts.thin(msg), tid, mid),
+                await reactionContext.reply(fonts.thin(msg), tid, mid),
             });
           } catch (error) {
             this.error(`onReact callback error: ${error.message}`);
           }
         },
-        conversationHistory: [],
       };
 
       setTimeout(() => delete global.Hajime.reactions[mid], 300000);
@@ -413,7 +411,43 @@ class onChat {
               return () => {};
             }
           },
-          onReact: async (callback) => await this.onReact(callback, lastReplyMsg.messageID),
+          onReact: async (callback) => {
+            try {
+              if (typeof callback !== "function") throw new Error("Callback must be a function.");
+              if (!lastReplyMsg.messageID) throw new Error("No message ID available for reaction listener.");
+
+              global.Hajime.reactions = global.Hajime.reactions || {};
+              global.Hajime.reactions[lastReplyMsg.messageID] = {
+                author: this.senderID || this.api.getCurrentUserID(),
+                callback: async (params) => {
+                  try {
+                    const { event } = params;
+                    const reactionContext = new onChat(this.api, event);
+                    await callback({
+                      ...reactionContext,
+                      reaction: event.reaction || null,
+                      reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                        await reactionContext.reply(fonts.thin(msg), tid, mid),
+                    });
+                  } catch (error) {
+                    this.error(`onReact callback error: ${error.message}`);
+                  }
+                },
+              };
+
+              setTimeout(() => delete global.Hajime.reactions[lastReplyMsg.messageID], 300000);
+              return () => {
+                try {
+                  delete global.Hajime.reactions[lastReplyMsg.messageID];
+                } catch (error) {
+                  this.error(`Error removing onReact listener: ${error.message}`);
+                }
+              };
+            } catch (error) {
+              this.error(`onReact setup error: ${error.message}`);
+              return () => {};
+            }
+          },
         };
       } else {
         const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
@@ -486,7 +520,43 @@ class onChat {
               return () => {};
             }
           },
-          onReact: async (callback) => await this.onReact(callback, replyMsg.messageID),
+          onReact: async (callback) => {
+            try {
+              if (typeof callback !== "function") throw new Error("Callback must be a function.");
+              if (!replyMsg.messageID) throw new Error("No message ID available for reaction listener.");
+
+              global.Hajime.reactions = global.Hajime.reactions || {};
+              global.Hajime.reactions[replyMsg.messageID] = {
+                author: this.senderID || this.api.getCurrentUserID(),
+                callback: async (params) => {
+                  try {
+                    const { event } = params;
+                    const reactionContext = new onChat(this.api, event);
+                    await callback({
+                      ...reactionContext,
+                      reaction: event.reaction || null,
+                      reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                        await reactionContext.reply(fonts.thin(msg), tid, mid),
+                    });
+                  } catch (error) {
+                    this.error(`onReact callback error: ${error.message}`);
+                  }
+                },
+              };
+
+              setTimeout(() => delete global.Hajime.reactions[replyMsg.messageID], 300000);
+              return () => {
+                try {
+                  delete global.Hajime.reactions[replyMsg.messageID];
+                } catch (error) {
+                  this.error(`Error removing onReact listener: ${error.message}`);
+                }
+              };
+            } catch (error) {
+              this.error(`onReact setup error: ${error.message}`);
+              return () => {};
+            }
+          },
         };
       }
     } catch (error) {

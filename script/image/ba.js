@@ -1,7 +1,7 @@
 module.exports = {
     config: {
         name: "ba",
-        aliases: ["b"],
+        aliases: ["bluearchive"],
         type: "anime",
         author: "Aljur Pogoy",
         role: 0,

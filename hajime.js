@@ -387,9 +387,10 @@ async function accountLogin(
         api.listenMqtt((error, event) => {
           if (error || !"type" in event) {
             logger.warn(
-              `MQTT error for user ${userid}: ${error?.stack || error}`
+              `MQTT error for user ${userid}: ${error?.error || error}`
             );
-            return process.exit(1);
+          //  deleteThisUser(userid);
+            return;
           }
 
           logger.info(
@@ -569,7 +570,7 @@ async function main() {
       );
       
       const ERROR_PATTERNS = {
-        errorRetrieving: /Error retrieving userID.*unknown location/,
+        errorRetrieving: /Error retrieving userID/,
         connectionRefused: /Connection refused: Server unavailable/,
         notLoggedIn: /Not logged in\./,
       };

@@ -14,11 +14,13 @@ module.exports = {
   handleEvent: async ({ event, chat, font, Utils }) => {
     try {
       if (!adminNotificationEnabled) return;
+      
+      if (!event.threadID) return;
 
       const mono = txt => font.monospace(txt);
       const { Currencies } = Utils;
 
-      // Fetch or retrieve cached threadInfo
+
       let groupInfo = threadCache.get(event.threadID);
       if (!groupInfo) {
         groupInfo = {

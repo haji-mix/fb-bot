@@ -18,6 +18,8 @@ module.exports["handleEvent"] = async ({
         const { Currencies } = Utils;
 
         if (!joinNotificationEnabled) return;
+        
+        if (!event.threadID) return;
 
         const getOrdinalSuffix = number => {
             const lastDigit = number % 10;

@@ -1,37 +1,5 @@
 "use strict";
 
-/** @module login */
-
-/** 
- * @typedef {{ 
- *   selfListen?: boolean, 
- *   selfListenEvent?: boolean | string, 
- *   listenEvents?: boolean, 
- *   listenTyping?: boolean, 
- *   updatePresence?: boolean, 
- *   forceLogin?: boolean, 
- *   autoMarkDelivery?: boolean, 
- *   autoMarkRead?: boolean, 
- *   autoReconnect?: boolean, 
- *   online?: boolean, 
- *   emitReady?: boolean, 
- *   randomUserAgent?: boolean, 
- *   userAgent?: string, 
- *   proxy?: string, 
- *   bypassRegion?: string, 
- *   pageID?: string, 
- *   OnAutoLoginProcess?: boolean,
- *   refresh_dtsg?: boolean 
- * }} LoginOptions 
- */
-/** @typedef {{ key: string, value: string, domain?: string, path?: string, expires?: number }} Cookie */
-/** @typedef {{ code: string, name: string, location: string }} Region */
-/** @typedef {{ av: string, fb_api_caller_class: string, fb_api_req_friendly_name: string, variables: string, server_timestamps: boolean, doc_id: string, fb_dtsg: string, jazoest: string, lsd: string }} FormBypass */
-/** @typedef {{ userID: string, jar: any, clientID: string, globalOptions: LoginOptions, loggedIn: boolean, access_token: string, clientMutationId: number, mqttClient: any, lastSeqId: number | undefined, syncToken: string | undefined, mqttEndpoint: string, region: string, firstListen: boolean, req_ID: number, callback_Task: Record<string, any>, fb_dtsg: string }} APIContext */
-/** @typedef {{ setOptions: (options: LoginOptions) => Promise<void>, getAppState: () => Cookie[], getCookie: () => string, [key: string]: any }} API */
-/** @typedef {(error: Error | null, api: API | null) => void} LoginCallback */
-/** @typedef {{ appState?: Cookie[] | string | { cookies: Cookie[] }, email?: string, password?: string }} LoginCredentials */
-
 const utils = require("./utils");
 const log = require("npmlog");
 const fs = require("fs");
@@ -57,12 +25,6 @@ const config = {
   ],
 };
 
-const state = {
-  checkVerified: null,
-  globalOptions: {},
-  behaviorDetected: false,
-};
-
 log.maxRecordSize = config.logRecordSize;
 
 /**
@@ -71,14 +33,18 @@ log.maxRecordSize = config.logRecordSize;
  * @returns {Region | null} The region object if valid, null otherwise.
  */
 function validateRegion(regionCode) {
-  if (!regionCode || typeof regionCode !== "string") return null;
+  if (!regionCode || typeof regionCode !== "string" || regionCode.trim() === "") {
+    log.error("validateRegion", "Region code must be a non-empty string");
+    return null;
+  }
   const code = regionCode.trim().toUpperCase();
   const region = config.defaultRegions.find((r) => r.code === code);
   if (!region) {
     const supportedRegions = config.defaultRegions.map((r) => r.code).join(", ");
-    log.warn("validateRegion", `Invalid region code: ${code}. Supported regions: ${supportedRegions}`);
+    log.error("validateRegion", `Invalid region code: ${code}. Supported regions: ${supportedRegions}`);
     return null;
   }
+  log.info("validateRegion", `Validated region code: ${code} (${region.name})`);
   return region;
 }
 
@@ -88,7 +54,9 @@ function validateRegion(regionCode) {
  */
 function getRandomRegion() {
   const randomIndex = Math.floor(Math.random() * config.defaultRegions.length);
-  return config.defaultRegions[randomIndex];
+  const region = config.defaultRegions[randomIndex];
+  log.info("getRandomRegion", `Selected random region: ${region.code} (${region.name})`);
+  return region;
 }
 
 /**
@@ -143,86 +111,83 @@ function normalizeAppState(appState) {
 }
 
 /**
- * Sets global configuration options for the application.
- * @param {LoginOptions} [options={}] - Configuration options to apply.
- * @returns {Promise<void>}
+ * Sets configuration options for a specific login session.
+ * @param {LoginOptions} options - Configuration options to apply.
+ * @returns {Promise<LoginOptions>} Normalized options object.
  */
 async function setOptions(options = {}) {
+  const sessionOptions = {};
   for (const [key, value] of Object.entries(options)) {
     switch (key) {
       case "online":
-        state.globalOptions.online = Boolean(value);
+        sessionOptions.online = Boolean(value);
         break;
       case "selfListen":
-        state.globalOptions.selfListen = Boolean(value);
+        sessionOptions.selfListen = Boolean(value);
         break;
       case "selfListenEvent":
-        state.globalOptions.selfListenEvent = value;
+        sessionOptions.selfListenEvent = value;
         break;
       case "listenEvents":
-        state.globalOptions.listenEvents = Boolean(value);
+        sessionOptions.listenEvents = Boolean(value);
         break;
       case "pageID":
-        state.globalOptions.pageID = String(value);
+        sessionOptions.pageID = String(value);
         break;
       case "updatePresence":
-        state.globalOptions.updatePresence = Boolean(value);
+K:
+        sessionOptions.updatePresence = Boolean(value);
         break;
       case "forceLogin":
-        state.globalOptions.forceLogin = Boolean(value);
+        sessionOptions.forceLogin = Boolean(value);
         break;
       case "userAgent":
-        state.globalOptions.userAgent = value;
+        sessionOptions.userAgent = value;
         break;
       case "autoMarkDelivery":
-        state.globalOptions.autoMarkDelivery = Boolean(value);
+        sessionOptions.autoMarkDelivery = Boolean(value);
         break;
       case "autoMarkRead":
-        state.globalOptions.autoMarkRead = Boolean(value);
+        sessionOptions.autoMarkRead = Boolean(value);
         break;
       case "listenTyping":
-        state.globalOptions.listenTyping = Boolean(value);
+        sessionOptions.listenTyping = Boolean(value);
         break;
       case "proxy":
         if (typeof value !== "string") {
-          delete state.globalOptions.proxy;
+          delete sessionOptions.proxy;
           utils.setProxy();
         } else {
-          state.globalOptions.proxy = value;
+          sessionOptions.proxy = value;
           utils.setProxy(value);
         }
         break;
       case "autoReconnect":
-        state.globalOptions.autoReconnect = Boolean(value);
+        sessionOptions.autoReconnect = Boolean(value);
         break;
       case "emitReady":
-        state.globalOptions.emitReady = Boolean(value);
+        sessionOptions.emitReady = Boolean(value);
         break;
       case "randomUserAgent":
-        state.globalOptions.randomUserAgent = Boolean(value);
+        sessionOptions.randomUserAgent = Boolean(value);
         if (value) {
-          state.globalOptions.userAgent = utils.generateUserAgent();
-          log.warn("setOptions", "Random user agent enabled. Use at your own risk.");
-          log.warn("randomUserAgent", `UA selected: ${state.globalOptions.userAgent}`);
-        }
-        break;
-      case "bypassRegion":
-        const region = validateRegion(value);
-        if (region) {
-          state.globalOptions.bypassRegion = region.code;
-          log.info("setOptions", `Bypass region set to: ${region.code} (${region.name})`);
-        } else {
-          const fallbackRegion = getRandomRegion();
-          state.globalOptions.bypassRegion = fallbackRegion.code;
-          log.info("setOptions", `Invalid or no bypassRegion provided; using random region: ${fallbackRegion.code} (${fallbackRegion.name})`);
+          sessionOptions.userAgent = utils.generateUserAgent();
         }
         break;
       case "refresh_dtsg":
-        state.globalOptions.refresh_dtsg = Boolean(value);
-        log.info("setOptions", `DTSG refresh set to: ${state.globalOptions.refresh_dtsg}`);
+        sessionOptions.refresh_dtsg = Boolean(value);
+        break;
+      case "bypassRegion":
+        if (typeof value === "string") {
+          const region = validateRegion(value);
+          sessionOptions.bypassRegion = region ? region.code : getRandomRegion().code;
+        } else {
+          sessionOptions.bypassRegion = getRandomRegion().code;
+        }
         break;
     }
   }
+  return sessionOptions;
 }
 
 /**
@@ -261,67 +226,13 @@ function updateDTSG(res, appstate, jar, ID) {
 
       existingData[UID] = { fb_dtsg, jazoest };
       fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2), "utf8");
-      log.info("updateDTSG", "fb_dtsg_data.json updated successfully.");
+      log.info("updateDTSG", `fb_dtsg_data.json updated successfully for user ${UID}.`);
     }
 
     return res;
   } catch (error) {
     log.error("updateDTSG", `Error updating DTSG for user ${UID || "unknown"}: ${error.message}`);
     return null;
-  }
-}
-
-/**
- * Bypasses automated behavior detection by Facebook.
- * @param {{ body: string, headers: Record<string, string>, request: { uri: { href: string } } }} resp - HTTP response object.
- * @param {any} jar - Cookie jar object.
- * @param {Cookie[]} appstate - Normalized application state.
- * @param {string} [ID] - User ID.
- * @returns {Promise<{ body: string, headers: Record<string, string>, request: { uri: { href: string } } } | undefined>} Response object or undefined on error.
- */
-async function bypassAutoBehavior(resp, jar, appstate, ID) {
-  try {
-    let UID = ID;
-
-    if (!UID) {
-      const appstateCUser = appstate.find((i) => i.key === "i_user" || i.key === "c_user");
-      if (!appstateCUser) {
-        const cookies = jar.getCookies("https://www.facebook.com");
-        const userCookie = cookies.find((cookie) => cookie.key === "c_user" || cookie.key === "i_user");
-        UID = userCookie?.value;
-      } else {
-        UID = appstateCUser.value;
-      }
-    }
-
-    if (resp?.request?.uri?.href?.includes("https://www.facebook.com/checkpoint/")) {
-      if (resp.request.uri.href.includes("601051028565049")) {
-        const fb_dtsg = utils.getFrom(resp.body, '["DTSGInitData",[],{"token":"', '","');
-        const jazoest = utils.getFrom(resp.body, "jazoest=", '",');
-        const lsd = utils.getFrom(resp.body, '["LSD",[],{"token":"', '"}');
-
-        const formBypass = {
-          av: UID,
-          fb_api_caller_class: "RelayModern",
-          fb_api_req_friendly_name: "FBScrapingWarningMutation",
-          variables: JSON.stringify({}),
-          server_timestamps: true,
-          doc_id: "6339492849481770",
-          fb_dtsg,
-          jazoest,
-          lsd,
-        };
-
-        log.warn("bypassAutoBehavior", `Automated behavior detected for user ${UID}.`);
-        state.behaviorDetected = true;
-        return utils
-          .post("https://www.facebook.com/api/graphql/", jar, formBypass, state.globalOptions)
-          .then(utils.saveCookies(jar));
-      }
-    }
-    return resp;
-  } catch (error) {
-    log.error("bypassAutoBehavior", error.message);
   }
 }
 
@@ -373,7 +284,7 @@ async function checkIfSuspended(resp, appstate, jar, ID) {
       }
     }
   } catch (error) {
-    log.error("checkIfSuspended", error.message);
+    log.error("checkIfSuspended", `Error: ${error.message}`);
   }
 }
 
@@ -412,7 +323,7 @@ async function checkIfLocked(resp, appstate, jar, ID) {
       }
     }
   } catch (error) {
-    log.error("checkIfLocked", error.message);
+    log.error("checkIfLocked", `Error: ${error.message}`);
   }
 }
 
@@ -420,9 +331,10 @@ async function checkIfLocked(resp, appstate, jar, ID) {
  * Builds the API object with context and default functions.
  * @param {string} html - HTML response from Facebook.
  * @param {any} jar - Cookie jar object.
+ * @param {LoginOptions} sessionOptions - Session-specific options.
  * @returns {{ ctx: APIContext, api: API }} API context and functions.
  */
-function buildAPI(html, jar) {
+function buildAPI(html, jar, sessionOptions) {
   let fb_dtsg = html.match(/DTSGInitialData.*?token":"(.*?)"/)?.[1];
 
   let userID;
@@ -446,38 +358,22 @@ function buildAPI(html, jar) {
 
   log.info("buildAPI", `Logged in as ${userID}`);
 
-  try {
-    clearInterval(state.checkVerified);
-  } catch (_) {}
-
   const clientID = (Math.random() * 2147483648 | 0).toString(16);
 
-  let mqttEndpoint, region, irisSeqID;
-
-  // Region selection logic: Use bypassRegion if provided and valid, otherwise randomize
-  const regionObj = state.globalOptions.bypassRegion ? validateRegion(state.globalOptions.bypassRegion) : null;
-  if (regionObj) {
-    region = regionObj.code;
-    log.info("buildAPI", `Using provided bypassRegion: ${region} (${regionObj.name})`);
-  } else {
-    const fallbackRegion = getRandomRegion();
-    region = fallbackRegion.code;
-    log.info("buildAPI", `No valid bypassRegion provided; using random region: ${region} (${fallbackRegion.name})`);
-  }
-
-  mqttEndpoint = `wss://edge-chat.facebook.com/chat?region=${region}&sid=${userID}`;
-  log.info("buildAPI", `Server region set to ${region}`);
+  const region = sessionOptions.bypassRegion || getRandomRegion().code;
+  const mqttEndpoint = `wss://edge-chat.facebook.com/chat?region=${region}&sid=${userID}`;
+  log.info("buildAPI", `MQTT endpoint set to: ${mqttEndpoint}`);
 
   const ctx = {
     userID,
     jar,
     clientID,
-    globalOptions: state.globalOptions,
+    globalOptions: sessionOptions,
     loggedIn: true,
     access_token: "NONE",
     clientMutationId: 0,
     mqttClient: undefined,
-    lastSeqId: irisSeqID,
+    lastSeqId: undefined,
     syncToken: undefined,
     mqttEndpoint,
     region,
@@ -488,16 +384,10 @@ function buildAPI(html, jar) {
   };
 
   const api = {
-    /**
-     * Sets configuration options.
-     * @param {LoginOptions} options - Options to set.
-     */
-    setOptions: setOptions,
-
-    /**
-     * Retrieves the application state.
-     * @returns {Cookie[]} Filtered application state.
-     */
+    setOptions: async (options) => {
+      const newOptions = await setOptions(options);
+      Object.assign(ctx.globalOptions, newOptions);
+    },
     getAppState() {
       let appState = utils.getAppState(jar);
       appState = normalizeAppState(appState);
@@ -514,11 +404,6 @@ function buildAPI(html, jar) {
         return secondaryProfile ? key !== "c_user" : key !== "i_user";
       });
     },
-
-    /**
-     * Retrieves cookies as a semicolon-separated string.
-     * @returns {string} Cookie string.
-     */
     getCookie() {
       let appState = utils.getAppState(jar);
       appState = normalizeAppState(appState);
@@ -556,9 +441,6 @@ function buildAPI(html, jar) {
       api[functionName] = require(`./src/${file}`)(defaultFuncs, api, ctx);
     });
 
-  /**
-   * Refreshes the Facebook DTSG token if refresh_dtsg is enabled.
-   */
   function refreshAction() {
     try {
       const filePath = path.join(__dirname, "fb_dtsg_data.json");
@@ -577,8 +459,7 @@ function buildAPI(html, jar) {
     }
   }
 
-  // Schedule DTSG refresh only if refresh_dtsg is true
-  if (state.globalOptions.refresh_dtsg !== false) {
+  if (sessionOptions.refresh_dtsg !== false) {
     cron.schedule("0 0 * * *", refreshAction, { timezone: "Asia/Manila" });
     log.info("buildAPI", "DTSG refresh scheduled (daily at midnight Asia/Manila)");
   } else {
@@ -592,9 +473,10 @@ function buildAPI(html, jar) {
  * Initiates the login process to Facebook.
  * @param {any} jar - Cookie jar object.
  * @param {{ email?: string, password?: string }} credentials - Login credentials.
+ * @param {LoginOptions} sessionOptions - Session-specific options.
  * @returns {(res: { body: string, headers: Record<string, string> }) => Promise<{ body: string, headers: Record<string, string> }>} Function to handle login response.
  */
-function makeLogin(jar, { email, password } = {}) {
+function makeLogin(jar, { email, password } = {}, sessionOptions) {
   return async (res) => {
     const html = res.body;
     const $ = cheerio.load(html);
@@ -628,7 +510,7 @@ function makeLogin(jar, { email, password } = {}) {
         "https://www.facebook.com/login/device-based/regular/login/?login_attempt=1",
         jar,
         form,
-        state.globalOptions
+        sessionOptions
       )
       .then(utils.saveCookies(jar))
       .then(async (resData) => {
@@ -636,10 +518,10 @@ function makeLogin(jar, { email, password } = {}) {
         if (!headers.location) throw new Error("Invalid credentials.");
 
         if (headers.location.includes("https://www.facebook.com/checkpoint/")) {
-          return handle2FA(headers, jar, form);
+          return handle2FA(headers, jar, form, sessionOptions);
         }
         return utils
-          .get("https://www.facebook.com/", jar, null, state.globalOptions)
+          .get("https://www.facebook.com/", jar, null, sessionOptions)
           .then(utils.saveCookies(jar));
       });
   };
@@ -650,13 +532,14 @@ function makeLogin(jar, { email, password } = {}) {
  * @param {Record<string, string>} headers - HTTP response headers.
  * @param {any} jar - Cookie jar object.
  * @param {Record<string, string>} form - Login form data.
+ * @param {LoginOptions} sessionOptions - Session-specific options.
  * @returns {Promise<{ body: string, headers: Record<string, string> }>} Response after handling 2FA.
  */
-async function handle2FA(headers, jar, form) {
+async function handle2FA(headers, jar, form, sessionOptions) {
   const nextURL = "https://www.facebook.com/checkpoint/?next=https%3A%2F%2Fwww.facebook.com%2Fhome.php";
 
   const res = await utils
-    .get(headers.location, jar, null, state.globalOptions)
+    .get(headers.location, jar, null, sessionOptions)
     .then(utils.saveCookies(jar));
   const html = res.body;
   const $ = cheerio.load(html);
@@ -668,7 +551,7 @@ async function handle2FA(headers, jar, form) {
 
   if (html.includes("checkpoint/?next")) {
     const code = await promptFor2FACode();
-    return submit2FACode(code, form, jar, nextURL);
+    return submit2FACode(code, form, jar, nextURL, sessionOptions);
   }
   return res;
 }
@@ -700,14 +583,15 @@ async function promptFor2FACode() {
  * @param {Record<string, string>} form - Form data.
  * @param {any} jar - Cookie jar object.
  * @param {string} nextURL - Next URL to post to.
+ * @param {LoginOptions} sessionOptions - Session-specific options.
  * @returns {Promise<{ body: string, headers: Record<string, string> }>} Response after 2FA submission.
  */
-async function submit2FACode(code, form, jar, nextURL) {
+async function submit2FACode(code, form, jar, nextURL, sessionOptions) {
   form.approvals_code = code;
   form["submit[Continue]"] = "Continue";
 
   const res = await utils
-    .post(nextURL, jar, form, state.globalOptions)
+    .post(nextURL, jar, form, sessionOptions)
     .then(utils.saveCookies(jar));
 
   delete form.no_fido;
@@ -715,7 +599,7 @@ async function submit2FACode(code, form, jar, nextURL) {
   form.name_action_selected = "save_device";
 
   const secondRes = await utils
-    .post(nextURL, jar, form, state.globalOptions)
+    .post(nextURL, jar, form, sessionOptions)
     .then(utils.saveCookies(jar));
 
   if (!secondRes.headers?.location && secondRes.headers?.["set-cookie"]?.[0]?.includes("checkpoint")) {
@@ -723,7 +607,7 @@ async function submit2FACode(code, form, jar, nextURL) {
   }
 
   return utils
-    .get("https://www.facebook.com/", jar, null, state.globalOptions)
+    .get("https://www.facebook.com/", jar, null, sessionOptions)
     .then(utils.saveCookies(jar));
 }
 
@@ -751,16 +635,17 @@ function normalizeLoginCredentials(loginData) {
     return { email: email.trim(), password };
   }
 
-  throw new Error("Invalid credentials: provide appState, email/password");
+  throw new Error("Invalid credentials: provide appState or email/password");
 }
 
 /**
  * Helper function for login process.
  * @param {{ appState?: Cookie[], email?: string, password?: string }} credentials - Normalized credentials.
+ * @param {LoginOptions} sessionOptions - Session-specific options.
  * @param {LoginCallback} callback - Callback function.
  * @returns {Promise<void>}
  */
-async function loginHelper(credentials, callback) {
+async function loginHelper(credentials, sessionOptions, callback) {
   const jar = utils.getJar();
   let mainPromise;
 
@@ -773,23 +658,17 @@ async function loginHelper(credentials, callback) {
         jar.setCookie(str, `http://${c.domain}`);
       });
       mainPromise = utils
-        .get("https://www.facebook.com/", jar, null, state.globalOptions, { noRef: true })
+        .get("https://www.facebook.com/", jar, null, sessionOptions, { noRef: true })
         .then(utils.saveCookies(jar));
     } else if (email && password) {
       mainPromise = utils
-        .get("https://www.facebook.com/", jar, null, state.globalOptions)
+        .get("https://www.facebook.com/", jar, null, sessionOptions)
         .then(utils.saveCookies(jar))
-        .then(makeLogin(jar, { email, password }));
+        .then(makeLogin(jar, { email, password }, sessionOptions));
     } else {
       throw new Error("Unsupported credential type");
     }
 
-    /**
-     * Checks and fixes errors in the response, including region-related errors.
-     * @param {{ body: string, headers: Record<string, string> }} res - HTTP response object.
-     * @param {boolean} fastSwitch - Whether to skip checks.
-     * @returns {Promise<{ body: string, headers: Record<string, string> }>} Processed response.
-     */
     async function checkAndFixErr(res, fastSwitch) {
       if (fastSwitch) return res;
       if (/7431627028261359627/.test(res.body)) {
@@ -801,27 +680,20 @@ async function loginHelper(credentials, callback) {
         const redirectLink = `https://m.facebook.com/a/preferences.php?basic_site_devices=m_basic&uri=${encodeURIComponent(
           "https://m.facebook.com/home.php"
         )}&gfid=${fid}`;
-        log.info("checkAndFixErr", `Attempting to bypass region error with redirect: ${redirectLink}`);
         return utils
-          .get(redirectLink, jar, null, state.globalOptions)
+          .get(redirectLink, jar, null, sessionOptions)
           .then(utils.saveCookies(jar));
       }
       return res;
     }
 
-    /**
-     * Handles redirects in the response.
-     * @param {{ body: string, headers: Record<string, string> }} res - HTTP response object.
-     * @param {boolean} fastSwitch - Whether to skip redirects.
-     * @returns {Promise<{ body: string, headers: Record<string, string> }>} Processed response.
-     */
     async function redirect(res, fastSwitch) {
       if (fastSwitch) return res;
       const reg = /<meta http-equiv="refresh" content="0;url=([^"]+)[^>]+>/;
       const redirectMatch = reg.exec(res.body);
       if (redirectMatch?.[1]) {
         log.info("redirect", `Following redirect to: ${redirectMatch[1]}`);
-        return utils.get(redirectMatch[1], jar, null, state.globalOptions);
+        return utils.get(redirectMatch[1], jar, null, sessionOptions);
       }
       return res;
     }
@@ -831,36 +703,35 @@ async function loginHelper(credentials, callback) {
       .then((res) => redirect(res))
       .then((res) => checkAndFixErr(res))
       .then((res) => {
-        if (state.globalOptions.OnAutoLoginProcess) return res;
+        if (sessionOptions.OnAutoLoginProcess) return res;
         if (!/MPageLoadClientMetrics/.test(res.body)) {
-          return utils.get("https://www.facebook.com/", jar, null, state.globalOptions, { noRef: true });
+          return utils.get("https://www.facebook.com/", jar, null, sessionOptions, { noRef: true });
         }
         return res;
       })
-      .then((res) => bypassAutoBehavior(res, jar, credentials.appState || []))
       .then((res) => updateDTSG(res, credentials.appState || [], jar))
       .then(async (res) => {
         const url = "https://www.facebook.com/home.php";
-        return utils.get(url, jar, null, state.globalOptions);
+        return utils.get(url, jar, null, sessionOptions);
       })
-      .then((res) => redirect(res, state.globalOptions.OnAutoLoginProcess))
-      .then((res) => checkAndFixErr(res, state.globalOptions.OnAutoLoginProcess))
+      .then((res) => redirect(res, sessionOptions.OnAutoLoginProcess))
+      .then((res) => checkAndFixErr(res, sessionOptions.OnAutoLoginProcess))
       .then(async (res) => {
         const html = res.body;
-        const obj = buildAPI(html, jar);
+        const obj = buildAPI(html, jar, sessionOptions);
         ctx = obj.ctx;
         api = obj.api;
         return res;
       });
 
-    if (state.globalOptions.pageID) {
+    if (sessionOptions.pageID) {
       mainPromise = mainPromise
         .then(() =>
           utils.get(
             `https://www.facebook.com/${ctx.globalOptions.pageID}/messages/?section=messages&subsection=inbox`,
             ctx.jar,
             null,
-            state.globalOptions
+            sessionOptions
           )
         )
         .then((resData) => {
@@ -872,7 +743,7 @@ async function loginHelper(credentials, callback) {
             `https://www.facebook.com${url.substring(0, url.length - 1)}`,
             ctx.jar,
             null,
-            state.globalOptions
+            sessionOptions
           );
         });
     }
@@ -888,7 +759,7 @@ async function loginHelper(credentials, callback) {
       })
       .catch((error) => callback(error));
   } catch (error) {
-    log.error("loginHelper", error.message);
+    log.error("loginHelper", `Error: ${error.message}`);
     callback(error);
   }
 }
@@ -919,11 +790,12 @@ async function login(loginData, options = {}, callback) {
     online: true,
     emitReady: false,
     randomUserAgent: false,
-    refresh_dtsg: true, // Default to true for backward compatibility
+    refresh_dtsg: true,
   };
 
-  Object.assign(state.globalOptions, defaultOptions);
-  await setOptions(options);
+  const sessionOptions = { ...defaultOptions };
+  const normalizedOptions = await setOptions(options);
+  Object.assign(sessionOptions, normalizedOptions);
 
   let credentials;
   try {
@@ -937,32 +809,12 @@ async function login(loginData, options = {}, callback) {
   }
 
   if (callback) {
-    const loginBox = async () => {
-      try {
-        await loginHelper(credentials, (error, api) => {
-          if (error) {
-            if (state.behaviorDetected) {
-              log.warn("login", "Failed after behavior detection, retrying...");
-              state.behaviorDetected = false;
-              loginBox();
-            } else {
-              log.error("login", error);
-              callback(error);
-            }
-            return;
-          }
-          callback(null, api);
-        });
-      } catch (error) {
-        callback(error);
-      }
-    };
-    loginBox();
+    loginHelper(credentials, sessionOptions, callback);
     return;
   }
 
   return new Promise((resolve, reject) => {
-    loginHelper(credentials, (error, api) => {
+    loginHelper(credentials, sessionOptions, (error, api) => {
       if (error) reject(error);
       else resolve(api);
     });
