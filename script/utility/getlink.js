@@ -29,7 +29,7 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
       chat.reply(replyMessage);
     } else if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
       const attachments = event.messageReply.attachments;
-      const attachmentLinks = attachments.map(attachment => attachment.url);
+      const attachmentLinks = attachments.map(attachment => await chat.tinyurl(attachment.url));
 
       chat.reply(attachmentLinks.join('\n\n'));
     } else {
