@@ -21,10 +21,10 @@ module.exports["run"] = async ({ chat, event, args, font }) => {
 
       let replyMessage = `Title: ${videoDetails.title || "Unknown or No Title"}\n`;
       if (videoDetails.hd) {
-        replyMessage += `HD Link: ${videoDetails.hd}\n`;
+        replyMessage += `HD Link: ${await chat.tinyurl(videoDetails.hd)}\n`;
       }
       if (videoDetails.sd) {
-        replyMessage += `SD Link: ${videoDetails.sd}\n`;
+        replyMessage += `SD Link: ${await chat.tinyurl(videoDetails.sd)}\n`;
       }
       chat.reply(replyMessage);
     } else if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
