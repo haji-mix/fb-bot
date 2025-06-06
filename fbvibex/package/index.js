@@ -6,7 +6,7 @@
 /** @typedef {{ code: string, name: string, location: string }} Region */
 /** @typedef {{ av: string, fb_api_caller_class: string, fb_api_req_friendly_name: string, variables: string, server_timestamps: boolean, doc_id: string, fb_dtsg: string, jazoest: string, lsd: string }} FormBypass */
 /** @typedef {{ userID: string, jar: any, clientID: string, globalOptions: LoginOptions, loggedIn: boolean, access_token: string, clientMutationId: number, mqttClient: any, lastSeqId: number | undefined, syncToken: string | undefined, mqttEndpoint: string, region: string, firstListen: boolean, req_ID: number, callback_Task: Record<string, any>, fb_dtsg: string }} APIContext */
-/** @typedef {{ selfListen?: boolean, selfListenEvent?: boolean | string, listenEvents?: boolean, listenTyping?: boolean, updatePresence?: boolean, forceLogin?: boolean, autoMarkDelivery?: boolean, autoMarkRead?: boolean, autoReconnect?: boolean, online?: boolean, emitReady?: boolean, randomUserAgent?: boolean, userAgent?: string, proxy?: string, bypassRegion?: string, pageID?: string, OnAutoLoginProcess?: boolean }} LoginOptions */
+/** @typedef {{ selfListen?: boolean, selfListenEvent?: boolean | string, listenEvents?: boolean, listenTyping?: boolean, updatePresence?: boolean, forceLogin?: boolean, autoMarkDelivery?: boolean, autoMarkRead?: boolean, autoReconnect?: boolean, online?: boolean, emitReady?: boolean, randomUserAgent?: boolean, userAgent?: string, proxy?: string, bypassRegion?: string, pageID?: string, OnAutoLoginProcess?: boolean, refresh_dtsg?: boolean }} LoginOptions */
 /** @typedef {{ setOptions: (options: LoginOptions) => Promise<void>, getAppState: () => Cookie[], getCookie: () => string, [key: string]: any }} API */
 /** @typedef {(error: Error | null, api: API | null) => void} LoginCallback */
 /** @typedef {{ appState?: Cookie[] | string | { cookies: Cookie[] }, email?: string, password?: string }} LoginCredentials */
@@ -52,6 +52,7 @@ const state = {
     online: true,
     emitReady: false,
     randomUserAgent: false,
+    refresh_dtsg: true,
   },
   behaviorDetected: false,
 };
@@ -146,6 +147,9 @@ function normalizeAppState(appState) {
 async function setOptions(options = {}) {
   for (const [key, value] of Object.entries(options)) {
     switch (key) {
+      case "refresh_dtsg":
+        state.globalOptions.refresh_dtsg = Boolean(value);
+        break;
       case "online":
         state.globalOptions.online = Boolean(value);
         break;
@@ -576,7 +580,11 @@ function buildAPI(html, jar) {
       }
     }
 
-    cron.schedule("0 0 * * *", refreshAction, { timezone: "Asia/Manila" });
+    if (ctx.globalOptions.refresh_dtsg) {
+      cron.schedule("0 0 * * *", refreshAction, { timezone: "Asia/Manila" });
+    } else {
+      log.info("buildAPI", "DTSG refresh disabled by configuration.");
+    }
 
     return { ctx, api };
 }
@@ -913,6 +921,7 @@ async function login(loginData, options = {}, callback) {
     online: true,
     emitReady: false,
     randomUserAgent: false,
+    refresh_dtsg: true,
   };
 
   await setOptions(options);
