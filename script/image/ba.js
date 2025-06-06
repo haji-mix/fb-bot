@@ -7,7 +7,6 @@ module.exports = {
         role: 0,
         cooldowns: 5,
         description: "Get a fun Blue Archive image!",
-        usages: "ba",
         prefix: true
     },
     run: async ({ chat, event, api, format }) => {
