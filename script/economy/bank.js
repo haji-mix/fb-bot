@@ -1,7 +1,7 @@
 module.exports = {
     config: {
         name: "bank",
-        aliases: ["b", "bn"],
+        aliases: ["b"],
         type: "economy",
         author: "Aljur Pogoy",
         role: 0,
@@ -18,11 +18,7 @@ module.exports = {
 
             if (!subcommand) {
                 const formattedText = format({
-                    title: {
-                        content: 'Bank Options 🏦',
-                        line_bottom: "default",
-                        text_font: "bold"
-                    },
+                    title: 'BANK OPTIONS 🏦',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -49,11 +45,7 @@ module.exports = {
                 usernameMap[senderID] = name;
                 await Utils.setData("bank_usernames", usernameMap);
                 const formattedText = format({
-                    title: {
-                        content: 'BANK REGISTRATION ✅',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: 'BANK REGISTRATION ✅',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -77,11 +69,7 @@ module.exports = {
                 if (amount > balance) return chat.reply("Insufficient balance.");
                 await Currencies.decreaseBalance(senderID, amount);
                 const formattedText = format({
-                    title: {
-                        content: 'WITHDRAW 💸',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: 'WITHDRAW 💸',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -101,11 +89,7 @@ module.exports = {
                 await Currencies.increaseBalance(senderID, amount);
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
-                    title: {
-                        content: 'DEPOSIT 💰',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: 'DEPOSIT 💰',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -128,11 +112,7 @@ module.exports = {
                 await Utils.setData(senderID, userData);
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
-                    title: {
-                        content: 'LOAN 📜',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: 'LOAN 📜',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -158,11 +138,7 @@ module.exports = {
                 if (userData.loan === 0) delete userData.loan;
                 await Utils.setData(senderID, userData);
                 const formattedText = format({
-                    title: {
-                        content: 'LOAN PAYMENT 💳',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: 'LOAN PAYMENT 💳',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -188,11 +164,7 @@ module.exports = {
                 await Currencies.increaseBalance(targetID, amount);
                 const newBalance = await Currencies.getBalance(senderID);
                 const formattedText = format({
-                    title: {
-                        content: subcommand.toUpperCase() + ' 💝',
-                        line_bottom: "default",
-                        text_font: "double_struck"
-                    },
+                    title: subcommand.toUpperCase() + ' 💝',
                     content: {
                         text_font: "fancy",
                         line_bottom_inside_x: "default",
@@ -209,11 +181,7 @@ module.exports = {
             chat.reply("Invalid subcommand. Use: bank [register <name> | withdraw <amount> | deposit <amount> | loan <amount> | pay <amount> | donate <uid> <amount> | give <uid> <amount>]");
         } catch (error) {
             const formattedText = format({
-                title: {
-                    content: 'BANK ERROR ❌',
-                    line_bottom: "default",
-                    text_font: "double_struck"
-                },
+                title: 'BANK ERROR ❌',
                 content: {
                     text_font: "fancy",
                     line_bottom_inside_x: "default",
