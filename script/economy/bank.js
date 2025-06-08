@@ -13,7 +13,9 @@ module.exports = {
     run: async ({ chat, event, args, format, Currencies }) => {
         try {
             if (!Currencies || typeof Currencies.getData !== 'function') {
-                throw new Error("Currency system is not properly initialized. Please contact the bot administrator.");
+                throw new Error(
+                    "Currency system is not initialized. Ensure the CurrencySystem instance from currency.js is properly passed to the command in bothandler.js. Contact the bot administrator for assistance."
+                );
             }
 
             const { senderID } = event;
