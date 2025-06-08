@@ -15,19 +15,11 @@ module.exports = {
             const { senderID } = event;
             const { Currencies } = Utils;
             const subcommand = args[0] ? args[0].toLowerCase() : "";
-
+// well tamad ako mag, ano kaya manual nlng : )
             if (!subcommand) {
                 const formattedText = format({
                     title: 'BANK OPTIONS 🏦',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: "Available:\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: "Available:\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
                 });
                 return chat.reply(formattedText);
             }
@@ -46,15 +38,7 @@ module.exports = {
                 await Utils.setData("bank_usernames", usernameMap);
                 const formattedText = format({
                     title: 'BANK REGISTRATION ✅',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Successfully registered ${name}!`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Successfully registered ${name}!`
                 });
                 return chat.reply(formattedText);
             }
@@ -70,15 +54,7 @@ module.exports = {
                 await Currencies.decreaseBalance(senderID, amount);
                 const formattedText = format({
                     title: 'WITHDRAW 💸',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Withdrew $${amount.toLocaleString()}! New balance: $${(balance - amount).toLocaleString()}`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Withdrew $${amount.toLocaleString()}! New balance: $${(balance - amount).toLocaleString()}`
                 });
                 return chat.reply(formattedText);
             }
@@ -90,15 +66,7 @@ module.exports = {
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'DEPOSIT 💰',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Deposited $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Deposited $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
                 });
                 return chat.reply(formattedText);
             }
@@ -113,15 +81,7 @@ module.exports = {
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'LOAN 📜',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Received a loan of $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Received a loan of $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
                 });
                 return chat.reply(formattedText);
             }
@@ -139,15 +99,7 @@ module.exports = {
                 await Utils.setData(senderID, userData);
                 const formattedText = format({
                     title: 'LOAN PAYMENT 💳',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Paid $${amount.toLocaleString()} towards your loan! Remaining: $${userData.loan ? userData.loan.toLocaleString() : 0}`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Paid $${amount.toLocaleString()} towards your loan! Remaining: $${userData.loan ? userData.loan.toLocaleString() : 0}`
                 });
                 return chat.reply(formattedText);
             }
@@ -165,32 +117,20 @@ module.exports = {
                 const newBalance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: subcommand.toUpperCase() + ' 💝',
-                    content: {
-                        text_font: "fancy",
-                        line_bottom_inside_x: "default",
-                        content: `Sent $${amount.toLocaleString()} to user ${targetID}! Your new balance: $${newBalance.toLocaleString()}`
-                    },
-                    footer: {
-                        content: "Made with 🤍 by Aljur Pogoy",
-                        text_font: "fancy"
-                    }
+                    content: `Sent $${amount.toLocaleString()} to user ${targetID}! Your new balance: $${newBalance.toLocaleString()}`
                 });
                 return chat.reply(formattedText);
             }
 
-            chat.reply("Invalid subcommand. Use: bank [register <name> | withdraw <amount> | deposit <amount> | loan <amount> | pay <amount> | donate <uid> <amount> | give <uid> <amount>]");
+            const formattedText = format({
+                title: 'BANK ERROR ❌',
+                content: "Invalid subcommand. Use: bank [register <name> | withdraw <amount> | deposit <amount> | loan <amount> | pay <amount> | donate <uid> <amount> | give <uid> <amount>]"
+            });
+            chat.reply(formattedText);
         } catch (error) {
             const formattedText = format({
                 title: 'BANK ERROR ❌',
-                content: {
-                    text_font: "fancy",
-                    line_bottom_inside_x: "default",
-                    content: error.stack || error.message || "An error occurred while processing your bank request. Please try again later."
-                },
-                footer: {
-                    content: "Made with 🤍 by Aljur Pogoy",
-                    text_font: "fancy"
-                }
+                content: error.stack || error.message || "An error occurred while processing your bank request. Please try again later."
             });
             chat.reply(formattedText);
         }
