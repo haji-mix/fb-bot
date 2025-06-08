@@ -1,7 +1,7 @@
 module.exports = {
     config: {
         name: "bank",
-        aliases: ["b"],
+        aliases: [],
         type: "economy",
         author: "Aljur Pogoy",
         role: 0,
@@ -12,13 +12,17 @@ module.exports = {
     },
     run: async ({ chat, event, args, format, Currencies }) => {
         try {
+            if (!Currencies || typeof Currencies.getData !== 'function') {
+                throw new Error("Currency system is not properly initialized. Please contact the bot administrator.");
+            }
+
             const { senderID } = event;
             const subcommand = args[0] ? args[0].toLowerCase() : "";
 
             if (!subcommand) {
                 const formattedText = format({
                     title: 'BANK OPTIONS 🏦',
-                    content: "Available:register\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
+                    content: "Available:\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
                 });
                 return chat.reply(formattedText);
             }
