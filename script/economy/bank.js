@@ -10,11 +10,11 @@ module.exports = {
         usages: "bank [register <name> | withdraw <amount> | deposit <amount> | loan <amount> | pay <amount> | donate <uid> <amount> | give <uid> <amount>]",
         prefix: true
     },
-    run: async ({ chat, event, args, format, Currencies }) => {
+    run: async ({ chat, event, args, format, Utils }) => {
         try {
-            if (!Currencies || typeof Currencies.getData !== 'function') {
+            if (!Utils.Currencies || typeof Utils.Currencies.getData !== 'function') {
                 throw new Error(
-                    "Currency system is not initialized. Ensure the CurrencySystem instance from currency.js is properly passed to the command in bothandler.js. Contact the bot administrator for assistance."
+                    "Currency system is not initialized. Ensure Utils.Currencies is properly set up with the CurrencySystem instance from currency.js. Contact the bot administrator for assistance."
                 );
             }
 
@@ -32,15 +32,15 @@ module.exports = {
             if (subcommand === "register") {
                 const name = args.slice(1).join(" ");
                 if (!name) return chat.reply("Please provide a name to register.");
-                const userData = await Currencies.getData(senderID) || {};
+                const userData = await Utils.Currencies.getData(senderID) || {};
                 if (userData.registered) return chat.reply("You are already registered.");
-                const usernameMap = await Currencies.getData("bank_usernames") || {};
+                const usernameMap = await Utils.Currencies.getData("bank_usernames") || {};
                 if (Object.values(usernameMap).includes(name)) return chat.reply("User name has already registered please try again.");
                 userData.registered = true;
                 userData.name = name;
-                await Currencies.setData(senderID, userData);
+                await Utils.Currencies.setData(senderID, userData);
                 usernameMap[senderID] = name;
-                await Currencies.setData("bank_usernames", usernameMap);
+                await Utils.Currencies.setData("bank_usernames", usernameMap);
                 const formattedText = format({
                     title: 'BANK REGISTRATION ✅',
                     content: `Successfully registered ${name}!`
@@ -48,15 +48,15 @@ module.exports = {
                 return chat.reply(formattedText);
             }
 
-            const userData = await Currencies.getData(senderID) || {};
+            const userData = await Utils.Currencies.getData(senderID) || {};
             if (!userData.registered) return chat.reply("Please register first using 'bank register <name>'.");
 
             if (subcommand === "withdraw") {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount <= 0) return chat.reply("Please enter a valid positive amount.");
-                const balance = await Currencies.getBalance(senderID);
+                const balance = await Utils.Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance.");
-                await Currencies.removeBalance(senderID, amount);
+                await Utils.Currencies.removeBalance(senderID, amount);
                 const formattedText = format({
                     title: 'WITHDRAW 💸',
                     content: `Withdrew $${amount.toLocaleString()}! New balance: $${(balance - amount).toLocaleString()}`
@@ -67,8 +67,8 @@ module.exports = {
             if (subcommand === "deposit") {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount <= 0) return chat.reply("Please enter a valid positive amount.");
-                await Currencies.addBalance(senderID, amount);
-                const balance = await Currencies.getBalance(senderID);
+                await Utils.Currencies.addBalance(senderID, amount);
+                const balance = await Utils.Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'DEPOSIT 💰',
                     content: `Deposited $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
@@ -80,10 +80,10 @@ module.exports = {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount !== 10000) return chat.reply("Loans are only available for $10,000.");
                 if (userData.loan > 0) return chat.reply("You already have an active loan.");
-                await Currencies.addBalance(senderID, amount);
+                await Utils.Currencies.addBalance(senderID, amount);
                 userData.loan = amount;
-                await Currencies.setData(senderID, userData);
-                const balance = await Currencies.getBalance(senderID);
+                await Utils.Currencies.setData(senderID, userData);
+                const balance = await Utils.Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'LOAN 📜',
                     content: `Received a loan of $${amount.toLocaleString()}! New balance: $${balance.toLocaleString()}`
@@ -95,13 +95,13 @@ module.exports = {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount <= 0) return chat.reply("Please enter a valid positive amount.");
                 if (!userData.loan) return chat.reply("You have no loan to pay.");
-                const balance = await Currencies.getBalance(senderID);
+                const balance = await Utils.Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance to pay.");
                 if (amount > userData.loan) return chat.reply(`You only owe $${userData.loan.toLocaleString()}.`);
-                await Currencies.removeBalance(senderID, amount);
+                await Utils.Currencies.removeBalance(senderID, amount);
                 userData.loan -= amount;
                 if (userData.loan === 0) delete userData.loan;
-                await Currencies.setData(senderID, userData);
+                await Utils.Currencies.setData(senderID, userData);
                 const formattedText = format({
                     title: 'LOAN PAYMENT 💳',
                     content: `Paid $${amount.toLocaleString()} towards your loan! Remaining: $${userData.loan ? userData.loan.toLocaleString() : 0}`
@@ -113,13 +113,13 @@ module.exports = {
                 const targetID = args[1];
                 const amount = parseInt(args[2]);
                 if (!targetID || !amount || isNaN(amount) || amount <= 0) return chat.reply("Please provide a valid user UID and positive amount.");
-                const balance = await Currencies.getBalance(senderID);
+                const balance = await Utils.Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance.");
-                const targetData = await Currencies.getData(targetID) || {};
+                const targetData = await Utils.Currencies.getData(targetID) || {};
                 if (!targetData.registered) return chat.reply("The recipient is not registered.");
-                await Currencies.removeBalance(senderID, amount);
-                await Currencies.addBalance(targetID, amount);
-                const newBalance = await Currencies.getBalance(senderID);
+                await Utils.Currencies.removeBalance(senderID, amount);
+                await Utils.Currencies.addBalance(targetID, amount);
+                const newBalance = await Utils.Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: subcommand.toUpperCase() + ' 💝',
                     content: `Sent $${amount.toLocaleString()} to user ${targetID}! Your new balance: $${newBalance.toLocaleString()}`
