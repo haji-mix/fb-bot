@@ -10,16 +10,15 @@ module.exports = {
         usages: "bank [register <name> | withdraw <amount> | deposit <amount> | loan <amount> | pay <amount> | donate <uid> <amount> | give <uid> <amount>]",
         prefix: true
     },
-    run: async ({ chat, event, Utils, args, format, UNIRedux }) => {
+    run: async ({ chat, event, args, format, Currencies }) => {
         try {
             const { senderID } = event;
-            const { Currencies } = Utils;
             const subcommand = args[0] ? args[0].toLowerCase() : "";
-// well tamad ako mag, ano kaya manual nlng : )
+
             if (!subcommand) {
                 const formattedText = format({
                     title: 'BANK OPTIONS 🏦',
-                    content: "Available:\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
+                    content: "Available:register\nwithdraw\ndeposit\nloan\npay\ndonate\ngive"
                 });
                 return chat.reply(formattedText);
             }
@@ -27,15 +26,15 @@ module.exports = {
             if (subcommand === "register") {
                 const name = args.slice(1).join(" ");
                 if (!name) return chat.reply("Please provide a name to register.");
-                const userData = await Utils.getData(senderID) || {};
+                const userData = await Currencies.getData(senderID) || {};
                 if (userData.registered) return chat.reply("You are already registered.");
-                const usernameMap = await Utils.getData("bank_usernames") || {};
+                const usernameMap = await Currencies.getData("bank_usernames") || {};
                 if (Object.values(usernameMap).includes(name)) return chat.reply("User name has already registered please try again.");
                 userData.registered = true;
                 userData.name = name;
-                await Utils.setData(senderID, userData);
+                await Currencies.setData(senderID, userData);
                 usernameMap[senderID] = name;
-                await Utils.setData("bank_usernames", usernameMap);
+                await Currencies.setData("bank_usernames", usernameMap);
                 const formattedText = format({
                     title: 'BANK REGISTRATION ✅',
                     content: `Successfully registered ${name}!`
@@ -43,7 +42,7 @@ module.exports = {
                 return chat.reply(formattedText);
             }
 
-            const userData = await Utils.getData(senderID) || {};
+            const userData = await Currencies.getData(senderID) || {};
             if (!userData.registered) return chat.reply("Please register first using 'bank register <name>'.");
 
             if (subcommand === "withdraw") {
@@ -51,7 +50,7 @@ module.exports = {
                 if (!amount || isNaN(amount) || amount <= 0) return chat.reply("Please enter a valid positive amount.");
                 const balance = await Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance.");
-                await Currencies.decreaseBalance(senderID, amount);
+                await Currencies.removeBalance(senderID, amount);
                 const formattedText = format({
                     title: 'WITHDRAW 💸',
                     content: `Withdrew $${amount.toLocaleString()}! New balance: $${(balance - amount).toLocaleString()}`
@@ -62,7 +61,7 @@ module.exports = {
             if (subcommand === "deposit") {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount <= 0) return chat.reply("Please enter a valid positive amount.");
-                await Currencies.increaseBalance(senderID, amount);
+                await Currencies.addBalance(senderID, amount);
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'DEPOSIT 💰',
@@ -75,9 +74,9 @@ module.exports = {
                 const amount = parseInt(args[1]);
                 if (!amount || isNaN(amount) || amount !== 10000) return chat.reply("Loans are only available for $10,000.");
                 if (userData.loan > 0) return chat.reply("You already have an active loan.");
-                await Currencies.increaseBalance(senderID, amount);
+                await Currencies.addBalance(senderID, amount);
                 userData.loan = amount;
-                await Utils.setData(senderID, userData);
+                await Currencies.setData(senderID, userData);
                 const balance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: 'LOAN 📜',
@@ -93,10 +92,10 @@ module.exports = {
                 const balance = await Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance to pay.");
                 if (amount > userData.loan) return chat.reply(`You only owe $${userData.loan.toLocaleString()}.`);
-                await Currencies.decreaseBalance(senderID, amount);
+                await Currencies.removeBalance(senderID, amount);
                 userData.loan -= amount;
                 if (userData.loan === 0) delete userData.loan;
-                await Utils.setData(senderID, userData);
+                await Currencies.setData(senderID, userData);
                 const formattedText = format({
                     title: 'LOAN PAYMENT 💳',
                     content: `Paid $${amount.toLocaleString()} towards your loan! Remaining: $${userData.loan ? userData.loan.toLocaleString() : 0}`
@@ -110,10 +109,10 @@ module.exports = {
                 if (!targetID || !amount || isNaN(amount) || amount <= 0) return chat.reply("Please provide a valid user UID and positive amount.");
                 const balance = await Currencies.getBalance(senderID);
                 if (amount > balance) return chat.reply("Insufficient balance.");
-                const targetData = await Utils.getData(targetID) || {};
+                const targetData = await Currencies.getData(targetID) || {};
                 if (!targetData.registered) return chat.reply("The recipient is not registered.");
-                await Currencies.decreaseBalance(senderID, amount);
-                await Currencies.increaseBalance(targetID, amount);
+                await Currencies.removeBalance(senderID, amount);
+                await Currencies.addBalance(targetID, amount);
                 const newBalance = await Currencies.getBalance(senderID);
                 const formattedText = format({
                     title: subcommand.toUpperCase() + ' 💝',
