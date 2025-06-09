@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
     name: "crushimg",
-    aliases: ["genimg", "hgen", "agen", "animegen"],
+    aliases: ["genimg", "hgen", "agen", "animegen", "animagine"],
     version: "1.5.0",
     type: "text2image",
     credits: "Kenneth Panio",

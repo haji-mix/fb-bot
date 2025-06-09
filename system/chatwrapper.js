@@ -456,7 +456,7 @@ class onChat {
           edit: async (message, delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.editmsg(message, replyMsg.messageID);
+              return await this.editmsg(message, replyMsg);
             } catch (error) {
               this.error(`Edit message error: ${error.message}`);
               return null;
@@ -465,7 +465,7 @@ class onChat {
           unsend: async (delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
+              return await this.unsendmsg(replyMsg);
             } catch (error) {
               this.error(`Unsend message error: ${error.message}`);
               return null;
@@ -474,7 +474,7 @@ class onChat {
           delete: async (delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
+              return await this.unsendmsg(replyMsg);
             } catch (error) {
               this.error(`Delete message error: ${error.message}`);
               return null;
@@ -576,7 +576,7 @@ class onChat {
     try {
       if (!msg || !mid) throw new Error("Message and Message ID are required.");
       const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
-      return await this.api.editMessage(formattedMsg, mid);
+      return await this.api.editMessage(formattedMsg, mid.messageID);
     } catch (error) {
       this.error(`Edit message error: ${error.message}`);
       return null;
@@ -586,12 +586,24 @@ class onChat {
   async unsendmsg(mid) {
     try {
       if (!mid) throw new Error("Message ID is required.");
-      return await this.api.unsendMessage(mid);
+      return await this.api.unsendMessage(mid.messageID);
     } catch (error) {
       this.error(`Unsend message error: ${error.message}`);
       return null;
     }
   }
+  
+  async delete(mid) {
+      try {
+      if (!mid) throw new Error("Message ID is required.");
+      return await this.unsendmsg(mid);       
+      } catch (error) {
+          this.error(`Delete message error: ${error.message}`);
+          return null;
+      }
+  }
+  
+  
 
   async add(id, tid = this.threadID) {
     try {
