@@ -288,44 +288,44 @@ class onChat {
     }
   }
 
- async #processAttachment(attachment) {
-  try {
-    if (!attachment) return null
+  async #processAttachment(attachment) {
+    try {
+      if (!attachment) return null;
 
-    if (typeof attachment === 'string') {
-      attachment = [attachment]
+      if (typeof attachment === 'string') {
+        attachment = [attachment];
+      }
+
+      if (!Array.isArray(attachment)) return attachment;
+
+      const processedAttachments = await Promise.all(
+        attachment.map(async (item) => {
+          if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://'))) {
+            return await this.stream(item);
+          }
+
+          if (
+            item &&
+            typeof item === 'object' &&
+            typeof item.url === 'string' &&
+            (item.url.startsWith('http://') || item.url.startsWith('https://'))
+          ) {
+            return await this.stream(item.url);
+          }
+
+          if (item && typeof item === 'object' && item.stream) {
+            return item.stream;
+          }
+          return item;
+        })
+      );
+
+      return processedAttachments;
+    } catch (error) {
+      this.error(`Attachment processing error: ${error.message}`);
+      return attachment;
     }
-
-    if (!Array.isArray(attachment)) return attachment
-
-    const processedAttachments = await Promise.all(
-      attachment.map(async (item) => {
-        if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://'))) {
-          return await this.stream(item)
-        }
-
-        if (
-          item &&
-          typeof item === 'object' &&
-          typeof item.url === 'string' &&
-          (item.url.startsWith('http://') || item.url.startsWith('https://'))
-        ) {
-          return await this.stream(item.url)
-        }
-
-        if (item && typeof item === 'object' && item.stream) {
-          return item.stream
-        }
-        return item
-      })
-    )
-
-    return processedAttachments
-  } catch (error) {
-    this.error(`Attachment processing error: ${error.message}`)
-    return attachment
   }
-}
 
   async reply(msg, tid = this.threadID, mid = this.messageID) {
     try {
@@ -421,7 +421,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -530,7 +530,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -626,7 +626,7 @@ class onChat {
 
   async unsendmsg(mid, delay = 0) {
     try {
-        await new Promise((res) => setTimeout(res, delay));
+      await new Promise((res) => setTimeout(res, delay));
       if (!mid) throw new Error("Message ID is required.");
       return await this.api.unsendMessage(mid.messageID);
     } catch (error) {
@@ -636,16 +636,14 @@ class onChat {
   }
   
   async delete(mid, delay) {
-      try {
+    try {
       if (!mid) throw new Error("Message ID is required.");
       return await this.unsendmsg(mid, delay);       
-      } catch (error) {
-          this.error(`Delete message error: ${error.message}`);
-          return null;
-      }
+    } catch (error) {
+      this.error(`Delete message error: ${error.message}`);
+      return null;
+    }
   }
-  
-  
 
   async add(id, tid = this.threadID) {
     try {
