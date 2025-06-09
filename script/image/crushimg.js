@@ -38,12 +38,12 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
             })
         }`;
 
-        generatingMsg.delete();
-
-        return message.reply({
+        await message.reply({
             body: font.bold(`🎨 Generated: ${prompt}`),
             attachment: apiUrl
         });
+        
+        generatingMsg.delete();
 
     } catch (error) {
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
