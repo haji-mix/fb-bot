@@ -572,8 +572,9 @@ class onChat {
     }
   }
 
-  async editmsg(msg, mid) {
+  async editmsg(msg, mid, delay = 0) {
     try {
+      await new Promise((res) => setTimeout(res, delay));
       if (!msg || !mid) throw new Error("Message and Message ID are required.");
       const formattedMsg = formatBold(this.#processUrls(this.#filterBadWords(msg)));
       return await this.api.editMessage(formattedMsg, mid.messageID);
@@ -583,8 +584,9 @@ class onChat {
     }
   }
 
-  async unsendmsg(mid) {
+  async unsendmsg(mid, delay = 0) {
     try {
+        await new Promise((res) => setTimeout(res, delay));
       if (!mid) throw new Error("Message ID is required.");
       return await this.api.unsendMessage(mid.messageID);
     } catch (error) {
@@ -593,10 +595,10 @@ class onChat {
     }
   }
   
-  async delete(mid) {
+  async delete(mid, delay) {
       try {
       if (!mid) throw new Error("Message ID is required.");
-      return await this.unsendmsg(mid);       
+      return await this.unsendmsg(mid, delay);       
       } catch (error) {
           this.error(`Delete message error: ${error.message}`);
           return null;
