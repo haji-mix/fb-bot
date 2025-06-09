@@ -288,19 +288,59 @@ class onChat {
     }
   }
 
+ async #processAttachment(attachment) {
+  try {
+    if (!attachment) return null
+
+    if (typeof attachment === 'string') {
+      attachment = [attachment]
+    }
+
+    if (!Array.isArray(attachment)) return attachment
+
+    const processedAttachments = await Promise.all(
+      attachment.map(async (item) => {
+        if (typeof item === 'string' && (item.startsWith('http://') || item.startsWith('https://'))) {
+          return await this.stream(item)
+        }
+
+        if (
+          item &&
+          typeof item === 'object' &&
+          typeof item.url === 'string' &&
+          (item.url.startsWith('http://') || item.url.startsWith('https://'))
+        ) {
+          return await this.stream(item.url)
+        }
+
+        if (item && typeof item === 'object' && item.stream) {
+          return item.stream
+        }
+        return item
+      })
+    )
+
+    return processedAttachments
+  } catch (error) {
+    this.error(`Attachment processing error: ${error.message}`)
+    return attachment
+  }
+}
+
   async reply(msg, tid = this.threadID, mid = this.messageID) {
     try {
       const threadID = tid !== null && tid !== undefined ? String(tid) : null;
       if (!threadID || !msg) throw new Error("Thread ID and Message are required.");
 
       let messageBody = typeof msg === "string" ? msg : msg.body || "";
-      let attachments = typeof msg === "object" && msg.attachment ? msg.attachment : null;
+      let attachments = typeof msg === "object" && msg.attachment ? await this.#processAttachment(msg.attachment) : null;
       const formattedMsg =
         typeof msg === "string"
           ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
           : {
               ...msg,
               body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined,
+              attachment: attachments
             };
 
       const MAX_CHAR_LIMIT = 5000;
@@ -381,7 +421,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -490,7 +530,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,

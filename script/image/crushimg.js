@@ -38,12 +38,11 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
             })
         }`;
 
-        const response = await message.stream(apiUrl);
         generatingMsg.delete();
 
         return message.reply({
             body: font.bold(`🎨 Generated: ${prompt}`),
-            attachment: response
+            attachment: apiUrl
         });
 
     } catch (error) {

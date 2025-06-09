@@ -20,7 +20,7 @@ module.exports = {
 
             await chat.reply({
                 body: formattedText,
-                attachment: await chat.stream(global.api.hajime + "/api/ba")
+                attachment: global.api.hajime + "/api/ba"
             });
         } catch (error) {
             const errorText = format({
