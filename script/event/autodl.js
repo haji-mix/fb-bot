@@ -21,7 +21,7 @@ module.exports.handleEvent = async ({ chat, event }) => {
             if (regex.test(link)) {
                 await chat.reply({
                     body: name,
-                    attachment: `https://www.haji-mix-api.gleeze.com/api/autodl?url=${link}&stream=true`
+                    attachment: `${global.api.hajime}/api/autodl?url=${link}&stream=true`
                 });
                 return;
             }
