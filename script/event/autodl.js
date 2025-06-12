@@ -16,6 +16,8 @@ const PLATFORMS = {
 module.exports.handleEvent = async ({ chat, event }) => {
     const links = event.body.match(/https?:\/\/[^\s]+/g) || [];
     
+     if (!links || links.length === 0) return;
+    
     for (const link of links) {
         for (const [_, { regex, name }] of Object.entries(PLATFORMS)) {
             if (regex.test(link)) {
