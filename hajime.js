@@ -389,7 +389,6 @@ async function accountLogin(
             logger.warn(
               `MQTT error for user ${userid}: ${error?.error || error}`
             );
-          //  deleteThisUser(userid);
             return;
           }
 
