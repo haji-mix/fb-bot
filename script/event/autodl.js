@@ -21,11 +21,10 @@ module.exports.handleEvent = async ({ chat, event }) => {
     for (const link of links) {
         for (const [_, { regex, name }] of Object.entries(PLATFORMS)) {
             if (regex.test(link)) {
-                await chat.reply({
+                return chat.reply({
                     body: name,
                     attachment: `${global.api.hajime}/api/autodl?url=${link}&stream=true`
                 });
-                return;
             }
         }
     }
