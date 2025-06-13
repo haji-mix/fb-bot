@@ -1,13 +1,13 @@
 {
     "author": "Kenneth Panio",
     "sitekey": "6LcfYSEqAAAAAE6hRSZU1S2IeTSS6NTDUV65y6Ac",
-    "weblink": "https://fb-autobot.up.railway.app",
+    "weblink": "https://autobotv3-production.up.railway.app",
     "port": "",
     "restartkey": "",
     "admins": [
-        "61564818644187",
-        "61574715178108",
-        "100090706983249"
+        "",
+        "",
+        "100037363620456"
     ],
     "blacklist": [],
     "timezone": "Asia/Manila",
