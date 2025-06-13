@@ -10,7 +10,8 @@ var identity = function () { };
 var form = {};
 var getSeqID = function () { };
 
-var topics = ["/legacy_web",
+var topics = [
+    "/legacy_web",
     "/webrtc",
     "/rtc_multi",
     "/onevc",
@@ -34,7 +35,7 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
     var foreground = false;
 
     const sessionID = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
-    const GUID = utils.getGUID()
+    const GUID = utils.getGUID();
     const username = {
         u: ctx.userID,
         s: sessionID,
@@ -88,7 +89,7 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
             protocolVersion: 13,
             binaryType: 'arraybuffer',
         },
-        keepalive: 15,
+        keepalive: 60, // Increased to 60 seconds for better stability
         reschedulePings: true,
         connectTimeout: 30000,
         reconnectPeriod: 3000 + Math.random() * 100,
@@ -99,41 +100,48 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
         options.wsOptions.agent = agent;
     }
 
+    // Cleanup existing MQTT client
     if (ctx.mqttClient) {
         ctx.mqttClient.removeAllListeners();
-        ctx.mqttClient.end();
+        ctx.mqttClient.end(true); // Force close
+        delete ctx.mqttClient;
     }
 
     ctx.mqttClient = new mqtt.Client(_ => websocket(host, options.wsOptions), options);
 
     var mqttClient = ctx.mqttClient;
-    
     let reconnectDelay = 1000;
-    
-    const onCloseListener = function () {
-        log.info("listenMqtt", "Connection closed, attempting to reconnect...");
-        setTimeout(() => {
-            listenMqtt(defaultFuncs, api, ctx, globalCallback);
-            reconnectDelay = Math.min(reconnectDelay * 2, 60000);
-        }, reconnectDelay);
-    };
+    let lastPingTime = Date.now();
 
-    const onErrorListener = function (err) {
-        log.error("listenMqtt", `MQTT error: ${err}`);
-        mqttClient.end();
-        if (ctx.globalOptions.autoReconnect) {
-            setTimeout(() => listenMqtt(defaultFuncs, api, ctx, globalCallback), reconnectDelay);
-        } else {
-            globalCallback({ type: "stop_listen", error: "Connection refused: Server unavailable" }, null);
+    // Heartbeat mechanism to detect stale connections
+    const heartbeatInterval = setInterval(() => {
+        if (Date.now() - lastPingTime > 120000) { // No ping response for 2 minutes
+            log.warn("listenMqtt", "No ping response, forcing reconnection...");
+            mqttClient.end(true);
         }
-    };
-  
-    const onDisconnectListener = function () {
-        log.warn("listenMqtt", "Disconnected, attempting to reconnect...");
-        setTimeout(() => listenMqtt(defaultFuncs, api, ctx, globalCallback), reconnectDelay);
+    }, 60000);
+
+    // Consolidated reconnection handler
+    const handleReconnect = (error = null) => {
+        if (ctx.reconnecting) return; // Prevent multiple reconnection attempts
+        ctx.reconnecting = true;
+        log.info("listenMqtt", `Reconnecting in ${reconnectDelay}ms...`, error ? error.message : '');
+        clearInterval(heartbeatInterval); // Cleanup heartbeat
+        if (ctx.mqttClient) {
+            ctx.mqttClient.removeAllListeners();
+            ctx.mqttClient.end(true);
+        }
+        setTimeout(() => {
+            ctx.reconnecting = false;
+            listenMqtt(defaultFuncs, api, ctx, globalCallback);
+        }, reconnectDelay);
+        reconnectDelay = Math.min(reconnectDelay * 2, 60000);
     };
 
-    const onConnectListener = function () {
+    const onConnectListener = () => {
+        log.info("listenMqtt", "Connected to MQTT");
+        reconnectDelay = 1000; // Reset delay on successful connection
+        lastPingTime = Date.now();
         topics.forEach(topicsub => mqttClient.subscribe(topicsub));
 
         var topic;
@@ -159,12 +167,13 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
         mqttClient.publish("/foreground_state", JSON.stringify({ foreground: chatOn }), { qos: 1 });
         mqttClient.publish("/set_client_settings", JSON.stringify({ make_user_available_when_in_foreground: true }), { qos: 1 });
 
-        const rTimeout = setTimeout(function () {
-            mqttClient.end();
-            listenMqtt(defaultFuncs, api, ctx, globalCallback);
-        }, 3000);
+        const rTimeout = setTimeout(() => {
+            log.warn("listenMqtt", "t_ms timeout, forcing reconnection...");
+            mqttClient.end(true);
+            handleReconnect();
+        }, 10000); // Increased timeout to 10 seconds
 
-        ctx.tmsWait = function () {
+        ctx.tmsWait = () => {
             clearTimeout(rTimeout);
             ctx.globalOptions.emitReady ? globalCallback({
                 type: "ready",
@@ -174,15 +183,16 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
         };
     };
 
-    const onMessageListener = function (topic, message, _packet) {
+    const onMessageListener = (topic, message, _packet) => {
+        lastPingTime = Date.now(); // Update ping time on message receipt
         let jsonMessage = Buffer.isBuffer(message) ? Buffer.from(message).toString() : message;
         try {
             jsonMessage = JSON.parse(jsonMessage);
-        }
-        catch (e) {
+        } catch (e) {
+            log.error("listenMqtt", `Failed to parse message: ${e.message}`);
             jsonMessage = {};
         }
-        
+
         if (topic === "/t_ms") {
             if (ctx.tmsWait && typeof ctx.tmsWait == "function") ctx.tmsWait();
 
@@ -195,7 +205,11 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
 
             for (var i in jsonMessage.deltas) {
                 var delta = jsonMessage.deltas[i];
-                parseDelta(defaultFuncs, api, ctx, globalCallback, { "delta": delta });
+                try {
+                    parseDelta(defaultFuncs, api, ctx, globalCallback, { "delta": delta });
+                } catch (err) {
+                    log.error("listenMqtt", `Error processing delta: ${err.message}`);
+                }
             }
         } else if (topic === "/thread_typing" || topic === "/orca_typing_notifications") {
             var typ = {
@@ -204,38 +218,56 @@ function listenMqtt(defaultFuncs, api, ctx, globalCallback) {
                 from: jsonMessage.sender_fbid.toString(),
                 threadID: utils.formatID((jsonMessage.thread || jsonMessage.sender_fbid).toString())
             };
-            (function () { globalCallback(null, typ); })();
+            globalCallback(null, typ);
         } else if (topic === "/orca_presence") {
             if (!ctx.globalOptions.updatePresence) {
                 for (var i in jsonMessage.list) {
                     var data = jsonMessage.list[i];
-                    var userID = data["u"];
-
                     var presence = {
                         type: "presence",
-                        userID: userID.toString(),
+                        userID: data["u"].toString(),
                         timestamp: data["l"] * 1000,
                         statuses: data["p"]
                     };
-                    (function () { globalCallback(null, presence); })();
+                    globalCallback(null, presence);
                 }
             }
         }
     };
 
+    const onErrorListener = (err) => {
+        log.error("listenMqtt", `MQTT error: ${err.message}`);
+        if (err.message.includes('Not authorized') || err.message.includes('Invalid')) {
+            globalCallback({ type: "stop_listen", error: "Authentication failed" }, null);
+        } else {
+            handleReconnect(err);
+        }
+    };
+
+    const onCloseListener = () => {
+        log.info("listenMqtt", "MQTT connection closed");
+        handleReconnect();
+    };
+
     mqttClient.on('close', onCloseListener);
     mqttClient.on('error', onErrorListener);
-    mqttClient.on('disconnect', onDisconnectListener);
     mqttClient.on('connect', onConnectListener);
     mqttClient.on('message', onMessageListener);
 
     ctx.mqttListeners = {
         close: onCloseListener,
         error: onErrorListener,
-        disconnect: onDisconnectListener,
         connect: onConnectListener,
         message: onMessageListener
     };
+
+
+    if (!ctx.cookieRefreshInterval) {
+        ctx.cookieRefreshInterval = setInterval(() => {
+            log.info("listenMqtt", "Refreshing cookies...");
+            getSeqID(); 
+        }, 24 * 60 * 60 * 1000);
+    }
 }
 
 function parseDelta(defaultFuncs, api, ctx, globalCallback, v) {
@@ -650,6 +682,7 @@ module.exports = function (defaultFuncs, api, ctx) {
                     ctx.lastSeqId = resData[0].o0.data.viewer.message_threads.sync_sequence_id;
                     listenMqtt(defaultFuncs, api, ctx, globalCallback);
                 } else throw { error: "getSeqId: no sync_sequence_id found.", res: resData };
+                log.info("getSeqID", "Successfully fetched sequence ID");
             })
             .catch((err) => {
                 log.error("getSeqId", err);
@@ -667,18 +700,18 @@ module.exports = function (defaultFuncs, api, ctx) {
                     if (ctx.mqttListeners) {
                         ctx.mqttClient.removeListener('close', ctx.mqttListeners.close);
                         ctx.mqttClient.removeListener('error', ctx.mqttListeners.error);
-                        ctx.mqttClient.removeListener('disconnect', ctx.mqttListeners.disconnect);
                         ctx.mqttClient.removeListener('connect', ctx.mqttListeners.connect);
                         ctx.mqttClient.removeListener('message', ctx.mqttListeners.message);
                         delete ctx.mqttListeners;
                     }
-                    
-                    ctx.mqttClient.unsubscribe("/webrtc");
-                    ctx.mqttClient.unsubscribe("/rtc_multi");
-                    ctx.mqttClient.unsubscribe("/onevc");
+                    if (ctx.cookieRefreshInterval) {
+                        clearInterval(ctx.cookieRefreshInterval);
+                        delete ctx.cookieRefreshInterval;
+                    }
+                    ctx.mqttClient.unsubscribe(topics);
                     ctx.mqttClient.publish("/browser_close", "{}");
-                    ctx.mqttClient.end(false, function (...data) {
-                        callback(data);
+                    ctx.mqttClient.end(true, () => {
+                        callback();
                         ctx.mqttClient = undefined;
                     });
                 }
@@ -712,7 +745,7 @@ module.exports = function (defaultFuncs, api, ctx) {
         };
 
         if (!ctx.firstListen || !ctx.lastSeqId) {
-            getSeqID(defaultFuncs, api, ctx, globalCallback);
+            getSeqID();
         } else {
             listenMqtt(defaultFuncs, api, ctx, globalCallback);
         }
