@@ -54,24 +54,31 @@ class onChat {
   }
 
   #normalizeWord(word) {
-    return word.toLowerCase()
+    return word
+      .toLowerCase()
       .replace(/([a-z])\1{2,}/gi, '$1$1')
-      .replace(/[^a-z]/g, ''); 
+      .replace(/[^a-z]/g, '');
   }
 
   #isSimilarToBadWord(word) {
     const normalizedWord = this.#normalizeWord(word);
-    
+    const originalWord = word.toLowerCase();
+
     for (const badWord of this.#badWords) {
       if (normalizedWord === badWord) return true;
-      
+
       if (normalizedWord.startsWith(badWord) && 
           normalizedWord.length <= badWord.length + 3) {
         return true;
       }
 
       const suffixPattern = new RegExp(`^${badWord}(s|es|ed|ing|er|r)?$`, 'i');
-      if (suffixPattern.test(normalizedWord)) return true;
+      if (suffixPattern.test(normalizedWord)) {
+        const coreWord = normalizedWord.replace(suffixPattern, badWord);
+        if (coreWord === badWord && this.#isWithinDistance(word, badWord)) {
+          return true;
+        }
+      }
 
       const leetPattern = badWord
         .replace(/a/gi, '[a4@]')
@@ -80,19 +87,39 @@ class onChat {
         .replace(/o/gi, '[o0]')
         .replace(/s/gi, '[s5$]')
         .replace(/t/gi, '[t7]');
-      const leetRegex = new RegExp(`^${leetPattern}`, 'i');
-      if (leetRegex.test(normalizedWord)) return true;
+      const leetRegex = new RegExp(`^${leetPattern}(s|es|ed|ing|er|r)?$`, 'i');
+      if (leetRegex.test(originalWord) && this.#isWithinDistance(word, badWord)) {
+        return true;
+      }
     }
     return false;
   }
 
+  #isWithinDistance(word, badWord) {
+    const normalizedWord = this.#normalizeWord(word);
+    const firstLetter = normalizedWord[0];
+    const lastLetter = normalizedWord[normalizedWord.length - 1];
+    const badFirstLetter = badWord[0];
+    const badLastLetter = badWord[badWord.length - 1];
+
+    if (firstLetter !== badFirstLetter || lastLetter !== badLastLetter) {
+      return false;
+    }
+
+    const wordMiddleLength = normalizedWord.length - 2;
+    const badWordMiddleLength = badWord.length - 2;
+
+    return Math.abs(wordMiddleLength - badWordMiddleLength) <= 3;
+  }
+
   #filterBadWords(text) {
     if (typeof text !== "string") return text;
-    
+
     return text.replace(/\b[\w']+\b/g, (word) => {
       if (word.length <= 2) return word;
       if (this.#isSimilarToBadWord(word)) {
-        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : "");
+        const middleLength = word.length - 2;
+        return word[0] + "*".repeat(Math.max(1, middleLength)) + (word.length > 1 ? word[word.length - 1] : "");
       }
       return word;
     });
