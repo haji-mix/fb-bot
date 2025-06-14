@@ -11,7 +11,10 @@ const formatBold = (text) => {
 class onChat {
   #badWords = [
     "damn",
-    "hell",
+    "boob",
+    "nipple",
+    "vagina",
+    "breast",
     "shit",
     "fuck",
     "bitch",
