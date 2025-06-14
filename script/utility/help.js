@@ -32,7 +32,7 @@ module.exports.run = async ({ api, event, Utils, prefix, args, chat, font, admin
     const commandPrefix = prefix || "";
 
     const categorizedCommands = allCommands.reduce((acc, cmd) => {
-        const type = cmd.type || "Uncategorized";
+        const type = cmd?.type.toLowerCase() || "Uncategorized";
         acc[type] = acc[type] || [];
         acc[type].push(cmd);
         return acc;
