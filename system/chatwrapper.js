@@ -89,7 +89,7 @@ class onChat {
     return text.replace(/\b[\w']+\b/g, (word) => {
       if (word.length <= 2) return word;
       if (this.#isSimilarToBadWord(word)) {
-        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : '');
+        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : "");
       }
       return word;
     });
@@ -459,7 +459,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -568,7 +568,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
