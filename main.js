@@ -22,8 +22,8 @@ const {
   CurrencySystem
 } = require("./system/modules");
 
-const hajime_config = fs.existsSync("./hajime.json")
-  ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
+const hajime_config = fs.existsSync("./config.json")
+  ? JSON.parse(fs.readFileSync("./config.json", "utf-8"))
   : {};
 const admins = Array.isArray(hajime_config?.admins) ? hajime_config.admins.map(String) : [];
 const pkg_config = fs.existsSync("./package.json")

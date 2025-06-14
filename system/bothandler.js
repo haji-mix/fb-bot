@@ -19,7 +19,7 @@ async function botHandler({
   prefix,
   userid,
 }) {
-  const hajime_config = JSON.parse(fs.readFileSync("./hajime.json", "utf-8"));
+  const hajime_config = JSON.parse(fs.readFileSync("./config.json", "utf-8"));
 
   const reply = async (msg, callback = null, reactCallback = null) => {
     try {
@@ -83,7 +83,7 @@ async function botHandler({
     );
     const repeatedMessages = recentMessages.filter((msg) => msg === message);
 
-    const configPath = path.join(__dirname, "./hajime.json");
+    const configPath = path.join(__dirname, "./config.json");
     if (!hajime_config.blacklist) hajime_config.blacklist = [];
 
     if (hajime_config.blacklist.includes(event.senderID)) return;
@@ -95,7 +95,7 @@ async function botHandler({
         JSON.stringify(hajime_config, null, 2),
         "utf-8",
         (err) => {
-          if (err) logger.error(`Error writing to hajime.json: ${err.message}`);
+          if (err) logger.error(`Error writing to config.json: ${err.message}`);
         }
       );
       await reply(`UserID: ${userId}, You have been Banned for Spamming.`);

@@ -2,8 +2,8 @@
 require('dotenv').config();
 const fs = require("fs");
 
-const hajime_config = fs.existsSync("./hajime.json")
-  ? JSON.parse(fs.readFileSync("./hajime.json", "utf-8"))
+const hajime_config = fs.existsSync("./config.json")
+  ? JSON.parse(fs.readFileSync("./config.json", "utf-8"))
   : {};
 
 

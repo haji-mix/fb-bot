@@ -14,7 +14,7 @@ module.exports = async ({ api, font, logger }) => {
         }
     };
 
-    const configPath = path.resolve(__dirname, '../hajime.json');
+    const configPath = path.resolve(__dirname, '../config.json');
     let config;
     try {
         config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
