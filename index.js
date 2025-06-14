@@ -2,7 +2,7 @@ const { spawn } = require("child_process");
 const path = require("path");
 const { logger } = require("./system/logger");
 
-const SCRIPT_FILE = "hajime.js";
+const SCRIPT_FILE = "main.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 const restartEnabled = process.env.PID !== "0";
