@@ -41,11 +41,7 @@ const mongoStore = createStore({
   createConnection: false,
 });
 
-const currencySystem = new CurrencySystem({
-  database: "FB_AUTOBOT",
-  collection: "currency_balances",
-  defaultBalance: 0,
-});
+const currencySystem = new CurrencySystem({ createStore });
 
 async function ensureMongoConnection() {
   try {
