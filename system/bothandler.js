@@ -113,15 +113,6 @@ async function botHandler({
     Utils.userActivity[userId].warned = false;
   }
 
-  const historyPath = "./data/history.json";
-
-  let history;
-  if (fs.existsSync(historyPath)) {
-    history = JSON.parse(fs.readFileSync(historyPath, "utf8"));
-  } else {
-    history = {};
-  }
-
   let isPrefix =
     event?.body &&
     aliases(
