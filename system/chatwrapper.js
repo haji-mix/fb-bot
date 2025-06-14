@@ -459,7 +459,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -568,7 +568,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
