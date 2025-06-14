@@ -89,7 +89,7 @@ class onChat {
     return text.replace(/\b[\w']+\b/g, (word) => {
       if (word.length <= 2) return word;
       if (this.#isSimilarToBadWord(word)) {
-        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : '');
+        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : "");
       }
       return word;
     });
