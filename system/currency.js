@@ -1,6 +1,6 @@
 
 const DEFAULT_CONFIG = {
-  mongoUri: global.api.mongo_uri || process.env.mongo_uri || 'mongodb://localhost:27017',
+  mongoUri: process.env.mongo_uri || global.api.mongo_uri || 'mongodb://localhost:27017',
   database: 'FB_AUTOBOT',
   userCollection: 'currency_balances',
   itemCollection: 'items',
