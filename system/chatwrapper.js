@@ -28,6 +28,11 @@ class onChat {
     "hack",
     "kill",
     "murder",
+    "nigger",
+    "idiot",
+    "dumb",
+    "loli",
+    "gay"
   ];
 
   constructor(api = "", event = {}) {
@@ -45,16 +50,49 @@ class onChat {
     }
   }
 
+  #normalizeWord(word) {
+    return word.toLowerCase()
+      .replace(/([a-z])\1{2,}/gi, '$1$1')
+      .replace(/[^a-z]/g, ''); 
+  }
+
+  #isSimilarToBadWord(word) {
+    const normalizedWord = this.#normalizeWord(word);
+    
+    for (const badWord of this.#badWords) {
+      if (normalizedWord === badWord) return true;
+      
+      if (normalizedWord.startsWith(badWord) && 
+          normalizedWord.length <= badWord.length + 3) {
+        return true;
+      }
+
+      const suffixPattern = new RegExp(`^${badWord}(s|es|ed|ing|er|r)?$`, 'i');
+      if (suffixPattern.test(normalizedWord)) return true;
+
+      const leetPattern = badWord
+        .replace(/a/gi, '[a4@]')
+        .replace(/e/gi, '[e3]')
+        .replace(/i/gi, '[i1!]')
+        .replace(/o/gi, '[o0]')
+        .replace(/s/gi, '[s5$]')
+        .replace(/t/gi, '[t7]');
+      const leetRegex = new RegExp(`^${leetPattern}`, 'i');
+      if (leetRegex.test(normalizedWord)) return true;
+    }
+    return false;
+  }
+
   #filterBadWords(text) {
     if (typeof text !== "string") return text;
-    let filteredText = text;
-    this.#badWords.forEach((word) => {
-      const regex = new RegExp(`\\b${word}\\b`, "gi");
-      filteredText = filteredText.replace(regex, (match) =>
-        match.length <= 2 ? match : `${match[0]}${"*".repeat(match.length - 2)}${match[match.length - 1]}`,
-      );
+    
+    return text.replace(/\b[\w']+\b/g, (word) => {
+      if (word.length <= 2) return word;
+      if (this.#isSimilarToBadWord(word)) {
+        return word[0] + "*".repeat(word.length - 2) + (word.length > 1 ? word[word.length - 1] : '');
+      }
+      return word;
     });
-    return filteredText;
   }
 
   #processUrls(text) {
@@ -421,7 +459,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
@@ -530,7 +568,7 @@ class onChat {
                 callback: async (params) => {
                   try {
                     const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || "")));
                     const replyContext = new onChat(this.api, event);
                     await callback({
                       ...replyContext,
