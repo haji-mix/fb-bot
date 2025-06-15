@@ -25,7 +25,7 @@ module.exports.run = async ({ api, event, Utils, prefix, args, chat, font, admin
     const input = args.join(" ").trim()?.toLowerCase();
     const isAdmin = admin.includes(String(event.senderID));
     const allCommands = [...Utils.commands.values()].filter(cmd => 
-        isAdmin || !hiddenTypes.includes(cmd.type)
+        isAdmin || !hiddenTypes.includes(cmd?.type.toLowerCase())
     );
     const perPage = 50;
     const totalCommands = allCommands.length;
