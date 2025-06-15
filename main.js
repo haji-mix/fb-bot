@@ -267,9 +267,6 @@ async function accountLogin(
   }
 
   return new Promise((resolve, reject) => {
-    logger.info(
-      `Initiating login with ${state ? "appState" : "email/password"}`
-    );
     login(loginOptions, async (error, api) => {
       if (error || !api) {
         const errorMsg = error?.message || "API object is null";
@@ -282,14 +279,11 @@ async function accountLogin(
         const appState = state;
         const userid = await api.getCurrentUserID();
 
-        logger.info(`Logged in user ${userid}`);
-
         const existingSession = await mongoStore.get(`session_${userid}`);
         if (
           existingSession &&
           JSON.stringify(existingSession) === JSON.stringify(appState)
         ) {
-          logger.info(`Session for user ${userid} exists in MongoDB`);
           if (Utils.account.get(userid)?.online) {
             logger.info(`User ${userid} is already online, reusing session`);
             resolve();
@@ -389,12 +383,8 @@ async function accountLogin(
             return;
           }
 
-          logger.info(
-            `MQTT event received for user ${userid}: ${JSON.stringify(
-              event,
-              null,
-              2
-            )}`
+          logger.json(
+              event
           );
           const chat = new onChat(api, event);
           Object.getOwnPropertyNames(Object.getPrototypeOf(chat))
@@ -446,7 +436,6 @@ async function addThisUser(userid, state, prefix, admin) {
       time: 0,
       createdAt: Date.now(),
     });
-    logger.info(`Added user ${userid} to MongoDB session store`);
   } catch (error) {
     logger.error(`Failed to add user ${userid}: ${error.message}`);
     throw error;
@@ -525,7 +514,6 @@ async function main() {
     }
 
     try {
-      logger.info(`Loading MongoDB session for user ${userid}`);
       const session = await mongoStore.get(`session_${userid}`);
       const userConfig = await mongoStore.get(`config_${userid}`);
 
@@ -558,7 +546,6 @@ async function main() {
           ]),
         ].filter(Boolean)
       );
-      logger.success(`Successfully loaded MongoDB session for user ${userid}`);
       return true;
     } catch (error) {
       logger.error(

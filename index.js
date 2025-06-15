@@ -10,8 +10,6 @@ const restartEnabled = process.env.PID !== "0";
 let mainProcess;
 
 function start() {
-    logger.success("Starting main process...");
-
     mainProcess = spawn("node", ["--no-deprecation", "--no-warnings", SCRIPT_PATH], {
         cwd: __dirname,
         stdio: "inherit",
