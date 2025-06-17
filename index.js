@@ -6,7 +6,7 @@ const SCRIPT_FILE = "main.js";
 const SCRIPT_PATH = path.join(__dirname, SCRIPT_FILE);
 
 const restartEnabled = process.env.PID !== "0";
-
+// ok sir
 let mainProcess;
 
 function start() {
