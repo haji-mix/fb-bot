@@ -41,6 +41,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
   let modelIndex = userModelMap[event.senderID] || 0;
   let ask = args.join(" ");
   let isModelSelection = false;
+  let recog_urls = "";
 
   if (args.length > 0 && args[0].toLowerCase() === "model" && !isNaN(args[1])) {
     modelIndex = parseInt(args[1]);
@@ -55,7 +56,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
 
   if (event.messageReply && event.messageReply.attachments) {
     const attachments = event.messageReply.attachments;
-    const recog_urls = attachments.map((attachment) => attachment.url);
+    recog_urls = attachments.map((attachment) => attachment.url);
     ask += `\n\nUser also sent these attachments: ${recog_urls.join(", ")}`;
   }
 
@@ -112,6 +113,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
 
     const apiRes = await axios.post(global.api.hajime + "/api/anthropic", {
       ask: ask,
+      img_url: recog_urls,
       uid: event.senderID || "default-user",
       model: modelToUse,
       roleplay: "",
