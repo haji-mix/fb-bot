@@ -14,7 +14,7 @@ module.exports["config"] = {
 module.exports["run"] = async ({ args, chat, font, event, format }) => {
     let ask = args.join(" ");
     
-    if (event.type === "message_reply" && event.messageReply.body) {
+    if (event.type === "message_reply" && event.messageReply?.body) {
         ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
     }
   
