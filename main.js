@@ -548,24 +548,53 @@ async function main() {
       );
       return true;
     } catch (error) {
-      logger.error(
-        `Failed to load MongoDB session for user ${userid}: ${error.message}`
-      );
-      
-      const ERROR_PATTERNS = {
-        errorRetrieving: /Error retrieving userID/,
-        connectionRefused: /Connection refused: Server unavailable/,
-        notLoggedIn: /Not logged in\./,
-      };
-      const ERROR = error?.message || error?.error;
-      for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
-        if (pattern && ERROR && pattern.test(ERROR)) {
-          logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
-          await deleteThisUser(userid);
-          break;
+const problematicUsers = new Set();
+let exitScheduled = false;
+
+logger.error(
+  `Failed to load MongoDB session for user ${userid}: ${error.message}`
+);
+
+const ERROR_PATTERNS = {
+  errorRetrieving: /Error retrieving userID/,
+  connectionRefused: /Connection refused: Server unavailable/,
+  notLoggedIn: /Not logged in\./,
+  stucked: /Exceeded maxRedirects\./,
+};
+
+const ERROR = error?.message || error?.error;
+
+for (const [type, pattern] of Object.entries(ERROR_PATTERNS)) {
+  if (pattern && ERROR && pattern.test(ERROR)) {
+    logger.warn(`Login issue for user ${userid}: ${type} - ${ERROR}`);
+    problematicUsers.add(userid);
+    
+    if (!exitScheduled) {
+      exitScheduled = true;
+      process.nextTick(async () => {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        if (problematicUsers.size > 0) {
+          logger.info(`Cleaning up ${problematicUsers.size} problematic users...`);
+          
+          try {
+            await Promise.all(
+              Array.from(problematicUsers).map(uid => deleteThisUser(uid))
+            );
+            logger.info('Cleanup complete. Exiting...');
+          } catch (error) {
+            logger.error('Error during cleanup:', error);
+          }
+          
+          process.exit(1);
         }
-      }
-      return false;
+      });
+    }
+    break;
+  }
+}
+
+return false;
     }
   };
 
