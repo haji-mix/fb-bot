@@ -49,7 +49,7 @@ module.exports["run"] = async ({ args, chat, font, event, format }) => {
     userModelMap[event.senderID] = modelIndex;
   }
 
-  if (event.type === "message_reply" && event.messageReply.body) {
+  if (event.type === "message_reply" && event.messageReply?.body) {
     ask += `\n\nUser replied with this message: ${event.messageReply.body}`;
   }
 
