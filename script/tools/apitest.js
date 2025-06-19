@@ -88,10 +88,10 @@ module.exports["run"] = async ({ chat, args, font, admin, event }) => {
 
         if (isMediaAttachment(contentType)) {
             const isAdmin = admin.includes(String(senderID));
-            return sendFile(chat, fileExt, data, `📽️ API returned a ${fileExt.toUpperCase()}:`, isAdmin);
+            return sendFile(chat, fileExt, data, `📽️ API returned a ${fileExt.toUpperCase()}:`, isAdmin, font);
         }
 
-        return sendFile(chat, "txt", data.toString(), "📄 Response attached.", true);
+        return sendFile(chat, "txt", data.toString(), "📄 Response attached.", true, font);
     } catch (error) {
         let errMsg = ``;
         if (error.response) {
@@ -104,9 +104,9 @@ module.exports["run"] = async ({ chat, args, font, admin, event }) => {
     }
 };
 
-async function sendFile(chat, ext, data, caption, allowAttachment) {
+async function sendFile(chat, ext, data, caption, allowAttachment, font) {
     if (!allowAttachment && ext !== "txt") {
-        return chat.reply("❌ Only admins can receive media attachments from this command.");
+        return chat.reply(font.thin("❌ Only admins can receive media attachments from this command."));
     }
 
     const filePath = path.join(tempDir, `file_${Date.now()}.${ext}`);
