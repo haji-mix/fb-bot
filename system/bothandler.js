@@ -459,7 +459,8 @@ async function botHandler({
             }' error: ` + error.stack
           );
           for (const adminID of hajime_config.admins) {
-            await chat.send(error_msg, adminID);
+              if (adminID === event.threadID) return;
+                chat.send(error_msg, adminID);
           }
         }
       }
