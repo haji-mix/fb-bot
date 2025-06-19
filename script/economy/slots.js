@@ -26,11 +26,13 @@ module.exports = {
             }
 
             const symbols = [
-                { icon: '🍒', weight: 40 }, // Common
-                { icon: '🍋', weight: 30 }, // Common
-                { icon: '🍊', weight: 20 }, // Less common
-                { icon: '💰', weight: 5 },  // Rare (jackpot)
-                { icon: '❌', weight: 5 }   // Rare (loser)
+                { icon: '🍒', weight: 30 }, // Common
+                { icon: '🍋', weight: 25 }, // Common
+                { icon: '🍊', weight: 20 }, // Common
+                { icon: '🍉', weight: 15 }, // Less common
+                { icon: '🔔', weight: 10 }, // Less common
+                { icon: '💰', weight: 3 },  // Rare (jackpot)
+                { icon: '❌', weight: 7 }   // Common (loser)
             ];
 
             const totalWeight = symbols.reduce((sum, sym) => sum + sym.weight, 0);
@@ -42,21 +44,22 @@ module.exports = {
                     currentWeight += sym.weight;
                     if (rand <= currentWeight) return sym.icon;
                 }
-                return symbols[0].icon; 
+                return symbols[0].icon;
             };
-
 
             const reel1 = getRandomSymbol();
             const reel2 = getRandomSymbol();
             const reel3 = getRandomSymbol();
 
             const payoutTable = {
-                '💰💰💰': 100,  // Jackpot: 100x
-                '🍒🍒🍒': 5,    // Three cherries: 5x
-                '🍋🍋🍋': 4,     // Three lemons: 4x
-                '🍊🍊🍊': 3,     // Three oranges: 3x
-                '❌❌❌': 0,      // Three X's: lose
-                'two_match': 1.5 // Any two matching symbols: 1.5x
+                '💰💰💰': 50,   // Jackpot: 50x (reduced for balance)
+                '🍒🍒🍒': 4,    // Three cherries: 4x
+                '🍋🍋🍋': 3.5,  // Three lemons: 3.5x
+                '🍊🍊🍊': 3,    // Three oranges: 3x
+                '🍉🍉🍉': 2.5,  // Three watermelons: 2.5x
+                '🔔🔔🔔': 2,    // Three bells: 2x
+                '❌❌❌': 0,     // Three X's: lose
+                'two_match': 0.8 // Two matching symbols: 0.8x (return less than bet)
             };
 
             let result, newBalance;
@@ -67,19 +70,15 @@ module.exports = {
                 const winnings = Math.floor(bet * multiplier);
                 newBalance = await Currencies.addBalance(senderID, winnings - bet);
                 if (multiplier > 0) {
-                    result = `${reel1} | ${reel2} | ${reel3}\n${multiplier === 100 ? 'JACKPOT!!! 🎉' : 'Three of a kind!'} You win $${winnings.toLocaleString()}!`;
+                    result = `${reel1} | ${reel2} | ${reel3}\n${multiplier === 50 ? 'JACKPOT!!! 🎉' : 'Three of a kind!'} You win $${winnings.toLocaleString()}!`;
                 } else {
                     result = `${reel1} | ${reel2} | ${reel3}\nNo luck... You lost $${bet.toLocaleString()}.`;
                 }
-            }
-
-            else if (reel1 === reel2 || reel2 === reel3 || reel1 === reel3) {
+            } else if (reel1 === reel2 || reel2 === reel3 || reel1 === reel3) {
                 const winnings = Math.floor(bet * payoutTable['two_match']);
                 newBalance = await Currencies.addBalance(senderID, winnings - bet);
                 result = `${reel1} | ${reel2} | ${reel3}\nTwo matches! You win $${winnings.toLocaleString()}.`;
-            }
-
-            else {
+            } else {
                 newBalance = await Currencies.removeBalance(senderID, bet);
                 result = `${reel1} | ${reel2} | ${reel3}\nNo matches... You lost $${bet.toLocaleString()}.`;
             }
