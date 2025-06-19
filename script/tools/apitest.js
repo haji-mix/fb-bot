@@ -112,7 +112,7 @@ async function sendFile(chat, ext, data, caption, allowAttachment, font) {
     const filePath = path.join(tempDir, `file_${Date.now()}.${ext}`);
     fs.writeFileSync(filePath, data);
     await chat.reply({
-        body: caption,
+        body: font.thin(caption),
         attachment: fs.createReadStream(filePath),
     });
 
