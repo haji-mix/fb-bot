@@ -4,20 +4,14 @@
   "description": "FB Autobot is a free tool that helps you automate Facebook tasks without coding skills. Build your own bot today!",
   "main": "index.js",
   "scripts": {
-    "start": "node --no-warnings --no-deprecation index.js",
+    "start": "node index.js",
     "dev": "nodemon index.js",
     "install:prod": "npm install --omit=dev"
   },
-  "keywords": [
-    "fb-bot",
-    "fb-autobot",
-    "hajime",
-    "hajime-project",
-    "hajime-ai"
-  ],
   "author": "Kenneth Panio",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
+    "undici": "7.11.0",
     "axios": "^1.6.5",
     "bluebird": "^3.7.2",
     "body-parser": "^1.20.2",
@@ -75,40 +69,9 @@
     "ytdl-core": "^4.11.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.10",
-    "@babel/preset-env": "^7.26.9",
-    "eslint": "^7.5.0",
-    "mocha": "^7.0.1",
-    "nodemon": "^3.1.0",
-    "prettier": "^1.11.1"
+    "nodemon": "^3.1.0"
   },
-  "eslintConfig": {
-    "env": {
-      "commonjs": true,
-      "es2021": true,
-      "node": true
-    },
-    "extends": "eslint:recommended",
-    "parserOptions": {
-      "ecmaVersion": 13
-    },
-    "rules": {
-      "no-prototype-builtins": 0,
-      "no-unused-vars": 1,
-      "comma-dangle": 1,
-      "no-redeclare": 0,
-      "prefer-const": 1,
-      "no-useless-escape": 0,
-      "no-mixed-spaces-and-tabs": 0,
-      "semi": 1,
-      "no-useless-catch": 0,
-      "no-empty": 0,
-      "use-isnan": 0,
-      "no-extra-semi": 1,
-      "no-async-promise-executor": 0,
-      "no-unreachable": 1,
-      "valid-typeof": 0,
-      "no-case-declarations": 0
-    }
+  "overrides": {
+    "undici": "7.11.0"
   }
 }
