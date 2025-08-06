@@ -4,7 +4,7 @@ const { randomUUID } = require("crypto");
 module.exports["config"] = {
   name: "gpt4o",
   isPrefix: false,
-  aliases: ["gpt", "gpt4", "ai"],
+  aliases: ["gpt", "gpt4"],
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara | Aljur Pogoy",
   role: 0,
