@@ -22,7 +22,7 @@
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
-    "ejs": "^3.1.10",
+    "nunjucks": "^3.2.4",
     "events": "^3.3.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.3.1",

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="{{ keywords.join(', ') }}">
+  <meta name="description" content="{{ description }}">
+  <meta name="author" content="{{ author }}">
+  <meta property="og:site_name" content="{{ name }}">
+  <meta property="og:title" content="{{ name }}">
+  <meta property="og:description" content="{{ description }}">
+  <meta property="og:image" content="https://i.imgur.com/jTPXYc9.jpeg">
+  <meta name="twitter:title" content="{{ name }}">
+  <meta name="twitter:description" content="{{ description }}">
+  <meta name="twitter:image" content="https://i.imgur.com/jTPXYc9.jpeg">
+  <meta name="google-adsense-account" content="ca-pub-8366475952965401">
+
+  <link rel="icon" href="https://i.imgur.com/jTPXYc9.jpeg" type="image/x-icon">
+  {% for file in styleFiles %}
+  <link rel="stylesheet" href="{{ file }}">
+  {% endfor %}
+  {% for file in cssFiles %}
+  <link rel="stylesheet" href="{{ file }}">
+  {% endfor %}
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/particlesjs/2.2.3/particles.min.js"
+    integrity="sha512-jq8sZI0I9Og0nnZ+CfJRnUzNSDKxr/5Bvha5bn7AHzTnRyxUfpUArMzfH++mwE/hb2efOo1gCAgI+1RMzf8F7g=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Particles.js -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+  <!-- Socket.io -->
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.4.0/dist/socket.io.min.js"></script>
+
+  <!-- reCAPTCHA -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  <!-- Eruda (dev tools) -->
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+
+  <!-- Tailwind CSS (just in case) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+  <title>FB AUTOBOT</title>
+
+  <style>
+    .glass-effect {
+      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .neon-glow {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.3), 0 0 40px rgba(34, 197, 94, 0.1);
+    }
+
+    .command-card {
+      background: linear-gradient(135deg, rgba(31, 41, 55, 0.8) 0%, rgba(17, 24, 39, 0.9) 100%);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .command-card:hover {
+      border-color: rgba(59, 130, 246, 0.6);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+    }
+
+    .bot-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.2) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .bot-card:hover {
+      border-color: rgba(16, 185, 129, 0.6);
+      transform: scale(1.02);
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+    }
+
+    .animate-pulse-slow {
+      animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .gradient-text {
+      background: linear-gradient(45deg, #fbbf24, #f59e0b, #d97706);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .scrollbar-thin {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(59, 130, 246, 0.5) rgba(31, 41, 55, 0.3);
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: rgba(31, 41, 55, 0.3);
+      border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.5);
+      border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between bg-gray-900 text-white">
+
+  <!-- Particles Background -->
+  <div id="particles-js"></div>
+
+  <!-- Popup Message -->
+  <div id="popup-message" class="popup">
+    <div class="popup-message">
+      <p id="popup-text">
+        {{ description }}
+      </p>
+    </div>
+    <button id="ok-button"
+      class="bg-green-400 text-gray-900 py-2 px-4 rounded-lg font-bold hover:bg-green-500 transition">Proceed</button>
+  </div>
+
+  <!-- Audio Player (hidden until music is played) -->
+  <audio id="audio-player" preload="auto" style="display:none;"></audio>
+
+  <!-- Main Content -->
+  <main class="flex-grow flex flex-col justify-center items-center p-6 text-center">
+    <!-- Enhanced Stats Section -->
+    <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+      <div class="glass-effect p-6 rounded-xl neon-glow">
+        <div class="flex items-center justify-center mb-2">
+          <i class="fas fa-robot text-3xl text-green-400 mr-3"></i>
+          <div>
+            <p class="text-gray-300 text-sm">Online Bots</p>
+            <p id="onlineUsers" class="text-3xl font-bold text-green-400 animate-pulse">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-effect p-6 rounded-xl">
+        <div class="flex items-center justify-center mb-2">
+          <i class="fas fa-clock text-3xl text-blue-400 mr-3"></i>
+          <div>
+            <p class="text-gray-300 text-sm">Current Time</p>
+            <p id="time" class="text-xl font-bold text-blue-400"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-effect p-6 rounded-xl">
+        <div class="flex items-center justify-center mb-2">
+          <i class="fas fa-terminal text-3xl text-purple-400 mr-3"></i>
+          <div>
+            <p class="text-gray-300 text-sm">Total Commands</p>
+            <p id="commandCount" class="text-3xl font-bold text-purple-400">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="glass-effect p-8 rounded-xl shadow-2xl max-w-md w-full mb-8">
+      <h2 id="login-method-title" class="text-2xl font-bold mb-4 gradient-text">APPSTATE METHOD</h2>
+      <p class="text-gray-300 mb-6">Login to your Facebook account to start using the autobot.</p>
+
+      <form id="cookie-form" class="space-y-4">
+        <!-- Appstate Input -->
+        <div id="json-data-container">
+          <label for="json-data" class="block text-sm font-medium text-gray-300 mb-1">App State (JSON)</label>
+          <textarea id="json-data" name="json-data" rows="4"
+            class="w-full p-3 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:border-yellow-400 focus:outline-none backdrop-blur-sm"
+            placeholder="Paste your Facebook app state JSON here..."></textarea>
+        </div>
+
+        <!-- Email/Password Fields (Hidden by default) -->
+        <div id="email-password-fields" class="hidden space-y-3">
+          <input type="email" id="email" name="email"
+            class="w-full p-3 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:border-yellow-400 focus:outline-none backdrop-blur-sm"
+            placeholder="Email">
+          <input type="password" id="password" name="password"
+            class="w-full p-3 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:border-yellow-400 focus:outline-none backdrop-blur-sm"
+            placeholder="Password">
+        </div>
+
+        <div class="flex space-x-4">
+          <div class="flex-1">
+            <label for="symbolSelect" class="block text-sm font-medium text-gray-300 mb-1">Bot Prefix</label>
+            <select id="symbolSelect"
+              class="w-full p-3 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:border-yellow-400 focus:outline-none backdrop-blur-sm">
+              <!-- Options will be populated by JavaScript -->
+            </select>
+          </div>
+          <div class="flex-1">
+            <label for="inputOfAdmin" class="block text-sm font-medium text-gray-300 mb-1">Admin ID</label>
+            <input type="text" id="inputOfAdmin" name="inputOfAdmin"
+              class="w-full p-3 bg-gray-700/50 text-white rounded-lg border border-gray-600 focus:border-yellow-400 focus:outline-none backdrop-blur-sm"
+              placeholder="Your Facebook user ID">
+          </div>
+        </div>
+
+        <!-- reCAPTCHA -->
+        {% if sitekey %}
+        <div class="flex justify-center">
+          <div class="g-recaptcha" data-sitekey="{{ sitekey }}" data-callback="onRecaptchaSuccess"></div>
+        </div>
+        {% endif %}
+
+        <button type="submit" id="submit-button"
+          class="w-full bg-gradient-to-r from-yellow-400 to-orange-500 text-gray-900 py-3 px-4 rounded-lg font-bold hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:scale-105 {% if sitekey %}hidden{% endif %}">
+          <i class="fas fa-sign-in-alt mr-2"></i>Login
+        </button>
+
+        <!-- Switch Login Method -->
+        <button type="button" id="switch-login-method"
+          class="w-full bg-gray-600/50 text-white py-2 px-4 rounded-lg font-bold hover:bg-gray-500/50 transition-all duration-300 backdrop-blur-sm">
+          SWITCH TO CREDENTIALS LOGIN
+        </button>
+      </form>
+    </div>
+
+    <!-- Enhanced Available Commands Section -->
+    <div id="availableCommands" class="hidden mt-6 glass-effect p-6 rounded-xl max-w-4xl w-full">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-bold gradient-text flex items-center">
+          <i class="fas fa-terminal mr-3"></i>Available Commands
+        </h3>
+        <button onclick="$('#availableCommands').addClass('hidden')"
+          class="text-gray-400 hover:text-white transition-colors">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+
+      <div id="commandsList" class="hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto scrollbar-thin">
+          <!-- Commands will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <div id="commandsLoading" class="text-center py-8">
+        <i class="fas fa-spinner fa-spin text-3xl text-blue-400 mb-4"></i>
+        <p class="text-gray-300">Loading commands...</p>
+      </div>
+    </div>
+    </div>
+  </main>
+
+  <!-- Enhanced Footer -->
+  <footer class="glass-effect p-4 text-center text-gray-400">
+    <p>&copy; 2024 FB AUTOBOT. Created with ❤️ by {{ author }}.</p>
+  </footer>
+
+  {% for file in scriptFiles %}
+  <script src="{{ file }}"></script>
+  {% endfor %}
+  {% for file in jsFiles %}
+  <script src="{{ file }}"></script>
+  {% endfor %}
+
+  <script>
+    // Enhanced functionality
+    window.onRecaptchaSuccess = function () {
+      $('#submit-button').removeClass('hidden').addClass('animate-pulse');
+    };
+
+    // Particles.js configuration
+    particlesJS.load('particles-js', './particles.json', function () {
+      console.log('Particles.js loaded');
+    });
+
+    // Update DOMContentLoaded to call fetchCommandCount
+    document.addEventListener('DOMContentLoaded', function () {
+      const popup = document.getElementById('popup-message');
+      const okButton = document.getElementById('ok-button');
+      popup.style.display = 'flex';
+      okButton.addEventListener('click', function () {
+        popup.style.display = 'none';
+      });
+
+      $('#activeBots').removeClass('hidden');
+      fetchActiveBots();
+      fetchCommandCount();
+    });
+
+
+     function fetchActiveBots() {
+      axios.get('/info').then(response => {
+        if (Array.isArray(response.data)) {
+        $('#onlineUsers').text(response.data.length);
+      } else {
+        $('#onlineUsers').text('N/A');
+      }
+    }).catch(error => {
+      $('#onlineUsers').text('N/A');
+    });
+  }
+
+
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${secs}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${secs}s`;
+      } else {
+        return `${secs}s`;
+      }
+    }
+
+    function fetchCommandCount() {
+      axios.get('/commands')
+        .then(response => {
+          // If response.data.commands exists and is an array, use its length
+          if (response.data && Array.isArray(response.data.commands)) {
+            $('#commandCount').text(response.data.commands.length);
+          } else {
+            $('#commandCount').text('N/A');
+          }
+        })
+        .catch(() => {
+          $('#commandCount').text('N/A');
+        });
+    }
+
+
+  </script>
+</body>

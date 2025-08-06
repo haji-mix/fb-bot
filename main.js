@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const login = require("./fbvibex/package/index");
 const express = require("express");
+const nunjucks = require("nunjucks");
 require("dotenv").config();
 
 global.api = {
@@ -70,9 +71,14 @@ loadModules(Utils, logger);
 
 const app = express();
 app.set("json spaces", 2);
-app
-  .set("view engine", "ejs")
-  .set("views", path.join(__dirname, "public", "views"));
+
+// Configure Nunjucks
+nunjucks.configure(path.join(__dirname, "public", "views"), {
+  autoescape: true,
+  express: app,
+  watch: true
+});
+
 app
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
@@ -83,7 +89,7 @@ async function startServer() {
   const serverUrl = hajime_config.weblink || `http://localhost:${PORT}`;
   app.listen(PORT, () =>
     logger.success(
-      `PUBLIC WEB: ${serverUrl}\nLOCAL WEB: http://127.0.0.1:${PORT}`
+      `PUBLIC WEB: ${serverUrl} LOCAL WEB: http://127.0.0.1:${PORT}`
     )
   );
 }
@@ -104,8 +110,8 @@ const jsFiles = getFilesFromDir("public/framework/js", ".js").map(
 );
 
 const routes = [
-  { path: "/", file: "index.ejs", method: "get" },
-  { path: "/jseditor", file: "ide.ejs", method: "get" },
+  { path: "/", file: "index.html", method: "get" },
+  { path: "/jseditor", file: "ide.html", method: "get" },
   {
     path: "/info",
     method: "get",
@@ -127,10 +133,9 @@ const routes = [
 
 routes.forEach((route) => {
   if (route.file) {
-    app[route.method](route.path, (req, res) =>
-      res.render(
-        route.file,
-        {
+    app[route.method](route.path, (req, res) => {
+      try {
+        const html = nunjucks.render(route.file, {
           cssFiles,
           scriptFiles,
           jsFiles,
@@ -140,13 +145,13 @@ routes.forEach((route) => {
           styleFiles,
           author,
           sitekey,
-        },
-        (err, html) =>
-          err
-            ? res.status(500).send("Error rendering template")
-            : res.send(html)
-      )
-    );
+        });
+        res.send(html);
+      } catch (err) {
+        console.error('Template rendering error:', err);
+        res.status(500).send("Error rendering template");
+      }
+    });
   } else if (route.handler) {
     app[route.method](route.path, route.handler);
   }
@@ -155,27 +160,43 @@ routes.forEach((route) => {
 app.get("/script/*", (req, res) => {
   const filePath = path.join(__dirname, "script", req.params[0] || "");
   if (!path.normalize(filePath).startsWith(path.join(__dirname, "script"))) {
-    return res.status(403).render("403", { cssFiles, jsFiles });
+    try {
+      const html = nunjucks.render("403.html", { cssFiles, jsFiles });
+      return res.status(403).send(html);
+    } catch (err) {
+      return res.status(403).send("Forbidden");
+    }
   }
   fs.readFile(filePath, "utf8", (err, data) => {
     if (err) {
-      return res
-        .status(404)
-        .render("404", { cssFiles, jsFiles }, (err, html) => {
-          res.send(err ? "Error rendering template" : minifyHtml(html));
-        });
+      try {
+        const html = nunjucks.render("404.html", { cssFiles, jsFiles });
+        return res.status(404).send(html);
+      } catch (renderErr) {
+        return res.status(404).send("Not Found");
+      }
     }
-    req.query.raw === "true"
-      ? res.type("text/plain").send(data)
-      : res.render("snippet", { title: req.params[0], code: data });
+    if (req.query.raw === "true") {
+      res.type("text/plain").send(data);
+          } else {
+        try {
+          const html = nunjucks.render("snippet.html", { title: req.params[0], code: data });
+          res.send(html);
+        } catch (renderErr) {
+          res.status(500).send("Error rendering template");
+        }
+      }
   });
 });
 
-app.use((req, res) =>
-  res.status(404).render("404", { cssFiles, jsFiles }, (err, html) => {
-    res.send(err ? "Error rendering template" : minifyHtml(html));
-  })
-);
+app.use((req, res) => {
+  try {
+    const html = nunjucks.render("404.html", { cssFiles, jsFiles });
+    res.status(404).send(html);
+  } catch (err) {
+    res.status(404).send("Not Found");
+  }
+});
 
 function getFilesFromDir(directory, fileExtension) {
   const dirPath = path.join(__dirname, directory);

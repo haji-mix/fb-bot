@@ -22,12 +22,51 @@ $(document).ready(function () {
     });
 
     function fetchCommands() {
+        $('#commandsLoading').removeClass('hidden');
+        $('#commandsList').addClass('hidden');
+        
         axios.get('/commands').then(response => {
-            const commandsList = response.data.commands.map((cmd, idx) =>
-                `<div>${idx + 1}. ${cmd}</div>`).join('');
-            $('#commandsList').html(commandsList);
-            $('#commandsList').removeClass('hidden').addClass('visible');
-        }).catch(console.error);
+            const commands = response.data.commands;
+            const roles = response.data.roles;
+            const aliases = response.data.aliases;
+            
+            let commandsHtml = '';
+            commands.forEach((cmd, idx) => {
+                const role = roles[idx] || 'user';
+                const cmdAliases = aliases[idx] || [];
+                const aliasText = cmdAliases.length > 0 ? cmdAliases.join(', ') : 'None';
+                
+                const roleColor = role === 'admin' ? 'text-red-400' : role === 'moderator' ? 'text-yellow-400' : 'text-green-400';
+                const roleIcon = role === 'admin' ? 'fa-crown' : role === 'moderator' ? 'fa-shield-alt' : 'fa-user';
+                
+                commandsHtml += `
+                    <div class="command-card p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-bold text-blue-400 flex items-center">
+                                <i class="fas fa-terminal mr-2 text-sm"></i>${cmd}
+                            </h4>
+                            <span class="${roleColor} text-xs flex items-center">
+                                <i class="fas ${roleIcon} mr-1"></i>${role}
+                            </span>
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            <p><strong>Aliases:</strong> ${aliasText}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            $('#commandsList').html(commandsHtml).removeClass('hidden');
+            $('#commandsLoading').addClass('hidden');
+            $('#commandCount').text(commands.length);
+        }).catch(error => {
+            $('#commandsLoading').html(`
+                <div class="text-center py-8">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-400 mb-4"></i>
+                    <p class="text-red-300">Failed to load commands</p>
+                </div>
+            `);
+        });
     }
 
     function fetchActiveBots() {
@@ -148,7 +187,7 @@ $(document).ready(function () {
     });
 
     $('#switch-login-method').on('click', function () {
-        const $jsonInput = $('#json-data');
+        const $jsonInput = $('#json-data-container');
         const $emailPasswordFields = $('#email-password-fields');
         const $loginMethodTitle = $('#login-method-title');
 

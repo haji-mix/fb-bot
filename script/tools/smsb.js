@@ -9,11 +9,10 @@ module.exports.config = {
 };
 
 module.exports.run = async function({ args, chat, font }) {
-  // Input validation
+
   const phone = args[0]?.trim() || "";
   const amount = parseInt(args[1]) || 10;
 
-  // Validate phone number
   let cleanPhone = phone;
   if (phone.startsWith("+63")) {
     cleanPhone = phone.slice(3);
@@ -29,13 +28,11 @@ module.exports.run = async function({ args, chat, font }) {
     );
   }
 
-  // Validate amount
-  if (isNaN(amount) || amount < 1 || amount > 20) {
-    // Added upper limit
-    return chat.reply(font.thin("Invalid amount. Must be between 1 and 50."));
+  if (isNaN(amount) || amount < 1 || amount > 1000) {
+
+    return chat.reply(font.thin("Invalid amount. Must be between 1 and 1000."));
   }
 
-  // Warning message
   const sent = await chat.reply(
     font.thin("Initiating SMS Bomb... Please use this responsibly.")
   );

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Forbidden</title>
+    {% for file in cssFiles %}
+    <link rel="stylesheet" href="{{ file }}">
+    {% endfor %}
+    {% for file in jsFiles %}
+    <script src="{{ file }}"></script>
+    {% endfor %}
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .glowing-red {
+            font-size: 5rem;
+            color: red;
+            text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
+            animation: glow 1.5s infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 5px red, 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red;
+            }
+
+            to {
+                text-shadow: 0 0 10px red, 0 0 20px red, 0 0 30px red, 0 0 40px red, 0 0 50px red;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center bg-gray-900 text-white">
+    <div class="text-center space-y-6">
+        <h1 class="glowing-red">403</h1>
+        <p class="text-xl text-yellow-400 font-bold">Unauthorized Access!</p>
+        <p class="text-gray-300">You have been Blocked!</p>
+        <a href="/" class="inline-block mt-4 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">
+            Go Home
+        </a>
+    </div>
+</body>
+
+</html> 

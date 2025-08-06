@@ -4,9 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <%= title %>
-    </title>
+    <title>{{ title }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js"></script>
@@ -21,14 +19,18 @@
 
             var code = editor.getValue();
 
-            var formattedCode = prettier.format(code, {
-                parser: "babel",
-                plugins: [prettier.parserBabel],
-                singleQuote: true,
-                semi: true
-            });
+            try {
+                var formattedCode = prettier.format(code, {
+                    parser: "babel",
+                    plugins: [prettier.parserBabel],
+                    singleQuote: true,
+                    semi: true
+                });
 
-            editor.setValue(formattedCode);
+                editor.setValue(formattedCode);
+            } catch (e) {
+                console.log("Code formatting failed:", e);
+            }
 
             setTimeout(function () {
                 editor.getSession().getAnnotations();
@@ -76,9 +78,7 @@
 </head>
 
 <body>
-    <div id="editor">
-        <%- code %>
-    </div>
+    <div id="editor">{{ code | safe }}</div>
 </body>
 
-</html>
+</html> 
