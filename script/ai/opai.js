@@ -2,7 +2,7 @@ const axios = require("axios");
 
 let cachedSupportedModels = null;
 const userModelMap = {};
-const DEFAULT_MODEL = "deepseek/deepseek-chat";
+const DEFAULT_MODEL = "openai/gpt-oss-20b";
 
 module.exports["config"] = {
   name: "ai",
