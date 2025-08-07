@@ -53,6 +53,25 @@ class onChat {
     }
   }
 
+  #splitCodeBlocks(text) {
+  if (typeof text !== "string") return [text];
+  const parts = [];
+  const regex = /(```[\s\S]*?```)/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index).trim());
+    }
+    parts.push(match[0].trim());
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex).trim());
+  }
+  return parts.filter(Boolean);
+}
+
   #normalizeWord(word) {
     return word
       .toLowerCase()
@@ -395,19 +414,29 @@ class onChat {
     }
   }
 
-  async reply(msg, tid = this.threadID, mid = this.messageID) {
+async reply(msg, tid = this.threadID, mid = this.messageID) {
     try {
       const threadID = tid !== null && tid !== undefined ? String(tid) : null;
       if (!threadID || !msg) throw new Error("Thread ID and Message are required.");
 
       let messageBody = typeof msg === "string" ? msg : msg.body || "";
       let attachments = typeof msg === "object" && msg.attachment ? await this.#processAttachment(msg.attachment) : null;
+
+      const parts = this.#splitCodeBlocks(messageBody);
+      const processedParts = parts.map(part => {
+        if (part.startsWith("```") && part.endsWith("```")) {
+          return formatBold(part);
+        }
+        return formatBold(this.#processUrls(this.#filterBadWords(part)));
+      });
+      messageBody = processedParts.join("\n");
+
       const formattedMsg =
         typeof msg === "string"
-          ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
+          ? messageBody
           : {
               ...msg,
-              body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined,
+              body: messageBody ? messageBody : undefined,
               attachment: attachments
             };
 
@@ -564,7 +593,7 @@ class onChat {
           edit: async (message, delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.editmsg(message, replyMsg);
+              return await this.editmsg(message, replyMsg.messageID);
             } catch (error) {
               this.error(`Edit message error: ${error.message}`);
               return null;
@@ -573,7 +602,7 @@ class onChat {
           unsend: async (delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg);
+              return await this.unsendmsg(replyMsg.messageID);
             } catch (error) {
               this.error(`Unsend message error: ${error.message}`);
               return null;
@@ -582,7 +611,7 @@ class onChat {
           delete: async (delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg);
+              return await this.unsendmsg(replyMsg.messageID);
             } catch (error) {
               this.error(`Delete message error: ${error.message}`);
               return null;
@@ -678,7 +707,7 @@ class onChat {
         onReact: async () => () => {},
       };
     }
-  }
+}
 
   async editmsg(msg, mid, delay = 0) {
     try {
