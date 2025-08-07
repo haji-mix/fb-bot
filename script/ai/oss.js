@@ -2,7 +2,7 @@ const axios = require("axios");
 const { randomUUID } = require("crypto");
 
 module.exports["config"] = {
-  name: "ai",
+  name: "oss",
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara | Aljur Pogoy",
