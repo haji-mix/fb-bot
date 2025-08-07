@@ -6,6 +6,7 @@ const DEFAULT_MODEL = "deepseek/deepseek-chat";
 
 module.exports["config"] = {
   name: "ai",
+  aliases: ["opai"],
   isPrefix: false,
   version: "1.0.0",
   credits: "Kenneth Panio | Liane Cagara",
