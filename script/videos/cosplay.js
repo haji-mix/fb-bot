@@ -11,10 +11,11 @@ module.exports.config = {
 };
 
 module.exports.run = async ({ message, font }) => {
-    try {
-      
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
+    
+  const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
 
+
+    try {
         const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
 
         const response = await message.arraybuffer(apiUrl, "mp4");
@@ -25,6 +26,7 @@ module.exports.run = async ({ message, font }) => {
         });
 
     } catch (error) {
+        generatingMsg.delete();
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
     }
 };

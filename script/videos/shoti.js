@@ -11,10 +11,9 @@ module.exports.config = {
 };
 
 module.exports.run = async ({ message, font }) => {
-    try {
-      
-        const generatingMsg = await message.reply(font.thin("🔄 Sending Shoti Video... Please wait..."));
+    const generatingMsg = await message.reply(font.thin("🔄 Sending Shoti Video... Please wait..."));
 
+    try {
         const res = await axios.get(`${global.api.hajimev2}/api/shawty?stream=false`);
         generatingMsg.delete();
 
@@ -24,6 +23,7 @@ module.exports.run = async ({ message, font }) => {
         });
 
     } catch (error) {
+        generatingMsg.delete();
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
     }
 };

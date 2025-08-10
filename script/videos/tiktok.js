@@ -12,13 +12,14 @@ module.exports.config = {
 };
 
 module.exports.run = async ({ args, message, font }) => {
+    
+        const generatingMsg = await message.reply(font.thin("🔄 Searching Tiktok Videos... Please wait..."));
+
     try {
 
         const search = args.join(" ") || "";
       
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Tiktok Videos... Please wait..."));
-
-        const apiUrl = `${global.api.hajime}/api/tiktok?search=${encodeURIComponent(search)}`;
+        const apiUrl = `${global.api.hajimev2}/api/tiktok?search=${encodeURIComponent(search)}`;
 
         const response = await message.arraybuffer(apiUrl, "mp4");
         generatingMsg.delete();
@@ -28,6 +29,7 @@ module.exports.run = async ({ args, message, font }) => {
         });
 
     } catch (error) {
+        generatingMsg.delete();
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
     }
 };
