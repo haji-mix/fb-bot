@@ -32,7 +32,7 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
             negativePrompt += ", hentai, nsfw, nude, naked, sexual, porn";
         }
 
-        const apiUrl = `${global.api.hajime}/api/crushimg?${
+        const apiUrl = `${global.api.hajimev2}/api/crushimg?${
             new URLSearchParams({
                 prompt,
                 style: useRealistic ? "realistic" : "anime",
