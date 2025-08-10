@@ -46,12 +46,10 @@
     "freeport": "^1.0.5",
     "gradient-string": "^1.1.0",
     "https-proxy-agent": "^4.0.0",
-    "jsonpath-plus": "^10.3.0",
     "lodash": "^4.17.21",
     "mqtt": "^3.0.0",
     "node-cron": "^3.0.3",
     "tough-cookie": "^5.1.2",
-    "undici": "^5.29.0",
     "websocket-stream": "^5.5.0",
     "jsonpath-plus": "^10.3.0"
   },
