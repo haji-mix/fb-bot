@@ -39,7 +39,7 @@ async function updateBio(api, fonts, prefix) {
         );
         await api.setProfileGuard(true);
     } catch (error) {
-        logger.error(error.stack);
+        console.error(error.stack);
     }
 }
 
