@@ -1,28 +1,25 @@
 const axios = require("axios");
 
 module.exports.config = {
-    name: "cosplay",
-    aliases: ["coser", "cos"],
+    name: "shoti",
+    aliases: ["shawty"],
     version: "1.5.0",
     credits: "Kenneth Panio",
     type: "videos",
-    description: "Fetch Random Cosplay Videos.",
+    description: "Fetch Random Shoti Videos.",
     cooldown: 15
 };
 
 module.exports.run = async ({ message, font }) => {
-    
-  const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
-
+    const generatingMsg = await message.reply(font.thin("🔄 Sending Shoti Video... Please wait..."));
 
     try {
-        const apiUrl = `${global.api.hajime}/api/cosplay?stream=true`;
-
-        const response = await message.arraybuffer(apiUrl, "mp4");
+        const res = await axios.get(`${global.api.hajimev2}/api/shawty?stream=false`);
         generatingMsg.delete();
 
         return message.reply({
-            attachment: response
+            body: `Tiktoker UID: ${res.data.meta.author.unique_id}`,
+            attachment: res.data.url
         });
 
     } catch (error) {

@@ -13,11 +13,12 @@ module.exports.config = {
 };
 
 module.exports.run = async ({ args, message, font }) => {
+    
+        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Image... Please wait..."));
+
     try {
         const search = args.join(" ") || "";
       
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Image... Please wait..."));
-
         const apiUrl = `${global.api.hajime}/api/cosplaytele?search=${encodeURIComponent(search)}&stream=true`;
 
         const response = await message.arraybuffer(apiUrl);
@@ -28,6 +29,7 @@ module.exports.run = async ({ args, message, font }) => {
         });
 
     } catch (error) {
+        generatingMsg.delete();
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
     }
 };

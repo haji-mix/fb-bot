@@ -13,7 +13,7 @@ module.exports.config = {
 };
 
 module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
-    try {
+    
         const fullText = args.join(" ");
         const useRealistic = fullText.includes("--style realistic");
         const prompt = fullText.replace(/--style\s+\w+/i, "").trim();
@@ -22,6 +22,8 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
 
         const generatingMsg = await message.reply(font.thin("🔄 Generating your image... Please wait..."));
 
+    try {
+        
         const isAdmin = admin.includes(String(event.senderID));
         
         let negativePrompt = "blurry, low quality, distorted";
@@ -30,7 +32,7 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
             negativePrompt += ", hentai, nsfw, nude, naked, sexual, porn";
         }
 
-        const apiUrl = `${global.api.hajime}/api/crushimg?${
+        const apiUrl = `${global.api.hajimev2}/api/crushimg?${
             new URLSearchParams({
                 prompt,
                 style: useRealistic ? "realistic" : "anime",
@@ -46,6 +48,7 @@ module.exports.run = async ({ args, message, event, font, prefix, admin }) => {
         generatingMsg.delete();
 
     } catch (error) {
+        generatingMsg.delete();
         message.reply(font.thin(`❌ Error: ${error.message}\nPlease try again later.`));
     }
 };

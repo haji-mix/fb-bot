@@ -77,6 +77,11 @@ const download = async (urls, responseType = "stream", extension = "") => {
     urls = Array.isArray(urls) ? urls : [urls];
     if (responseType === "arraybuffer") ensureDirectory(targetPath);
 
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 2000;
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     try {
         const files = await Promise.all(
             urls.map(async (url) => {
@@ -84,40 +89,52 @@ const download = async (urls, responseType = "stream", extension = "") => {
                     return null;
                 }
 
-                try {
-                    let fileExtension = getExtensionFromUrl(url);
-                    const axiosConfig = {
-                        responseType: responseType === "stream" ? "stream" : "arraybuffer",
-                        headers: getHeadersForUrl(url),
-                    };
+                let attempt = 0;
+                let lastError = null;
 
-                    const response = await axiosInstance.get(url, axiosConfig);
+                while (attempt < MAX_RETRIES) {
+                    try {
+                        let fileExtension = getExtensionFromUrl(url);
+                        const axiosConfig = {
+                            responseType: responseType === "stream" ? "stream" : "arraybuffer",
+                            headers: getHeadersForUrl(url),
+                        };
 
-                    if (!fileExtension) {
-                        fileExtension = getExtensionFromContentType(response.headers["content-type"]);
+                        const response = await axiosInstance.get(url, axiosConfig);
+
+                        if (!fileExtension) {
+                            fileExtension = getExtensionFromContentType(response.headers["content-type"]);
+                        }
+                        fileExtension = fileExtension || extension || FALLBACK_EXTENSION;
+
+                        if (responseType === "stream") {
+                            return response.data;
+                        }
+
+                        const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
+                        fs.writeFileSync(filePath, response.data);
+
+                        setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
+
+                        return fs.createReadStream(filePath);
+
+                    } catch (error) {
+                        lastError = error;
+                        attempt++;
+                        console.warn(`Attempt ${attempt} failed for ${url}: ${error.message}`);
+                        if (attempt < MAX_RETRIES) {
+                            await delay(RETRY_DELAY_MS);
+                        }
                     }
-                    fileExtension = fileExtension || extension || FALLBACK_EXTENSION;
-
-                    if (responseType === "stream") {
-                        return response.data;
-                    }
-
-                    const filePath = path.join(targetPath, `${Date.now()}_media_file.${fileExtension}`);
-                    fs.writeFileSync(filePath, response.data);
-
-                    setTimeout(() => fs.unlink(filePath, (err) => err && console.error("Error deleting file:", err)), 5 * 60 * 1000);
-
-                    return fs.createReadStream(filePath);
-                } catch (error) {
-                    console.error(`Error downloading ${url}:`, error.message);
-                    return null;
                 }
+
+                console.error(`Failed to download ${url} after ${MAX_RETRIES} attempts:`, lastError.message);
+                return null;
             })
         );
 
         return files.length === 1 ? files[0] : files;
     } catch (error) {
-        console.error("Error in download function:", error.message);
         return null;
     }
 };

@@ -7,6 +7,7 @@ require("dotenv").config();
 
 global.api = {
   hajime: "https://haji-mix-api.gleeze.com",
+  hajimev2: "https://haji-mix.up.railway.app",
   mongo_uri: "YOUR MONGO URI or PUT IT in .env"
 };
 
