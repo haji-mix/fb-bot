@@ -12,9 +12,10 @@ const PLATFORMS = {
     name: 'YouTube'
   },
   tiktok: {
-    regex: /https:\/\/(www\.)?[a-z]{2}\.tiktok\.[a-z.]+\/[a-zA-Z0-9-_]+\/?/,
+    regex: /https:\/\/(?:www\.|[a-z]{2}\.)?tiktok\.[a-z.]+\/(@[a-zA-Z0-9._-]+\/video\/\d+(?:\?[^\s]*)?|[a-zA-Z0-9-_]+\/?)/,
     name: 'TikTok'
   },
+  xcom: { regex: /https:\/\/(x|twitter)\.com\/(?:\w+)\/status\/(\d+)/, name: 'X.com' },
   instagram: {
     regex: /https:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[a-zA-Z0-9_-]+\/?/,
     name: 'Instagram'
@@ -27,11 +28,11 @@ const PLATFORMS = {
 
 module.exports.handleEvent = async ({ chat, event }) => {
   if (!event?.body) return;
-  
+
   const links = event?.body.match(/https?:\/\/[^\s]+/g);
- 
+
   if (!links || links.length === 0) return;
-  
+
   for (const link of links) {
     for (const [_, { regex, name }] of Object.entries(PLATFORMS)) {
       if (regex.test(link)) {
