@@ -369,6 +369,7 @@ async function accountLogin(
         }, 1000);
 
         api.setOptions({
+          bypassRegion: "PNB",
           forceLogin: false,
           listenEvents: true,
           logLevel: "silent",
