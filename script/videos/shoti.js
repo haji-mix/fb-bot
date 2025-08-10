@@ -13,9 +13,9 @@ module.exports.config = {
 module.exports.run = async ({ message, font }) => {
     try {
       
-        const generatingMsg = await message.reply(font.thin("🔄 Searching Cosplay Videos... Please wait..."));
+        const generatingMsg = await message.reply(font.thin("🔄 Sending Shoti Video... Please wait..."));
 
-        const res = await axios.get(`${global.api.hajimev2}/api/shawty?stream=true`);
+        const res = await axios.get(`${global.api.hajimev2}/api/shawty?stream=false`);
         generatingMsg.delete();
 
         return message.reply({
