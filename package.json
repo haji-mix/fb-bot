@@ -10,6 +10,13 @@
   "author": "Kenneth Panio",
   "license": "MIT",
   "dependencies": {
+    "lodash": "^4.17.21",
+    "tough-cookie": "^5.1.2",
+    "jsonpath-plus": "^10.3.0",
+    "freeport": "^1.0.5",
+    "cheerio": "^0.22.0",
+    "deepdash": "^5.3.9",
+    "axios-cookiejar-support": "^4.0.7",
     "mocha": "^11.7.1",
     "undici": "^5.29.0",
     "axios": "^1.6.5",
