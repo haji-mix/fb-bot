@@ -433,233 +433,110 @@ class onChat {
     }
   }
   
+#splitCodeBlocks(text) {
+  if (typeof text !== "string") return [text];
+  const parts = [];
+  const regex = /(```[a-zA-Z]*\n?([\s\S]*?)```)/g;
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index).trim());
+    }
+    // Extract the code content (match[2]) without the language specifier and backticks
+    const codeContent = match[2].trim();
+    if (codeContent) {
+      parts.push(codeContent);
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex).trim();
+    if (remaining.includes("```")) {
+      parts.push(remaining);
+    } else if (remaining) {
+      parts.push(remaining);
+    }
+  }
+  return parts.filter(Boolean);
+}
+
 async reply(msg, tid = this.threadID, mid = this.messageID) {
-  try {
-    const threadID = tid !== null && tid !== undefined ? String(tid) : null;
-    if (!threadID || !msg) throw new Error("Thread ID and Message are required.");
+    try {
+      const threadID = tid !== null && tid !== undefined ? String(tid) : null;
+      if (!threadID || !msg) throw new Error("Thread ID and Message are required.");
 
-    let messageBody = typeof msg === "string" ? msg : msg.body || "";
-    let attachments = typeof msg === "object" && msg.attachment ? await this.#processAttachment(msg.attachment) : null;
+      let messageBody = typeof msg === "string" ? msg : msg.body || "";
+      let attachments = typeof msg === "object" && msg.attachment ? await this.#processAttachment(msg.attachment) : null;
 
-    const parts = this.#splitCodeBlocks(messageBody);
-    const hasCodeBlocks = parts.some(part => typeof part === "object" && part.type === "code");
+      // Check if message contains code blocks
+      const parts = this.#splitCodeBlocks(messageBody);
+      const hasCodeBlocks = parts.some(part => !part.startsWith("```") && !part.endsWith("```"));
 
-    if (hasCodeBlocks && parts.length > 1) {
-      const sentMessages = [];
-      for (let index = 0; index < parts.length; index++) {
-        const part = parts[index];
-        const isLastPart = index === parts.length - 1;
-        let formattedPart;
+      if (hasCodeBlocks && parts.length > 1) {
+        // If message has code blocks, send each part separately
+        const sentMessages = [];
+        for (let index = 0; index < parts.length; index++) {
+          const part = parts[index];
+          const isLastPart = index === parts.length - 1;
+          let formattedPart;
 
-        if (typeof part === "object" && part.type === "code") {
-          // Use only the code content, no formatting
-          formattedPart = part.content;
-        } else {
-          // Apply bad word filtering, URL processing, and bold formatting to non-code text
-          formattedPart = formatBold(this.#processUrls(this.#filterBadWords(part)));
-        }
-
-        const MAX_CHAR_LIMIT = 5000;
-        if (formattedPart.length > MAX_CHAR_LIMIT) {
-          const messages = [];
-          let currentMessage = "";
-          let charCount = 0;
-          const words = formattedPart.split(" ");
-
-          for (const word of words) {
-            const wordLength = word.length + 1;
-            if (charCount + wordLength > MAX_CHAR_LIMIT) {
-              messages.push(currentMessage.trim());
-              currentMessage = word + " ";
-              charCount = wordLength;
-            } else {
-              currentMessage += word + " ";
-              charCount += wordLength;
-            }
+          if (part.startsWith("```") && part.endsWith("```")) {
+            // Preserve code blocks, apply bold formatting only
+            formattedPart = formatBold(part);
+          } else {
+            // Apply bad word filtering, URL processing, and bold formatting to non-code blocks
+            formattedPart = formatBold(this.#processUrls(this.#filterBadWords(part)));
           }
-          if (currentMessage.trim()) messages.push(currentMessage.trim());
 
-          for (let chunkIndex = 0; chunkIndex < messages.length; chunkIndex++) {
-            const chunk = messages[chunkIndex];
-            const chunkMsg = chunkIndex === 0 ? chunk : `... ${chunk}`;
+          const MAX_CHAR_LIMIT = 5000;
+          if (formattedPart.length > MAX_CHAR_LIMIT) {
+            // Split long part into chunks
+            const messages = [];
+            let currentMessage = "";
+            let charCount = 0;
+            const words = formattedPart.split(" ");
+
+            for (const word of words) {
+              const wordLength = word.length + 1;
+              if (charCount + wordLength > MAX_CHAR_LIMIT) {
+                messages.push(currentMessage.trim());
+                currentMessage = word + " ";
+                charCount = wordLength;
+              } else {
+                currentMessage += word + " ";
+                charCount += wordLength;
+              }
+            }
+            if (currentMessage.trim()) messages.push(currentMessage.trim());
+
+            // Send each chunk
+            for (let chunkIndex = 0; chunkIndex < messages.length; chunkIndex++) {
+              const chunk = messages[chunkIndex];
+              const chunkMsg = chunkIndex === 0 ? chunk : `... ${chunk}`;
+              const messageObject = {
+                body: chunkMsg,
+                ...(isLastPart && chunkIndex === messages.length - 1 && attachments ? { attachment: attachments } : {}),
+              };
+              await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay to prevent spamming
+              const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 && chunkIndex === 0 ? mid : null);
+              sentMessages.push(replyMsg);
+            }
+          } else {
+            // Send part as a single message
             const messageObject = {
-              body: chunkMsg,
-              ...(isLastPart && chunkIndex === messages.length - 1 && attachments ? { attachment: attachments } : {}),
+              body: formattedPart,
+              ...(isLastPart && attachments ? { attachment: attachments } : {}),
             };
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 && chunkIndex === 0 ? mid : null);
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // 2-second delay to prevent spamming
+            const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 ? mid : null);
             sentMessages.push(replyMsg);
           }
-        } else {
-          const messageObject = {
-            body: formattedPart,
-            ...(isLastPart && attachments ? { attachment: attachments } : {}),
-          };
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 ? mid : null);
-          sentMessages.push(replyMsg);
-        }
-      }
-
-      const lastReplyMsg = sentMessages[sentMessages.length - 1];
-      return {
-        messageID: lastReplyMsg.messageID,
-        edit: async (message, delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.editmsg(message, lastReplyMsg.messageID);
-          } catch (error) {
-            this.error(`Edit message error: ${error.message}`);
-            return null;
-          }
-        },
-        unsend: async (delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.unsendmsg(lastReplyMsg.messageID);
-          } catch (error) {
-            this.error(`Unsend message error: ${error.message}`);
-            return null;
-          }
-        },
-        delete: async (delay = 0) => {
-          try {
-            await new Promise((res) => setTimeout(res, delay));
-            return await this.unsendmsg(lastReplyMsg.messageID);
-          } catch (error) {
-            this.error(`Delete message error: ${error.message}`);
-            return null;
-          }
-        },
-        onReply: async (callback) => {
-          try {
-            if (typeof callback !== "function") throw new Error("Callback must be a function.");
-            if (!lastReplyMsg.messageID) throw new Error("No message ID available for reply listener.");
-
-            global.Hajime.replies[lastReplyMsg.messageID] = {
-              author: this.senderID || this.api.getCurrentUserID(),
-              callback: async (params) => {
-                try {
-                  const { event } = params;
-                  const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
-                  const replyContext = new onChat(this.api, event);
-                  await callback({
-                    ...replyContext,
-                    body: formattedBody,
-                    args: event.body ? event.body.trim().split(/\s+/) : [],
-                    fonts,
-                    reply: async (msg, tid = event.threadID, mid = event.messageID) =>
-                      await replyContext.reply(fonts.thin(msg), tid, mid),
-                  });
-                } catch (error) {
-                  this.error(`onReply callback error: ${error.message}`);
-                }
-              },
-              conversationHistory: [],
-            };
-
-            setTimeout(() => delete global.Hajime.replies[lastReplyMsg.messageID], 300000);
-            return () => {
-              try {
-                delete global.Hajime.replies[lastReplyMsg.messageID];
-              } catch (error) {
-                this.error(`Error removing onReply listener: ${error.message}`);
-              }
-            };
-          } catch (error) {
-            this.error(`onReply setup error: ${error.message}`);
-            return () => {};
-          }
-        },
-        onReact: async (callback) => {
-          try {
-            if (typeof callback !== "function") throw new Error("Callback must be a function.");
-            if (!lastReplyMsg.messageID) throw new Error("No message ID available for reaction listener.");
-
-            global.Hajime.reactions = global.Hajime.reactions || {};
-            global.Hajime.reactions[lastReplyMsg.messageID] = {
-              author: this.senderID || this.api.getCurrentUserID(),
-              callback: async (params) => {
-                try {
-                  const { event } = params;
-                  const reactionContext = new onChat(this.api, event);
-                  await callback({
-                    ...reactionContext,
-                    reaction: event.reaction || null,
-                    reply: async (msg, tid = event.threadID, mid = event.messageID) =>
-                      await reactionContext.reply(fonts.thin(msg), tid, mid),
-                  });
-                } catch (error) {
-                  this.error(`onReact callback error: ${error.message}`);
-                }
-              },
-            };
-
-            setTimeout(() => delete global.Hajime.reactions[lastReplyMsg.messageID], 300000);
-            return () => {
-              try {
-                delete global.Hajime.reactions[lastReplyMsg.messageID];
-              } catch (error) {
-                this.error(`Error removing onReact listener: ${error.message}`);
-              }
-            };
-          } catch (error) {
-            this.error(`onReact setup error: ${error.message}`);
-            return () => {};
-          }
-        },
-      };
-    } else {
-      const formattedMsg =
-        typeof msg === "string"
-          ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
-          : {
-              ...msg,
-              body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined,
-              attachment: attachments,
-            };
-
-      const MAX_CHAR_LIMIT = 5000;
-      if (
-        (typeof formattedMsg === "string" && formattedMsg.length > MAX_CHAR_LIMIT) ||
-        (typeof formattedMsg === "object" && formattedMsg.body && formattedMsg.body.length > MAX_CHAR_LIMIT)
-      ) {
-        const messages = [];
-        let currentMessage = "";
-        let charCount = 0;
-        const textToSplit = typeof formattedMsg === "string" ? formattedMsg : formattedMsg.body;
-        const words = textToSplit.split(" ");
-
-        for (const word of words) {
-          const wordLength = word.length + 1;
-          if (charCount + wordLength > MAX_CHAR_LIMIT) {
-            messages.push(currentMessage.trim());
-            currentMessage = word + " ";
-            charCount = wordLength;
-          } else {
-            currentMessage += word + " ";
-            charCount += wordLength;
-          }
-        }
-        if (currentMessage.trim()) messages.push(currentMessage.trim());
-
-        const sentMessages = [];
-        for (let index = 0; index < messages.length; index++) {
-          const chunk = messages[index];
-          const chunkMsg = index === 0 ? chunk : `... ${chunk}`;
-          const isLastChunk = index === messages.length - 1;
-          const messageObject = {
-            body: chunkMsg,
-            ...(isLastChunk && attachments ? { attachment: attachments } : {}),
-          };
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 ? mid : null);
-          sentMessages.push(replyMsg);
         }
 
-        const lastReplyMsg = sentMessages[sentMessages.length - 1];
+        const lastReplyMsg = sentMessages[sentMessages.length - 1]; // Use last message ID
         return {
-          messageID: lastReplyMsg.messageID,
+          messageID: lastReplyMsg.messageID, // Return last message ID
           edit: async (message, delay = 0) => {
             try {
               await new Promise((res) => setTimeout(res, delay));
@@ -766,129 +643,284 @@ async reply(msg, tid = this.threadID, mid = this.messageID) {
           },
         };
       } else {
-        const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
-        return {
-          messageID: replyMsg.messageID,
-          edit: async (message, delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.editmsg(message, replyMsg.messageID);
-            } catch (error) {
-              this.error(`Edit message error: ${error.message}`);
-              return null;
-            }
-          },
-          unsend: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              this.error(`Unsend message error: ${error.message}`);
-              return null;
-            }
-          },
-          delete: async (delay = 0) => {
-            try {
-              await new Promise((res) => setTimeout(res, delay));
-              return await this.unsendmsg(replyMsg.messageID);
-            } catch (error) {
-              this.error(`Delete message error: ${error.message}`);
-              return null;
-            }
-          },
-          onReply: async (callback) => {
-            try {
-              if (typeof callback !== "function") throw new Error("Callback must be a function.");
-              if (!replyMsg.messageID) throw new Error("No message ID available for reply listener.");
+        const formattedMsg =
+          typeof msg === "string"
+            ? formatBold(this.#processUrls(this.#filterBadWords(messageBody)))
+            : {
+                ...msg,
+                body: messageBody ? formatBold(this.#processUrls(this.#filterBadWords(messageBody))) : undefined,
+                attachment: attachments,
+              };
 
-              global.Hajime.replies[replyMsg.messageID] = {
-                author: this.senderID || this.api.getCurrentUserID(),
-                callback: async (params) => {
+        const MAX_CHAR_LIMIT = 5000;
+        if (
+          (typeof formattedMsg === "string" && formattedMsg.length > MAX_CHAR_LIMIT) ||
+          (typeof formattedMsg === "object" && formattedMsg.body && formattedMsg.body.length > MAX_CHAR_LIMIT)
+        ) {
+          const messages = [];
+          let currentMessage = "";
+          let charCount = 0;
+          const textToSplit = typeof formattedMsg === "string" ? formattedMsg : formattedMsg.body;
+          const words = textToSplit.split(" ");
+
+          for (const word of words) {
+            const wordLength = word.length + 1;
+            if (charCount + wordLength > MAX_CHAR_LIMIT) {
+              messages.push(currentMessage.trim());
+              currentMessage = word + " ";
+              charCount = wordLength;
+            } else {
+              currentMessage += word + " ";
+              charCount += wordLength;
+            }
+          }
+          if (currentMessage.trim()) messages.push(currentMessage.trim());
+
+          const sentMessages = [];
+          for (let index = 0; index < messages.length; index++) {
+            const chunk = messages[index];
+            const chunkMsg = index === 0 ? chunk : `... ${chunk}`;
+            const isLastChunk = index === messages.length - 1;
+            const messageObject = {
+              body: chunkMsg,
+              ...(isLastChunk && attachments ? { attachment: attachments } : {}),
+            };
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+            const replyMsg = await this.api.sendMessage(messageObject, threadID, index === 0 ? mid : null);
+            sentMessages.push(replyMsg);
+          }
+
+          const lastReplyMsg = sentMessages[sentMessages.length - 1];
+          return {
+            messageID: lastReplyMsg.messageID,
+            edit: async (message, delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.editmsg(message, lastReplyMsg.messageID);
+              } catch (error) {
+                this.error(`Edit message error: ${error.message}`);
+                return null;
+              }
+            },
+            unsend: async (delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.unsendmsg(lastReplyMsg.messageID);
+              } catch (error) {
+                this.error(`Unsend message error: ${error.message}`);
+                return null;
+              }
+            },
+            delete: async (delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.unsendmsg(lastReplyMsg.messageID);
+              } catch (error) {
+                this.error(`Delete message error: ${error.message}`);
+                return null;
+              }
+            },
+            onReply: async (callback) => {
+              try {
+                if (typeof callback !== "function") throw new Error("Callback must be a function.");
+                if (!lastReplyMsg.messageID) throw new Error("No message ID available for reply listener.");
+
+                global.Hajime.replies[lastReplyMsg.messageID] = {
+                  author: this.senderID || this.api.getCurrentUserID(),
+                  callback: async (params) => {
+                    try {
+                      const { event } = params;
+                      const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                      const replyContext = new onChat(this.api, event);
+                      await callback({
+                        ...replyContext,
+                        body: formattedBody,
+                        args: event.body ? event.body.trim().split(/\s+/) : [],
+                        fonts,
+                        reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                          await replyContext.reply(fonts.thin(msg), tid, mid),
+                      });
+                    } catch (error) {
+                      this.error(`onReply callback error: ${error.message}`);
+                    }
+                  },
+                  conversationHistory: [],
+                };
+
+                setTimeout(() => delete global.Hajime.replies[lastReplyMsg.messageID], 300000);
+                return () => {
                   try {
-                    const { event } = params;
-                    const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
-                    const replyContext = new onChat(this.api, event);
-                    await callback({
-                      ...replyContext,
-                      body: formattedBody,
-                      args: event.body ? event.body.trim().split(/\s+/) : [],
-                      fonts,
-                      reply: async (msg, tid = event.threadID, mid = event.messageID) =>
-                        await replyContext.reply(fonts.thin(msg), tid, mid),
-                    });
+                    delete global.Hajime.replies[lastReplyMsg.messageID];
                   } catch (error) {
-                    this.error(`onReply callback error: ${error.message}`);
+                    this.error(`Error removing onReply listener: ${error.message}`);
                   }
-                },
-                conversationHistory: [],
-              };
+                };
+              } catch (error) {
+                this.error(`onReply setup error: ${error.message}`);
+                return () => {};
+              }
+            },
+            onReact: async (callback) => {
+              try {
+                if (typeof callback !== "function") throw new Error("Callback must be a function.");
+                if (!lastReplyMsg.messageID) throw new Error("No message ID available for reaction listener.");
 
-              setTimeout(() => delete global.Hajime.replies[replyMsg.messageID], 300000);
-              return () => {
-                try {
-                  delete global.Hajime.replies[replyMsg.messageID];
-                } catch (error) {
-                  this.error(`Error removing onReply listener: ${error.message}`);
-                }
-              };
-            } catch (error) {
-              this.error(`onReply setup error: ${error.message}`);
-              return () => {};
-            }
-          },
-          onReact: async (callback) => {
-            try {
-              if (typeof callback !== "function") throw new Error("Callback must be a function.");
-              if (!replyMsg.messageID) throw new Error("No message ID available for reaction listener.");
+                global.Hajime.reactions = global.Hajime.reactions || {};
+                global.Hajime.reactions[lastReplyMsg.messageID] = {
+                  author: this.senderID || this.api.getCurrentUserID(),
+                  callback: async (params) => {
+                    try {
+                      const { event } = params;
+                      const reactionContext = new onChat(this.api, event);
+                      await callback({
+                        ...reactionContext,
+                        reaction: event.reaction || null,
+                        reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                          await reactionContext.reply(fonts.thin(msg), tid, mid),
+                      });
+                    } catch (error) {
+                      this.error(`onReact callback error: ${error.message}`);
+                    }
+                  },
+                };
 
-              global.Hajime.reactions = global.Hajime.reactions || {};
-              global.Hajime.reactions[replyMsg.messageID] = {
-                author: this.senderID || this.api.getCurrentUserID(),
-                callback: async (params) => {
+                setTimeout(() => delete global.Hajime.reactions[lastReplyMsg.messageID], 300000);
+                return () => {
                   try {
-                    const { event } = params;
-                    const reactionContext = new onChat(this.api, event);
-                    await callback({
-                      ...reactionContext,
-                      reaction: event.reaction || null,
-                      reply: async (msg, tid = event.threadID, mid = event.messageID) =>
-                        await reactionContext.reply(fonts.thin(msg), tid, mid),
-                    });
+                    delete global.Hajime.reactions[lastReplyMsg.messageID];
                   } catch (error) {
-                    this.error(`onReact callback error: ${error.message}`);
+                    this.error(`Error removing onReact listener: ${error.message}`);
                   }
-                },
-              };
+                };
+              } catch (error) {
+                this.error(`onReact setup error: ${error.message}`);
+                return () => {};
+              }
+            },
+          };
+        } else {
+          const replyMsg = await this.api.sendMessage(formattedMsg, threadID, mid);
+          return {
+            messageID: replyMsg.messageID,
+            edit: async (message, delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.editmsg(message, replyMsg);
+              } catch (error) {
+                this.error(`Edit message error: ${error.message}`);
+                return null;
+              }
+            },
+            unsend: async (delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.unsendmsg(replyMsg);
+              } catch (error) {
+                this.error(`Unsend message error: ${error.message}`);
+                return null;
+              }
+            },
+            delete: async (delay = 0) => {
+              try {
+                await new Promise((res) => setTimeout(res, delay));
+                return await this.unsendmsg(replyMsg);
+              } catch (error) {
+                this.error(`Delete message error: ${error.message}`);
+                return null;
+              }
+            },
+            onReply: async (callback) => {
+              try {
+                if (typeof callback !== "function") throw new Error("Callback must be a function.");
+                if (!replyMsg.messageID) throw new Error("No message ID available for reply listener.");
 
-              setTimeout(() => delete global.Hajime.reactions[replyMsg.messageID], 300000);
-              return () => {
-                try {
-                  delete global.Hajime.reactions[replyMsg.messageID];
-                } catch (error) {
-                  this.error(`Error removing onReact listener: ${error.message}`);
-                }
-              };
-            } catch (error) {
-              this.error(`onReact setup error: ${error.message}`);
-              return () => {};
-            }
-          },
-        };
+                global.Hajime.replies[replyMsg.messageID] = {
+                  author: this.senderID || this.api.getCurrentUserID(),
+                  callback: async (params) => {
+                    try {
+                      const { event } = params;
+                      const formattedBody = this.#filterBadWords(this.#processUrls(event.body || ""));
+                      const replyContext = new onChat(this.api, event);
+                      await callback({
+                        ...replyContext,
+                        body: formattedBody,
+                        args: event.body ? event.body.trim().split(/\s+/) : [],
+                        fonts,
+                        reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                          await replyContext.reply(fonts.thin(msg), tid, mid),
+                      });
+                    } catch (error) {
+                      this.error(`onReply callback error: ${error.message}`);
+                    }
+                  },
+                  conversationHistory: [],
+                };
+
+                setTimeout(() => delete global.Hajime.replies[replyMsg.messageID], 300000);
+                return () => {
+                  try {
+                    delete global.Hajime.replies[replyMsg.messageID];
+                  } catch (error) {
+                    this.error(`Error removing onReply listener: ${error.message}`);
+                  }
+                };
+              } catch (error) {
+                this.error(`onReply setup error: ${error.message}`);
+                return () => {};
+              }
+            },
+            onReact: async (callback) => {
+              try {
+                if (typeof callback !== "function") throw new Error("Callback must be a function.");
+                if (!replyMsg.messageID) throw new Error("No message ID available for reaction listener.");
+
+                global.Hajime.reactions = global.Hajime.reactions || {};
+                global.Hajime.reactions[replyMsg.messageID] = {
+                  author: this.senderID || this.api.getCurrentUserID(),
+                  callback: async (params) => {
+                    try {
+                      const { event } = params;
+                      const reactionContext = new onChat(this.api, event);
+                      await callback({
+                        ...reactionContext,
+                        reaction: event.reaction || null,
+                        reply: async (msg, tid = event.threadID, mid = event.messageID) =>
+                          await reactionContext.reply(fonts.thin(msg), tid, mid),
+                      });
+                    } catch (error) {
+                      this.error(`onReact callback error: ${error.message}`);
+                    }
+                  },
+                };
+
+                setTimeout(() => delete global.Hajime.reactions[replyMsg.messageID], 300000);
+                return () => {
+                  try {
+                    delete global.Hajime.reactions[replyMsg.messageID];
+                  } catch (error) {
+                    this.error(`Error removing onReact listener: ${error.message}`);
+                  }
+                };
+              } catch (error) {
+                this.error(`onReact setup error: ${error.message}`);
+                return () => {};
+              }
+            },
+          };
+        }
       }
+    } catch (error) {
+      this.error(`Reply error: ${error.message}`);
+      return {
+        messageID: null,
+        edit: async () => null,
+        unsend: async () => null,
+        delete: async () => null,
+        onReply: async () => () => {},
+        onReact: async () => () => {},
+      };
     }
-  } catch (error) {
-    this.error(`Reply error: ${error.message}`);
-    return {
-      messageID: null,
-      edit: async () => null,
-      unsend: async () => null,
-      delete: async () => null,
-      onReply: async () => () => {},
-      onReact: async () => () => {},
-    };
-  }
 }
-
   async editmsg(msg, mid, delay = 0) {
     try {
       await new Promise((res) => setTimeout(res, delay));
