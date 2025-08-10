@@ -52,44 +52,6 @@ class onChat {
       this.error(`Constructor error: ${error.message}`);
     }
   }
-  
-#splitCodeBlocks(text) {
-  if (typeof text !== "string") return [text];
-
-  const parts = [];
-  const regex = /(```[a-zA-Z]*\n?[\s\S]*?\n```)/g;
-  let lastIndex = 0, match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      const nonCode = text.slice(lastIndex, match.index).trim();
-      if (nonCode) parts.push(nonCode);
-    }
-
-    const block = match[0].trim();
-    const codeMatch = block.match(/```([a-zA-Z]*)\n?([\s\S]*?)\n```/);
-    if (codeMatch) {
-      const [, lang, content] = codeMatch;
-      parts.push({
-        type: "code",
-        language: lang || "plain",
-        content: content.trim(),
-        raw: block
-      });
-    } else {
-      parts.push(block);
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    const remaining = text.slice(lastIndex).trim();
-    if (remaining) parts.push(remaining);
-  }
-
-  return parts.filter(Boolean);
-}
 
   #normalizeWord(word) {
     return word
