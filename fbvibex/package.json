@@ -19,9 +19,6 @@
   ],
   "community": "Exocore",
   "license": "MIT",
-  "bugs": {
-    "url": ""
-  },
   "homepage": "",
   "keywords": [
     "facebook",
@@ -35,6 +32,7 @@
     "nextgen"
   ],
   "dependencies": {
+    "bluebird": "^3.7.2",
     "undici": "^5.29.0",
     "axios": "^1.9.0",
     "axios-cookiejar-support": "^4.0.7",
