@@ -893,7 +893,7 @@ async reply(msg, tid = this.threadID, mid = this.messageID) {
     try {
       await new Promise((res) => setTimeout(res, delay));
       if (!mid) throw new Error("Message ID is required.");
-      return await this.api.unsent(mid.messageID, threadID);
+      return await this.api.unsendMessage(mid.messageID, threadID);
     } catch (error) {
       this.error(`Unsend message error: ${error.message}`);
       return null;
