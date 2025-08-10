@@ -38,7 +38,7 @@ module.exports.handleEvent = async ({ chat, event }) => {
       if (regex.test(link)) {
         return chat.reply({
           body: name,
-          attachment: `${global.api.hajime}/api/autodl?url=${link}&stream=true`
+          attachment: `${global.api.hajimev2}/api/autodl?url=${link}&stream=true`
         });
       }
     }
