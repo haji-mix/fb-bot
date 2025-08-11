@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const login = require("fbvibex");
+const login = require("./fbvibex/package/index");
 const express = require("express");
 const nunjucks = require("nunjucks");
 require("dotenv").config();

@@ -40,7 +40,7 @@ module.exports.run = async function({ args, chat, font }) {
   try {
     const { get } = require("axios");
     
-    const apiEndpoint = global.api.hajime;
+    const apiEndpoint = global.api.hajimev2;
     const response = await get(
       `${apiEndpoint}/api/smsbomber?phone=${cleanPhone}&times=${amount}`
     );
