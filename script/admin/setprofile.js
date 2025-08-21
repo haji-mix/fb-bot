@@ -4,7 +4,7 @@ module.exports["config"] = {
   name: "setprofile",
   aliases: ["profilepic", "changeprofile", "profile"],
   version: "1.0.0",
-  role: 3,
+  role: 1,
   credits: "kennethpanio",
   info: "Change your profile picture",
   type: "admin",
