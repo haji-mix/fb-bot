@@ -3,7 +3,7 @@ const axios = require('axios');
 module.exports["config"] = {
     name: "post",
     version: "1.0.0",
-    role: 1,
+    role: 3,
     credits: "kennethpanio",
     info: "Post multiple pictures using bot",
     type: "admin",
